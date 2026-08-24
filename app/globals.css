@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+/*
+ * Palette carried over from the build spec so the holding page and the room
+ * that replaces it share one design language. Ember is the candle; in/out are
+ * the breath colours reserved for the timer.
+ */
+@theme {
+  --color-paper: #fbfaf8;
+  --color-surface: #ffffff;
+  --color-ink: #16181b;
+  --color-ink-2: #43484d;
+  --color-ink-3: #767b80;
+  --color-rule: #e1ded8;
+  --color-ember: #a8641f;
+  --color-ember-soft: #f4e6d4;
+
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+  --font-serif: var(--font-instrument-serif), Georgia, serif;
+}
+
+/*
+ * Dark palette overrides the variable VALUES only. It must not be another
+ * @theme block — @theme is build-time and cannot live inside @media, so
+ * nesting one there applies the dark values unconditionally.
+ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-paper: #131518;
+    --color-surface: #1a1d21;
+    --color-ink: #e9e7e3;
+    --color-ink-2: #b5b2ad;
+    --color-ink-3: #85827d;
+    --color-rule: #2a2e33;
+    --color-ember: #e0a057;
+    --color-ember-soft: #2c2117;
+  }
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The candle glow. Breathing is the whole visual idea, so it is the one
+   animation that exists before the room is built. */
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    opacity: 0.95;
+    transform: translateX(-50%) scale(1.06);
+  }
+}
+
+.glow {
+  animation: breathe 11s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glow {
+    animation: none;
+    opacity: 0.7;
+  }
+}
