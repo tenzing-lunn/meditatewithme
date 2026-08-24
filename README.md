@@ -6,7 +6,7 @@ mix ambient sounds, sit with the candle, and see how many others are sitting
 with you.
 
 **Status:** v1 in development. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
-for the system design and [`docs/internal-build-spec.html`](docs/internal-build-spec.html)
+for the system design and [`plans/v1-build-spec.html`](plans/v1-build-spec.html)
 for scope and build order.
 
 ---

@@ -386,7 +386,8 @@ meditatewithme/
 │   ├── prefs.ts                 # localStorage <-> DB
 │   └── supabase.ts
 ├── supabase/migrations/
-└── docs/
+├── plans/                       # active plans
+└── docs/                        # finished writing
 ```
 
 `lib/` holds no React and no I/O beyond explicit fetches — it should be testable with plain functions. `session.ts` and `clock.ts` in particular are pure enough to unit test properly, and they are the two places a bug would be least visible in manual testing.
