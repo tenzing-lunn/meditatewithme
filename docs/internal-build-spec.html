@@ -1,0 +1,678 @@
+<title>First Candle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;450;500;600&family=Instrument+Serif:ital@0;1&display=swap">
+
+<style>
+  :root {
+    --paper:       #FBFAF8;
+    --surface:     #FFFFFF;
+    --surface-2:   #F3F1ED;
+    --ink:         #16181B;
+    --ink-2:       #43484D;
+    --ink-3:       #767B80;
+    --rule:        #E1DED8;
+    --rule-strong: #CBC7C0;
+    --ember:       #A8641F;
+    --ember-soft:  #F4E6D4;
+    --in:          #3F6B4C;
+    --in-soft:     #E3EDE5;
+    --out:         #8A5648;
+    --out-soft:    #F3E5E0;
+    --code-bg:     #F5F3EF;
+    --shadow:      0 1px 2px rgba(22,24,27,.05), 0 8px 24px -16px rgba(22,24,27,.28);
+
+    --step--1: clamp(.78rem, .76rem + .1vw, .84rem);
+    --step-0:  clamp(1rem, .97rem + .14vw, 1.075rem);
+    --step-1:  clamp(1.2rem, 1.14rem + .3vw, 1.4rem);
+    --step-2:  clamp(1.55rem, 1.42rem + .62vw, 2rem);
+    --step-3:  clamp(2.1rem, 1.75rem + 1.7vw, 3.3rem);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:       #131518;
+      --surface:     #1A1D21;
+      --surface-2:   #21252A;
+      --ink:         #E9E7E3;
+      --ink-2:       #B5B2AD;
+      --ink-3:       #85827D;
+      --rule:        #2A2E33;
+      --rule-strong: #3B4046;
+      --ember:       #E0A057;
+      --ember-soft:  #2C2117;
+      --in:          #7FB893;
+      --in-soft:     #1B2A21;
+      --out:         #C98D7B;
+      --out-soft:    #2B1E1A;
+      --code-bg:     #1B1E22;
+      --shadow:      0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.8);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:       #131518;
+    --surface:     #1A1D21;
+    --surface-2:   #21252A;
+    --ink:         #E9E7E3;
+    --ink-2:       #B5B2AD;
+    --ink-3:       #85827D;
+    --rule:        #2A2E33;
+    --rule-strong: #3B4046;
+    --ember:       #E0A057;
+    --ember-soft:  #2C2117;
+    --in:          #7FB893;
+    --in-soft:     #1B2A21;
+    --out:         #C98D7B;
+    --out-soft:    #2B1E1A;
+    --code-bg:     #1B1E22;
+    --shadow:      0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.8);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: var(--step-0);
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  .wrap {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 clamp(1.1rem, 4vw, 3rem) 6rem;
+  }
+
+  /* ---------- masthead ---------- */
+
+  .masthead {
+    position: relative;
+    padding: clamp(3.5rem, 9vw, 7rem) 0 clamp(2rem, 4vw, 3rem);
+    border-bottom: 1px solid var(--rule);
+    overflow: hidden;
+  }
+
+  .glow {
+    position: absolute;
+    top: -14rem; left: 50%;
+    width: 46rem; height: 30rem;
+    transform: translateX(-50%);
+    background: radial-gradient(ellipse at center, var(--ember-soft) 0%, transparent 68%);
+    opacity: .85;
+    pointer-events: none;
+    animation: breathe 11s ease-in-out infinite;
+  }
+  @keyframes breathe {
+    0%, 100% { opacity: .55; transform: translateX(-50%) scale(1); }
+    50%      { opacity: .95; transform: translateX(-50%) scale(1.06); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .glow { animation: none; opacity: .7; }
+  }
+
+  .masthead > * { position: relative; }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: var(--step--1);
+    font-weight: 500;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--ember);
+    margin: 0 0 1.4rem;
+  }
+
+  h1 {
+    font-family: "Instrument Serif", Georgia, "Times New Roman", serif;
+    font-weight: 400;
+    font-size: var(--step-3);
+    line-height: .98;
+    letter-spacing: -.015em;
+    text-wrap: balance;
+    margin: 0 0 1.1rem;
+  }
+  h1 em { font-style: italic; color: var(--ember); }
+
+  .standfirst {
+    font-size: var(--step-1);
+    line-height: 1.48;
+    color: var(--ink-2);
+    max-width: 34ch;
+    margin: 0;
+    text-wrap: pretty;
+  }
+
+  .decisions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px;
+    margin-top: clamp(2.5rem, 5vw, 3.5rem);
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .decision { background: var(--surface); padding: 1rem 1.15rem; }
+  .decision dt {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .68rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: .4rem;
+  }
+  .decision dd {
+    margin: 0;
+    font-weight: 500;
+    font-size: .95rem;
+    line-height: 1.35;
+  }
+
+  /* ---------- sections ---------- */
+
+  section {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    padding: clamp(2.75rem, 6vw, 4.5rem) 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  section:last-of-type { border-bottom: 0; }
+
+  @media (min-width: 900px) {
+    section {
+      grid-template-columns: 9rem minmax(0, 1fr);
+      gap: 2.5rem;
+    }
+    .rail { grid-column: 1; }
+    .body { grid-column: 2; }
+  }
+
+  .rail {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .7rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    line-height: 1.5;
+  }
+  .rail .num {
+    display: block;
+    font-size: 1.55rem;
+    letter-spacing: 0;
+    color: var(--rule-strong);
+    margin-bottom: .3rem;
+  }
+
+  .body { min-width: 0; max-width: 68ch; }
+  .body > * + * { margin-top: 1.15rem; }
+
+  h2 {
+    font-family: "Instrument Serif", Georgia, serif;
+    font-weight: 400;
+    font-size: var(--step-2);
+    line-height: 1.12;
+    letter-spacing: -.01em;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  h3 {
+    font-size: var(--step-0);
+    font-weight: 600;
+    letter-spacing: -.005em;
+    margin: 2.25rem 0 0;
+  }
+  h3 + * { margin-top: .5rem !important; }
+
+  p { margin: 0; text-wrap: pretty; }
+
+  a { color: var(--ember); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--ember);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  strong { font-weight: 600; }
+
+  ul.plain { margin: 0; padding-left: 1.15rem; }
+  ul.plain li + li { margin-top: .45rem; }
+  ul.plain li::marker { color: var(--rule-strong); }
+
+  code {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .88em;
+    background: var(--code-bg);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: .08em .34em;
+  }
+
+  pre {
+    margin: 0;
+    background: var(--code-bg);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 1rem 1.1rem;
+    overflow-x: auto;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .8rem;
+    line-height: 1.65;
+    color: var(--ink-2);
+  }
+  pre code { background: none; border: 0; padding: 0; font-size: inherit; }
+  pre .c { color: var(--ink-3); font-style: italic; }
+  pre .k { color: var(--ember); }
+
+  /* ---------- scope table ---------- */
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 4px; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .9rem;
+    background: var(--surface);
+  }
+  th, td {
+    text-align: left;
+    padding: .65rem .9rem;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  thead th {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .66rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    font-weight: 500;
+    background: var(--surface-2);
+  }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: "IBM Plex Mono", monospace; }
+
+  .chip {
+    display: inline-block;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .64rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: .2em .55em;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+  .chip.in  { background: var(--in-soft);  color: var(--in); }
+  .chip.out { background: var(--out-soft); color: var(--out); }
+
+  /* ---------- seam callout ---------- */
+
+  .seam {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 2px solid var(--ember);
+    border-radius: 3px;
+    padding: .85rem 1.1rem;
+    font-size: .9rem;
+    line-height: 1.55;
+    color: var(--ink-2);
+  }
+  .seam b {
+    display: block;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .64rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ember);
+    margin-bottom: .3rem;
+    font-weight: 500;
+  }
+
+  /* ---------- build order ---------- */
+
+  .steps { list-style: none; margin: 0; padding: 0; }
+  .step {
+    display: grid;
+    grid-template-columns: 2.1rem minmax(0,1fr) auto;
+    gap: .1rem 1rem;
+    align-items: baseline;
+    padding: .95rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .step:first-child { border-top: 1px solid var(--rule); }
+  .step .n {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .78rem;
+    color: var(--rule-strong);
+    font-variant-numeric: tabular-nums;
+  }
+  .step .t { font-weight: 550; }
+  .step .h {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .78rem;
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+  .step .d {
+    grid-column: 2 / -1;
+    font-size: .88rem;
+    color: var(--ink-2);
+    margin-top: .15rem;
+  }
+
+  .weekmark {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .66rem;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    padding: 1.6rem 0 .5rem;
+  }
+  .weekmark:first-child { padding-top: 0; }
+
+  .cutline {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    margin: 1.5rem 0 0;
+    padding: .8rem 1.1rem;
+    background: var(--ember-soft);
+    border-radius: 3px;
+    font-size: .88rem;
+    line-height: 1.5;
+    color: var(--ink-2);
+  }
+  .cutline svg { flex: none; color: var(--ember); }
+
+  .total {
+    display: flex;
+    justify-content: space-between;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .8rem;
+    padding: .9rem 0 0;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- checklist ---------- */
+
+  .checks { list-style: none; margin: 0; padding: 0; }
+  .checks li {
+    display: grid;
+    grid-template-columns: 1.4rem 1fr;
+    gap: .6rem;
+    padding: .7rem 0;
+    border-bottom: 1px solid var(--rule);
+    align-items: start;
+  }
+  .checks li:first-child { border-top: 1px solid var(--rule); }
+  .checks .box {
+    width: 14px; height: 14px;
+    margin-top: .32rem;
+    border: 1.5px solid var(--rule-strong);
+    border-radius: 2px;
+  }
+  .checks .why { display: block; color: var(--ink-3); font-size: .85rem; margin-top: .1rem; }
+
+  footer {
+    padding: 3rem 0 0;
+    color: var(--ink-3);
+    font-size: .85rem;
+    border-top: 1px solid var(--rule);
+    margin-top: 3rem;
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="glow" aria-hidden="true"></div>
+    <p class="eyebrow">Meditate With Me · Build Spec v1</p>
+    <h1>Everyone sits at the <em>top of the hour</em>.</h1>
+    <p class="standfirst">No live video. No volunteers. No streaming bill. Just the promise the whole platform rests on — you are not meditating alone — shipped in three weeks.</p>
+
+    <dl class="decisions">
+      <div class="decision"><dt>Ship by</dt><dd>3 weeks · ~41 hrs</dd></div>
+      <div class="decision"><dt>Stack</dt><dd>Next.js · Supabase · Vercel</dd></div>
+      <div class="decision"><dt>Accounts</dt><dd>Guest first, optional</dd></div>
+      <div class="decision"><dt>Donations</dt><dd>Deferred — no entity</dd></div>
+      <div class="decision"><dt>Hosting cost</dt><dd>≈ £0 / month</dd></div>
+    </dl>
+  </header>
+
+  <section>
+    <div class="rail"><span class="num">01</span>The product</div>
+    <div class="body">
+      <h2>What v1 actually is</h2>
+      <p>A single page. You arrive, you see how many minutes until the next session and how many people are already waiting. At the top of the hour a candle lights, and a counter tells you how many people worldwide lit it with you. You set a timer between one and forty-five minutes, choose the sounds you want underneath, and sit. A bell ends your session.</p>
+      <p>That is the entire product. It is also, stripped of its infrastructure, the entire <em>idea</em> — the client's spec spends twenty-three pages describing ways to deliver a feeling that this page delivers on its own.</p>
+
+      <div class="seam">
+        <b>Why this is the right v1</b>
+        The thing being tested is not whether live video works. It is whether anyone shows up at 4am to sit with strangers. If they do, the live layer is worth building and there will be donations to fund it. If they don't, no amount of streaming infrastructure would have saved it.
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="rail"><span class="num">02</span>Scope</div>
+    <div class="body">
+      <h2>In and out, explicitly</h2>
+      <p>Everything marked <span class="chip out">later</span> stays in the roadmap. None of it is being argued away — it is being sequenced. Put this table in the contract so additions are change orders, not assumptions.</p>
+
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr><th>Feature</th><th>v1</th><th>Note</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Hourly synchronised session (UTC)</td><td><span class="chip in">in</span></td><td>The core loop</td></tr>
+            <tr><td>Candle / focus point loop</td><td><span class="chip in">in</span></td><td>3 options, cached video</td></tr>
+            <tr><td>Personal timer, 1–45 min</td><td><span class="chip in">in</span></td><td>Wall-clock accurate</td></tr>
+            <tr><td>Ambient sound mixer</td><td><span class="chip in">in</span></td><td>5 tracks, per-track volume</td></tr>
+            <tr><td>End bell</td><td><span class="chip in">in</span></td><td>3 options</td></tr>
+            <tr><td>Live participant count</td><td><span class="chip in">in</span></td><td>Supabase Realtime presence</td></tr>
+            <tr><td>Guest access, no login</td><td><span class="chip in">in</span></td><td>Default path</td></tr>
+            <tr><td>Optional account, saved preferences</td><td><span class="chip in">in</span></td><td>Magic link · cuttable</td></tr>
+            <tr><td>Privacy notice, terms, age policy</td><td><span class="chip in">in</span></td><td>18+ recommended</td></tr>
+            <tr><td>Mobile responsive, keyboard, contrast</td><td><span class="chip in">in</span></td><td>Not optional</td></tr>
+            <tr><td>Live Candle Lighter video</td><td><span class="chip out">later</span></td><td>Cost + safety — see §04</td></tr>
+            <tr><td>Dharma Circles</td><td><span class="chip out">later</span></td><td>A social network on its own</td></tr>
+            <tr><td>Waiting Room uploads</td><td><span class="chip out">later</span></td><td>Needs moderation policy</td></tr>
+            <tr><td>Distant Blessings Now</td><td><span class="chip out">later</span></td><td>Health data — legal review first</td></tr>
+            <tr><td>Donations</td><td><span class="chip out">later</span></td><td>Blocked on legal entity</td></tr>
+            <tr><td>Multi-language</td><td><span class="chip out">later</span></td><td>Needs a translator, not code</td></tr>
+            <tr><td>Calendar, social sharing, email list</td><td><span class="chip out">later</span></td><td>Cheap to add once live</td></tr>
+            <tr><td>Streaks, notifications, mobile app</td><td><span class="chip out">later</span></td><td>Needs users first</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="rail"><span class="num">03</span>Architecture</div>
+    <div class="body">
+      <h2>Five decisions that make v2 cheap</h2>
+      <p>"Right track to expand" is not a feeling, it's a set of specific seams. Each decision below is chosen so the live version slots in behind an interface that already exists, rather than forcing a rewrite.</p>
+
+      <h3>1 · A session is a row type, not a feature</h3>
+      <p>The client never asks "is this live?" It asks the session what to render. In v1 every session resolves to an ambient candle; in v2 some resolve to a stream. Same query, same component tree, one new branch in the player.</p>
+<pre><code><span class="c">-- sessions rows are OVERRIDES, not the schedule itself</span>
+<span class="k">create table</span> sessions (
+  hour_start  timestamptz <span class="k">primary key</span>,   <span class="c">-- always exactly on the hour, UTC</span>
+  kind        text <span class="k">not null default</span> 'ambient'
+              <span class="k">check</span> (kind <span class="k">in</span> ('ambient','live')),
+  focus_slug  text <span class="k">not null default</span> 'candle',
+  stream_url  text,                        <span class="c">-- v2 only</span>
+  lighter_id  uuid <span class="k">references</span> profiles(id) <span class="c">-- v2 only</span>
+);</code></pre>
+
+      <h3>2 · The schedule is computed, never stored</h3>
+      <p>No cron job pre-creating 8,760 rows a year, no job queue, nothing to fall over at 3am. The current session is a pure function of the clock. A missing row is not an error — it's the ambient default, which is why the site can never be empty.</p>
+<pre><code><span class="c">// the entire scheduler</span>
+<span class="k">export function</span> currentHour(now = Date.now()) {
+  <span class="k">const</span> d = <span class="k">new</span> Date(now);
+  d.setUTCMinutes(0, 0, 0);
+  <span class="k">return</span> d;
+}
+
+<span class="c">// select * from sessions where hour_start = currentHour()</span>
+<span class="c">// no row  -> ambient candle. site is never empty.</span>
+<span class="c">// row     -> whatever it says. in v2, that's a live stream.</span></code></pre>
+
+      <div class="seam">
+        <b>The seam</b>
+        This also settles the open question in the client's spec about time zones. One global session per hour, anchored to UTC, displayed in the viewer's local time. Everyone worldwide is in the same room. The alternative — top of the hour in each volunteer's local zone — means up to 24 parallel sessions and 24× the volunteers.
+      </div>
+
+      <h3>3 · Presence keyed by the hour</h3>
+      <p>The participant count uses Supabase Realtime presence on a channel named after the current hour. The room rolls over by itself at the top of every hour with no cleanup code. In v2 the identical channel carries the live session's viewer count.</p>
+<pre><code><span class="k">const</span> room = supabase.channel(`session:${hourKey}`, {
+  config: { presence: { key: anonId } }   <span class="c">// random per tab, not a user id</span>
+});
+room.on('presence', { event: 'sync' }, () =&gt;
+  setCount(Object.keys(room.presenceState()).length)
+);
+room.subscribe(s =&gt; s === 'SUBSCRIBED' &amp;&amp; room.track({}));</code></pre>
+
+      <h3>4 · Web Audio, not <code>&lt;audio&gt;</code> tags</h3>
+      <p>Five loops mixing at independent volumes needs one <code>AudioContext</code> with a gain node per track. Audio elements drift out of sync and can't be ramped smoothly. Decode each buffer once, loop it natively, ramp the gain on change.</p>
+<pre><code><span class="k">function</span> track(ctx, buffer, master) {
+  <span class="k">const</span> src  = ctx.createBufferSource();
+  <span class="k">const</span> gain = ctx.createGain();
+  src.buffer = buffer; src.loop = <span class="k">true</span>; gain.gain.value = 0;
+  src.connect(gain).connect(master);
+  src.start();
+  <span class="k">return</span> v =&gt; gain.gain.linearRampToValueAtTime(v, ctx.currentTime + 0.15);
+}</code></pre>
+      <p>Two gotchas worth knowing now rather than in week two: an <code>AudioContext</code> cannot start without a user gesture, and iOS suspends it when the screen locks. Turn the first into the ritual — a single <strong>Begin</strong> tap that lights the candle and starts the audio. The constraint becomes the design.</p>
+
+      <h3>5 · The timer reads the clock, it doesn't count</h3>
+      <p>Browsers throttle <code>setInterval</code> to roughly once a minute in a background tab, and meditating with the tab hidden is the normal case. Store the target time and derive what's left; the countdown self-corrects after any sleep or tab switch.</p>
+<pre><code><span class="k">const</span> endsAt = Date.now() + minutes * 60_000;
+<span class="k">const</span> remaining = () =&gt; Math.max(0, endsAt - Date.now());
+
+<span class="c">// schedule the bell on the AUDIO clock, not a JS timer,</span>
+<span class="c">// or it fires late in a backgrounded tab</span>
+bell.start(ctx.currentTime + remaining() / 1000);</code></pre>
+    </div>
+  </section>
+
+  <section>
+    <div class="rail"><span class="num">04</span>What it costs</div>
+    <div class="body">
+      <h2>Effectively nothing, and that's the point</h2>
+      <p>The focus loops are short video files — a few megabytes, cached at the CDN edge, downloaded once per visitor. That is categorically different from streaming, where every viewer-minute is metered. Sound files behave the same way.</p>
+      <p>Supabase and Vercel free tiers cover the traffic a launching meditation site will see. Realistically the only recurring cost is the domain the client already owns.</p>
+
+      <div class="seam">
+        <b>Contrast with the original spec</b>
+        Live video at 25 average concurrent viewers, 24/7/365, runs roughly £10,000 a year in delivery alone — and scales upward with success, on a platform with no revenue. v1 removes that entire cost curve, plus the live-moderation and age-assurance obligations that come with broadcasting volunteers to an anonymous global audience.
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="rail"><span class="num">05</span>Build order</div>
+    <div class="body">
+      <h2>Three weeks, sequenced so it's safe to stop</h2>
+      <p>Ordered by dependency, not by importance. The sequence matters: the product is complete and shippable after step 6, and everything after that is enhancement. If term work eats week three, you ship anyway.</p>
+
+      <p class="weekmark">Week 1 — the room</p>
+      <ol class="steps">
+        <li class="step">
+          <span class="n">01</span><span class="t">Scaffold and deploy on day one</span><span class="h">4h</span>
+          <span class="d">Next.js App Router, Tailwind, Supabase project, Vercel, custom domain live with a holding page. Deploying first means never debugging deployment and features at once.</span>
+        </li>
+        <li class="step">
+          <span class="n">02</span><span class="t">Session engine</span><span class="h">3h</span>
+          <span class="d"><code>currentHour()</code>, override lookup, ambient fallback, next-session countdown. Pure functions, easy to unit test.</span>
+        </li>
+        <li class="step">
+          <span class="n">03</span><span class="t">The room itself</span><span class="h">8h</span>
+          <span class="d">Layout, candle loop, session clock in local time, the Begin gesture. This is the design work — spend the time here, it's the whole first impression.</span>
+        </li>
+      </ol>
+
+      <p class="weekmark">Week 2 — the practice</p>
+      <ol class="steps">
+        <li class="step">
+          <span class="n">04</span><span class="t">Timer and end bell</span><span class="h">5h</span>
+          <span class="d">Slider, wall-clock countdown, bell scheduled on the audio clock. Decide what happens when a timer ends inside a running session — fade, or stay.</span>
+        </li>
+        <li class="step">
+          <span class="n">05</span><span class="t">Sound mixer</span><span class="h">7h</span>
+          <span class="d">Web Audio graph, 5 tracks, per-track and master volume, preferences to <code>localStorage</code>. Blocked on the client sourcing licensed audio — chase this now.</span>
+        </li>
+        <li class="step">
+          <span class="n">06</span><span class="t">Live participant count</span><span class="h">3h</span>
+          <span class="d">Realtime presence, hour-keyed channel, plus a toggle to hide the number for anyone who finds it distracting.</span>
+        </li>
+      </ol>
+
+      <div class="cutline">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M1 8h14M8 1v14" stroke-dasharray="2 2"/></svg>
+        <span><strong>The cut line.</strong> Everything above is a complete product for guests. Preferences live in <code>localStorage</code>, so the account layer below is purely a sync mechanism — bolt-on, not load-bearing.</span>
+      </div>
+
+      <p class="weekmark">Week 3 — the wrapper</p>
+      <ol class="steps">
+        <li class="step">
+          <span class="n">07</span><span class="t">Accounts and synced preferences</span><span class="h">6h</span>
+          <span class="d">Supabase magic-link auth — no passwords means no reset flow. One <code>preferences</code> table, one RLS policy. On first login, push whatever's in <code>localStorage</code> up. This is the step most likely to overrun; it's last for that reason.</span>
+        </li>
+        <li class="step">
+          <span class="n">08</span><span class="t">Legal, polish, launch</span><span class="h">5h</span>
+          <span class="d">Privacy notice, terms, age gate, favicon and Open Graph, mobile QA on a real phone, keyboard navigation, <code>prefers-reduced-motion</code>.</span>
+        </li>
+      </ol>
+
+      <p class="total"><span>Total</span><span>41 hours</span></p>
+
+      <div class="seam">
+        <b>One RLS policy, and why it matters</b>
+        <code>create policy "own prefs" on preferences for all using (auth.uid() = user_id) with check (auth.uid() = user_id);</code> — the <code>using</code> clause governs what rows a user can read and delete; the <code>with check</code> clause governs what they're allowed to write. Omit the second and a user can update someone else's row by changing the id. Both, always.
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="rail"><span class="num">06</span>Risks</div>
+    <div class="body">
+      <h2>Where this actually goes wrong</h2>
+      <ul class="plain">
+        <li><strong>Audio assets never arrive.</strong> The single hardest external dependency. Good singing bowl and Tibetan bell recordings that hold up on decent headphones cost money and someone has to buy them. Without them step 5 stalls. Chase it in week one, not week two.</li>
+        <li><strong>Auth overruns.</strong> RLS is new to you and the first policy you write will be wrong in an interesting way. It's scheduled last and marked cuttable precisely so this can't sink the launch.</li>
+        <li><strong>Scope creep from the original spec.</strong> The 23-page document will keep exerting pull. The §02 table is the defence — agree it in writing before starting and treat additions as separately quoted work.</li>
+        <li><strong>The client hears "no live video" as "no product".</strong> Frame it as sequencing funded by evidence, not as a cut. Live becomes v2, paid for by donations v1 proves exist.</li>
+        <li><strong>Nobody shows up.</strong> The real risk, and the one worth running. Better discovered in three weeks for almost nothing than after a year of building the full platform.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <div class="rail"><span class="num">07</span>Blocked on</div>
+    <div class="body">
+      <h2>Needed from the client before step 1</h2>
+      <ul class="checks">
+        <li><span class="box" aria-hidden="true"></span><span>Registrar access to the domain confirmed, auto-renew and transfer lock on <span class="why">A 20-year-old domain lapsing mid-project is unrecoverable. Verify he is the registrant, not an agency from 2006.</span></span></li>
+        <li><span class="box" aria-hidden="true"></span><span>Budget and sourcing for licensed audio <span class="why">Five ambient loops and three bells. Blocks step 5.</span></span></li>
+        <li><span class="box" aria-hidden="true"></span><span>Three focus-point visuals, licensed <span class="why">Candle plus two. Seamless loops, sourced or commissioned.</span></span></li>
+        <li><span class="box" aria-hidden="true"></span><span>The legal entity behind the site, and who is named as data controller <span class="why">Cannot write the privacy notice without it. Also gates donations.</span></span></li>
+        <li><span class="box" aria-hidden="true"></span><span>Minimum age decided — 18+ recommended <span class="why">Reversible later. A safeguarding incident is not.</span></span></li>
+        <li><span class="box" aria-hidden="true"></span><span>Written agreement on the §02 scope table <span class="why">Before any code. This is the only real protection against the other twenty pages.</span></span></li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    <p>Build spec for the Meditate With Me v1 · prepared August 2026 · supersedes the feature list in the client's 23-page brief, which remains the reference for v2 and beyond.</p>
+  </footer>
+
+</div>

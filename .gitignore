@@ -1,0 +1,15 @@
+node_modules/
+.next/
+out/
+build/
+.DS_Store
+
+# Secrets. .env.local holds the service role key, which bypasses RLS entirely.
+# If this line is ever removed, rotate the key immediately.
+.env
+.env*.local
+
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+coverage/
