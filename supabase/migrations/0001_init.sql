@@ -42,7 +42,7 @@ comment on table public.sessions is
 -- Powers the participant count. Deliberately NOT Supabase Realtime presence:
 -- presence sync is O(N) messages per join and everyone joins at the top of the
 -- hour simultaneously, which blows the free-tier limit by orders of magnitude
--- at exactly the wrong moment. See docs/ARCHITECTURE.md §5.
+-- at exactly the wrong moment. See context/ARCHITECTURE.md §5.
 --
 -- Instead: clients upsert every 30s, and read a count endpoint cached for 10s
 -- at the edge. One cache entry serves the whole world.

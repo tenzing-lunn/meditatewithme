@@ -69,7 +69,7 @@ export function resetClock(): void {
  *
  * Failure is non-fatal by design: we fall back to the device clock with a zero
  * offset. A slightly wrong session time is much better than a broken page —
- * see the failure-mode table in docs/ARCHITECTURE.md.
+ * see the failure-mode table in context/ARCHITECTURE.md.
  *
  * Call on mount and again on tab focus, since laptops sleep and wake with a
  * clock that may have been corrected by NTP in the meantime.

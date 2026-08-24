@@ -5,7 +5,7 @@ every UTC hour; everyone worldwide joins the same one. Set a personal timer,
 mix ambient sounds, sit with the candle, and see how many others are sitting
 with you.
 
-**Status:** v1 in development. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+**Status:** v1 in development. See [`context/ARCHITECTURE.md`](context/ARCHITECTURE.md)
 for the system design and [`plans/v1-build-spec.html`](plans/v1-build-spec.html)
 for scope and build order.
 

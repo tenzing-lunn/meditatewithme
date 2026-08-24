@@ -386,6 +386,7 @@ meditatewithme/
 │   ├── prefs.ts                 # localStorage <-> DB
 │   └── supabase.ts
 ├── supabase/migrations/
+├── context/                     # standing project knowledge
 ├── plans/                       # active plans
 └── docs/                        # finished writing
 ```
