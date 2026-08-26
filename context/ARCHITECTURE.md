@@ -417,3 +417,46 @@ meditatewithme/
 2. **Should the count include people who haven't pressed Begin?** Arguably waiting is participating. Simpler: count only those who've begun. Needs a decision, not a discussion.
 3. **Anonymous id lifetime.** A `localStorage` uuid per browser means one person on two devices counts twice. Acceptable, and the alternative is worse.
 4. **Do we record any analytics at all?** If nothing third-party and nothing that identifies people, the cookie banner question largely disappears. Strong reason to keep it that way.
+
+---
+
+## 15. Deployment
+
+| | |
+|---|---|
+| Host | Vercel, project `meditatewithme` under `10zinglunn-afks-projects` |
+| URL | https://meditatewithme.vercel.app |
+| Source | Auto-deploys on push to `main` (GitHub `10zinglunn-afk/meditatewithme`) |
+| Custom domain | Not attached — Jonny owns it, DNS not yet pointed |
+
+### Why Vercel specifically
+
+Not a default. §5's whole argument is that the count survives a simultaneous
+global join because one edge-cached response serves everyone — that mechanism
+*is* the `s-maxage` / `stale-while-revalidate` pair set in `app/api/count/route.ts`,
+and it only works on a CDN that honours them. Verified in production: repeat
+requests return `x-vercel-cache: HIT`, and a fresh heartbeat surfaces one cache
+generation later via `STALE`, exactly as designed.
+
+Cloudflare Workers is the credible alternative — cheaper at real scale — but
+Next.js App Router needs the OpenNext adapter there and the caching above would
+need reworking. Not worth it at this traffic.
+
+### Environment variables
+
+Set in Vercel for Production and Development. **Preview is not set**: CLI v52
+rejects `--yes` for preview-all-branches (it demands a git branch regardless of
+the flag). Either upgrade the CLI or add the three by hand in the dashboard —
+until then, preview deployments cannot reach Supabase.
+
+`SUPABASE_SERVICE_ROLE_KEY` is server-only and must stay that way. Verified
+against the live bundle: the key appears in none of the seven client chunks nor
+in the HTML. Re-run that check if `serviceClient()` ever gains a new caller.
+
+### Plan limits
+
+The account is on Hobby (free), which is intended for non-commercial projects.
+Donations would likely push this to Pro. Not a blocker now, but it lands on
+Jonny's bill eventually — and per the payment message, hosting is meant to sit
+in his name, not Tenzing's. Worth settling before the domain is attached, since
+moving a project after DNS is pointed is the annoying order to do it in.
