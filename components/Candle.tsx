@@ -19,7 +19,7 @@ export default function Candle({ lit }: { lit: boolean }) {
   return (
     <div
       aria-hidden
-      className="relative flex h-64 w-64 items-center justify-center sm:h-80 sm:w-80"
+      className="relative flex h-52 w-52 items-center justify-center sm:h-64 sm:w-64"
     >
       {/* Ambient glow. Present but very faint when unlit, so the space the
           candle will occupy is already visible and nothing jumps on Begin. */}

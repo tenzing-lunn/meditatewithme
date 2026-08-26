@@ -33,9 +33,22 @@ export interface Session {
  */
 export type SessionPhase = 'active' | 'interlude';
 
+/**
+ * The three closing bells from the proposal.
+ *
+ * A union rather than a string: the value round-trips through localStorage,
+ * where anyone can edit it by hand, and it ends up selecting an audio buffer.
+ * Naming the alternatives here means the compiler catches a bad one instead of
+ * the audio graph failing silently at the end of somebody's sitting.
+ *
+ * Declared in lib/ so the dependency points the right way — components/audio.ts
+ * imports this, not the reverse.
+ */
+export type BellKind = 'singing-bowl' | 'gong' | 'struck-bell';
+
 export interface UserPreferences {
   timerMinutes: number;
-  endBell: string;
+  endBell: BellKind;
   focusSlug: string;
   /** track slug -> gain, 0..1 */
   soundMix: Record<string, number>;
