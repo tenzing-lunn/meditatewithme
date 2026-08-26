@@ -426,8 +426,18 @@ meditatewithme/
 |---|---|
 | Host | Vercel, project `meditatewithme` under `10zinglunn-afks-projects` |
 | URL | https://meditatewithme.vercel.app |
-| Source | Auto-deploys on push to `main` (GitHub `10zinglunn-afk/meditatewithme`) |
+| Source | GitHub `10zinglunn-afk/meditatewithme`, auto-deploying on push |
 | Custom domain | Not attached — Jonny owns it, DNS not yet pointed |
+
+### Branches
+
+`main` is production and deploys on push; `dev` is where work happens and
+deploys to a preview URL. The split exists because a commit on `main` is a
+release whether or not anyone intended one.
+
+The two branches differ at `app/page.tsx` on purpose: `main` serves the holding
+page, `dev` serves the room. Merging `dev` into `main` is therefore the launch,
+and should never be a side effect of some other change.
 
 ### Why Vercel specifically
 
@@ -444,10 +454,18 @@ need reworking. Not worth it at this traffic.
 
 ### Environment variables
 
-Set in Vercel for Production and Development. **Preview is not set**: CLI v52
-rejects `--yes` for preview-all-branches (it demands a git branch regardless of
-the flag). Either upgrade the CLI or add the three by hand in the dashboard —
-until then, preview deployments cannot reach Supabase.
+Set in Vercel for Production, Development, and Preview **scoped to the `dev`
+branch**.
+
+That scoping is a workaround, not a preference. CLI v52 advertises `--yes` for
+preview-all-branches and then demands a git branch anyway, so the all-branches
+form is unusable until the CLI is upgraded. Naming `dev` explicitly is accepted
+and covers the branch we actually deploy.
+
+The consequence to remember: **a new branch with a different name will not reach
+Supabase.** Its preview will build and then fail at every database call. Either
+add the three variables for that branch too, or upgrade the CLI and set them for
+all preview branches at once.
 
 `SUPABASE_SERVICE_ROLE_KEY` is server-only and must stay that way. Verified
 against the live bundle: the key appears in none of the seven client chunks nor

@@ -1,40 +1,21 @@
-import SessionCountdown from '@/components/SessionCountdown';
+import Room from '@/components/Room';
 
 /**
- * Holding page (build step 01).
+ * The room, at the root.
  *
- * Deliberately not the room — that is step 03 and it is where the design time
- * goes. This exists so the domain is live from day one and so the session
- * engine is proven end-to-end in a real browser rather than only in tests.
+ * It briefly lived at /room while `main` was the only branch — anything pushed
+ * went straight to the live URL, and a half-built room should not appear at a
+ * client-facing address. Now that work happens on `dev`, that reason is gone:
+ * `main` still serves the holding page to the world, and this is what replaces
+ * it the moment dev is merged. That merge is the launch.
+ *
+ * Not marked noindex. Vercel already sends X-Robots-Tag: noindex on preview
+ * deployments, and this file is correct as-is for the day it goes live.
  */
 export default function Home() {
   return (
-    <main className="relative isolate flex min-h-dvh flex-col items-center justify-center overflow-hidden px-6 text-center">
-      <div
-        aria-hidden
-        className="glow pointer-events-none absolute -top-56 left-1/2 h-[30rem] w-[46rem] -translate-x-1/2"
-        style={{
-          background:
-            'radial-gradient(ellipse at center, var(--color-ember-soft) 0%, transparent 68%)',
-        }}
-      />
-
-      <h1 className="font-serif text-5xl leading-[0.98] tracking-tight text-balance sm:text-6xl">
-        Meditate <em className="text-ember italic">With Me</em>
-      </h1>
-
-      <p className="text-ink-2 mt-5 max-w-[34ch] text-lg text-pretty">
-        A new session begins at the top of every hour. Everyone worldwide sits
-        in the same one.
-      </p>
-
-      <div className="mt-14">
-        <SessionCountdown />
-      </div>
-
-      <footer className="text-ink-3 absolute bottom-8 font-mono text-xs tracking-[0.13em] uppercase">
-        Opening soon
-      </footer>
+    <main className="relative isolate flex min-h-dvh flex-col items-center justify-center overflow-hidden px-6 py-16">
+      <Room />
     </main>
   );
 }

@@ -27,6 +27,33 @@ corrected.
 
 `README.md` stays at the repo root — it's the front door, not a document.
 
+## Branches
+
+**Work on `dev`. Never commit straight to `main`.**
+
+| Branch | Is | Deploys to |
+|---|---|---|
+| `dev` | Where everything is built and tested | A preview URL, per push |
+| `main` | What the world sees | meditatewithme.vercel.app, and the custom domain once it's pointed |
+
+`main` auto-deploys on push, so a commit landing there is a release whether or
+not it was meant as one. That's the whole reason for the split — not ceremony.
+
+The rules:
+
+- Start every piece of work on `dev` (`git checkout dev`). Branch off `dev` for
+  anything long-running, and merge back into `dev`, not `main`.
+- Typecheck, tests and `npm run build` all pass on `dev` before it goes near
+  `main`.
+- Merging `dev` → `main` is a deliberate act that puts something live. Ask
+  first; don't fold it into a commit that was about something else.
+- Preview environment variables are set for the `dev` branch specifically, not
+  for all preview branches — see §15 of `context/ARCHITECTURE.md`. A new branch
+  with a different name won't reach Supabase until its vars are added too.
+
+The two branches deliberately differ at `app/page.tsx`: `main` serves the
+holding page, `dev` serves the room. **Merging `dev` into `main` is the launch.**
+
 ## Code layout
 
 - `app/api/` — route handlers (`time`, `count`, `heartbeat`)
