@@ -68,3 +68,60 @@ body {
     opacity: 0.7;
   }
 }
+
+/*
+ * The candle. Two animations on periods that never line up (11s and 7s) so the
+ * result reads as alive rather than as a pulse. Kept separate from .glow above
+ * because that one bakes in a translateX(-50%) for the holding page's layout.
+ */
+@keyframes candle-breathe {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.07);
+  }
+}
+
+/*
+ * The wrapper owns the 45° rotation, so this only ever scales. Growing from the
+ * base — the corner nearest the wick, which is bottom-right once rotated —
+ * keeps the flame anchored instead of drifting off the candle.
+ */
+@keyframes candle-flicker {
+  0%,
+  100% {
+    transform: scale(1, 1);
+    opacity: 0.94;
+  }
+  35% {
+    transform: scale(0.97, 1.06);
+    opacity: 1;
+  }
+  70% {
+    transform: scale(1.02, 0.96);
+    opacity: 0.9;
+  }
+}
+
+.candle-glow {
+  animation: candle-breathe 11s ease-in-out infinite;
+}
+
+.candle-flame {
+  animation: candle-flicker 7s ease-in-out infinite;
+  transform-origin: 100% 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .candle-glow {
+    animation: none;
+    opacity: 0.85;
+  }
+  .candle-flame {
+    animation: none;
+  }
+}
