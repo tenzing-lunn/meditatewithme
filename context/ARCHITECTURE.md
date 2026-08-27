@@ -282,7 +282,27 @@ logged out    → falls back to localStorage, nothing breaks
 
 This ordering is deliberate and it is what makes step 7 of the build genuinely cuttable. The account layer is a **sync mechanism bolted onto a working app**, not a foundation the app sits on. If week three disappears into coursework, we ship without it and nothing is missing except cross-device sync.
 
+Cuttable is enforced, not just intended: `components/useAuth.ts`, `components/useSyncPreferences.ts` and `components/SignIn.tsx` plus one block in `Room.tsx` are the entire feature. Delete them and the room is unchanged. `usePreferences` has no idea accounts exist.
+
+### The rule when local and server disagree
+
+**The server wins if it has a row; local is pushed up only when it doesn't.**
+
+The build spec says "on first login, push whatever's in localStorage up", which is right for the first device and wrong for the second. Signing in on a phone would otherwise push that phone's untouched defaults over the settings you actually chose on your laptop. The cost of the rule as implemented is that a guest tweak made on a device you *later* sign in on is discarded — a smaller harm than losing settings you deliberately saved, but a real one.
+
+### Implicit flow, not PKCE
+
+Magic links only. No password means no reset flow, which is where most auth bugs live.
+
+PKCE keeps its verifier in the localStorage of the browser that requested the link, so requesting on a laptop and opening the mail on a phone fails. That is the normal case here, not an edge case. Implicit costs us server-side sessions, which this app does not use: the room is a client component and preferences are guarded by RLS against the user's own JWT. If a server component ever needs to know who is watching, this becomes `@supabase/ssr` and a callback route.
+
+There is no callback route. The link returns to the site origin and `detectSessionInUrl` takes the token out of the fragment.
+
+**`lib/supabase.ts` returns one browser client, not a new one per call.** Two clients share a localStorage key and race each other refreshing the same token.
+
 ### Schema
+
+As migrated. `0001` created these tables and nothing wrote to them for three build steps, which hid three defects until `0003`:
 
 ```sql
 create table profiles (
@@ -293,12 +313,14 @@ create table profiles (
 
 create table preferences (
   user_id       uuid primary key references profiles(id) on delete cascade,
-  timer_minutes int  not null default 10 check (timer_minutes between 1 and 45),
-  end_bell      text not null default 'singing-bowl',
+  timer_minutes int  not null default 10
+                check (timer_minutes between 5 and 60 and timer_minutes % 5 = 0),
+  end_bell      text not null default 'singing-bowl'
+                check (end_bell in ('singing-bowl','gong','struck-bell')),
   focus_slug    text not null default 'candle',
   sound_mix     jsonb not null default '{}'::jsonb,   -- {"rain":0.4,"wind":0.15}
   show_count    boolean not null default true,
-  updated_at    timestamptz not null default now()
+  updated_at    timestamptz not null default now()   -- maintained by trigger
 );
 
 alter table preferences enable row level security;
@@ -307,9 +329,41 @@ create policy "own preferences" on preferences
   for all
   using      (auth.uid() = user_id)
   with check (auth.uid() = user_id);
+
+-- Signing up creates only the auth.users row. Without this, the first
+-- preferences insert fails on the profiles foreign key — for every user.
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
 ```
 
+What `0003` had to fix, all of it invisible while the tables were empty:
+
+1. **`timer_minutes between 1 and 45`** was left over from the 45-minute session. The slider is 5–60, so picking the hour — the value the presets deliberately put on offer — would have been rejected by the database.
+2. **`end_bell` was unconstrained text.** `BellKind` is a union in TypeScript precisely so a bad value cannot reach the audio graph; that guarantee stopped at the database, which would have stored anything and synced it to every device.
+3. **Nothing created a profile row,** so the foreign key above would have failed on every user's first sync.
+4. `updated_at` never updated — it held the creation time forever, which is worse than not having the column.
+
+`timer_minutes` and `end_bell` duplicate constraints that also live in TypeScript (`lib/timer.ts`, `lib/types.ts`). That duplication is intentional — the database is the last line and cannot import a type — but it means **changing the bells or the slider bounds is a two-file change**, and `0003` exists because somebody forgot that once already.
+
+### Validation happens in one place
+
+`lib/preferences.ts` `normalize()` is the only thing that decides what a valid preference is. Both sources go through it: localStorage, which a user can hand-edit in devtools, and the `preferences` table, which syncs to every device someone owns. Validating in two places means one path drifts, and the failures are quiet — a bad bell does nothing at all until a sitting ends.
+
 **On that policy, since RLS is new to you:** `using` governs which rows a user can *see* and *delete*. `with check` governs what they're allowed to *write*. Omit the second and a user can update a row and set `user_id` to someone else's id, silently taking over their record. Write both, every time. Test it by logging in as one user and trying to read another's row — if it returns data, the policy is wrong.
+
+**That test has been run**, against two real users and a real JWT obtained through the actual magic-link flow, not against the types:
+
+| Attack with user A's token | Result |
+|---|---|
+| `select *` from preferences | only A's row |
+| update B's row | 0 rows |
+| insert a row owned by B | `42501` RLS violation |
+| **set A's own `user_id` to B** | `42501` — this is the one `with check` catches |
+| delete B's row | 0 rows |
+| read `heartbeats` | `[]` — RLS on, no policy at all |
+
+Re-run it after any change to the policy. The fourth row is the one that passes when `with check` is missing.
 
 `sessions` and `heartbeats` are readable by everyone and writable only by the service role. Heartbeat writes go through a route handler, not from the browser directly, so nobody can inflate the count from the console.
 
@@ -472,6 +526,33 @@ all preview branches at once.
 `SUPABASE_SERVICE_ROLE_KEY` is server-only and must stay that way. Verified
 against the live bundle: the key appears in none of the seven client chunks nor
 in the HTML. Re-run that check if `serviceClient()` ever gains a new caller.
+
+Re-verified after `lib/supabase.ts` gained the auth configuration. The check is
+only meaningful if you also confirm the search *would* have found something —
+grep for the publishable key in the same pass; it must be present in
+`.next/static`. A negative result from a broken grep looks identical to a pass.
+
+### Auth redirect URLs — a launch trap
+
+**Supabase must be told which URLs a magic link may return to**
+(Dashboard → Authentication → URL Configuration). This is not in the repo and no
+migration can set it.
+
+The failure is silent and therefore nasty: if `emailRedirectTo` is not on the
+allow list, Supabase does not error — it redirects to the project's **Site URL**
+instead. A new project's Site URL is `http://localhost:3000`, so unless this is
+changed, **every magic link sent from production will land the user on their own
+machine's localhost** and appear to do nothing.
+
+Needed before accounts work anywhere but a dev machine:
+
+- Site URL → the production domain
+- Redirect URLs → `http://localhost:3000`, the `meditatewithme.vercel.app`
+  domain, and a wildcard for preview deployments
+  (`https://meditatewithme-*.vercel.app`)
+
+Worth checking this the same day the custom domain is pointed, since the Site URL
+has to change again then.
 
 ### Plan limits
 

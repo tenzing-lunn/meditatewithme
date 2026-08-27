@@ -7,9 +7,12 @@ import { endsAt as computeEndsAt, hasEnded, mmss, remainingMs } from '@/lib/time
 import type { Session } from '@/lib/types';
 import Candle from './Candle';
 import SessionSetup from './SessionSetup';
+import SignIn from './SignIn';
+import { useAuth } from './useAuth';
 import { usePresence } from './usePresence';
 import { usePreferences } from './usePreferences';
 import { useSession } from './useSession';
+import { useSyncPreferences } from './useSyncPreferences';
 import { scheduleBell, unlockAudio, type ScheduledBell } from './audio';
 
 /**
@@ -56,8 +59,19 @@ export default function Room() {
   const [mono, setMono] = useState(0);
   const [activity, setActivity] = useState<Activity>({ kind: 'idle' });
 
-  const { prefs, update } = usePreferences();
+  const { prefs, update, replace, loaded } = usePreferences();
   const { count } = usePresence();
+
+  // Accounts are optional and cuttable. Removing these two lines and the
+  // <SignIn> below leaves a complete product — which is the promise the scope
+  // table makes with the word "optional", kept at runtime rather than on paper.
+  const { state: auth, signIn, signOut } = useAuth();
+  const sync = useSyncPreferences({
+    userId: auth.status === 'signed-in' ? auth.user.id : null,
+    prefs,
+    replace,
+    loaded,
+  });
 
   // Re-resolves only when the clock rolls into a new hour, which is the only
   // moment the answer can change.
@@ -172,6 +186,17 @@ export default function Room() {
           <Afterwards
             onAgain={() => setActivity({ kind: 'idle' })}
             minutes={prefs.timerMinutes}
+          />
+        )}
+
+        {/* Not during a sitting. The one moment nobody should be offered an
+            account is while they are sitting with their eyes closed. */}
+        {!sitting && (
+          <SignIn
+            state={auth}
+            sync={sync}
+            signIn={signIn}
+            signOut={signOut}
           />
         )}
 

@@ -36,7 +36,25 @@ export interface Session {
  * Declared in lib/ so the dependency points the right way — components/audio.ts
  * imports this, not the reverse.
  */
-export type BellKind = 'singing-bowl' | 'gong' | 'struck-bell';
+export const BELL_KINDS = ['singing-bowl', 'gong', 'struck-bell'] as const;
+
+export type BellKind = (typeof BELL_KINDS)[number];
+
+export const DEFAULT_BELL: BellKind = 'singing-bowl';
+
+/**
+ * The guard lives with the type, not with the audio graph.
+ *
+ * Two things outside the browser need it now: preferences read back from
+ * localStorage, and preferences synced down from the database. Neither should
+ * have to import the Web Audio module to find out whether a string is a bell.
+ *
+ * The same three values are a CHECK constraint on `preferences.end_bell` in
+ * supabase/migrations/0003_accounts.sql. Change one, change both.
+ */
+export function isBellKind(v: unknown): v is BellKind {
+  return typeof v === 'string' && (BELL_KINDS as readonly string[]).includes(v);
+}
 
 export interface UserPreferences {
   timerMinutes: number;

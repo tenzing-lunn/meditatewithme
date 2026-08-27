@@ -1,6 +1,6 @@
 'use client';
 
-import type { BellKind } from '@/lib/types';
+import { DEFAULT_BELL, type BellKind } from '@/lib/types';
 
 export type { BellKind };
 
@@ -69,12 +69,6 @@ export const BELLS: Record<
   gong: { label: 'Gong', fundamental: 174, decay: 12 },
   'struck-bell': { label: 'Struck bell', fundamental: 523, decay: 6 },
 };
-
-export const DEFAULT_BELL: BellKind = 'singing-bowl';
-
-export function isBellKind(v: unknown): v is BellKind {
-  return typeof v === 'string' && v in BELLS;
-}
 
 function strike(
   context: AudioContext,
