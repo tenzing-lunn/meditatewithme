@@ -132,8 +132,12 @@ export default function SessionSetup({
           aria-checked={prefs.showCount}
           aria-label="Show how many people are here"
           onClick={() => update({ showCount: !prefs.showCount })}
-          className={`relative h-6 w-11 rounded-full border transition-colors ${
-            prefs.showCount ? 'border-ember bg-ember/20' : 'border-rule'
+          // Off state uses ink-3, not rule. Every other control here says what
+          // it is in words, so a faint border costs nothing; this one conveys
+          // its state through colour and knob position alone, which puts it
+          // under the 3:1 rule for UI components. `rule` is 1.29:1.
+          className={`focus-visible:ring-ember focus-visible:ring-offset-paper relative h-6 w-11 rounded-full border transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none ${
+            prefs.showCount ? 'border-ember bg-ember/20' : 'border-ink-3'
           }`}
         >
           <span

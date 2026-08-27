@@ -4,15 +4,29 @@
  * Palette carried over from the build spec so the holding page and the room
  * that replaces it share one design language. Ember is the candle; in/out are
  * the breath colours reserved for the timer.
+ *
+ * CONTRAST IS A CONSTRAINT, NOT A PREFERENCE
+ * The spec marks WCAG AA as not optional, so every ink and ember value below
+ * clears 4.5:1 against the background it is used on. Light mode was the
+ * problem: ink-3 measured 4.10 and ember 4.47 against paper, both failures.
+ * Darkening them by 5% and 1% respectively fixed it at no visible cost —
+ * they now read 4.51 and 4.53. Dark mode already passed everywhere.
+ *
+ * `rule` is the exception and is meant to be: at 1.29:1 it is a decorative
+ * hairline, not a boundary anyone has to perceive. That means it must never be
+ * the ONLY thing conveying a control's state — see the switch in
+ * SessionSetup.tsx, which uses ink-3 for its off state for exactly this reason.
+ *
+ * Check with `node scripts/contrast.mjs` before changing any of these.
  */
 @theme {
   --color-paper: #fbfaf8;
   --color-surface: #ffffff;
   --color-ink: #16181b;
   --color-ink-2: #43484d;
-  --color-ink-3: #767b80;
+  --color-ink-3: #707479;
   --color-rule: #e1ded8;
-  --color-ember: #a8641f;
+  --color-ember: #a7631e;
   --color-ember-soft: #f4e6d4;
 
   --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
@@ -31,7 +45,7 @@
     --color-surface: #1a1d21;
     --color-ink: #e9e7e3;
     --color-ink-2: #b5b2ad;
-    --color-ink-3: #85827d;
+    --color-ink-3: #87847f;
     --color-rule: #2a2e33;
     --color-ember: #e0a057;
     --color-ember-soft: #2c2117;
