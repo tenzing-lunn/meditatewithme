@@ -133,3 +133,21 @@ export async function resolveSession(
 export function hourKey(atMs: number): string {
   return hourStart(atMs).toISOString();
 }
+
+/**
+ * `Session` over the wire.
+ *
+ * JSON has no Date, so `hourStart` crosses as an ISO string and is revived on
+ * the other side. Naming the shape means the compiler notices when the two
+ * ends disagree, rather than the UI receiving a string where it expects a Date
+ * and rendering "Invalid Date" at the top of the page.
+ */
+export type SessionWire = Omit<Session, 'hourStart'> & { hourStart: string };
+
+export function toWire(session: Session): SessionWire {
+  return { ...session, hourStart: session.hourStart.toISOString() };
+}
+
+export function fromWire(wire: SessionWire): Session {
+  return { ...wire, hourStart: new Date(wire.hourStart) };
+}

@@ -13,6 +13,8 @@ import {
   sessionFromRow,
   resolveSession,
   hourKey,
+  toWire,
+  fromWire,
 } from '../lib/session.ts';
 
 const at = (iso: string) => Date.parse(iso);
@@ -231,5 +233,37 @@ describe('hourKey', () => {
     const a = hourKey(at('2026-08-23T14:59:59Z'));
     const b = hourKey(at('2026-08-23T15:00:00Z'));
     assert.notEqual(a, b);
+  });
+});
+
+describe('the wire format', () => {
+  test('survives a round trip through JSON', () => {
+    const before = ambientSession(hourStart(at('2026-08-23T14:00:00Z')));
+    const after = fromWire(JSON.parse(JSON.stringify(toWire(before))));
+
+    // Deep-equal would pass on two strings; the point of the round trip is
+    // that hourStart arrives as a Date on the far side.
+    assert.ok(after.hourStart instanceof Date);
+    assert.equal(after.hourStart.getTime(), before.hourStart.getTime());
+    assert.deepEqual(after, before);
+  });
+
+  test('carries a live session unchanged', () => {
+    const before = sessionFromRow({
+      hour_start: '2026-08-23T14:00:00.000Z',
+      kind: 'live',
+      focus_slug: 'water',
+      stream_url: 'https://example.test/s.m3u8',
+      lighter_id: 'lighter-1',
+    });
+    assert.deepEqual(fromWire(toWire(before)), before);
+  });
+
+  test('hourStart on the wire matches the hour key', () => {
+    // useSession compares these two strings to discard a session that arrived
+    // for the hour we just left. If they ever stop being the same format the
+    // comparison silently never matches, and the fetch becomes a no-op.
+    const ms = at('2026-08-23T14:37:12Z');
+    assert.equal(toWire(ambientSession(hourStart(ms))).hourStart, hourKey(ms));
   });
 });

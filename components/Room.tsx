@@ -2,12 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { serverNow, syncClock } from '@/lib/clock';
-import { candleBurn, hourStart, nextHourStart } from '@/lib/session';
+import { candleBurn, hourKey, hourStart, nextHourStart } from '@/lib/session';
 import { endsAt as computeEndsAt, hasEnded, mmss, remainingMs } from '@/lib/timer';
+import type { Session } from '@/lib/types';
 import Candle from './Candle';
 import SessionSetup from './SessionSetup';
 import { usePresence } from './usePresence';
 import { usePreferences } from './usePreferences';
+import { useSession } from './useSession';
 import { scheduleBell, unlockAudio, type ScheduledBell } from './audio';
 
 /**
@@ -56,6 +58,10 @@ export default function Room() {
 
   const { prefs, update } = usePreferences();
   const { count } = usePresence();
+
+  // Re-resolves only when the clock rolls into a new hour, which is the only
+  // moment the answer can change.
+  const session = useSession(now === null ? null : hourKey(now));
 
   // Read in cleanup, where a stale closure would otherwise leave a bell
   // scheduled after the component is gone.
@@ -133,7 +139,7 @@ export default function Room() {
       )}
 
       <div className="mt-6">
-        <Candle burn={candleBurn(now)} />
+        <Focus session={session} burn={candleBurn(now)} />
       </div>
 
       <div className="mt-4 flex w-full flex-col items-center">
@@ -175,6 +181,32 @@ export default function Room() {
       </div>
     </div>
   );
+}
+
+/**
+ * Whatever this hour asks you to look at.
+ *
+ * This is the branch the whole session architecture exists to make possible,
+ * and it is deliberately the only one. The room does not ask "are we live?" —
+ * it hands the session here and renders what it says.
+ *
+ * In v1 that is always the candle: `sessions` is empty, so every hour resolves
+ * ambient. The two remaining focus loops from the spec, and v2's live video,
+ * both arrive as cases in this function and a row in a table — not as changes
+ * to the clock, the timer, the presence count or anything else in this file.
+ *
+ * `session` is null only in the instant before the first tick. The candle is
+ * right for that instant too, so there is nothing to wait for.
+ */
+function Focus({ session, burn }: { session: Session | null; burn: number }) {
+  switch (session?.focusSlug) {
+    // 'water' and 'hourglass' from the spec are cases here once the client
+    // sources the loops. Anything unrecognised falls through on purpose: a
+    // typo in a database row should show a candle, not an empty page.
+    case 'candle':
+    default:
+      return <Candle burn={burn} />;
+  }
 }
 
 function localTime(d: Date): string {
