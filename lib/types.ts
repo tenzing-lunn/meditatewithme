@@ -26,14 +26,6 @@ export interface Session {
 }
 
 /**
- * Where we are inside the hour.
- *
- * 'active'   — minutes 0-45, the session is running
- * 'interlude' — minutes 45-60, waiting for the next one
- */
-export type SessionPhase = 'active' | 'interlude';
-
-/**
  * The three closing bells from the proposal.
  *
  * A union rather than a string: the value round-trips through localStorage,

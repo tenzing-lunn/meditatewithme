@@ -14,21 +14,37 @@ import {
 } from '../lib/timer.ts';
 
 describe('clampMinutes', () => {
-  test('keeps values already in range', () => {
+  test('keeps values already on a stop', () => {
     assert.equal(clampMinutes(10), 10);
     assert.equal(clampMinutes(TIMER_MIN_MINUTES), TIMER_MIN_MINUTES);
     assert.equal(clampMinutes(TIMER_MAX_MINUTES), TIMER_MAX_MINUTES);
   });
 
-  test('clamps outside the proposal bounds', () => {
+  test('clamps outside five minutes to an hour', () => {
     assert.equal(clampMinutes(0), TIMER_MIN_MINUTES);
     assert.equal(clampMinutes(-5), TIMER_MIN_MINUTES);
     assert.equal(clampMinutes(1000), TIMER_MAX_MINUTES);
+    assert.equal(clampMinutes(90), TIMER_MAX_MINUTES);
   });
 
-  test('rounds fractional input', () => {
-    assert.equal(clampMinutes(10.4), 10);
-    assert.equal(clampMinutes(10.6), 11);
+  test('snaps to the nearest five-minute stop', () => {
+    assert.equal(clampMinutes(12), 10);
+    assert.equal(clampMinutes(13), 15);
+    assert.equal(clampMinutes(17.5), 20);
+  });
+
+  test('rescues a preference saved under the old 1-45 range', () => {
+    // Anyone who set 7 or 45 before the client changed the bounds should land
+    // on a stop the slider can show, not between two notches.
+    assert.equal(clampMinutes(7), 5);
+    assert.equal(clampMinutes(1), 5);
+    assert.equal(clampMinutes(45), 45);
+  });
+
+  test('every stop survives a round trip', () => {
+    for (let m = TIMER_MIN_MINUTES; m <= TIMER_MAX_MINUTES; m += 5) {
+      assert.equal(clampMinutes(m), m);
+    }
   });
 
   test('falls back to the default on nonsense', () => {
@@ -46,6 +62,10 @@ describe('endsAt', () => {
 
   test('clamps the duration before applying it', () => {
     assert.equal(endsAt(0, 99), TIMER_MAX_MINUTES * 60_000);
+  });
+
+  test('an hour is now reachable, which it was not under the old bounds', () => {
+    assert.equal(endsAt(0, 60), 3_600_000);
   });
 });
 

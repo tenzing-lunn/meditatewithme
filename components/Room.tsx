@@ -2,13 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { serverNow, syncClock } from '@/lib/clock';
-import {
-  hourStart,
-  msLeftInSession,
-  msUntilNextSession,
-  nextHourStart,
-  sessionPhase,
-} from '@/lib/session';
+import { candleBurn, hourStart, nextHourStart } from '@/lib/session';
 import { endsAt as computeEndsAt, hasEnded, mmss, remainingMs } from '@/lib/timer';
 import Candle from './Candle';
 import SessionSetup from './SessionSetup';
@@ -17,21 +11,29 @@ import { usePreferences } from './usePreferences';
 import { scheduleBell, unlockAudio, type ScheduledBell } from './audio';
 
 /**
- * The room (build steps 03 + 04).
+ * The room.
+ *
+ * NOBODY IS EVER TURNED AWAY
+ * An earlier version ran a forty-five minute session and refused to start a
+ * sitting for the other fifteen, which meant a meditation site told a quarter
+ * of its arrivals to come back later. The hour is not permission. A candle is
+ * lit at the top of every hour and burns down across it; you sit whenever you
+ * like, against whatever is left of it.
+ *
+ * What is shared is the candle's state, not the right to begin. Two people in
+ * different timezones opening this in the same second see the same height of
+ * wax — and someone arriving at :50 gets a stub, which says "you are late"
+ * far more gently than a locked button.
  *
  * TWO CLOCKS, KEPT APART
  * The session clock is absolute, shared and corrected against the server. The
- * personal timer is relative, private and monotonic. Conflating them is,
- * per the architecture notes, the most likely source of confusing bugs here —
- * so `now` and `mono` are read from different sources on the same tick and
- * never substituted for one another.
+ * personal timer is relative, private and monotonic. Conflating them is the
+ * most likely source of confusing bugs here, so `now` and `mono` are read from
+ * different sources on the same tick and never substituted for one another.
  *
- * A SIT OUTLIVES ITS SESSION
- * You can start a ten-minute sit at :44, and the session's forty-five minutes
- * end under you. The sit continues to its bell: the commitment you made was to
- * sit for ten minutes, and blowing the candle out mid-breath to honour a
- * schedule you did not set would be the wrong way round. The session clock
- * quietly changes to the next session behind you.
+ * A sitting may run through the top of the hour. It is not interrupted — a new
+ * candle is simply lit under it, which needs no code because the burn is a
+ * function of the clock.
  */
 
 type Sitting = {
@@ -84,8 +86,8 @@ export default function Room() {
 
   const begin = useCallback(() => {
     // Must happen inside the click. Autoplay policy will not let an
-    // AudioContext start any other way, which is exactly why Begin exists as a
-    // deliberate gesture rather than sound arriving unannounced.
+    // AudioContext start any other way, which is why Begin is a deliberate
+    // gesture rather than sound arriving unannounced.
     unlockAudio();
 
     const startedAt = performance.now();
@@ -120,7 +122,6 @@ export default function Room() {
     );
   }
 
-  const phase = sessionPhase(now);
   const sitting = activity.kind === 'sitting';
 
   return (
@@ -128,36 +129,26 @@ export default function Room() {
       {sitting ? (
         <SittingClock remaining={remainingMs(activity.sit.endsAt, mono)} />
       ) : (
-        <SessionClock now={now} phase={phase} />
+        <Masthead now={now} />
       )}
 
-      <div className="mt-8">
-        <Candle lit={sitting} />
+      <div className="mt-6">
+        <Candle burn={candleBurn(now)} />
       </div>
 
-      <div className="mt-6 flex w-full flex-col items-center">
+      <div className="mt-4 flex w-full flex-col items-center">
         {activity.kind === 'idle' && (
           <>
             <SessionSetup prefs={prefs} update={update} />
 
-            <div className="mt-7">
-              {phase === 'active' ? (
-                <button
-                  type="button"
-                  onClick={begin}
-                  className="border-ember text-ember hover:bg-ember focus-visible:ring-ember focus-visible:ring-offset-paper rounded-full border px-9 py-3 font-mono text-sm tracking-[0.18em] uppercase transition-colors duration-500 hover:text-white focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-                >
-                  Begin
-                </button>
-              ) : (
-                // Deliberately not a disabled Begin. There is nothing wrong to
-                // fix, you are simply early — so the room says when, and the
-                // button arrives on its own at the top of the hour.
-                <p className="text-ink-3 font-mono text-xs tracking-[0.13em] uppercase">
-                  Begin opens at {localTime(nextHourStart(now))}
-                </p>
-              )}
-            </div>
+            {/* Always available. There is no wrong minute to start meditating. */}
+            <button
+              type="button"
+              onClick={begin}
+              className="border-ember text-ember hover:bg-ember focus-visible:ring-ember focus-visible:ring-offset-paper mt-7 rounded-full border px-9 py-3 font-mono text-sm tracking-[0.18em] uppercase transition-colors duration-500 hover:text-white focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+            >
+              Begin
+            </button>
           </>
         )}
 
@@ -179,7 +170,7 @@ export default function Room() {
         )}
 
         {prefs.showCount && activity.kind !== 'finished' && (
-          <PresenceLine count={count} phase={phase} sitting={sitting} />
+          <PresenceLine count={count} sitting={sitting} />
         )}
       </div>
     </div>
@@ -190,7 +181,35 @@ function localTime(d: Date): string {
   return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
-/** The personal timer. Takes the large type once a sit is running. */
+/**
+ * The name, and the one sentence that explains the whole thing.
+ *
+ * This replaces a large countdown to the next session. The countdown implied
+ * you were waiting for permission, which was never true and is now not even
+ * structurally possible — so it is a sentence instead, and the candle carries
+ * the sense of where you are in the hour.
+ */
+function Masthead({ now }: { now: number }) {
+  return (
+    <div className="space-y-4">
+      <h1 className="font-serif text-4xl leading-none tracking-tight sm:text-5xl">
+        Meditate <em className="text-ember italic">With Me</em>
+      </h1>
+
+      <p className="text-ink-2 mx-auto max-w-[38ch] text-pretty">
+        A candle is lit at the top of every hour and burns down until the next
+        one. Sit whenever you like — everyone worldwide is watching the same
+        candle.
+      </p>
+
+      <p className="text-ink-3 font-mono text-xs tracking-[0.13em] uppercase">
+        Lit at {localTime(hourStart(now))} · next at {localTime(nextHourStart(now))}
+      </p>
+    </div>
+  );
+}
+
+/** The personal timer. Takes the large type once a sitting is running. */
 function SittingClock({ remaining }: { remaining: number }) {
   return (
     <div className="space-y-3">
@@ -205,43 +224,6 @@ function SittingClock({ remaining }: { remaining: number }) {
   );
 }
 
-/** The session's own clock, always shown in the viewer's local time. */
-function SessionClock({
-  now,
-  phase,
-}: {
-  now: number;
-  phase: 'active' | 'interlude';
-}) {
-  const active = phase === 'active';
-
-  return (
-    <div className="space-y-3">
-      <p className="text-ember font-mono text-sm tracking-[0.13em] uppercase">
-        {active ? 'Session in progress' : 'Next session'}
-      </p>
-
-      <p className="font-serif text-6xl leading-none tabular-nums sm:text-7xl">
-        {mmss(active ? msLeftInSession(now) : msUntilNextSession(now))}
-      </p>
-
-      {/*
-        These times are the entire point of the product: one global session
-        anchored to UTC, shown to each person in their own zone. Someone's 3pm
-        and someone else's 10pm are the same room, and saying so out loud is
-        what makes that legible.
-      */}
-      <p className="text-ink-2">
-        {active ? (
-          <>remaining · began at {localTime(hourStart(now))} your time</>
-        ) : (
-          <>begins at {localTime(nextHourStart(now))} your time</>
-        )}
-      </p>
-    </div>
-  );
-}
-
 /**
  * After the bell.
  *
@@ -251,8 +233,8 @@ function SessionClock({
  * after the strike rather than landing on top of it.
  *
  * Signing in to log the sitting belongs here and is not built: accounts are
- * step 07, and a practice log is a table, a policy and a view that nobody has
- * quoted for yet.
+ * step 07, and a practice log is a table, a policy and a view nobody has quoted
+ * for yet.
  */
 function Afterwards({
   onAgain,
@@ -273,14 +255,14 @@ function Afterwards({
       className={`flex flex-col items-center transition-opacity duration-1000 ${shown ? 'opacity-100' : 'opacity-0'}`}
     >
       <p className="text-ink-2">
-        You sat for {minutes} {minutes === 1 ? 'minute' : 'minutes'}.
+        You sat for {minutes} minutes.
       </p>
 
       <div className="mt-7 flex gap-3">
         <button
           type="button"
           onClick={onAgain}
-          className="border-ember text-ember hover:bg-ember hover:text-white rounded-full border px-7 py-2.5 font-mono text-xs tracking-[0.15em] uppercase transition-colors duration-500"
+          className="border-ember text-ember hover:bg-ember rounded-full border px-7 py-2.5 font-mono text-xs tracking-[0.15em] uppercase transition-colors duration-500 hover:text-white"
         >
           Sit again
         </button>
@@ -309,11 +291,9 @@ function Afterwards({
  */
 function PresenceLine({
   count,
-  phase,
   sitting,
 }: {
   count: number | null;
-  phase: 'active' | 'interlude';
   sitting: boolean;
 }) {
   if (count === null) return null;
@@ -321,15 +301,11 @@ function PresenceLine({
   const others = Math.max(0, count - 1);
 
   const text =
-    phase === 'interlude' && !sitting
-      ? others === 0
-        ? 'You are the first one waiting'
-        : `${others} ${others === 1 ? 'other is' : 'others are'} waiting`
-      : others === 0
-        ? sitting
-          ? 'You are sitting alone right now'
-          : 'Nobody else is here yet'
-        : `${others} ${others === 1 ? 'other is' : 'others are'} here`;
+    others === 0
+      ? sitting
+        ? 'You are sitting alone right now'
+        : 'Nobody else is here yet'
+      : `${others} ${others === 1 ? 'other is' : 'others are'} here`;
 
   return (
     <p className="text-ink-3 mt-8 font-mono text-xs tracking-[0.13em] uppercase">

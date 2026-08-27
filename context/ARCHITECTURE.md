@@ -210,7 +210,9 @@ Every session calculation uses `serverNow()`. Never `Date.now()` directly. Re-sy
 
 ### 6.3 The personal timer (local, private)
 
-Independent of the session. Someone can sit for 5 minutes inside a 45-minute session, or start at :37.
+Independent of the session, and five to sixty minutes in five-minute steps. Someone can sit for five minutes starting at :37, or for an hour starting at :50 and carry straight through two candles.
+
+The session no longer occupies part of its hour — it fills the whole one, and nothing gates the start. See §16.
 
 Never count with `setInterval` — browsers throttle background tabs to roughly one tick per minute, and meditating with the tab hidden is the normal case, not the exception. Store the target, derive the remainder:
 
@@ -478,3 +480,58 @@ Donations would likely push this to Pro. Not a blocker now, but it lands on
 Jonny's bill eventually — and per the payment message, hosting is meant to sit
 in his name, not Tenzing's. Worth settling before the domain is attached, since
 moving a project after DNS is pointed is the annoying order to do it in.
+
+---
+
+## 16. The candle, and why nothing is gated
+
+The original model ran a 45-minute session with a 15-minute interlude, and the
+room withheld Begin during the interlude. Two things were wrong with it.
+
+The first is arithmetic: for a quarter of every hour, a meditation site told
+people who had arrived wanting to meditate to come back later.
+
+The second is that it made the hour mean the wrong thing. A countdown only
+carries meaning if something happens at :00 that cannot happen at :23 — and the
+only thing that happened was a button unlocking. That is friction wearing the
+costume of ritual. Worse, the session and the personal timer quietly undercut
+each other: if you may join at :23 and sit for seven minutes, you are not
+synchronised with anybody, so the countdown was measuring nothing.
+
+### What replaced it
+
+**A candle is lit at the top of every hour and burns down across it.** Nothing
+is gated; you sit whenever you like.
+
+The shared thing is the candle's *state*. `candleBurn(now)` is a pure function
+of the clock, so two people in different timezones opening the site in the same
+second see the same height of wax. That is real synchrony, and it costs no
+coordination — no cron, no socket, no event to miss.
+
+It also communicates lateness honestly. Arrive at :50 and you are handed a
+stub. You can see you came late, which is a far gentler thing than a locked
+button, and it preserves the reason to show up at the top of the hour without
+punishing anyone who cannot.
+
+A sitting may run through :00. It is not interrupted — a new candle is simply
+lit under it, which needs no code at all, because the burn is derived rather
+than stored.
+
+### Consequences in the code
+
+- `SESSION_MS === HOUR_MS`. There is no interlude.
+- `sessionPhase` and the `SessionPhase` type are gone. They encoded a design
+  that no longer exists, and a phase that always returns `'active'` is worse
+  than no phase at all.
+- The personal timer is 5–60 minutes in 5-minute steps: twelve stops, not
+  sixty. Nobody sitting down to meditate has an opinion about seventeen minutes
+  versus eighteen.
+- `clampMinutes` rounds to the step as well as the range, so preferences saved
+  under the old 1–45 bounds land on a stop the slider can represent.
+
+### What is still assumed rather than known
+
+The candle is CSS, and its burn is linear. A real candle does not burn linearly
+and the licensed video loop will not either — when that asset lands, the mapping
+from `candleBurn` to what is on screen may need a curve rather than a straight
+line. The interface does not change.

@@ -19,18 +19,30 @@
  * remainder, which self-corrects after any sleep, throttle or tab switch.
  */
 
-/** Bounds from the proposal: one to forty-five minutes. */
-export const TIMER_MIN_MINUTES = 1;
-export const TIMER_MAX_MINUTES = 45;
+/**
+ * Five minutes to an hour, in five-minute steps — the client's call.
+ *
+ * Twelve stops rather than sixty is the point: a slider you drag to roughly the
+ * right place, not a number you tune. Nobody sitting down to meditate has an
+ * opinion about seventeen minutes versus eighteen.
+ */
+export const TIMER_MIN_MINUTES = 5;
+export const TIMER_MAX_MINUTES = 60;
+export const TIMER_STEP_MINUTES = 5;
 export const TIMER_DEFAULT_MINUTES = 10;
 
-/** Snap a requested duration into range, rejecting anything not a number. */
+/**
+ * Snap a requested duration to a valid stop.
+ *
+ * Rounds to the step as well as clamping to the range, so a value that arrives
+ * off-grid — an old preference saved when the range was 1–45, or something
+ * edited by hand in devtools — lands somewhere the slider can actually
+ * represent instead of sitting between two notches.
+ */
 export function clampMinutes(minutes: number): number {
   if (!Number.isFinite(minutes)) return TIMER_DEFAULT_MINUTES;
-  return Math.min(
-    TIMER_MAX_MINUTES,
-    Math.max(TIMER_MIN_MINUTES, Math.round(minutes)),
-  );
+  const snapped = Math.round(minutes / TIMER_STEP_MINUTES) * TIMER_STEP_MINUTES;
+  return Math.min(TIMER_MAX_MINUTES, Math.max(TIMER_MIN_MINUTES, snapped));
 }
 
 /** When a sit started now would end, on the same monotonic scale. */

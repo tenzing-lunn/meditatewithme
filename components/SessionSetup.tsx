@@ -4,6 +4,7 @@ import type { UserPreferences } from '@/lib/types';
 import {
   TIMER_MIN_MINUTES,
   TIMER_MAX_MINUTES,
+  TIMER_STEP_MINUTES,
   clampMinutes,
 } from '@/lib/timer';
 import { BELLS, type BellKind, previewBell } from './audio';
@@ -20,7 +21,8 @@ import { BELLS, type BellKind, previewBell } from './audio';
  * anything here.
  */
 
-const PRESETS = [5, 10, 20, 30];
+/** Spread across the range so the hour is visibly on offer, not buried. */
+const PRESETS = [5, 15, 30, 60];
 
 export default function SessionSetup({
   prefs,
@@ -45,18 +47,21 @@ export default function SessionSetup({
             Sit for
           </label>
           <span className="font-serif text-2xl tabular-nums">
-            {prefs.timerMinutes}
+            {prefs.timerMinutes === 60 ? 1 : prefs.timerMinutes}
             <span className="text-ink-3 ml-1 font-sans text-sm">
-              {prefs.timerMinutes === 1 ? 'minute' : 'minutes'}
+              {prefs.timerMinutes === 60 ? 'hour' : 'minutes'}
             </span>
           </span>
         </div>
 
+        {/* Twelve stops, not sixty. Nobody meditating has an opinion about
+            seventeen minutes versus eighteen. */}
         <input
           id="duration"
           type="range"
           min={TIMER_MIN_MINUTES}
           max={TIMER_MAX_MINUTES}
+          step={TIMER_STEP_MINUTES}
           value={prefs.timerMinutes}
           onChange={(e) =>
             update({ timerMinutes: clampMinutes(Number(e.target.value)) })
@@ -78,7 +83,7 @@ export default function SessionSetup({
                   : 'border-rule text-ink-3 hover:border-ink-3'
               }`}
             >
-              {m}m
+              {m === 60 ? '1h' : `${m}m`}
             </button>
           ))}
         </div>

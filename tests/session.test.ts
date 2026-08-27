@@ -8,9 +8,7 @@ import {
   nextHourStart,
   msIntoHour,
   msUntilNextSession,
-  sessionPhase,
-  sessionProgress,
-  msLeftInSession,
+  candleBurn,
   ambientSession,
   sessionFromRow,
   resolveSession,
@@ -110,56 +108,39 @@ describe('msUntilNextSession', () => {
   });
 });
 
-describe('sessionPhase', () => {
-  test('active at the top of the hour', () => {
-    assert.equal(sessionPhase(at('2026-08-23T14:00:00Z')), 'active');
+describe('candleBurn', () => {
+  test('a fresh candle at the top of the hour', () => {
+    assert.equal(candleBurn(at('2026-08-23T14:00:00Z')), 0);
   });
 
-  test('active one ms before the 45 minute mark', () => {
-    const t = at('2026-08-23T14:00:00Z') + SESSION_MS - 1;
-    assert.equal(sessionPhase(t), 'active');
+  test('half burned at half past', () => {
+    assert.equal(candleBurn(at('2026-08-23T14:30:00Z')), 0.5);
   });
 
-  test('interlude exactly at the 45 minute mark', () => {
-    const t = at('2026-08-23T14:00:00Z') + SESSION_MS;
-    assert.equal(sessionPhase(t), 'interlude');
+  test('nearly gone at :59 — the point being you can SEE you are late', () => {
+    const burn = candleBurn(at('2026-08-23T14:59:00Z'));
+    assert.ok(burn > 0.98 && burn < 1, `got ${burn}`);
   });
 
-  test('interlude at :59', () => {
-    assert.equal(sessionPhase(at('2026-08-23T14:59:00Z')), 'interlude');
-  });
-});
-
-describe('sessionProgress', () => {
-  test('is 0 at the start', () => {
-    assert.equal(sessionProgress(at('2026-08-23T14:00:00Z')), 0);
-  });
-
-  test('is 0.5 halfway through the session, not halfway through the hour', () => {
-    const t = at('2026-08-23T14:00:00Z') + SESSION_MS / 2;
-    assert.equal(sessionProgress(t), 0.5);
-  });
-
-  test('clamps to 1 during the interlude', () => {
-    assert.equal(sessionProgress(at('2026-08-23T14:52:00Z')), 1);
-  });
-
-  test('never exceeds 1 or drops below 0', () => {
+  test('never reaches 1, because a new candle replaces it first', () => {
     for (let m = 0; m < 60; m++) {
-      const p = sessionProgress(at('2026-08-23T14:00:00Z') + m * 60_000);
-      assert.ok(p >= 0 && p <= 1, `minute ${m} gave ${p}`);
+      const b = candleBurn(at('2026-08-23T14:00:00Z') + m * 60_000);
+      assert.ok(b >= 0 && b < 1, `minute ${m} gave ${b}`);
     }
   });
-});
 
-describe('msLeftInSession', () => {
-  test('is the full session length at the start', () => {
-    assert.equal(msLeftInSession(at('2026-08-23T14:00:00Z')), SESSION_MS);
+  test('resets across the hour boundary rather than continuing', () => {
+    // Somebody sitting through :00 sees a new candle lit under them.
+    const before = candleBurn(at('2026-08-23T14:59:59Z'));
+    const after = candleBurn(at('2026-08-23T15:00:00Z'));
+    assert.ok(before > 0.99);
+    assert.equal(after, 0);
   });
 
-  test('is 0 during the interlude, never negative', () => {
-    assert.equal(msLeftInSession(at('2026-08-23T14:50:00Z')), 0);
-    assert.equal(msLeftInSession(at('2026-08-23T14:59:59Z')), 0);
+  test('the session now fills its whole hour, leaving no dead time', () => {
+    // The old model ran 45 minutes and refused to start a sitting for the
+    // other 15. This asserts that gap is gone for good.
+    assert.equal(SESSION_MS, HOUR_MS);
   });
 });
 
