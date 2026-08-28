@@ -7,16 +7,19 @@ only the version of it Jonny sees.
 
 ## Before sending
 
-1. **Reconstruct the hours.** His first question is "where are we against the
-   55?" and "I'm not sure" turns a professional change order into a student who
-   lost track. An hour of honest reconstruction buys the whole conversation.
+1. [x] **Reconstruct the hours.** Working estimate: about **43 of the agreed
+   55 hours**. That is the original steps 1–7 (36h), the off-scope practice log
+   (~4h), and the B/D proof (3h). It is a reconstruction from the build plan,
+   not a precise timesheet, so say "roughly 43" if asked.
 2. [x] **Build B and D first** — "you began with 14 others" and the first-here
    empty room. Three hours, unbilled, deliberately. They make this message
    obvious instead of theoretical. Implemented as the bounded proof: a
    server-stamped start cohort and a first-arrival cue; the paid A/C scope is
    still untouched.
-3. **Send it with a link that actually opens.** Preview deployments currently
-   302 to Vercel SSO; he needs a share link, not the branch URL.
+3. [x] **Send it with a link that actually opens.** A Vercel Shareable Link for
+   the `dev` preview has been created and externally verified. Keep its signed
+   query parameter out of git; retrieve it from Vercel when sending rather than
+   putting it in this document.
 
 ## How this one is written, and why
 
