@@ -10,9 +10,11 @@ only the version of it Jonny sees.
 1. **Reconstruct the hours.** His first question is "where are we against the
    55?" and "I'm not sure" turns a professional change order into a student who
    lost track. An hour of honest reconstruction buys the whole conversation.
-2. **Build B and D first** — "you began with 14 others" and the first-here
+2. [x] **Build B and D first** — "you began with 14 others" and the first-here
    empty room. Three hours, unbilled, deliberately. They make this message
-   obvious instead of theoretical.
+   obvious instead of theoretical. Implemented as the bounded proof: a
+   server-stamped start cohort and a first-arrival cue; the paid A/C scope is
+   still untouched.
 3. **Send it with a link that actually opens.** Preview deployments currently
    302 to Vercel SSO; he needs a share link, not the branch URL.
 

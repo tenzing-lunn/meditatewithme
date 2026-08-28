@@ -130,12 +130,30 @@ body {
   transform-origin: 100% 100%;
 }
 
+/* The first person does not get a flash or a chime. This slow increase in
+   warmth is the only acknowledgement that they have changed the room. */
+@keyframes candle-first-here {
+  from {
+    filter: brightness(0.72);
+  }
+  to {
+    filter: brightness(1);
+  }
+}
+
+.candle-first-here {
+  animation: candle-first-here 4s ease-out both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .candle-glow {
     animation: none;
     opacity: 0.85;
   }
   .candle-flame {
+    animation: none;
+  }
+  .candle-first-here {
     animation: none;
   }
 }

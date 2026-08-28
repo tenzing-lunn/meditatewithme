@@ -27,7 +27,14 @@
 const FULL_HEIGHT_REM = 7;
 const STUB_HEIGHT_REM = 1.75;
 
-export default function Candle({ burn }: { burn: number }) {
+export default function Candle({
+  burn,
+  firstHere = false,
+}: {
+  burn: number;
+  /** A quiet acknowledgement, not a state change in the shared hour candle. */
+  firstHere?: boolean;
+}) {
   const clamped = Math.min(1, Math.max(0, burn));
   const bodyHeight = FULL_HEIGHT_REM - clamped * (FULL_HEIGHT_REM - STUB_HEIGHT_REM);
 
@@ -39,7 +46,9 @@ export default function Candle({ burn }: { burn: number }) {
   return (
     <div
       aria-hidden
-      className="relative flex h-52 w-52 items-end justify-center pb-6 sm:h-64 sm:w-64 sm:pb-8"
+      className={`relative flex h-52 w-52 items-end justify-center pb-6 sm:h-64 sm:w-64 sm:pb-8 ${
+        firstHere ? 'candle-first-here' : ''
+      }`}
     >
       <div
         className="candle-glow absolute inset-0"

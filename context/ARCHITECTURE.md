@@ -152,6 +152,7 @@ create table heartbeats (
   anon_id    uuid        not null,
   hour_start timestamptz not null,
   last_seen  timestamptz not null default now(),
+  began_at   timestamptz,              -- server-stamped at Begin only
   primary key (anon_id, hour_start)
 );
 
@@ -164,6 +165,12 @@ select count(*) from heartbeats
 where hour_start = $1
   and last_seen > now() - interval '90 seconds';
 ```
+
+`began_at` is a second, nullable reading of the same row—not a start-event
+log. On Begin the route stamps it and counts rows whose `began_at` is within
+the preceding thirty seconds, returning one fixed “you began with N others”
+sentence. The all-hour count is also returned with the live count, so the
+first arrival can be framed truthfully as the first person to light the hour.
 
 Because the response is identical for every viewer, one edge cache entry with a 10-second TTL serves the entire world. **A thousand concurrent users generate roughly one origin query every ten seconds.** The same thousand users would have destroyed the presence approach.
 

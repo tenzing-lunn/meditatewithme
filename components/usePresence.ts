@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * Presence: tell the server we're here, and read back how many others are.
@@ -66,13 +66,39 @@ function loadAnonId(): string {
 export interface Presence {
   /** People present now. Null while unknown, or if the count is degraded. */
   count: number | null;
+  /** People who have lit this hour, including people who have since left. */
+  litCount: number | null;
+  /** Record a Begin and return the number who began in the same short window. */
+  begin: () => Promise<number | null>;
 }
 
 export function usePresence(): Presence {
   const [count, setCount] = useState<number | null>(null);
+  const [litCount, setLitCount] = useState<number | null>(null);
+  const anonIdRef = useRef<string | null>(null);
+
+  const begin = useCallback(async () => {
+    const anonId = anonIdRef.current;
+    if (!anonId) return null;
+
+    try {
+      const res = await fetch('/api/heartbeat', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ anonId, began: true }),
+        keepalive: true,
+      });
+      if (!res.ok) return null;
+      const body = (await res.json()) as { beganCount?: unknown };
+      return typeof body.beganCount === 'number' ? body.beganCount : null;
+    } catch {
+      return null;
+    }
+  }, []);
 
   useEffect(() => {
     const anonId = loadAnonId();
+    anonIdRef.current = anonId;
 
     let beatTimer: number | undefined;
     let pollTimer: number | undefined;
@@ -96,8 +122,14 @@ export function usePresence(): Presence {
       try {
         const res = await fetch('/api/count');
         if (!res.ok) return;
-        const body = (await res.json()) as { count: number | null };
-        if (!stopped) setCount(body.count);
+        const body = (await res.json()) as {
+          count: number | null;
+          litCount: number | null;
+        };
+        if (!stopped) {
+          setCount(body.count);
+          setLitCount(body.litCount);
+        }
       } catch {
         // Leave the last known number on screen rather than blanking it.
       }
@@ -132,10 +164,11 @@ export function usePresence(): Presence {
 
     return () => {
       stopped = true;
+      anonIdRef.current = null;
       stop();
       document.removeEventListener('visibilitychange', onVisibility);
     };
   }, []);
 
-  return { count };
+  return { count, litCount, begin };
 }

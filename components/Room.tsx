@@ -81,7 +81,8 @@ export default function Room() {
   const [activity, setActivity] = useState<Activity>({ kind: 'idle' });
 
   const { prefs, update, replace, loaded } = usePreferences();
-  const { count } = usePresence();
+  const { count, litCount, begin: recordBegin } = usePresence();
+  const [beganWith, setBeganWith] = useState<number | null>(null);
 
   // Accounts are optional and cuttable. Removing these two lines and the
   // <SignIn> below leaves a complete product — which is the promise the scope
@@ -172,7 +173,11 @@ export default function Room() {
         bell,
       },
     });
-  }, [prefs.timerMinutes, prefs.endBell, mix]);
+    // Presence is never allowed to delay the ritual. The request records a
+    // server-stamped start and, if it returns in time, gives the one still
+    // sentence that says who crossed the threshold with you.
+    void recordBegin().then(setBeganWith);
+  }, [prefs.timerMinutes, prefs.endBell, mix, recordBegin]);
 
   const endEarly = useCallback(() => {
     setActivity((a) => {
@@ -225,6 +230,7 @@ export default function Room() {
   }
 
   const sitting = activity.kind === 'sitting';
+  const firstHere = count === 1 && litCount === 1;
 
   return (
     <div className="flex w-full flex-col items-center text-center">
@@ -235,7 +241,7 @@ export default function Room() {
       )}
 
       <div className="mt-6">
-        <Focus session={session} burn={candleBurn(now)} />
+        <Focus session={session} burn={candleBurn(now)} firstHere={firstHere} />
       </div>
 
       <div className="mt-4 flex w-full flex-col items-center">
@@ -293,7 +299,12 @@ export default function Room() {
         )}
 
         {prefs.showCount && activity.kind !== 'finished' && (
-          <PresenceLine count={count} sitting={sitting} />
+          <PresenceLine
+            count={count}
+            sitting={sitting}
+            firstHere={firstHere}
+            beganWith={beganWith}
+          />
         )}
       </div>
     </div>
@@ -315,14 +326,22 @@ export default function Room() {
  * `session` is null only in the instant before the first tick. The candle is
  * right for that instant too, so there is nothing to wait for.
  */
-function Focus({ session, burn }: { session: Session | null; burn: number }) {
+function Focus({
+  session,
+  burn,
+  firstHere,
+}: {
+  session: Session | null;
+  burn: number;
+  firstHere: boolean;
+}) {
   switch (session?.focusSlug) {
     // 'water' and 'hourglass' from the spec are cases here once the client
     // sources the loops. Anything unrecognised falls through on purpose: a
     // typo in a database row should show a candle, not an empty page.
     case 'candle':
     default:
-      return <Candle burn={burn} />;
+      return <Candle burn={burn} firstHere={firstHere} />;
   }
 }
 
@@ -541,11 +560,34 @@ function SoundDrawer({
 function PresenceLine({
   count,
   sitting,
+  firstHere,
+  beganWith,
 }: {
   count: number | null;
   sitting: boolean;
+  firstHere: boolean;
+  beganWith: number | null;
 }) {
+  if (beganWith !== null) {
+    const others = Math.max(0, beganWith - 1);
+    if (others > 0) {
+      return (
+        <p className="text-ink-3 mt-8 font-mono text-xs tracking-[0.13em] uppercase">
+          You began with {others} {others === 1 ? 'other' : 'others'}
+        </p>
+      );
+    }
+  }
+
   if (count === null) return null;
+
+  if (firstHere) {
+    return (
+      <p className="text-ink-3 mt-8 font-mono text-xs tracking-[0.13em] uppercase">
+        You are the first here this hour
+      </p>
+    );
+  }
 
   const others = Math.max(0, count - 1);
 
