@@ -44,10 +44,20 @@ describe('normalize', () => {
     assert.equal(normalize({ timerMinutes: 0 }).timerMinutes, 1);
   });
 
+  test('drops levels for tracks that do not exist', () => {
+    // 'sea' was never a track. Without this it would sit in localStorage and
+    // in the sound_mix column forever, syncing between devices, controlling
+    // nothing — and the same would happen to any track we ever rename.
+    const mix = normalize({ soundMix: { rain: 0.4, sea: 0.9 } }).soundMix;
+    assert.deepEqual(mix, { rain: 0.4 });
+  });
+
   test('clamps sound gains into 0..1', () => {
     // These are applied straight to an AudioNode; 40 would be deafening.
-    const mix = normalize({ soundMix: { rain: 40, wind: -3, sea: 0.5 } }).soundMix;
-    assert.deepEqual(mix, { rain: 1, wind: 0, sea: 0.5 });
+    const mix = normalize({
+      soundMix: { rain: 40, wind: -3, master: 0.5 },
+    }).soundMix;
+    assert.deepEqual(mix, { rain: 1, wind: 0, master: 0.5 });
   });
 
   test('drops non-numeric gains rather than passing NaN to the mixer', () => {

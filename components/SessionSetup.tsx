@@ -8,6 +8,8 @@ import {
   timerStopIndex,
 } from '@/lib/timer';
 import { BELLS, type BellKind, previewBell } from './audio';
+import type { MASTER_KEY, TrackSlug } from './mix';
+import SoundMixer from './SoundMixer';
 
 /**
  * What you set before you sit.
@@ -16,9 +18,9 @@ import { BELLS, type BellKind, previewBell } from './audio';
  * choices you make once per sitting, not configuration you file away. Hiding
  * them would mean everybody sits for whatever the default is.
  *
- * Sound mixing is absent on purpose — that is step 05 and it is blocked on the
- * client sourcing licensed loops. It slots in below the bell without disturbing
- * anything here.
+ * Sound sits below the bell. It is last because it is the only control here
+ * somebody might spend a minute on rather than a second, and putting it above
+ * Begin's other choices would turn a page about starting into a mixing desk.
  */
 
 /**
@@ -33,10 +35,13 @@ const PRESETS = [1, 10, 30, 60];
 export default function SessionSetup({
   prefs,
   update,
+  onSound,
   disabled,
 }: {
   prefs: UserPreferences;
   update: (patch: Partial<UserPreferences>) => void;
+  /** Runs inside the change event, because the audio graph needs a gesture. */
+  onSound: (slug: TrackSlug | typeof MASTER_KEY, gain: number) => void;
   disabled?: boolean;
 }) {
   const duration = durationLabel(prefs.timerMinutes);
@@ -139,6 +144,9 @@ export default function SessionSetup({
           ))}
         </div>
       </fieldset>
+
+      {/* ---- What you hear underneath ---- */}
+      <SoundMixer soundMix={prefs.soundMix} onChange={onSound} />
 
       {/* ---- The count ---- */}
       <div className="flex items-center justify-between">

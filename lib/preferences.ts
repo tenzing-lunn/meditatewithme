@@ -23,7 +23,9 @@
 // does not guess extensions. tsconfig has allowImportingTsExtensions for it.
 import {
   DEFAULT_BELL,
+  MASTER_KEY,
   isBellKind,
+  isTrackSlug,
   type BellKind,
   type UserPreferences,
 } from './types.ts';
@@ -38,11 +40,18 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   showCount: true,
 };
 
-/** Gains outside 0..1 would be applied straight to an AudioNode. */
+/**
+ * Gains outside 0..1 would be applied straight to an AudioNode.
+ *
+ * Unknown keys are dropped rather than carried. A track renamed or removed
+ * would otherwise leave its level in everybody's localStorage and in the
+ * `sound_mix` column forever, syncing between devices, controlling nothing.
+ */
 function normalizeMix(v: unknown): Record<string, number> {
   if (!v || typeof v !== 'object' || Array.isArray(v)) return {};
   const out: Record<string, number> = {};
   for (const [slug, gain] of Object.entries(v as Record<string, unknown>)) {
+    if (!isTrackSlug(slug) && slug !== MASTER_KEY) continue;
     const n = Number(gain);
     if (Number.isFinite(n)) out[slug] = Math.min(1, Math.max(0, n));
   }

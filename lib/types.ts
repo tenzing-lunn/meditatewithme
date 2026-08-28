@@ -56,6 +56,42 @@ export function isBellKind(v: unknown): v is BellKind {
   return typeof v === 'string' && (BELL_KINDS as readonly string[]).includes(v);
 }
 
+/**
+ * The five ambient beds.
+ *
+ * Declared here rather than in components/mix.ts for the same reason
+ * BELL_KINDS is: the value round-trips through localStorage and through a
+ * jsonb column, both of which anyone can edit by hand, and the things that need
+ * to validate it — `normalize()` in lib/preferences.ts above all — should not
+ * have to import the Web Audio module to find out whether a string is a track.
+ *
+ * The labels and the sound itself stay in components/mix.ts. This is the
+ * vocabulary; that is the instrument.
+ */
+export const TRACK_SLUGS = ['rain', 'wind', 'waterfall', 'hum', 'night'] as const;
+
+export type TrackSlug = (typeof TRACK_SLUGS)[number];
+
+export function isTrackSlug(v: unknown): v is TrackSlug {
+  return typeof v === 'string' && (TRACK_SLUGS as readonly string[]).includes(v);
+}
+
+/**
+ * Master volume rides in the same record as the tracks, under a reserved key.
+ *
+ * The alternative was a sixth field on UserPreferences and a migration for one
+ * number. `normalizeMix` already clamps every value in that record to 0..1,
+ * which is exactly the guarantee a master gain needs, so it comes for free.
+ *
+ * The cost is that `soundMix` now has one key that is not a track, which is why
+ * `isTrackSlug` deliberately returns false for it and why normalizeMix has to
+ * allow it through by name.
+ */
+export const MASTER_KEY = 'master';
+
+/** Loud enough to hear under a bell, quiet enough not to be the point. */
+export const DEFAULT_MASTER = 0.7;
+
 export interface UserPreferences {
   timerMinutes: number;
   endBell: BellKind;

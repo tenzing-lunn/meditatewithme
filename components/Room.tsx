@@ -10,6 +10,9 @@ import Candle from './Candle';
 import Practice from './Practice';
 import SessionSetup from './SessionSetup';
 import SignIn from './SignIn';
+import SoundMixer from './SoundMixer';
+import type { MASTER_KEY, TrackSlug } from './mix';
+import { useMix } from './useMix';
 import { useAuth } from './useAuth';
 import { usePractice } from './usePractice';
 import { usePresence } from './usePresence';
@@ -91,6 +94,10 @@ export default function Room() {
   // The log works signed out. Signing in only carries it between devices.
   const { entries, record } = usePractice(userId);
 
+  // The ambient mix. Preferences own the levels; this only turns them into
+  // sound, which is why it is handed prefs rather than any state of its own.
+  const mix = useMix(prefs.soundMix);
+
   // Re-resolves only when the clock rolls into a new hour, which is the only
   // moment the answer can change.
   const session = useSession(now === null ? null : hourKey(now));
@@ -122,11 +129,30 @@ export default function Room() {
     };
   }, []);
 
+  /**
+   * A sound slider moved.
+   *
+   * `ensure()` first and synchronously: this call is inside the change event,
+   * which is the only place autoplay policy will let an AudioContext start.
+   * Persisting is second because it goes through React and would not count.
+   */
+  const setSound = useCallback(
+    (slug: TrackSlug | typeof MASTER_KEY, gain: number) => {
+      mix.ensure();
+      update({ soundMix: { ...prefs.soundMix, [slug]: gain } });
+    },
+    [mix, update, prefs.soundMix],
+  );
+
   const begin = useCallback(() => {
     // Must happen inside the click. Autoplay policy will not let an
     // AudioContext start any other way, which is why Begin is a deliberate
     // gesture rather than sound arriving unannounced.
     unlockAudio();
+    // Same gesture, same reason. Somebody who set a mix and then reloaded has
+    // levels stored but no graph running, so Begin has to build it.
+    mix.ensure();
+    mix.restore();
 
     const startedAt = performance.now();
     const end = computeEndsAt(startedAt, prefs.timerMinutes);
@@ -146,12 +172,13 @@ export default function Room() {
         bell,
       },
     });
-  }, [prefs.timerMinutes, prefs.endBell]);
+  }, [prefs.timerMinutes, prefs.endBell, mix]);
 
   const endEarly = useCallback(() => {
     setActivity((a) => {
       if (a.kind === 'sitting') {
         a.sit.bell?.cancel();
+        mix.fadeOut();
         // Stopping early still counts, and counts for what was actually sat.
         // Someone who set an hour and stopped at twenty sat for twenty —
         // recording the intention instead would make the totals a wish list.
@@ -165,7 +192,7 @@ export default function Room() {
       }
       return { kind: 'idle' };
     });
-  }, [record]);
+  }, [record, mix]);
 
   // The bell rings itself, on the audio clock. This only moves the UI on.
   useEffect(() => {
@@ -182,8 +209,12 @@ export default function Room() {
       completed: true,
     });
 
+    // The sound goes with the sitting, slowly. The bell is ringing as this
+    // runs and the whole point of the moment is that nothing is abrupt.
+    mix.fadeOut();
+
     setActivity({ kind: 'finished' });
-  }, [activity, mono, record]);
+  }, [activity, mono, record, mix]);
 
   if (now === null) {
     return (
@@ -210,7 +241,7 @@ export default function Room() {
       <div className="mt-4 flex w-full flex-col items-center">
         {activity.kind === 'idle' && (
           <>
-            <SessionSetup prefs={prefs} update={update} />
+            <SessionSetup prefs={prefs} update={update} onSound={setSound} />
 
             {/* Always available. There is no wrong minute to start meditating. */}
             <button
@@ -224,18 +255,24 @@ export default function Room() {
         )}
 
         {sitting && (
-          <button
-            type="button"
-            onClick={endEarly}
-            className="text-ink-3 hover:text-ink-2 font-mono text-xs tracking-[0.13em] uppercase transition-colors"
-          >
-            End this sitting
-          </button>
+          <>
+            <SoundDrawer soundMix={prefs.soundMix} onSound={setSound} />
+            <button
+              type="button"
+              onClick={endEarly}
+              className="text-ink-3 hover:text-ink-2 mt-8 font-mono text-xs tracking-[0.13em] uppercase transition-colors"
+            >
+              End this sitting
+            </button>
+          </>
         )}
 
         {activity.kind === 'finished' && (
           <Afterwards
-            onAgain={() => setActivity({ kind: 'idle' })}
+            onAgain={() => {
+              mix.restore();
+              setActivity({ kind: 'idle' });
+            }}
             minutes={prefs.timerMinutes}
             entries={entries}
             now={now}
@@ -443,6 +480,47 @@ function PracticePanel({
       {open && (
         <div className="mt-6">
           <Practice entries={entries} now={now} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The mix, reachable mid-sitting.
+ *
+ * The proposal promises people can adjust the sound "without leaving the page",
+ * and it means during, not only before — the volume that was right in the
+ * setup is often wrong thirty seconds in, once you have stopped listening to
+ * it and started hearing it.
+ *
+ * Closed by default, and it opens in place. Five faders sitting permanently
+ * under somebody with their eyes shut is a control panel, not a room; a single
+ * quiet line of text is not.
+ */
+function SoundDrawer({
+  soundMix,
+  onSound,
+}: {
+  soundMix: Record<string, number>;
+  onSound: (slug: TrackSlug | typeof MASTER_KEY, gain: number) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="mt-8 flex w-full max-w-sm flex-col items-center">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="text-ink-3 hover:text-ink-2 focus-visible:ring-ember focus-visible:ring-offset-paper rounded-sm font-mono text-xs tracking-[0.13em] uppercase underline underline-offset-4 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+      >
+        {open ? 'Hide sound' : 'Sound'}
+      </button>
+
+      {open && (
+        <div className="mt-6 w-full">
+          <SoundMixer soundMix={soundMix} onChange={onSound} compact />
         </div>
       )}
     </div>
