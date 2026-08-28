@@ -5,10 +5,13 @@ import { serverNow, syncClock } from '@/lib/clock';
 import { candleBurn, hourKey, hourStart, nextHourStart } from '@/lib/session';
 import { endsAt as computeEndsAt, hasEnded, mmss, remainingMs } from '@/lib/timer';
 import type { Session } from '@/lib/types';
+import { currentStreak, type PracticeEntry } from '@/lib/practice';
 import Candle from './Candle';
+import Practice from './Practice';
 import SessionSetup from './SessionSetup';
 import SignIn from './SignIn';
 import { useAuth } from './useAuth';
+import { usePractice } from './usePractice';
 import { usePresence } from './usePresence';
 import { usePreferences } from './usePreferences';
 import { useSession } from './useSession';
@@ -42,7 +45,14 @@ import { scheduleBell, unlockAudio, type ScheduledBell } from './audio';
  */
 
 type Sitting = {
+  /** Its own id, minted at Begin. Carried into the practice log so that a
+   *  double-fired effect records the same sitting twice and de-duplicates to
+   *  one, rather than counting it twice. */
+  id: string;
   startedAt: number;
+  /** Wall clock, for the practice log. `startedAt` is monotonic and says
+   *  nothing about what day it is. */
+  startedAtWall: number;
   endsAt: number;
   bell: ScheduledBell | null;
 };
@@ -51,6 +61,14 @@ type Activity =
   | { kind: 'idle' }
   | { kind: 'sitting'; sit: Sitting }
   | { kind: 'finished' };
+
+function newSittingId(): string {
+  try {
+    return crypto.randomUUID();
+  } catch {
+    return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  }
+}
 
 export default function Room() {
   // Null until mounted — the server cannot know the viewer's clock, so
@@ -66,12 +84,12 @@ export default function Room() {
   // <SignIn> below leaves a complete product — which is the promise the scope
   // table makes with the word "optional", kept at runtime rather than on paper.
   const { state: auth, signIn, signOut } = useAuth();
-  const sync = useSyncPreferences({
-    userId: auth.status === 'signed-in' ? auth.user.id : null,
-    prefs,
-    replace,
-    loaded,
-  });
+  const userId = auth.status === 'signed-in' ? auth.user.id : null;
+
+  const sync = useSyncPreferences({ userId, prefs, replace, loaded });
+
+  // The log works signed out. Signing in only carries it between devices.
+  const { entries, record } = usePractice(userId);
 
   // Re-resolves only when the clock rolls into a new hour, which is the only
   // moment the answer can change.
@@ -118,21 +136,54 @@ export default function Room() {
     // failed at its one job.
     const bell = scheduleBell((end - startedAt) / 1000, prefs.endBell);
 
-    setActivity({ kind: 'sitting', sit: { startedAt, endsAt: end, bell } });
+    setActivity({
+      kind: 'sitting',
+      sit: {
+        id: newSittingId(),
+        startedAt,
+        startedAtWall: Date.now(),
+        endsAt: end,
+        bell,
+      },
+    });
   }, [prefs.timerMinutes, prefs.endBell]);
 
   const endEarly = useCallback(() => {
     setActivity((a) => {
-      if (a.kind === 'sitting') a.sit.bell?.cancel();
+      if (a.kind === 'sitting') {
+        a.sit.bell?.cancel();
+        // Stopping early still counts, and counts for what was actually sat.
+        // Someone who set an hour and stopped at twenty sat for twenty —
+        // recording the intention instead would make the totals a wish list.
+        // Under a minute records nothing; that was a mis-tap.
+        record({
+          id: a.sit.id,
+          startedAt: a.sit.startedAtWall,
+          seconds: (performance.now() - a.sit.startedAt) / 1000,
+          completed: false,
+        });
+      }
       return { kind: 'idle' };
     });
-  }, []);
+  }, [record]);
 
   // The bell rings itself, on the audio clock. This only moves the UI on.
   useEffect(() => {
     if (activity.kind !== 'sitting') return;
-    if (hasEnded(activity.sit.endsAt, mono)) setActivity({ kind: 'finished' });
-  }, [activity, mono]);
+    if (!hasEnded(activity.sit.endsAt, mono)) return;
+
+    // Passing the sitting's own id makes this safe to run twice — React runs
+    // effects twice in development, and the log de-duplicates by id rather than
+    // counting the same sitting again.
+    record({
+      id: activity.sit.id,
+      startedAt: activity.sit.startedAtWall,
+      seconds: (activity.sit.endsAt - activity.sit.startedAt) / 1000,
+      completed: true,
+    });
+
+    setActivity({ kind: 'finished' });
+  }, [activity, mono, record]);
 
   if (now === null) {
     return (
@@ -186,8 +237,12 @@ export default function Room() {
           <Afterwards
             onAgain={() => setActivity({ kind: 'idle' })}
             minutes={prefs.timerMinutes}
+            entries={entries}
+            now={now}
           />
         )}
+
+        {activity.kind === 'idle' && <PracticePanel entries={entries} now={now} />}
 
         {/* Not during a sitting. The one moment nobody should be offered an
             account is while they are sitting with their eyes closed. */}
@@ -296,9 +351,13 @@ function SittingClock({ remaining }: { remaining: number }) {
 function Afterwards({
   onAgain,
   minutes,
+  entries,
+  now,
 }: {
   onAgain: () => void;
   minutes: number;
+  entries: PracticeEntry[];
+  now: number;
 }) {
   const [shown, setShown] = useState(false);
 
@@ -307,12 +366,26 @@ function Afterwards({
     return () => window.clearTimeout(t);
   }, []);
 
+  const streak = currentStreak(entries, now);
+
   return (
     <div
       className={`flex flex-col items-center transition-opacity duration-1000 ${shown ? 'opacity-100' : 'opacity-0'}`}
     >
       <p className="text-ink-2">
         You sat for {minutes} minutes.
+        {/* One clause, only once it is true of more than today. The proposal
+            asks for "a single line acknowledging the sit, and nothing more",
+            so the streak joins that line rather than becoming a panel of its
+            own at the one moment the page should be quietest. */}
+        {streak > 1 && (
+          <>
+            {' '}
+            <span className="text-ink-3">
+              That is {streak} days in a row.
+            </span>
+          </>
+        )}
       </p>
 
       <div className="mt-7 flex gap-3">
@@ -331,6 +404,47 @@ function Afterwards({
           Finish
         </button>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Your practice, folded away.
+ *
+ * Collapsed by default, and absent entirely until there is something to show.
+ * The page's job is to get somebody sitting; a history is what you look at
+ * afterwards, or on a day you are deciding whether to bother. Opening with it
+ * would put a record of your consistency between you and the act of starting,
+ * which is the wrong order for a meditation site and would quietly make the
+ * page about performance.
+ */
+function PracticePanel({
+  entries,
+  now,
+}: {
+  entries: PracticeEntry[];
+  now: number;
+}) {
+  const [open, setOpen] = useState(false);
+
+  if (entries.length === 0) return null;
+
+  return (
+    <div className="mt-10 flex w-full flex-col items-center">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="text-ink-3 hover:text-ink-2 focus-visible:ring-ember focus-visible:ring-offset-paper rounded-sm font-mono text-xs tracking-[0.13em] uppercase underline underline-offset-4 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+      >
+        {open ? 'Hide your practice' : 'Your practice'}
+      </button>
+
+      {open && (
+        <div className="mt-6">
+          <Practice entries={entries} now={now} />
+        </div>
+      )}
     </div>
   );
 }

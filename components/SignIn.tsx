@@ -8,10 +8,11 @@ import type { SyncStatus } from './useSyncPreferences';
  * The account offer.
  *
  * WHAT IT PROMISES IS WHAT IT DOES
- * An account keeps your settings on every device. It does not keep a practice
- * log — there is no table, no policy and no view for one, and offering to
- * "save your practice" would be describing a feature that does not exist. When
- * a practice log is built the copy here changes; until then it stays honest.
+ * An account carries your practice and your settings between devices. It is not
+ * what creates them: the log and the streak work signed out, in localStorage,
+ * and always have. So the copy offers to carry them, not to save them — a guest
+ * who is told to sign in "to save your practice" would reasonably conclude
+ * theirs is not being kept, and it is.
  *
  * WHERE IT SITS
  * Underneath everything, small, and never in the way. This is the one part of
@@ -75,7 +76,7 @@ export default function SignIn({
         onClick={() => setOpen(true)}
         className="text-ink-3 hover:text-ink-2 focus-visible:ring-ember focus-visible:ring-offset-paper mt-10 rounded-sm font-mono text-xs tracking-[0.13em] uppercase underline underline-offset-4 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
       >
-        Keep these settings on every device
+        Carry your practice to another device
       </button>
     );
   }
