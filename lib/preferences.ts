@@ -34,6 +34,7 @@ import { DEFAULT_FOCUS_SLUG } from './session.ts';
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
   timerMinutes: TIMER_DEFAULT_MINUTES,
+  untilBell: false,
   endBell: DEFAULT_BELL,
   focusSlug: DEFAULT_FOCUS_SLUG,
   soundMix: {},
@@ -65,6 +66,7 @@ export function normalize(v: unknown): UserPreferences {
 
   return {
     timerMinutes: clampMinutes(Number(p.timerMinutes)),
+    untilBell: p.untilBell === true,
     endBell: isBellKind(p.endBell) ? p.endBell : DEFAULT_BELL,
     focusSlug:
       typeof p.focusSlug === 'string' && p.focusSlug
@@ -98,6 +100,7 @@ export function parsePreferences(raw: string | null): UserPreferences {
 export interface PreferencesRow {
   user_id: string;
   timer_minutes: number;
+  until_bell: boolean | null;
   end_bell: string;
   focus_slug: string | null;
   sound_mix: unknown;
@@ -108,6 +111,7 @@ export function toRow(userId: string, p: UserPreferences): PreferencesRow {
   return {
     user_id: userId,
     timer_minutes: p.timerMinutes,
+    until_bell: p.untilBell,
     end_bell: p.endBell,
     focus_slug: p.focusSlug,
     sound_mix: p.soundMix,
@@ -122,6 +126,7 @@ export function fromRow(row: PreferencesRow): UserPreferences {
   // constraints anyway.
   return normalize({
     timerMinutes: row.timer_minutes,
+    untilBell: row.until_bell ?? undefined,
     endBell: row.end_bell as BellKind,
     focusSlug: row.focus_slug ?? undefined,
     soundMix: row.sound_mix,
@@ -139,6 +144,7 @@ export function fromRow(row: PreferencesRow): UserPreferences {
 export function samePreferences(a: UserPreferences, b: UserPreferences): boolean {
   return (
     a.timerMinutes === b.timerMinutes &&
+    a.untilBell === b.untilBell &&
     a.endBell === b.endBell &&
     a.focusSlug === b.focusSlug &&
     a.showCount === b.showCount &&

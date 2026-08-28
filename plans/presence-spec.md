@@ -157,7 +157,9 @@ cheapest, and between them they make the whole idea obvious rather than
 theoretical. A client who cannot picture a thing cannot fund it, and three hours
 of unbilled work is a much better price than a paragraph of persuasion.
 
-Then A, then C, if the answer is yes.
+Then A, then C, if the answer is yes. **Both are now complete on `dev` after
+approval to proceed:** A is the capped flame field and C is the persisted
+“until the bell” option with a five-minute late-arrival roll-forward.
 
 ## Where this goes wrong
 

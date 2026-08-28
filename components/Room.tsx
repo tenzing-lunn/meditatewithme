@@ -3,11 +3,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { serverNow, syncClock } from '@/lib/clock';
 import { candleBurn, hourKey, hourStart, nextHourStart } from '@/lib/session';
-import { endsAt as computeEndsAt, hasEnded, mmss, remainingMs } from '@/lib/timer';
+import {
+  endsAt as computeEndsAt,
+  hasEnded,
+  mmss,
+  monotonicEndAtFromServerTarget,
+  nextSharedBellAt,
+  remainingMs,
+} from '@/lib/timer';
 import type { Session } from '@/lib/types';
 import { currentStreak, type PracticeEntry } from '@/lib/practice';
 import Candle from './Candle';
 import Practice from './Practice';
+import PresenceField from './PresenceField';
 import SessionSetup from './SessionSetup';
 import SignIn from './SignIn';
 import SoundMixer from './SoundMixer';
@@ -63,7 +71,7 @@ type Sitting = {
 type Activity =
   | { kind: 'idle' }
   | { kind: 'sitting'; sit: Sitting }
-  | { kind: 'finished' };
+  | { kind: 'finished'; minutes: number };
 
 function newSittingId(): string {
   try {
@@ -156,7 +164,16 @@ export default function Room() {
     mix.restore();
 
     const startedAt = performance.now();
-    const end = computeEndsAt(startedAt, prefs.timerMinutes);
+    // Begin is only rendered after `now` exists; the fallback keeps this
+    // callback total for TypeScript and for an unusually fast programmatic tap.
+    const sessionNow = now ?? serverNow();
+    const end = prefs.untilBell
+      ? monotonicEndAtFromServerTarget(
+          nextSharedBellAt(sessionNow),
+          sessionNow,
+          startedAt,
+        )
+      : computeEndsAt(startedAt, prefs.timerMinutes);
 
     // Scheduled on the AUDIO clock, not a JS timer — background tabs throttle
     // timers to roughly one tick a minute, and a bell ninety seconds late has
@@ -177,7 +194,7 @@ export default function Room() {
     // server-stamped start and, if it returns in time, gives the one still
     // sentence that says who crossed the threshold with you.
     void recordBegin().then(setBeganWith);
-  }, [prefs.timerMinutes, prefs.endBell, mix, recordBegin]);
+  }, [prefs.timerMinutes, prefs.untilBell, prefs.endBell, now, mix, recordBegin]);
 
   const endEarly = useCallback(() => {
     setActivity((a) => {
@@ -218,7 +235,10 @@ export default function Room() {
     // runs and the whole point of the moment is that nothing is abrupt.
     mix.fadeOut();
 
-    setActivity({ kind: 'finished' });
+    setActivity({
+      kind: 'finished',
+      minutes: Math.max(1, Math.round((activity.sit.endsAt - activity.sit.startedAt) / 60_000)),
+    });
   }, [activity, mono, record, mix]);
 
   if (now === null) {
@@ -244,10 +264,21 @@ export default function Room() {
         <Focus session={session} burn={candleBurn(now)} firstHere={firstHere} />
       </div>
 
+      {prefs.showCount && activity.kind !== 'finished' && (
+        <>
+          <PresenceField liveCount={count} litCount={litCount} />
+          <PresenceMessage
+            count={count}
+            firstHere={firstHere}
+            beganWith={beganWith}
+          />
+        </>
+      )}
+
       <div className="mt-4 flex w-full flex-col items-center">
         {activity.kind === 'idle' && (
           <>
-            <SessionSetup prefs={prefs} update={update} onSound={setSound} />
+            <SessionSetup prefs={prefs} update={update} onSound={setSound} now={now} />
 
             {/* Always available. There is no wrong minute to start meditating. */}
             <button
@@ -279,7 +310,7 @@ export default function Room() {
               mix.restore();
               setActivity({ kind: 'idle' });
             }}
-            minutes={prefs.timerMinutes}
+            minutes={activity.minutes}
             entries={entries}
             now={now}
           />
@@ -298,14 +329,6 @@ export default function Room() {
           />
         )}
 
-        {prefs.showCount && activity.kind !== 'finished' && (
-          <PresenceLine
-            count={count}
-            sitting={sitting}
-            firstHere={firstHere}
-            beganWith={beganWith}
-          />
-        )}
       </div>
     </div>
   );
@@ -547,7 +570,7 @@ function SoundDrawer({
 }
 
 /**
- * How many people are present.
+ * The one sentence the room says back.
  *
  * Counts everyone on the page, not only those who have begun — so the wording
  * is "here", which is true of both. Claiming they were all meditating would
@@ -557,14 +580,12 @@ function SoundDrawer({
  * to meditate should never be shown an error, and a missing number costs far
  * less than a wrong one.
  */
-function PresenceLine({
+function PresenceMessage({
   count,
-  sitting,
   firstHere,
   beganWith,
 }: {
   count: number | null;
-  sitting: boolean;
   firstHere: boolean;
   beganWith: number | null;
 }) {
@@ -589,18 +610,5 @@ function PresenceLine({
     );
   }
 
-  const others = Math.max(0, count - 1);
-
-  const text =
-    others === 0
-      ? sitting
-        ? 'You are sitting alone right now'
-        : 'Nobody else is here yet'
-      : `${others} ${others === 1 ? 'other is' : 'others are'} here`;
-
-  return (
-    <p className="text-ink-3 mt-8 font-mono text-xs tracking-[0.13em] uppercase">
-      {text}
-    </p>
-  );
+  return null;
 }

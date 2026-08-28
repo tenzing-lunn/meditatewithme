@@ -47,6 +47,39 @@ export const TIMER_MIN_MINUTES: number = TIMER_STOPS[0];
 export const TIMER_MAX_MINUTES: number = TIMER_STOPS[TIMER_STOPS.length - 1]!;
 export const TIMER_DEFAULT_MINUTES = 10;
 
+const HOUR_MS = 3_600_000;
+/** A shared bell needs enough time to be a choice, not an accidental three-minute sit. */
+export const SHARED_BELL_MIN_LEAD_MS = 5 * 60_000;
+
+/**
+ * The next global bell worth offering.
+ *
+ * This is absolute server time and stays at the UI boundary. Callers convert
+ * its result to the monotonic timer clock exactly once with
+ * `monotonicEndAtFromServerTarget()` below.
+ */
+export function nextSharedBellAt(serverNowMs: number): number {
+  const nextHour = Math.floor(serverNowMs / HOUR_MS) * HOUR_MS + HOUR_MS;
+  return nextHour - serverNowMs < SHARED_BELL_MIN_LEAD_MS
+    ? nextHour + HOUR_MS
+    : nextHour;
+}
+
+/**
+ * Convert one shared, absolute target into a local monotonic deadline.
+ *
+ * This boundary is deliberately named and singular. Once it returns, all
+ * timer maths sees only `performance.now()`-scale values, so an NTP correction
+ * or a sleeping laptop cannot move a bell that has already been scheduled.
+ */
+export function monotonicEndAtFromServerTarget(
+  targetServerMs: number,
+  serverNowMs: number,
+  monotonicNowMs: number,
+): number {
+  return monotonicNowMs + Math.max(0, targetServerMs - serverNowMs);
+}
+
 /**
  * Snap a requested duration to the nearest stop.
  *

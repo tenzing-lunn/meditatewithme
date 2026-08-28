@@ -5,6 +5,7 @@ import {
   TIMER_STOPS,
   clampMinutes,
   durationLabel,
+  nextSharedBellAt,
   timerStopIndex,
 } from '@/lib/timer';
 import { BELLS, type BellKind, previewBell } from './audio';
@@ -30,21 +31,29 @@ import SoundMixer from './SoundMixer';
  * not sure they want to sit at all, and leaving it at the far left of a slider
  * hides it from exactly the person it exists for.
  */
-const PRESETS = [1, 10, 30, 60];
+const PRESETS = [1, 10, 30, 'bell'] as const;
 
 export default function SessionSetup({
   prefs,
   update,
   onSound,
+  now,
   disabled,
 }: {
   prefs: UserPreferences;
   update: (patch: Partial<UserPreferences>) => void;
   /** Runs inside the change event, because the audio graph needs a gesture. */
   onSound: (slug: TrackSlug | typeof MASTER_KEY, gain: number) => void;
+  /** Server-corrected clock: the bell label must mean the same moment worldwide. */
+  now: number;
   disabled?: boolean;
 }) {
   const duration = durationLabel(prefs.timerMinutes);
+  const bellAt = nextSharedBellAt(now);
+  const bellLabel = new Date(bellAt).toLocaleTimeString([], {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
 
   return (
     <div
@@ -60,10 +69,19 @@ export default function SessionSetup({
             Sit for
           </label>
           <span className="font-serif text-2xl tabular-nums">
-            {duration.value}
-            <span className="text-ink-3 ml-1 font-sans text-sm">
-              {duration.unit}
-            </span>
+            {prefs.untilBell ? (
+              <>
+                Until the
+                <span className="text-ink-3 ml-1 font-sans text-sm">bell</span>
+              </>
+            ) : (
+              <>
+                {duration.value}
+                <span className="text-ink-3 ml-1 font-sans text-sm">
+                  {duration.unit}
+                </span>
+              </>
+            )}
           </span>
         </div>
 
@@ -79,38 +97,53 @@ export default function SessionSetup({
           id="duration"
           type="range"
           min={0}
-          max={TIMER_STOPS.length - 1}
+          max={TIMER_STOPS.length}
           step={1}
-          value={timerStopIndex(prefs.timerMinutes)}
-          aria-valuetext={`${duration.value} ${duration.unit}`}
-          onChange={(e) =>
+          value={prefs.untilBell ? TIMER_STOPS.length : timerStopIndex(prefs.timerMinutes)}
+          aria-valuetext={prefs.untilBell ? `Until the bell at ${bellLabel}` : `${duration.value} ${duration.unit}`}
+          onChange={(e) => {
+            const index = Number(e.target.value);
+            if (index === TIMER_STOPS.length) {
+              update({ untilBell: true });
+              return;
+            }
             update({
-              timerMinutes: clampMinutes(
-                TIMER_STOPS[Number(e.target.value)] ?? prefs.timerMinutes,
-              ),
-            })
-          }
+              timerMinutes: clampMinutes(TIMER_STOPS[index] ?? prefs.timerMinutes),
+              untilBell: false,
+            });
+          }}
           className="accent-ember w-full"
         />
 
         {/* The slider is precise but fiddly; most people want a round number. */}
         <div className="flex gap-2">
-          {PRESETS.map((m) => (
+          {PRESETS.map((preset) => (
             <button
-              key={m}
+              key={preset}
               type="button"
-              onClick={() => update({ timerMinutes: m })}
-              aria-pressed={prefs.timerMinutes === m}
+              onClick={() =>
+                update(
+                  preset === 'bell'
+                    ? { untilBell: true }
+                    : { timerMinutes: preset, untilBell: false },
+                )
+              }
+              aria-pressed={preset === 'bell' ? prefs.untilBell : !prefs.untilBell && prefs.timerMinutes === preset}
               className={`flex-1 rounded-full border py-1.5 font-mono text-xs transition-colors ${
-                prefs.timerMinutes === m
+                (preset === 'bell' ? prefs.untilBell : !prefs.untilBell && prefs.timerMinutes === preset)
                   ? 'border-ember text-ember'
                   : 'border-rule text-ink-3 hover:border-ink-3'
               }`}
             >
-              {m === 60 ? '1h' : `${m}m`}
+              {preset === 'bell' ? 'Until bell' : `${preset}m`}
             </button>
           ))}
         </div>
+        {prefs.untilBell && (
+          <p className="text-ink-3 font-mono text-xs tracking-[0.08em]">
+            Everyone who chooses this ends together at {bellLabel}.
+          </p>
+        )}
       </section>
 
       {/* ---- Which bell ---- */}
@@ -148,16 +181,16 @@ export default function SessionSetup({
       {/* ---- What you hear underneath ---- */}
       <SoundMixer soundMix={prefs.soundMix} onChange={onSound} />
 
-      {/* ---- The count ---- */}
+      {/* ---- The room ---- */}
       <div className="flex items-center justify-between">
         <span className="text-ink-3 font-mono text-xs tracking-[0.13em] uppercase">
-          Show how many are here
+          Show the room
         </span>
         <button
           type="button"
           role="switch"
           aria-checked={prefs.showCount}
-          aria-label="Show how many people are here"
+          aria-label="Show the room"
           onClick={() => update({ showCount: !prefs.showCount })}
           // Off state uses ink-3, not rule. Every other control here says what
           // it is in words, so a faint border costs nothing; this one conveys

@@ -15,6 +15,7 @@ describe('normalize', () => {
   test('passes a valid set through unchanged', () => {
     const p = {
       timerMinutes: 30,
+      untilBell: false,
       endBell: 'gong',
       focusSlug: 'water',
       soundMix: { rain: 0.4 },
@@ -75,6 +76,12 @@ describe('normalize', () => {
     assert.equal(normalize({ showCount: false }).showCount, false);
   });
 
+  test('only an explicit true selects the shared bell', () => {
+    assert.equal(normalize({}).untilBell, false);
+    assert.equal(normalize({ untilBell: true }).untilBell, true);
+    assert.equal(normalize({ untilBell: 'yes' }).untilBell, false);
+  });
+
   test('survives being handed nonsense', () => {
     for (const junk of [null, undefined, 42, 'string', []]) {
       assert.deepEqual(normalize(junk), DEFAULT_PREFERENCES);
@@ -114,6 +121,7 @@ describe('the database row mapping', () => {
     const legacy: PreferencesRow = {
       user_id: 'user-1',
       timer_minutes: 3,
+      until_bell: null,
       end_bell: 'something-removed',
       focus_slug: null,
       sound_mix: null,
@@ -124,6 +132,7 @@ describe('the database row mapping', () => {
     assert.equal(p.endBell, DEFAULT_PREFERENCES.endBell);
     assert.equal(p.focusSlug, DEFAULT_PREFERENCES.focusSlug);
     assert.equal(p.showCount, true);
+    assert.equal(p.untilBell, false);
   });
 
   test('carries the user id onto the row', () => {
@@ -146,6 +155,7 @@ describe('samePreferences', () => {
     assert.ok(!samePreferences(base, { ...base, endBell: 'gong' }));
     assert.ok(!samePreferences(base, { ...base, focusSlug: 'water' }));
     assert.ok(!samePreferences(base, { ...base, showCount: false }));
+    assert.ok(!samePreferences(base, { ...base, untilBell: true }));
     assert.ok(!samePreferences(base, { ...base, soundMix: { rain: 0.1 } }));
   });
 });

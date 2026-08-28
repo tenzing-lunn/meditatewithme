@@ -14,7 +14,34 @@ import {
   hasEnded,
   timerProgress,
   mmss,
+  monotonicEndAtFromServerTarget,
+  nextSharedBellAt,
+  SHARED_BELL_MIN_LEAD_MS,
 } from '../lib/timer.ts';
+
+describe('shared bell target', () => {
+  test('uses the upcoming hour when there is enough time to choose it', () => {
+    const now = 10 * 3_600_000 + 30 * 60_000;
+    assert.equal(nextSharedBellAt(now), 11 * 3_600_000);
+  });
+
+  test('rolls a late arrival to the following hour', () => {
+    const now = 10 * 3_600_000 + 57 * 60_000;
+    assert.equal(nextSharedBellAt(now), 12 * 3_600_000);
+  });
+
+  test('keeps exactly five minutes as a viable shared sit', () => {
+    const now = 11 * 3_600_000 - SHARED_BELL_MIN_LEAD_MS;
+    assert.equal(nextSharedBellAt(now), 11 * 3_600_000);
+  });
+
+  test('converts the absolute target to monotonic time once', () => {
+    assert.equal(
+      monotonicEndAtFromServerTarget(1_500_000, 1_000_000, 42_000),
+      542_000,
+    );
+  });
+});
 
 describe('clampMinutes', () => {
   test('keeps values already on a stop', () => {

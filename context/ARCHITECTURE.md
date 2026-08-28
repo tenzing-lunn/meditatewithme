@@ -176,6 +176,12 @@ Because the response is identical for every viewer, one edge cache entry with a 
 
 Cleanup is a nightly `delete from heartbeats where hour_start < now() - interval '2 days'`. Rows are tiny and nobody cares about history.
 
+The client renders these aggregate readings as a capped field of flames: up to
+sixty individual flames, with an edge glow and a compact overflow indication
+after that. No heartbeat ids leave the route handler. A viewer's own flame is
+a client-side ring on a stable slot, so the only personalised part of the room
+does not make the shared response uncacheable.
+
 ### The general lesson
 
 Realtime transport is for data that is **personalised, high-value, and latency-sensitive**. This number is none of those. Polling a cached endpoint is not the primitive solution here — it is the correct one, and it scales roughly a hundred times further on the same free tier.
@@ -322,6 +328,7 @@ create table preferences (
   user_id       uuid primary key references profiles(id) on delete cascade,
   timer_minutes int  not null default 10
                 check (timer_minutes between 5 and 60 and timer_minutes % 5 = 0),
+  until_bell    boolean not null default false,
   end_bell      text not null default 'singing-bowl'
                 check (end_bell in ('singing-bowl','gong','struck-bell')),
   focus_slug    text not null default 'candle',
@@ -352,6 +359,11 @@ What `0003` had to fix, all of it invisible while the tables were empty:
 4. `updated_at` never updated — it held the creation time forever, which is worse than not having the column.
 
 `timer_minutes` and `end_bell` duplicate constraints that also live in TypeScript (`lib/timer.ts`, `lib/types.ts`). That duplication is intentional — the database is the last line and cannot import a type — but it means **changing the bells or the slider bounds is a two-file change**, and `0003` exists because somebody forgot that once already.
+
+`until_bell` is deliberately separate from `timer_minutes`: it is a shared
+absolute target converted once into a monotonic deadline at Begin, not a
+sentinel duration. Arrivals inside five minutes of the hour are offered the
+following bell, so no one is refused or quietly given a three-minute sit.
 
 ### The practice log
 

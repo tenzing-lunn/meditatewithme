@@ -94,6 +94,8 @@ export const DEFAULT_MASTER = 0.7;
 
 export interface UserPreferences {
   timerMinutes: number;
+  /** Finish at the next shared bell instead of after a private duration. */
+  untilBell: boolean;
   endBell: BellKind;
   focusSlug: string;
   /** track slug -> gain, 0..1 */

@@ -73,7 +73,7 @@ export function useSyncPreferences({
 
         const { data, error } = await supabase
           .from('preferences')
-          .select('user_id, timer_minutes, end_bell, focus_slug, sound_mix, show_count')
+          .select('user_id, timer_minutes, until_bell, end_bell, focus_slug, sound_mix, show_count')
           .eq('user_id', userId)
           // maybeSingle: a first-time user having no row is the normal case,
           // and single() would call it an error.
