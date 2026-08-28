@@ -1,11 +1,12 @@
 # Change order — Presence
 
-Unsent. Move to `docs/` once it's gone out.
+Archived commercial record. This draft was not sent externally; the quoted
+scope was nevertheless implemented on `dev` after approval to proceed.
 
 What it asks for is specified in `presence-spec.md`. Read that first; this is
 only the version of it Jonny sees.
 
-## Before sending
+## Record before the decision
 
 1. [x] **Reconstruct the hours.** Working estimate: about **43 of the agreed
    55 hours**. That is the original steps 1–7 (36h), the off-scope practice log
@@ -14,9 +15,9 @@ only the version of it Jonny sees.
 2. [x] **Build B and D first** — "you began with 14 others" and the first-here
    empty room. Three hours, unbilled, deliberately. They make this message
    obvious instead of theoretical. Implemented as the bounded proof: a
-   server-stamped start cohort and a first-arrival cue; the paid A/C scope is
-   still untouched.
-3. [x] **Send it with a link that actually opens.** A Vercel Shareable Link for
+   server-stamped start cohort and a first-arrival cue. The paid A/C scope was
+   subsequently implemented on `dev`.
+3. [x] **Prepare it with a link that actually opens.** A Vercel Shareable Link for
    the `dev` preview has been created and externally verified. Keep its signed
    query parameter out of git; retrieve it from Vercel when sending rather than
    putting it in this document.

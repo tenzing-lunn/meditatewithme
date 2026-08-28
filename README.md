@@ -2,12 +2,13 @@
 
 A synchronised global meditation session. A new session begins at the top of
 every UTC hour; everyone worldwide joins the same one. Set a personal timer,
-mix ambient sounds, sit with the candle, and see how many others are sitting
-with you.
+mix ambient sounds, sit with the candle, and share a quiet field of flames with
+others who are there.
 
-**Status:** v1 in development. See [`context/ARCHITECTURE.md`](context/ARCHITECTURE.md)
-for the system design and [`plans/v1-build-spec.html`](plans/v1-build-spec.html)
-for scope and build order.
+**Status:** v1 is ready for launch-readiness work on `dev`. See
+[`plans/launch-readiness.md`](plans/launch-readiness.md) for the live checklist,
+[`context/ARCHITECTURE.md`](context/ARCHITECTURE.md) for the system design, and
+[`plans/v1-build-spec.html`](plans/v1-build-spec.html) for the original scope.
 
 ---
 

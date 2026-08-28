@@ -1,7 +1,8 @@
 # Presence — making "with someone" felt
 
-Addition to v1. Not agreed with the client yet; `presence-change-order.md` is
-the message that asks. Nothing here starts until that comes back yes.
+Archived implementation record. The scope described here was completed on
+`dev` after approval to proceed; the related unsent commercial draft is in
+`presence-change-order.md`.
 
 ---
 

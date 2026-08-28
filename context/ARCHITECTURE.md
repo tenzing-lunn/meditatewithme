@@ -598,13 +598,32 @@ machine's localhost** and appear to do nothing.
 
 Needed before accounts work anywhere but a dev machine:
 
-- Site URL → the production domain
-- Redirect URLs → `http://localhost:3000`, the `meditatewithme.vercel.app`
-  domain, and a wildcard for preview deployments
-  (`https://meditatewithme-*.vercel.app`)
+- Site URL → the canonical production origin. Use
+  `https://meditatewithme.vercel.app` until the custom domain is attached, then
+  change it to the custom-domain origin.
+- Redirect URLs → `http://localhost:3000/**`,
+  `https://meditatewithme.vercel.app/**`, and the Vercel team-scoped preview
+  wildcard `https://*-10zinglunn-afks-projects.vercel.app/**`. Add the exact
+  custom-domain origin (with `/**`) when DNS is live.
 
 Worth checking this the same day the custom domain is pointed, since the Site URL
 has to change again then.
+
+### Auth email delivery — a second launch trap
+
+The hosted default SMTP service is suitable only for testing: it delivers Auth
+mail to pre-authorized team addresses, not ordinary visitors. Before publicly
+offering accounts, configure and verify a custom SMTP sender in Supabase
+Dashboard → Authentication → SMTP. Do not customise email templates unless the
+project's plan supports it; if a custom template is used with `emailRedirectTo`,
+its link must use `{{ .RedirectTo }}` rather than ignoring the requested return
+origin.
+
+The app deliberately asks `signInWithOtp` to return to `window.location.origin`.
+That makes local, preview, and production links land back on the exact page the
+person requested from; the security boundary is the allow-list above, not a
+hard-coded deployment URL. Test with a real non-team inbox on the preview and
+again after production DNS is attached.
 
 ### Plan limits
 
