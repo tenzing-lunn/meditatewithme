@@ -2,10 +2,10 @@
 
 import type { UserPreferences } from '@/lib/types';
 import {
-  TIMER_MIN_MINUTES,
-  TIMER_MAX_MINUTES,
-  TIMER_STEP_MINUTES,
+  TIMER_STOPS,
   clampMinutes,
+  durationLabel,
+  timerStopIndex,
 } from '@/lib/timer';
 import { BELLS, type BellKind, previewBell } from './audio';
 
@@ -21,8 +21,14 @@ import { BELLS, type BellKind, previewBell } from './audio';
  * anything here.
  */
 
-/** Spread across the range so the hour is visibly on offer, not buried. */
-const PRESETS = [5, 15, 30, 60];
+/**
+ * Spread across the range so both ends are visibly on offer, not buried.
+ *
+ * One minute is here deliberately. It is the sit somebody takes when they are
+ * not sure they want to sit at all, and leaving it at the far left of a slider
+ * hides it from exactly the person it exists for.
+ */
+const PRESETS = [1, 10, 30, 60];
 
 export default function SessionSetup({
   prefs,
@@ -33,6 +39,8 @@ export default function SessionSetup({
   update: (patch: Partial<UserPreferences>) => void;
   disabled?: boolean;
 }) {
+  const duration = durationLabel(prefs.timerMinutes);
+
   return (
     <div
       className={`w-full max-w-sm space-y-6 ${disabled ? 'pointer-events-none opacity-40' : ''}`}
@@ -47,24 +55,35 @@ export default function SessionSetup({
             Sit for
           </label>
           <span className="font-serif text-2xl tabular-nums">
-            {prefs.timerMinutes === 60 ? 1 : prefs.timerMinutes}
+            {duration.value}
             <span className="text-ink-3 ml-1 font-sans text-sm">
-              {prefs.timerMinutes === 60 ? 'hour' : 'minutes'}
+              {duration.unit}
             </span>
           </span>
         </div>
 
-        {/* Twelve stops, not sixty. Nobody meditating has an opinion about
-            seventeen minutes versus eighteen. */}
+        {/* Thirteen stops, not sixty. Nobody meditating has an opinion about
+            seventeen minutes versus eighteen.
+
+            The value is an INDEX into TIMER_STOPS, not a number of minutes,
+            because the stops are not evenly spaced — the jump from one minute
+            to five has no `step` that can describe it. That makes the raw
+            value meaningless to a screen reader, which is what aria-valuetext
+            is for. */}
         <input
           id="duration"
           type="range"
-          min={TIMER_MIN_MINUTES}
-          max={TIMER_MAX_MINUTES}
-          step={TIMER_STEP_MINUTES}
-          value={prefs.timerMinutes}
+          min={0}
+          max={TIMER_STOPS.length - 1}
+          step={1}
+          value={timerStopIndex(prefs.timerMinutes)}
+          aria-valuetext={`${duration.value} ${duration.unit}`}
           onChange={(e) =>
-            update({ timerMinutes: clampMinutes(Number(e.target.value)) })
+            update({
+              timerMinutes: clampMinutes(
+                TIMER_STOPS[Number(e.target.value)] ?? prefs.timerMinutes,
+              ),
+            })
           }
           className="accent-ember w-full"
         />

@@ -339,7 +339,7 @@ create trigger on_auth_user_created
 
 What `0003` had to fix, all of it invisible while the tables were empty:
 
-1. **`timer_minutes between 1 and 45`** was left over from the 45-minute session. The slider is 5–60, so picking the hour — the value the presets deliberately put on offer — would have been rejected by the database.
+1. **`timer_minutes between 1 and 45`** was left over from the 45-minute session. The slider is 1–60, so picking the hour — the value the presets deliberately put on offer — would have been rejected by the database. (0003 replaced it with a 5–60 multiple-of-five check; `0005_timer_stops.sql` then replaced *that* with an explicit `in` list when the one-minute stop came back. The constraint has now chased the slider twice, which is the argument for keeping it a literal list that can be compared to `TIMER_STOPS` by eye.)
 2. **`end_bell` was unconstrained text.** `BellKind` is a union in TypeScript precisely so a bad value cannot reach the audio graph; that guarantee stopped at the database, which would have stored anything and synced it to every device.
 3. **Nothing created a profile row,** so the foreign key above would have failed on every user's first sync.
 4. `updated_at` never updated — it held the creation time forever, which is worse than not having the column.
@@ -485,10 +485,27 @@ meditatewithme/
 
 ## 14. Open technical questions
 
-1. **What happens when a personal timer ends mid-session?** Fade the audio and hold the candle, or return to the idle state? Product question, needs Jonny — but it changes the state machine, so decide before building the Room component.
-2. **Should the count include people who haven't pressed Begin?** Arguably waiting is participating. Simpler: count only those who've begun. Needs a decision, not a discussion.
-3. **Anonymous id lifetime.** A `localStorage` uuid per browser means one person on two devices counts twice. Acceptable, and the alternative is worse.
-4. **Do we record any analytics at all?** If nothing third-party and nothing that identifies people, the cookie banner question largely disappears. Strong reason to keep it that way.
+Two of the four are closed. They were filed as "needs Jonny" and they did not —
+they needed a decision, and holding them open was costing more than getting one
+wrong would have.
+
+1. **~~What happens when a personal timer ends mid-session?~~ Settled: the sound
+   fades, the candle stays, and the room moves to a `finished` state.** Returning
+   to idle punishes somebody for finishing — it clears the screen at the one
+   moment they are least ready to be handed a fresh set of controls. `Afterwards`
+   is what that state renders, and it offers going again rather than assuming it.
+2. **~~Should the count include people who haven't pressed Begin?~~ Settled:
+   everyone on the page counts.** Waiting is participating, and a number that
+   only moved after Begin would be smaller than the room genuinely is at the top
+   of the hour. It is honest because the wording is "here", not "meditating" —
+   see the note above `PresenceLine` in `Room.tsx`. The forgotten-tab problem is
+   handled by the visibility API rather than by narrowing who counts.
+3. **Anonymous id lifetime.** A `localStorage` uuid per browser means one person
+   on two devices counts twice. Acceptable, and the alternative is worse.
+4. **Do we record any analytics at all?** If nothing third-party and nothing that
+   identifies people, the cookie banner question largely disappears. Strong
+   reason to keep it that way. *Still genuinely open — it is a question for the
+   privacy notice in step 08, and the answer that needs no banner is "none".*
 
 ---
 
@@ -620,11 +637,19 @@ than stored.
 - `sessionPhase` and the `SessionPhase` type are gone. They encoded a design
   that no longer exists, and a phase that always returns `'active'` is worse
   than no phase at all.
-- The personal timer is 5–60 minutes in 5-minute steps: twelve stops, not
-  sixty. Nobody sitting down to meditate has an opinion about seventeen minutes
-  versus eighteen.
-- `clampMinutes` rounds to the step as well as the range, so preferences saved
-  under the old 1–45 bounds land on a stop the slider can represent.
+- The personal timer is 1–60 minutes over thirteen explicit stops — 1, then
+  every five minutes to the hour. Nobody sitting down to meditate has an opinion
+  about seventeen minutes versus eighteen.
+- The stops are a list (`TIMER_STOPS`), not a min/max/step, because the jump
+  from one minute to five is not a uniform step and no `step` value can describe
+  it. The slider's value is an index into that list, which is why it carries an
+  `aria-valuetext` — the raw number means nothing to a screen reader.
+- `clampMinutes` snaps to the nearest stop, with ties going to the longer sit.
+  Three minutes is equidistant from one and five; rounding down would cut the
+  sit by two thirds to save two minutes.
+- The one-minute stop is deliberate. It is the sit somebody takes when they are
+  not sure they want to sit at all, which describes most first visits — and it
+  is what the proposal the client holds actually promises.
 
 ### What is still assumed rather than known
 

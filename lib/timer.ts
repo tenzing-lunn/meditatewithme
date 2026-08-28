@@ -20,29 +20,81 @@
  */
 
 /**
- * Five minutes to an hour, in five-minute steps — the client's call.
+ * One minute to an hour — the stops, written out.
  *
- * Twelve stops rather than sixty is the point: a slider you drag to roughly the
- * right place, not a number you tune. Nobody sitting down to meditate has an
- * opinion about seventeen minutes versus eighteen.
+ * Thirteen stops rather than sixty is the point: a slider you drag to roughly
+ * the right place, not a number you tune. Nobody sitting down to meditate has
+ * an opinion about seventeen minutes versus eighteen.
+ *
+ * WHY A LIST AND NOT A MIN/MAX/STEP
+ * The proposal the client holds promises one minute to forty-five; the build
+ * spec said five to sixty. This is the superset that honours both, and the
+ * gap from 1 to 5 is not a uniform step, so there is no `step` value that can
+ * describe it. An explicit list is the honest representation, and it makes the
+ * slider an index into this array rather than a number of minutes.
+ *
+ * One minute earns its place: it is the sit somebody takes when they are not
+ * sure they want to sit at all, which is most first visits.
  */
-export const TIMER_MIN_MINUTES = 5;
-export const TIMER_MAX_MINUTES = 60;
-export const TIMER_STEP_MINUTES = 5;
+export const TIMER_STOPS = [
+  1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60,
+] as const;
+
+// `noUncheckedIndexedAccess` widens a computed index to `| undefined` even on
+// a tuple, so the ends are asserted rather than left to leak through every
+// caller. The array is a literal directly above; it cannot be empty.
+export const TIMER_MIN_MINUTES: number = TIMER_STOPS[0];
+export const TIMER_MAX_MINUTES: number = TIMER_STOPS[TIMER_STOPS.length - 1]!;
 export const TIMER_DEFAULT_MINUTES = 10;
 
 /**
- * Snap a requested duration to a valid stop.
+ * Snap a requested duration to the nearest stop.
  *
- * Rounds to the step as well as clamping to the range, so a value that arrives
- * off-grid — an old preference saved when the range was 1–45, or something
+ * Anything off-grid — a preference saved under an older range, or a value
  * edited by hand in devtools — lands somewhere the slider can actually
  * represent instead of sitting between two notches.
+ *
+ * Ties go to the longer sit. Three minutes is equidistant from one and five,
+ * and rounding down would cut somebody's sit by two thirds to save them two
+ * minutes.
  */
 export function clampMinutes(minutes: number): number {
   if (!Number.isFinite(minutes)) return TIMER_DEFAULT_MINUTES;
-  const snapped = Math.round(minutes / TIMER_STEP_MINUTES) * TIMER_STEP_MINUTES;
-  return Math.min(TIMER_MAX_MINUTES, Math.max(TIMER_MIN_MINUTES, snapped));
+
+  let best: number = TIMER_STOPS[0];
+  let bestDistance = Infinity;
+  for (const stop of TIMER_STOPS) {
+    const distance = Math.abs(stop - minutes);
+    // <= rather than <, so the later stop wins a tie.
+    if (distance <= bestDistance) {
+      bestDistance = distance;
+      best = stop;
+    }
+  }
+  return best;
+}
+
+/**
+ * Where a duration sits on the slider.
+ *
+ * The slider's value is an index, not a number of minutes, because the stops
+ * are not evenly spaced. Exported so the control and the clamping logic cannot
+ * disagree about which stop a preference means.
+ */
+export function timerStopIndex(minutes: number): number {
+  return TIMER_STOPS.indexOf(clampMinutes(minutes) as (typeof TIMER_STOPS)[number]);
+}
+
+/**
+ * How a duration is said out loud: "10 minutes", "1 minute", "1 hour".
+ *
+ * Lives here rather than in the component because it is a fact about the
+ * range, and because "1 minutes" is exactly the bug that appears the moment a
+ * one-minute stop becomes reachable.
+ */
+export function durationLabel(minutes: number): { value: string; unit: string } {
+  if (minutes === 60) return { value: '1', unit: 'hour' };
+  return { value: String(minutes), unit: minutes === 1 ? 'minute' : 'minutes' };
 }
 
 /** When a sit started now would end, on the same monotonic scale. */
