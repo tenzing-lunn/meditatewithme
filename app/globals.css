@@ -20,23 +20,25 @@
  * Check with `node scripts/contrast.mjs` before changing any of these.
  */
 @theme {
-  --color-paper: #fbfaf8;
+  --color-paper: #f4efe4;
   --color-surface: #ffffff;
   --color-ink: #16181b;
   --color-ink-2: #43484d;
   --color-ink-3: #707479;
   --color-rule: #e1ded8;
   --color-ember: #a7631e;
-  --color-ember-soft: #f4e6d4;
+  --color-ember-soft: #f0dcbd;
 
-  /* The wax, lit from the flame above it. Its own tokens because the light
-     and dark versions are not the same idea: on paper the wax is a pale
-     object with a shadow, in the dark it is a dark object with light falling
-     on its top edge. Reusing `surface` for both is what made the candle
-     disappear into the background at night. */
-  --color-wax-top: #fffdf8;
-  --color-wax-bottom: #e8dcc8;
-  --color-wax-edge: #d8cbb4;
+  /* The wax. A candle is a lit cylinder, so it needs more than two stops:
+     `lit` is the centre of the barrel facing us, `dark` the sides curving
+     away, `pool` the melted cup at the top that the flame sits in, and `rim`
+     its edge. Without the side falloff the body reads as a flat rectangle;
+     without the pool it reads as a battery. */
+  --color-wax-lit: #fffdf7;
+  --color-wax-mid: #f4ecdc;
+  --color-wax-dark: #dcd0ba;
+  --color-wax-pool: #fff6e4;
+  --color-wax-rim: #cdbb9c;
 
   --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, monospace;
@@ -58,9 +60,11 @@
     --color-rule: #2a2e33;
     --color-ember: #e0a057;
     --color-ember-soft: #2c2117;
-  --color-wax-top: #6d5333;
-  --color-wax-bottom: #241d17;
-  --color-wax-edge: #7d5f38;
+    --color-wax-lit: #6b5133;
+    --color-wax-mid: #40311f;
+    --color-wax-dark: #1d1712;
+    --color-wax-pool: #c99a58;
+    --color-wax-rim: #8a6636;
   }
 }
 

@@ -260,7 +260,7 @@ export default function Room() {
         <Masthead now={now} />
       )}
 
-      <div className="mt-2">
+      <div className="mt-1">
         <Focus session={session} burn={candleBurn(now)} firstHere={firstHere} />
       </div>
 
@@ -275,7 +275,7 @@ export default function Room() {
         </>
       )}
 
-      <div className="mt-4 flex w-full flex-col items-center">
+      <div className="mt-2 flex w-full flex-col items-center">
         {activity.kind === 'idle' && (
           <SessionSetup
             prefs={prefs}
