@@ -24,8 +24,8 @@
  * the last place to ignore that setting.
  */
 
-const FULL_HEIGHT_REM = 7;
-const STUB_HEIGHT_REM = 1.75;
+const FULL_HEIGHT_REM = 9.5;
+const STUB_HEIGHT_REM = 2.25;
 
 export default function Candle({
   burn,
@@ -46,15 +46,26 @@ export default function Candle({
   return (
     <div
       aria-hidden
-      className={`relative flex h-52 w-52 items-end justify-center pb-6 sm:h-64 sm:w-64 sm:pb-8 ${
+      className={`relative flex h-72 w-72 items-end justify-center pb-4 sm:h-[22rem] sm:w-[22rem] sm:pb-6 ${
         firstHere ? 'candle-first-here' : ''
       }`}
     >
+      {/* Two layers, because one radial gradient reads as a disc sitting
+          behind the candle rather than as light in a room. The wide one is the
+          room; the tight one is the halo immediately around the flame. */}
       <div
-        className="candle-glow absolute inset-0"
+        className="candle-glow absolute -inset-16"
         style={{
           background:
-            'radial-gradient(circle at 50% 58%, var(--color-ember-soft) 0%, transparent 62%)',
+            'radial-gradient(ellipse 60% 45% at 50% 46%, var(--color-ember-soft) 0%, transparent 70%)',
+          opacity: glowStrength * 0.9,
+        }}
+      />
+      <div
+        className="candle-glow pointer-events-none absolute inset-0"
+        style={{
+          background:
+            'radial-gradient(circle 22% at 50% 34%, var(--color-ember-soft) 0%, transparent 100%)',
           opacity: glowStrength,
         }}
       />
@@ -74,8 +85,8 @@ export default function Candle({
         <div
           className="flex items-end justify-center"
           style={{
-            width: '2.1rem',
-            height: '2.1rem',
+            width: '2.6rem',
+            height: '2.6rem',
             // Rotate first, then stretch in the parent's frame — transforms
             // apply right to left.
             transform: 'scaleY(1.32) rotate(45deg)',
@@ -88,9 +99,14 @@ export default function Candle({
               width: '100%',
               height: '100%',
               borderRadius: '0 50% 50% 50%',
+              // The last stop fades to transparent rather than stopping on a
+              // colour. A gradient that still has opacity where the border
+              // radius cuts it gives the flame a hard edge, and nothing with a
+              // hard edge looks like fire.
               background:
-                'radial-gradient(circle at 62% 62%, #fff6e2 0%, #f0b25e 34%, var(--color-ember) 72%)',
-              boxShadow: '0 0 1.6rem 0.2rem var(--color-ember-soft)',
+                'radial-gradient(circle at 62% 62%, #fffdf4 0%, #ffd89a 26%, #f0a94e 52%, rgb(167 99 30 / 0.55) 78%, transparent 100%)',
+              boxShadow:
+                '0 0 2.2rem 0.5rem var(--color-ember-soft), 0 0 0.9rem 0.1rem rgb(240 169 78 / 0.35)',
             }}
           />
         </div>
@@ -111,14 +127,23 @@ export default function Candle({
           is left is the one thing this component exists to communicate.
         */}
         <div
-          className="border-rule mt-0.5 rounded-t-[3px] rounded-b-sm border"
+          className="mt-0.5 rounded-t-[4px] rounded-b-sm"
           style={{
-            width: '3.25rem',
+            width: '3.4rem',
             height: `${bodyHeight}rem`,
             transition: 'height 1.2s ease-out',
+            // Lit from the flame: brightest along the top two centimetres and
+            // falling away below. The old version ran surface -> ember-soft,
+            // which in dark mode is one near-black into another and left the
+            // silhouette invisible — and how much wax is left is the one thing
+            // this component exists to say.
             background:
-              'linear-gradient(180deg, var(--color-surface) 0%, var(--color-ember-soft) 100%)',
-            boxShadow: '0 1px 2px rgb(0 0 0 / 0.04)',
+              'linear-gradient(180deg, var(--color-wax-top) 0%, var(--color-wax-bottom) 62%, var(--color-wax-bottom) 100%)',
+            // A rim rather than a border: the light lands on the top edge and
+            // the sides catch a little of it, so the shape is described by
+            // where the light falls instead of by an outline drawn around it.
+            boxShadow:
+              'inset 0 1px 0 0 var(--color-wax-edge), inset 1px 0 0 0 rgb(255 255 255 / 0.06), inset -1px 0 0 0 rgb(0 0 0 / 0.18), 0 2px 10px rgb(0 0 0 / 0.25)',
           }}
         />
       </div>

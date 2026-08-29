@@ -40,10 +40,8 @@ export default function SoundMixer({
 
   return (
     <div className={compact ? 'w-full space-y-2.5' : 'w-full space-y-3'}>
-      {!compact && (
-        <span className="text-ink-3 block font-mono text-xs tracking-[0.13em] uppercase">
-          Underneath
-        </span>
+      {compact && (
+        <span className="text-ink-3 block text-sm">Underneath</span>
       )}
 
       {TRACKS.map((track) => {
@@ -55,7 +53,10 @@ export default function SoundMixer({
               htmlFor={id}
               // The label carries the on/off state, so a track that is up
               // reads as up without a second indicator to keep in sync.
-              className={`w-20 shrink-0 text-left font-mono text-xs tracking-[0.13em] uppercase transition-colors ${
+              // Sentence case in a wider column. "WATERFALL" in tracked mono
+              // caps overflowed 5rem and sat on top of its own slider at 390px,
+              // which is the width most of this site will be used at.
+              className={`w-24 shrink-0 text-left text-sm transition-colors ${
                 value > 0 ? 'text-ember' : 'text-ink-3'
               }`}
             >
@@ -79,7 +80,7 @@ export default function SoundMixer({
       <div className="border-rule flex items-center gap-3 border-t pt-3">
         <label
           htmlFor={`${prefix}-master`}
-          className="text-ink-3 w-20 shrink-0 text-left font-mono text-xs tracking-[0.13em] uppercase"
+          className="text-ink-3 w-24 shrink-0 text-left text-sm"
         >
           All
         </label>

@@ -29,6 +29,15 @@
   --color-ember: #a7631e;
   --color-ember-soft: #f4e6d4;
 
+  /* The wax, lit from the flame above it. Its own tokens because the light
+     and dark versions are not the same idea: on paper the wax is a pale
+     object with a shadow, in the dark it is a dark object with light falling
+     on its top edge. Reusing `surface` for both is what made the candle
+     disappear into the background at night. */
+  --color-wax-top: #fffdf8;
+  --color-wax-bottom: #e8dcc8;
+  --color-wax-edge: #d8cbb4;
+
   --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, monospace;
   --font-serif: var(--font-instrument-serif), Georgia, serif;
@@ -49,6 +58,9 @@
     --color-rule: #2a2e33;
     --color-ember: #e0a057;
     --color-ember-soft: #2c2117;
+  --color-wax-top: #6d5333;
+  --color-wax-bottom: #241d17;
+  --color-wax-edge: #7d5f38;
   }
 }
 

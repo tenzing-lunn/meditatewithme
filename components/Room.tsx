@@ -260,7 +260,7 @@ export default function Room() {
         <Masthead now={now} />
       )}
 
-      <div className="mt-6">
+      <div className="mt-2">
         <Focus session={session} burn={candleBurn(now)} firstHere={firstHere} />
       </div>
 
@@ -277,18 +277,25 @@ export default function Room() {
 
       <div className="mt-4 flex w-full flex-col items-center">
         {activity.kind === 'idle' && (
-          <>
-            <SessionSetup prefs={prefs} update={update} onSound={setSound} now={now} />
-
-            {/* Always available. There is no wrong minute to start meditating. */}
-            <button
-              type="button"
-              onClick={begin}
-              className="border-ember text-ember hover:bg-ember focus-visible:ring-ember focus-visible:ring-offset-paper mt-7 rounded-full border px-9 py-3 font-mono text-sm tracking-[0.18em] uppercase transition-colors duration-500 hover:text-white focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-            >
-              Begin
-            </button>
-          </>
+          <SessionSetup
+            prefs={prefs}
+            update={update}
+            onSound={setSound}
+            now={now}
+            // Placed by the stack rather than after it: when Begin appears is
+            // the same question as how far through the questions we are.
+            // Always available once it appears — there is no wrong minute to
+            // start meditating.
+            begin={
+              <button
+                type="button"
+                onClick={begin}
+                className="border-ember text-ember hover:bg-ember focus-visible:ring-ember focus-visible:ring-offset-paper rounded-full border px-10 py-3.5 font-serif text-lg transition-colors duration-500 hover:text-white focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+              >
+                Begin
+              </button>
+            }
+          />
         )}
 
         {sitting && (
@@ -382,18 +389,19 @@ function localTime(d: Date): string {
  */
 function Masthead({ now }: { now: number }) {
   return (
-    <div className="space-y-4">
-      <h1 className="font-serif text-4xl leading-none tracking-tight sm:text-5xl">
+    <div className="space-y-2.5">
+      <h1 className="font-serif text-3xl leading-none tracking-tight sm:text-4xl">
         Meditate <em className="text-ember italic">With Me</em>
       </h1>
 
-      <p className="text-ink-2 mx-auto max-w-[38ch] text-pretty">
-        A candle is lit at the top of every hour and burns down until the next
-        one. Sit whenever you like — everyone worldwide is watching the same
-        candle.
+      {/* One line, not four. The old copy explained the mechanic before anyone
+          had seen it — a manual at the top of a page whose entire promise is
+          that no instructions are needed. The candle on screen says the rest. */}
+      <p className="text-ink-2 mx-auto max-w-[34ch] text-pretty">
+        Everyone is watching the same candle.
       </p>
 
-      <p className="text-ink-3 font-mono text-xs tracking-[0.13em] uppercase">
+      <p className="text-ink-3 text-sm tabular-nums">
         Lit at {localTime(hourStart(now))} · next at {localTime(nextHourStart(now))}
       </p>
     </div>

@@ -44,7 +44,7 @@ export default function SignIn({
 
   if (state.status === 'signed-in') {
     return (
-      <div className="text-ink-3 mt-10 flex flex-col items-center gap-1 font-mono text-xs tracking-[0.13em] uppercase">
+      <div className="text-ink-3 mt-10 flex flex-col items-center gap-1 text-sm">
         <span>
           {state.user.email}
           {sync === 'error' && ' · settings not saved'}
@@ -74,7 +74,7 @@ export default function SignIn({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-ink-3 hover:text-ink-2 focus-visible:ring-ember focus-visible:ring-offset-paper mt-10 rounded-sm font-mono text-xs tracking-[0.13em] uppercase underline underline-offset-4 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+        className="text-ink-3 hover:text-ink-2 focus-visible:ring-ember focus-visible:ring-offset-paper mt-10 rounded-sm text-sm underline underline-offset-4 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
       >
         Carry your practice to another device
       </button>
@@ -97,7 +97,7 @@ export default function SignIn({
     >
       <label
         htmlFor={emailId}
-        className="text-ink-3 font-mono text-xs tracking-[0.13em] uppercase"
+        className="text-ink-3 text-sm"
       >
         Your email
       </label>
