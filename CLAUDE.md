@@ -69,6 +69,27 @@ prefix so Next.js won't inline it into the client bundle — never import
 `serviceClient()` from `lib/supabase.ts` into a component, and never add that
 prefix. See `.env.example`.
 
+## Time
+
+This is billed work: **£25/hr, capped at 55 hours.** `TIMELOG.md` at the repo
+root is what any invoice is built from.
+
+Session hooks capture each session's wall-clock automatically into
+`.timelog/pending.tsv`. **You do not need to record anything.**
+
+**Never confirm hours.** Do not run `npm run timelog` with a number, do not edit
+`TIMELOG.md`'s `Engaged` column, and do not offer an estimate when asked how
+long something took. Not a guess from commit timestamps, not a figure inferred
+from how much work a session produced. An agent sees a session, not a working
+day, and has no idea whether anyone was watching it run. Hours are engaged
+time — Tenzing directing, reviewing, testing, deciding — and only Tenzing can
+know that number. A fabricated hour on an hourly
+invoice is the worst error available on this project.
+
+If asked "where are we against the 55?", read `TIMELOG.md` and answer from the
+filled rows only. Say how many rows are unfilled rather than covering the gap
+with an estimate.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know

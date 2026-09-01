@@ -10,6 +10,27 @@
             "statusMessage": "Loading recent git activity..."
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/timelog-start.sh",
+            "timeout": 5,
+            "statusMessage": "Stamping session start..."
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/timelog-end.sh",
+            "timeout": 10
+          }
+        ]
       }
     ]
   }

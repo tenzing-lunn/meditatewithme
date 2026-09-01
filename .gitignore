@@ -14,3 +14,6 @@ supabase/.temp/
 *.tsbuildinfo
 next-env.d.ts
 coverage/
+
+# Session capture for TIMELOG.md. Local working state, per machine.
+.timelog/
