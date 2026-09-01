@@ -17,25 +17,42 @@
  * carries a control's state on its own.
  */
 
+import { readFileSync } from 'node:fs';
+
+const css = readFileSync(new URL('../app/globals.css', import.meta.url), 'utf8');
+
+/** Return a complete CSS block without trying to parse the rest of CSS. */
+function blockFor(selector) {
+  const start = css.indexOf(selector);
+  if (start < 0) throw new Error(`Missing ${selector} in app/globals.css`);
+  const open = css.indexOf('{', start + selector.length);
+  if (open < 0) throw new Error(`Missing opening brace for ${selector}`);
+
+  let depth = 0;
+  for (let i = open; i < css.length; i++) {
+    if (css[i] === '{') depth++;
+    if (css[i] === '}') depth--;
+    if (depth === 0) return css.slice(open + 1, i);
+  }
+  throw new Error(`Missing closing brace for ${selector}`);
+}
+
+function colorsIn(selector) {
+  const colors = {};
+  for (const match of blockFor(selector).matchAll(
+    /--color-([\w-]+):\s*(#[\da-f]{6})\s*;/gi,
+  )) {
+    colors[match[1]] = match[2];
+  }
+  return colors;
+}
+
+// Palette values have one source of truth: the build-time theme and the
+// deliberate runtime override in globals.css. This check must fail with the
+// page instead of staying green against an old hand-copied object.
 const THEME = {
-  light: {
-    paper: '#fbfaf8',
-    surface: '#ffffff',
-    ink: '#16181b',
-    'ink-2': '#43484d',
-    'ink-3': '#707479',
-    rule: '#e1ded8',
-    ember: '#a7631e',
-  },
-  dark: {
-    paper: '#131518',
-    surface: '#1a1d21',
-    ink: '#e9e7e3',
-    'ink-2': '#b5b2ad',
-    'ink-3': '#87847f',
-    rule: '#2a2e33',
-    ember: '#e0a057',
-  },
+  theme: colorsIn('@theme'),
+  runtime: colorsIn(':root'),
 };
 
 /** Foreground, background, and the threshold that pair must clear. */
@@ -46,8 +63,6 @@ const PAIRS = [
   ['ember', 'paper', 4.5],
   ['ink-3', 'surface', 4.5],
   ['ember', 'surface', 4.5],
-  // The switch's off state and its knob: UI boundaries, so 3.0.
-  ['ink-3', 'paper', 3.0],
 ];
 
 const channel = (c) => {

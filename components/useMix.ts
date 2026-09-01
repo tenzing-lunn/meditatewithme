@@ -38,8 +38,9 @@ export interface Mix {
    * user gesture. Safe to call repeatedly.
    */
   ensure: () => void;
-  /** Take the mix down gently. Used once the bell has sounded. */
-  fadeOut: () => void;
+  /** Take the mix down gently. Used once the bell has sounded — the caller
+   *  sets how gently, because the ending is thirty seconds long. */
+  fadeOut: (seconds?: number) => void;
   /** Bring it back for the next sitting. */
   restore: () => void;
 }
@@ -97,7 +98,10 @@ export function useMix(soundMix: Record<string, number>): Mix {
     };
   }, []);
 
-  const fadeOut = useCallback(() => handle.current?.fadeOut(), []);
+  const fadeOut = useCallback(
+    (seconds?: number) => handle.current?.fadeOut(seconds),
+    [],
+  );
 
   const restore = useCallback(
     () => handle.current?.restore(latest.current[MASTER_KEY] ?? DEFAULT_MASTER),

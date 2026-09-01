@@ -14,7 +14,15 @@ import Room from '@/components/Room';
  */
 export default function Home() {
   return (
-    <main className="relative isolate flex min-h-dvh flex-col items-center justify-center overflow-hidden px-6 py-16">
+    // Exactly one viewport, and it does not scroll. The room is a photograph
+    // and this is the frame of it — a photograph you have to scroll is a
+    // different object, and the moment the page scrolls the type and the
+    // picture come apart, because the picture is fixed and the type is not.
+    // Everything therefore has to fit; see the band in `CandleScene`.
+    //
+    // `isolate` keeps the scene's -z-10 behind the column but in front of the
+    // page.
+    <main className="relative isolate h-dvh overflow-hidden">
       <Room />
     </main>
   );

@@ -61,13 +61,27 @@ export function audioContext(): AudioContext | null {
  * metal bowl, and each partial decays faster than the one below it, because
  * high partials die first in anything physical.
  */
+/**
+ * `decay` is the fundamental's tail in seconds, and it is long on purpose.
+ *
+ * The end of a sitting is not the moment the sound stops — it is the half
+ * minute afterwards, while the bowl is still going and you are coming back.
+ * These were 9 / 12 / 6, which put silence in the room several seconds before
+ * anybody had opened their eyes and made the ending feel like a timer expiring.
+ * The camera now takes thirty seconds to come back from a sitting, and the bell
+ * is what fills it.
+ *
+ * Previews are struck at a fraction of this (see `previewBell`), because
+ * auditioning three bells should not leave three tails overlapping for a
+ * minute.
+ */
 export const BELLS: Record<
   BellKind,
   { label: string; fundamental: number; decay: number }
 > = {
-  'singing-bowl': { label: 'Singing bowl', fundamental: 312, decay: 9 },
-  gong: { label: 'Gong', fundamental: 174, decay: 12 },
-  'struck-bell': { label: 'Struck bell', fundamental: 523, decay: 6 },
+  'singing-bowl': { label: 'Singing bowl', fundamental: 312, decay: 18 },
+  gong: { label: 'Gong', fundamental: 174, decay: 22 },
+  'struck-bell': { label: 'Struck bell', fundamental: 523, decay: 13 },
 };
 
 function strike(
@@ -75,12 +89,14 @@ function strike(
   when: number,
   gainNode: GainNode,
   kind: BellKind,
+  decayScale = 1,
 ) {
   // The three differ only in pitch and decay length for now. That is enough to
   // make the selector real rather than decorative, but they are three settings
   // of one synth, not three instruments — the licensed recordings are what
   // actually make them distinct.
-  const { fundamental, decay } = BELLS[kind];
+  const { fundamental } = BELLS[kind];
+  const decay = BELLS[kind].decay * decayScale;
   const partials = [
     { ratio: 1, gain: 0.5, decay },
     { ratio: 2.76, gain: 0.24, decay: decay * 0.67 },
@@ -128,6 +144,7 @@ export interface ScheduledBell {
 export function scheduleBell(
   delaySeconds: number,
   kind: BellKind = DEFAULT_BELL,
+  decayScale = 1,
 ): ScheduledBell | null {
   const context = unlockAudio();
   if (!context) return null;
@@ -136,7 +153,13 @@ export function scheduleBell(
   master.gain.value = 0.9;
   master.connect(context.destination);
 
-  strike(context, context.currentTime + Math.max(0, delaySeconds), master, kind);
+  strike(
+    context,
+    context.currentTime + Math.max(0, delaySeconds),
+    master,
+    kind,
+    decayScale,
+  );
 
   return {
     cancel: () => {
@@ -156,7 +179,15 @@ export function scheduleBell(
   };
 }
 
-/** Ring once, immediately. Used to preview a bell from the settings. */
+/**
+ * Ring once, immediately, and briefly. Used to preview a bell from the
+ * settings.
+ *
+ * A third of the real tail. The real one is built to last the thirty seconds it
+ * takes to come back from a sitting; struck three times in a row while somebody
+ * compares them, that would be three bowls ringing over each other for a minute.
+ * You can tell a gong from a struck bell in four seconds.
+ */
 export function previewBell(kind: BellKind = DEFAULT_BELL): void {
-  scheduleBell(0, kind);
+  scheduleBell(0, kind, 0.32);
 }

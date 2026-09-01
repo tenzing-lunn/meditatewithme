@@ -36,7 +36,7 @@ export default function Practice({
 
   if (s.sittings === 0) {
     return (
-      <p className="text-ink-3 max-w-[34ch] text-center font-mono text-xs leading-relaxed tracking-[0.13em] uppercase">
+      <p className="text-ink-3 max-w-[34ch] text-center text-sm leading-relaxed">
         Your first sitting will show up here.
       </p>
     );
@@ -62,7 +62,10 @@ export default function Practice({
           )}
         </p>
 
-        <p className="text-ink-3 font-mono text-xs tracking-[0.13em] uppercase">
+        {/* ink-2, not ink-3. The log is read over the photograph with the
+            camera stopped down, and ink-3 measured 3.81:1 there. It stays
+            secondary to the streak above it by being a third of its size. */}
+        <p className="text-ink-2 text-sm tabular-nums">
           {s.sittings} sitting{s.sittings === 1 ? '' : 's'} ·{' '}
           {humanMinutes(s.totalMinutes)}
         </p>
@@ -70,7 +73,7 @@ export default function Practice({
         {/* Only once it means something. A personal best of 2 shown to
             somebody on day 2 is just noise. */}
         {s.longestStreak > s.currentStreak && s.longestStreak > 2 && (
-          <p className="text-ink-3 font-mono text-xs tracking-[0.13em] uppercase opacity-70">
+          <p className="text-ink-3 text-sm tabular-nums">
             Longest {s.longestStreak} days
           </p>
         )}

@@ -7,15 +7,12 @@
  *
  * CONTRAST IS A CONSTRAINT, NOT A PREFERENCE
  * The spec marks WCAG AA as not optional, so every ink and ember value below
- * clears 4.5:1 against the background it is used on. Light mode was the
- * problem: ink-3 measured 4.10 and ember 4.47 against paper, both failures.
- * Darkening them by 5% and 1% respectively fixed it at no visible cost —
- * they now read 4.51 and 4.53. Dark mode already passed everywhere.
+ * clears 4.5:1 against the background it is used on.
  *
- * `rule` is the exception and is meant to be: at 1.29:1 it is a decorative
+ * `rule` is the exception and is meant to be: it is a decorative
  * hairline, not a boundary anyone has to perceive. That means it must never be
- * the ONLY thing conveying a control's state — see the switch in
- * SessionSetup.tsx, which uses ink-3 for its off state for exactly this reason.
+ * the only thing conveying a control's state; controls pair it with readable
+ * text, shape, or an explicit pressed state.
  *
  * Check with `node scripts/contrast.mjs` before changing any of these.
  */
@@ -24,54 +21,169 @@
   --color-surface: #ffffff;
   --color-ink: #16181b;
   --color-ink-2: #43484d;
-  --color-ink-3: #707479;
+  --color-ink-3: #656a6f;
   --color-rule: #e1ded8;
-  --color-ember: #a7631e;
+  --color-ember: #985b1b;
   --color-ember-soft: #f0dcbd;
 
-  /* The wax. A candle is a lit cylinder, so it needs more than two stops:
-     `lit` is the centre of the barrel facing us, `dark` the sides curving
-     away, `pool` the melted cup at the top that the flame sits in, and `rim`
-     its edge. Without the side falloff the body reads as a flat rectangle;
-     without the pool it reads as a battery. */
-  --color-wax-lit: #fffdf7;
-  --color-wax-mid: #f4ecdc;
-  --color-wax-dark: #dcd0ba;
-  --color-wax-pool: #fff6e4;
-  --color-wax-rim: #cdbb9c;
+  /* Type has three jobs, not three interchangeable moods: Instrument Serif
+     is display type, Plex Sans is the room's voice and every control, and
+     Plex Mono is reserved for changing numerals such as the sitting clock. */
+  --font-display: var(--font-instrument-serif), Georgia, serif;
+  --font-body: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-numeral: var(--font-plex-mono), ui-monospace, monospace;
+  --font-serif: var(--font-display);
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-numeral);
 
-  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
-  --font-serif: var(--font-instrument-serif), Georgia, serif;
+  /* Geometry follows the same restraint: controls share one soft corner;
+     only the primary Begin action becomes a full pill. */
+  --radius-control: 0.75rem;
+  --radius-action: 9999px;
 }
 
 /*
- * Dark palette overrides the variable VALUES only. It must not be another
- * @theme block — @theme is build-time and cannot live inside @media, so
- * nesting one there applies the dark values unconditionally.
+ * The room is always dark. These values override the build-time palette
+ * variables at runtime, independent of the visitor's system preference.
  */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-paper: #131518;
-    --color-surface: #1a1d21;
-    --color-ink: #e9e7e3;
-    --color-ink-2: #b5b2ad;
-    --color-ink-3: #87847f;
-    --color-rule: #2a2e33;
-    --color-ember: #e0a057;
-    --color-ember-soft: #2c2117;
-    --color-wax-lit: #6b5133;
-    --color-wax-mid: #40311f;
-    --color-wax-dark: #1d1712;
-    --color-wax-pool: #c99a58;
-    --color-wax-rim: #8a6636;
-  }
+:root {
+  color-scheme: dark;
+  --color-paper: #131518;
+  --color-surface: #1a1d21;
+  --color-ink: #e9e7e3;
+  --color-ink-2: #b5b2ad;
+  /* Raised from #87847f when the room became a photograph. The old value was
+     tuned against flat #131518 and cleared 4.5:1 there with almost nothing to
+     spare — but the room is now a lit photograph whose darkest band still sits
+     around rgb(46,37,27), and against that the quiet tone fell to 4.03:1. It
+     is used in about twenty places across the room, so the fix belongs here
+     rather than at the call sites. The binding case is `End this sitting`,
+     read against blurred wax with the camera pushed to 1.82. Measured on the
+     composited scene, not on the palette — `scripts/contrast.mjs` only knows
+     about flat colours and will report this pair as comfortable. */
+  --color-ink-3: #9a9792;
+  --color-rule: #2a2e33;
+  --color-ember: #e0a057;
+  --color-ember-soft: #2c2117;
 }
 
 body {
   background: var(--color-paper);
   color: var(--color-ink);
   -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * Native range inputs, with the accessibility and keyboard behaviour left
+ * intact. Components set --range-fill from their real value so WebKit can
+ * show the warm portion of the track as reliably as Firefox does.
+ *
+ * THE THUMB IS A PILL, AND THAT IS THE POINT
+ * It was a 14px dot on a 2px hairline, which is a dot you aim at rather than a
+ * thing you take hold of. This is the control the whole product is set with —
+ * how long you are going to sit — so it is a grip: wide enough to land a thumb
+ * on without looking, tall enough to read as a physical object, and it swells
+ * slightly while it is being dragged so the grab registers.
+ *
+ * The width is deliberately much greater than the height. A big circle reads
+ * as a ball resting on a wire; a pill reads as a slider you slide.
+ */
+.room-range {
+  --range-fill: 0%;
+  appearance: none;
+  min-height: 2.75rem;
+  border-radius: var(--radius-control);
+  background: linear-gradient(
+      to right,
+      var(--color-ember) 0 var(--range-fill),
+      var(--color-rule) var(--range-fill) 100%
+    )
+    center / 100% 4px no-repeat;
+  cursor: grab;
+}
+
+.room-range:active {
+  cursor: grabbing;
+}
+
+.room-range:focus-visible {
+  outline: 2px solid var(--color-ember);
+  outline-offset: 6px;
+  border-radius: var(--radius-action);
+}
+
+.room-range::-webkit-slider-runnable-track {
+  height: 4px;
+  background: transparent;
+}
+
+.room-range::-webkit-slider-thumb {
+  width: 2.75rem;
+  height: 1.5rem;
+  /* (track 4px - thumb 24px) / 2 */
+  margin-top: -10px;
+  appearance: none;
+  border: 1px solid var(--color-ember);
+  border-radius: var(--radius-action);
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--color-ember) 92%, white),
+    var(--color-ember)
+  );
+  box-shadow:
+    0 1px 3px rgb(0 0 0 / 0.5),
+    inset 0 1px 0 rgb(255 255 255 / 0.25);
+  transition:
+    transform 120ms ease-out,
+    box-shadow 120ms ease-out;
+}
+
+.room-range:active::-webkit-slider-thumb {
+  transform: scale(1.06);
+  box-shadow:
+    0 2px 8px rgb(0 0 0 / 0.6),
+    inset 0 1px 0 rgb(255 255 255 / 0.3);
+}
+
+.room-range::-moz-range-track {
+  height: 4px;
+  border: 0;
+  border-radius: 2px;
+  background: var(--color-rule);
+}
+
+.room-range::-moz-range-progress {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-ember);
+}
+
+.room-range::-moz-range-thumb {
+  width: 2.75rem;
+  height: 1.5rem;
+  box-sizing: border-box;
+  border: 1px solid var(--color-ember);
+  border-radius: var(--radius-action);
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--color-ember) 92%, white),
+    var(--color-ember)
+  );
+  box-shadow:
+    0 1px 3px rgb(0 0 0 / 0.5),
+    inset 0 1px 0 rgb(255 255 255 / 0.25);
+  transition: transform 120ms ease-out;
+}
+
+.room-range:active::-moz-range-thumb {
+  transform: scale(1.06);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .room-range::-webkit-slider-thumb,
+  .room-range::-moz-range-thumb {
+    transition: none;
+  }
 }
 
 /* The candle glow. Breathing is the whole visual idea, so it is the one
@@ -100,65 +212,30 @@ body {
 }
 
 /*
- * The candle. Two animations on periods that never line up (11s and 7s) so the
- * result reads as alive rather than as a pulse. Kept separate from .glow above
- * because that one bakes in a translateX(-50%) for the holding page's layout.
+ * The room's slow drift.
+ *
+ * The only CSS the photographic scene needs. Everything else about it is
+ * derived from the phase and therefore inline, on the element, in JS — a
+ * stylesheet cannot know which of six phases the camera is in, and a class per
+ * phase would only be the same numbers spelled twice.
+ *
+ * Scale never drops to 1: the photograph is always overscanned a little so a
+ * translate has somewhere to go and never exposes an edge.
  */
-@keyframes candle-breathe {
+@keyframes room-drift {
   0%,
   100% {
-    opacity: 0.6;
-    transform: scale(1);
+    transform: scale(1.025) translate(0.3%, 0.2%);
   }
   50% {
-    opacity: 1;
-    transform: scale(1.07);
+    transform: scale(1.05) translate(-0.4%, -0.6%);
   }
 }
 
-/*
- * The wrapper owns the 45° rotation, so this only ever scales. Growing from the
- * base — the corner nearest the wick, which is bottom-right once rotated —
- * keeps the flame anchored instead of drifting off the candle.
- */
-@keyframes candle-flicker {
-  0%,
-  100% {
-    transform: scale(1, 1);
-    opacity: 0.94;
+@media (prefers-reduced-motion: reduce) {
+  .room-drift {
+    animation: none !important;
   }
-  35% {
-    transform: scale(0.97, 1.06);
-    opacity: 1;
-  }
-  70% {
-    transform: scale(1.02, 0.96);
-    opacity: 0.9;
-  }
-}
-
-.candle-glow {
-  animation: candle-breathe 11s ease-in-out infinite;
-}
-
-.candle-flame {
-  animation: candle-flicker 7s ease-in-out infinite;
-  transform-origin: 100% 100%;
-}
-
-/* The first person does not get a flash or a chime. This slow increase in
-   warmth is the only acknowledgement that they have changed the room. */
-@keyframes candle-first-here {
-  from {
-    filter: brightness(0.72);
-  }
-  to {
-    filter: brightness(1);
-  }
-}
-
-.candle-first-here {
-  animation: candle-first-here 4s ease-out both;
 }
 
 /* A field, not a chart. Its size never changes after sixty flames; a larger
@@ -170,6 +247,7 @@ body {
 
 .presence-field-glow {
   position: absolute;
+  pointer-events: none;
   inset: 1.5rem 1rem 0;
   background: radial-gradient(ellipse, var(--color-ember-soft) 0%, transparent 70%);
   filter: blur(0.45rem);
@@ -215,16 +293,6 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .candle-glow {
-    animation: none;
-    opacity: 0.85;
-  }
-  .candle-flame {
-    animation: none;
-  }
-  .candle-first-here {
-    animation: none;
-  }
   .presence-flame {
     transition: none;
   }

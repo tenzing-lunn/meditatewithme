@@ -48,14 +48,12 @@ export default function PresenceField({
   const lit = Math.max(live, boundedCount(litCount));
   const visible = Math.min(MAX_FLAMES, lit);
   const visibleLive = Math.min(visible, live);
-  const overflow = Math.max(0, lit - MAX_FLAMES);
-
   if (visible === 0) return null;
 
   return (
     <section
       aria-label={`The room: ${live} here now, ${lit} lit this hour`}
-      className="presence-field mt-8 w-full max-w-sm"
+      className="presence-field w-full max-w-sm"
     >
       <div aria-hidden className="presence-field-glow" />
       <div aria-hidden className="presence-field-flames">
@@ -75,12 +73,6 @@ export default function PresenceField({
           );
         })}
       </div>
-
-      {overflow > 0 && (
-        <p className="text-ink-3 relative mt-2 font-mono text-xs tracking-[0.13em] uppercase">
-          and {overflow} more
-        </p>
-      )}
     </section>
   );
 }
