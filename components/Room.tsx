@@ -21,7 +21,6 @@ import type { Session } from '@/lib/types';
 import { currentStreak, summarise, type PracticeEntry } from '@/lib/practice';
 import CandleScene, { type ScenePhase } from './CandleScene';
 import Practice from './Practice';
-import PresenceField from './PresenceField';
 import SessionSetup, { type Step } from './SessionSetup';
 import SignIn from './SignIn';
 import SoundMixer from './SoundMixer';
@@ -103,7 +102,8 @@ type Activity =
  * follow, and no amount of hand-tuned spacing survives it. The copy is
  * therefore measured and scaled to fit, which is the only thing that holds at
  * every viewport and for every combination of what happens to be on screen
- * (the presence field alone is 112px that comes and goes).
+ * (the ending's stat table alone is three rows that come and go with what is
+ * true of you).
  *
  * `offsetHeight` and `ResizeObserver` both report the UNTRANSFORMED box, so
  * the scale this sets cannot feed back into the measurement that produced it.
@@ -819,32 +819,34 @@ export default function Room() {
       {/*
         THE FOOT OF THE FRAME
 
-        Only two kinds of thing may live below the band. Bare type is not one of
-        them: at 1280x800 there is a strip in the bottom left about 480px wide
-        and 44px tall that measures 5.15:1, and it is tempting — but widen it to
-        560 and it is 4.46, raise it 44px and it is 2.66 where the dish begins,
-        and at 375 wide the photograph is cropped to the candle so there is no
-        dark foreground at all. Two links measured 3.98 and 2.19 there. The band
-        is the only part of this picture whose darkness belongs to the
-        composition rather than to the window.
+        Only one kind of thing may live below the band, and bare type is not it:
+        at 1280x800 there is a strip in the bottom left about 480px wide and 44px
+        tall that measures 5.15:1, and it is tempting — but widen it to 560 and
+        it is 4.46, raise it 44px and it is 2.66 where the dish begins, and at
+        375 wide the photograph is cropped to the candle so there is no dark
+        foreground at all. Two links measured 3.98 and 2.19 there. The band is
+        the only part of this picture whose darkness belongs to the composition
+        rather than to the window.
 
-        What may: the presence field, which is flames and a glow and has nothing
-        to clear 4.5:1 against — and a `LIFTED` button, which carries its own
-        surface and so is measured against that rather than against whatever the
-        photograph is doing underneath it. See `LIFTED`.
+        What may: a `LIFTED` button, which carries its own surface and so is
+        measured against that rather than against whatever the photograph is
+        doing underneath it. See `LIFTED`.
+
+        THE PRESENCE FIELD IS GONE FROM HERE, AND FROM THE PRODUCT
+        It was a 6x10 grid of identical teardrops in this corner, half of them
+        dimmed, and on the photograph it read as a sprite sheet that had failed
+        to load rather than as people. `room-polish.md` §4A called it that in
+        those words; Tenzing, looking at it on the live site, called it the same
+        thing less politely.
+
+        Nothing replaces it because the ring already did: one dot per candle lit
+        this hour, on the circle the timer sweeps, in the middle of the frame
+        where somebody is actually looking. Keeping the field on the landing was
+        the last of it, on the reasoning that the landing has no ring — but the
+        landing's whole argument is that it is a photograph with one word on it,
+        and a scatter of flames in the corner is precisely the thing that
+        argument exists to keep off.
       */}
-
-      {/* Not during a sitting any more. The ring now carries the room — one
-          dot per candle lit this hour, sitting just outside the circumference
-          the timer sweeps — and two scatterings of the same flames in one frame
-          is the field competing with the thing that replaced it. It stays on
-          the landing, where there is no ring and it is the only sign that
-          anybody else is here. */}
-      {activity.kind === 'idle' && prefs.showCount && (
-        <div className="absolute inset-x-0 bottom-0 flex justify-start px-5 pb-3">
-          <PresenceField liveCount={count} litCount={litCount} />
-        </div>
-      )}
 
       {/* Out of the band entirely, and out of the way. These are the two things
           you might reach for mid-sitting, and neither belongs anywhere near the
