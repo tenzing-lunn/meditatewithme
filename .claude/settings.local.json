@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -p \"require\\('./node_modules/@supabase/supabase-js/package.json'\\).version\")",
+      "Bash(python3 -)",
+      "Bash(npx tsc *)"
+    ]
+  }
+}

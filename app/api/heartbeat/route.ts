@@ -5,7 +5,7 @@ import { hourStart } from '@/lib/session';
 /**
  * Record that an anonymous participant is present in the current session.
  *
- * Called every 30s by clients that have pressed Begin. Goes through a route
+ * Called every 30s by visible room clients. Goes through a route
  * handler rather than straight from the browser because `heartbeats` has RLS
  * enabled with no browser policy — so the anon key cannot touch it and nobody
  * can inflate the count from the console.
@@ -21,9 +21,12 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   let anonId: unknown;
+  let began = false;
 
   try {
-    ({ anonId } = await request.json());
+    const body = (await request.json()) as { anonId?: unknown; began?: unknown };
+    anonId = body.anonId;
+    began = body.began === true;
   } catch {
     return NextResponse.json({ ok: false }, { status: 400 });
   }
@@ -39,16 +42,42 @@ export async function POST(request: Request) {
 
     // Upsert on (anon_id, hour_start): one row per person per session,
     // refreshed rather than appended. The table stays small by construction.
+    const now = new Date();
+    const start = hourStart(now.getTime()).toISOString();
+    const heartbeat = {
+      anon_id: anonId,
+      hour_start: start,
+      last_seen: now.toISOString(),
+      // A normal liveness update must not erase the moment this person began.
+      // A second Begin deliberately restamps it: that is a new sitting.
+      ...(began ? { began_at: now.toISOString() } : {}),
+    };
+
     const { error } = await supabase.from('heartbeats').upsert(
-      {
-        anon_id: anonId,
-        hour_start: hourStart(Date.now()).toISOString(),
-        last_seen: new Date().toISOString(),
-      },
+      heartbeat,
       { onConflict: 'anon_id,hour_start' },
     );
 
     if (error) throw error;
+
+    if (began) {
+      // This is a sentence for one moment, not another live counter. Keep the
+      // window short enough to mean "together" and make the server's timestamp
+      // the authority, so a device with a wrong clock cannot join the cohort.
+      const beganCutoff = new Date(now.getTime() - 30_000).toISOString();
+      const { count, error: countError } = await supabase
+        .from('heartbeats')
+        .select('*', { count: 'exact', head: true })
+        .eq('hour_start', start)
+        .gte('began_at', beganCutoff);
+
+      if (countError) throw countError;
+
+      return NextResponse.json(
+        { ok: true, beganCount: count ?? 1 },
+        { headers: { 'Cache-Control': 'no-store' } },
+      );
+    }
 
     return NextResponse.json(
       { ok: true },

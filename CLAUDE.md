@@ -27,6 +27,33 @@ corrected.
 
 `README.md` stays at the repo root — it's the front door, not a document.
 
+## Branches
+
+**Work on `dev`. Never commit straight to `main`.**
+
+| Branch | Is | Deploys to |
+|---|---|---|
+| `dev` | Where everything is built and tested | A preview URL, per push |
+| `main` | What the world sees | meditatewithme.vercel.app, and the custom domain once it's pointed |
+
+`main` auto-deploys on push, so a commit landing there is a release whether or
+not it was meant as one. That's the whole reason for the split — not ceremony.
+
+The rules:
+
+- Start every piece of work on `dev` (`git checkout dev`). Branch off `dev` for
+  anything long-running, and merge back into `dev`, not `main`.
+- Typecheck, tests and `npm run build` all pass on `dev` before it goes near
+  `main`.
+- Merging `dev` → `main` is a deliberate act that puts something live. Ask
+  first; don't fold it into a commit that was about something else.
+- Preview environment variables are set for the `dev` branch specifically, not
+  for all preview branches — see §15 of `context/ARCHITECTURE.md`. A new branch
+  with a different name won't reach Supabase until its vars are added too.
+
+The two branches deliberately differ at `app/page.tsx`: `main` serves the
+holding page, `dev` serves the room. **Merging `dev` into `main` is the launch.**
+
 ## Code layout
 
 - `app/api/` — route handlers (`time`, `count`, `heartbeat`)
@@ -41,3 +68,34 @@ corrected.
 prefix so Next.js won't inline it into the client bundle — never import
 `serviceClient()` from `lib/supabase.ts` into a component, and never add that
 prefix. See `.env.example`.
+
+## Time
+
+This is billed work: **£25/hr, capped at 55 hours.** `TIMELOG.md` at the repo
+root is what any invoice is built from.
+
+Session hooks capture each session's wall-clock automatically into
+`.timelog/pending.tsv`. **You do not need to record anything.**
+
+**Never confirm hours.** Do not run `npm run timelog` with a number, do not edit
+`TIMELOG.md`'s `Engaged` column, and do not offer an estimate when asked how
+long something took. Not a guess from commit timestamps, not a figure inferred
+from how much work a session produced. An agent sees a session, not a working
+day, and has no idea whether anyone was watching it run. Hours are engaged
+time — Tenzing directing, reviewing, testing, deciding — and only Tenzing can
+know that number. A fabricated hour on an hourly
+invoice is the worst error available on this project.
+
+If asked "where are we against the 55?", read `TIMELOG.md` and answer from the
+filled rows only. Say how many rows are unfilled rather than covering the gap
+with an estimate.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

@@ -1,41 +1,75 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { serverNow, syncClock } from '@/lib/clock';
 import {
-  hourStart,
-  msLeftInSession,
-  msUntilNextSession,
-  nextHourStart,
-  sessionPhase,
-} from '@/lib/session';
-import { endsAt as computeEndsAt, hasEnded, mmss, remainingMs } from '@/lib/timer';
-import Candle from './Candle';
-import SessionSetup from './SessionSetup';
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
+import { serverNow, syncClock } from '@/lib/clock';
+import { candleBurn, hourKey, nextHourStart } from '@/lib/session';
+import {
+  endsAt as computeEndsAt,
+  hasEnded,
+  mmss,
+  monotonicEndAtFromServerTarget,
+  nextSharedBellAt,
+  remainingMs,
+} from '@/lib/timer';
+import type { Session } from '@/lib/types';
+import { currentStreak, summarise, type PracticeEntry } from '@/lib/practice';
+import CandleScene, { type ScenePhase } from './CandleScene';
+import Practice from './Practice';
+import PresenceField from './PresenceField';
+import SessionSetup, { type Step } from './SessionSetup';
+import SignIn from './SignIn';
+import SoundMixer from './SoundMixer';
+import type { MASTER_KEY, TrackSlug } from './mix';
+import { useMix } from './useMix';
+import { useAuth } from './useAuth';
+import { usePractice } from './usePractice';
 import { usePresence } from './usePresence';
 import { usePreferences } from './usePreferences';
+import { useSession } from './useSession';
+import { useSyncPreferences } from './useSyncPreferences';
 import { scheduleBell, unlockAudio, type ScheduledBell } from './audio';
 
 /**
- * The room (build steps 03 + 04).
+ * The room.
+ *
+ * NOBODY IS EVER TURNED AWAY
+ * An earlier version ran a forty-five minute session and refused to start a
+ * sitting for the other fifteen, which meant a meditation site told a quarter
+ * of its arrivals to come back later. The hour is not permission. A candle is
+ * lit at the top of every hour and burns down across it; you sit whenever you
+ * like, against whatever is left of it.
+ *
+ * What is shared is the candle's state, not the right to begin. Two people in
+ * different timezones opening this in the same second see the same height of
+ * wax — and someone arriving at :50 gets a stub, which says "you are late"
+ * far more gently than a locked button.
  *
  * TWO CLOCKS, KEPT APART
  * The session clock is absolute, shared and corrected against the server. The
- * personal timer is relative, private and monotonic. Conflating them is,
- * per the architecture notes, the most likely source of confusing bugs here —
- * so `now` and `mono` are read from different sources on the same tick and
- * never substituted for one another.
+ * personal timer is relative, private and monotonic. Conflating them is the
+ * most likely source of confusing bugs here, so `now` and `mono` are read from
+ * different sources on the same tick and never substituted for one another.
  *
- * A SIT OUTLIVES ITS SESSION
- * You can start a ten-minute sit at :44, and the session's forty-five minutes
- * end under you. The sit continues to its bell: the commitment you made was to
- * sit for ten minutes, and blowing the candle out mid-breath to honour a
- * schedule you did not set would be the wrong way round. The session clock
- * quietly changes to the next session behind you.
+ * A sitting may run through the top of the hour. It is not interrupted — a new
+ * candle is simply lit under it, which needs no code because the burn is a
+ * function of the clock.
  */
 
 type Sitting = {
+  /** Its own id, minted at Begin. Carried into the practice log so that a
+   *  double-fired effect records the same sitting twice and de-duplicates to
+   *  one, rather than counting it twice. */
+  id: string;
   startedAt: number;
+  /** Wall clock, for the practice log. `startedAt` is monotonic and says
+   *  nothing about what day it is. */
+  startedAtWall: number;
   endsAt: number;
   bell: ScheduledBell | null;
 };
@@ -43,7 +77,153 @@ type Sitting = {
 type Activity =
   | { kind: 'idle' }
   | { kind: 'sitting'; sit: Sitting }
-  | { kind: 'finished' };
+  | {
+      kind: 'finished';
+      minutes: number;
+      /** Monotonic, at the bell. What the ten-second return counts from. */
+      endedAt: number;
+      /**
+       * How many other people had lit this hour when the bell went.
+       *
+       * Read once, at the bell, and then carried — not read live. The count
+       * polls every fifteen seconds, and a sentence that says "you sat with
+       * eleven others" is not allowed to become "with ten" while somebody is
+       * reading it. Null means the count was unavailable, in which case the
+       * line is not shown at all rather than guessed at.
+       */
+      withOthers: number | null;
+    };
+
+/**
+ * Fit the copy into the band above the flame.
+ *
+ * The band's height comes from cover-fitting a 3:2 photograph, which is a
+ * scale with no relationship at all to the height type is sized against — so
+ * on a short wide window the flame climbs faster than any `vh` clamp can
+ * follow, and no amount of hand-tuned spacing survives it. The copy is
+ * therefore measured and scaled to fit, which is the only thing that holds at
+ * every viewport and for every combination of what happens to be on screen
+ * (the presence field alone is 112px that comes and goes).
+ *
+ * `offsetHeight` and `ResizeObserver` both report the UNTRANSFORMED box, so
+ * the scale this sets cannot feed back into the measurement that produced it.
+ *
+ * Not floored. A floor would mean choosing, on some window somebody really
+ * has, between clipping the copy and putting it on the candle — and small is
+ * recoverable where either of those is not.
+ *
+ * Callback refs rather than `useRef`, because the band is not in the first
+ * render: `Room` returns "Finding the hour…" until the clock answers, so a
+ * `useRef` read inside a `[]` effect finds null, gives up, and is never asked
+ * again. This re-runs the moment the nodes actually exist.
+ *
+ * WHY useLayoutEffect, AND WHY THAT IS THE WHOLE BUG FIX
+ * With `useEffect` the browser paints once at whatever scale the last screen
+ * left behind, and only then measures and corrects. On every screen change that
+ * is a visible snap — the copy lands at one size and jumps to another a frame
+ * later, which reads as the page glitching. `useLayoutEffect` runs after the
+ * DOM is written and before the paint, so the first frame anybody sees is
+ * already the right size. There is nothing to transition and nothing to catch.
+ */
+function useFitToBand(screen: string) {
+  const [outer, setOuter] = useState<HTMLDivElement | null>(null);
+  const [inner, setInner] = useState<HTMLDivElement | null>(null);
+  const [fit, setFit] = useState({ scale: 1, slack: 0 });
+
+  useLayoutEffect(() => {
+    if (!outer || !inner) return;
+
+    const measure = () => {
+      const available = outer.clientHeight;
+      const needed = inner.offsetHeight;
+      if (!available || !needed) return;
+      const scale = Math.min(1, available / needed);
+      // How much room is left over once it fits. Zero whenever the copy had to
+      // be scaled down, positive only when it was already short enough — which
+      // is what makes lifting it safe: there is nothing to lift into when the
+      // band is full, so nothing can be pushed off the top.
+      const slack = Math.max(0, available - needed * scale);
+      // Only when it actually moves. Writing the same numbers back on every
+      // observer callback re-renders the whole room for nothing.
+      setFit((was) =>
+        Math.abs(scale - was.scale) < 0.001 && Math.abs(slack - was.slack) < 1
+          ? was
+          : { scale, slack },
+      );
+    };
+
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(outer);
+    ro.observe(inner);
+    return () => ro.disconnect();
+    // `screen` is in the deps so the measurement is re-taken explicitly every
+    // time what is on screen changes, rather than waiting to be told. A
+    // ResizeObserver is delivered during the browser's rendering step, which
+    // does not run at all for a hidden page — leave the screen change to the
+    // observer alone and the copy comes back at the previous screen's size.
+    // Measured: the sound question rendered with the bell question's offset,
+    // 127px of lift where it needed 70.
+  }, [outer, inner, screen]);
+
+  return { outer: setOuter, inner: setInner, ...fit };
+}
+
+/**
+ * The return.
+ *
+ * Ten seconds between the bell and anything to read, counted down on screen so
+ * it is a held beat rather than a page that has failed to load. The gong you
+ * chose is still ringing across all of it — bells decay over 18–22s — and the
+ * ambient mix is still receding underneath (`fadeOut(14)`).
+ *
+ * The point of showing the number is that a meditation does not have an OK
+ * button. Landing straight on a stat block and two choices is being handed a
+ * receipt while the bowl is still sounding. Ten seconds is long enough to open
+ * your eyes in and short enough that nobody wonders whether it is stuck.
+ */
+const COOLDOWN_MS = 10_000;
+
+/**
+ * A control that lives on the photograph rather than in the dark band.
+ *
+ * THE ONE EXCEPTION TO "TEXT ONLY IN THE BAND", AND WHY IT IS ALLOWED
+ * Everything readable goes in the strip above the flame because the rest of the
+ * frame is lit wax and nothing sits on it at 4.5:1. That rule is about *type* —
+ * a sentence you scrim in order to read is a panel pasted onto a picture, which
+ * is what the veil was and why it went.
+ *
+ * A button is a different object. It is allowed to have a surface, because a
+ * surface is what tells you it is a button; and once it has one, its contrast
+ * is measured against its own fill and not against whatever is behind it. So
+ * the two controls during a sitting and the account offer after one can sit at
+ * the foot of the frame, where they are out of the way of the ring and the
+ * reading, without touching the photograph anywhere else.
+ *
+ * White, not ink-2. Over lit wax the composite behind this is nowhere near dark
+ * enough for ink — measured at the worst case this ever sees, the bright dish
+ * in `finished` at roughly #d8c0a0, white comes out at 6.9:1 and ink-2 at about
+ * 1.6. On the much darker wall behind a sitting it is comfortably past 15:1.
+ *
+ * THE FILL IS WARM AND IT IS NOT OPAQUE
+ * At #100c09/80 it was a neutral near-black, which on a warm brown photograph
+ * reads as a chip of something else laid on top — the button announced itself
+ * as not belonging to the picture. A warm dark at 65% takes the room's own
+ * colour through it, so it reads as a shadow in the scene that happens to have
+ * a word in it. That is as far as it can go: the transparency is bounded by the
+ * measurement above, not by taste, and lightening it further is what would
+ * start failing on the dish.
+ */
+const LIFTED =
+  'flex min-h-11 items-center justify-center rounded-control border border-white/20 bg-[#1c1410]/65 px-6 text-sm tracking-wide text-white transition-colors hover:border-white/40 hover:bg-[#1c1410]/85 focus-visible:ring-ember focus-visible:ring-offset-paper focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none';
+
+function newSittingId(): string {
+  try {
+    return crypto.randomUUID();
+  } catch {
+    return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  }
+}
 
 export default function Room() {
   // Null until mounted — the server cannot know the viewer's clock, so
@@ -52,13 +232,89 @@ export default function Room() {
   const [mono, setMono] = useState(0);
   const [activity, setActivity] = useState<Activity>({ kind: 'idle' });
 
-  const { prefs, update } = usePreferences();
-  const { count } = usePresence();
+  // The camera's opening move. `load` is the wide, soft, dim frame the room
+  // arrives on; `booted` is what releases it into the five-second settle.
+  const [booted, setBooted] = useState(false);
+  /**
+   * Is the setup flow open, and which question is showing.
+   *
+   * `setup` null means the landing: the photograph, and the word `Begin.` on
+   * it. Nothing else — no folded settings, no questions. `Begin.` opens the
+   * flow, the room settles out of focus behind it, and the last screen of the
+   * flow is what actually starts a sitting.
+   */
+  const [setup, setSetup] = useState<Step | null>(null);
+  // The mixer, reached mid-sitting, and the practice log. Owned here rather
+  // than by the components that show them because the camera has to know: see
+  // `phase` below.
+  const [soundOpen, setSoundOpen] = useState(false);
+  const [practiceOpen, setPracticeOpen] = useState(false);
+  /**
+   * Whether the half minute after the bell has passed.
+   *
+   * The bell is not the end of a sitting; it is the start of coming back from
+   * one. For thirty seconds after it the bowl is still audible, the ambient mix
+   * is still receding and the camera is still travelling — see `returning` in
+   * `CandleScene`. This only marks when that is over.
+   */
+  const [returned, setReturned] = useState(false);
+  /**
+   * How much of the ending has been allowed on screen.
+   *
+   * 0 the ten seconds of coming back · 1 what you sat, to read · 2 what you can
+   * do about it, to choose from.
+   *
+   * READING, THEN SELECTIONS
+   * The ending had six blocks arriving on four timers and read as a pile. It is
+   * now two things in that order: a stat block you read, and a row of controls
+   * you pick from. Splitting them across two beats 3.5s apart — one fade
+   * length, so each has finished arriving before the next starts — is what
+   * makes the difference legible without a rule drawn between them.
+   *
+   * Nothing at all for the first ten seconds. See `ComingBack`.
+   */
+  const [reveal, setReveal] = useState(0);
+
+  const { prefs, update, replace, loaded } = usePreferences();
+
+  // Everything that changes what is in the band, in one string. See the hook.
+  const band = useFitToBand(
+    // `reveal` is in here because the ending swaps `ComingBack` for the stat
+    // block at stage 1, and those are different heights.
+    `${activity.kind}:${setup ?? '-'}:${soundOpen}:${practiceOpen}:${prefs.showCount}:${reveal}`,
+  );
+  const { count, litCount, begin: recordBegin } = usePresence();
+  const [beganWith, setBeganWith] = useState<number | null>(null);
+
+  // Accounts are optional and cuttable. Removing these two lines and the
+  // <SignIn> below leaves a complete product — which is the promise the scope
+  // table makes with the word "optional", kept at runtime rather than on paper.
+  const { state: auth, signIn, signOut } = useAuth();
+  const userId = auth.status === 'signed-in' ? auth.user.id : null;
+
+  const sync = useSyncPreferences({ userId, prefs, replace, loaded });
+
+  // The log works signed out. Signing in only carries it between devices.
+  const { entries, record } = usePractice(userId);
+
+  // The ambient mix. Preferences own the levels; this only turns them into
+  // sound, which is why it is handed prefs rather than any state of its own.
+  const mix = useMix(prefs.soundMix);
+
+  // Re-resolves only when the clock rolls into a new hour, which is the only
+  // moment the answer can change.
+  const session = useSession(now === null ? null : hourKey(now));
 
   // Read in cleanup, where a stale closure would otherwise leave a bell
   // scheduled after the component is gone.
   const activityRef = useRef(activity);
   activityRef.current = activity;
+
+  // Read at the bell, not depended on. Putting `litCount` in the finishing
+  // effect's deps would tear it down and rebuild it every fifteen seconds for
+  // a number it only reads once.
+  const litRef = useRef<number | null>(null);
+  litRef.current = litCount;
 
   useEffect(() => {
     let frame: number;
@@ -82,107 +338,675 @@ export default function Room() {
     };
   }, []);
 
+  /**
+   * One held beat on the opening frame, then the settle.
+   *
+   * Deliberately keyed on WHETHER the clock has arrived, not on what it says.
+   * `now` changes four times a second, so depending on its value would tear
+   * this timeout down and rebuild it on every tick — and would leave the room
+   * stranded in `load` forever the day somebody makes the tick faster than
+   * this delay. It should run once, when time first exists.
+   */
+  useEffect(() => {
+    if (activity.kind !== 'finished') {
+      setReturned(false);
+      setReveal(0);
+      return;
+    }
+    // Ten seconds of coming back, then the reading, then the selections a fade
+    // apart. Thirty before the camera has finished travelling. The bell is
+    // still ringing through all of it — `decay` is 18–22s.
+    const timers = [
+      window.setTimeout(() => setReveal(1), COOLDOWN_MS),
+      window.setTimeout(() => setReveal(2), COOLDOWN_MS + 3500),
+      window.setTimeout(() => setReturned(true), 30_000),
+    ];
+    return () => timers.forEach((t) => window.clearTimeout(t));
+  }, [activity.kind]);
+
+  const hasTime = now !== null;
+  useEffect(() => {
+    if (!hasTime) return;
+    const t = window.setTimeout(() => setBooted(true), 200);
+    return () => window.clearTimeout(t);
+  }, [hasTime]);
+
+  /**
+   * A sound slider moved.
+   *
+   * `ensure()` first and synchronously: this call is inside the change event,
+   * which is the only place autoplay policy will let an AudioContext start.
+   * Persisting is second because it goes through React and would not count.
+   */
+  const setSound = useCallback(
+    (slug: TrackSlug | typeof MASTER_KEY, gain: number) => {
+      mix.ensure();
+      update({ soundMix: { ...prefs.soundMix, [slug]: gain } });
+    },
+    [mix, update, prefs.soundMix],
+  );
+
+  /**
+   * `Begin.` on the landing. Opens the questions; does not start a sitting.
+   *
+   * The audio unlock happens HERE rather than at the end of the flow, and that
+   * is the whole reason it is a callback and not a `setSetup` inline. Autoplay
+   * policy only lets an AudioContext start inside a user gesture, and the next
+   * thing this flow does is offer to play five sounds so somebody can hear what
+   * they are choosing. Waiting until the end would mean every one of those play
+   * buttons was the first gesture, on a context that had not been unlocked yet.
+   */
+  const openSetup = useCallback(() => {
+    unlockAudio();
+    mix.ensure();
+    setSetup('duration');
+  }, [mix]);
+
   const begin = useCallback(() => {
     // Must happen inside the click. Autoplay policy will not let an
-    // AudioContext start any other way, which is exactly why Begin exists as a
-    // deliberate gesture rather than sound arriving unannounced.
+    // AudioContext start any other way, which is why Begin is a deliberate
+    // gesture rather than sound arriving unannounced.
     unlockAudio();
+    // Same gesture, same reason. Somebody who set a mix and then reloaded has
+    // levels stored but no graph running, so Begin has to build it.
+    mix.ensure();
+    mix.restore();
 
     const startedAt = performance.now();
-    const end = computeEndsAt(startedAt, prefs.timerMinutes);
+    // Begin is only rendered after `now` exists; the fallback keeps this
+    // callback total for TypeScript and for an unusually fast programmatic tap.
+    const sessionNow = now ?? serverNow();
+    const end = prefs.untilBell
+      ? monotonicEndAtFromServerTarget(
+          nextSharedBellAt(sessionNow),
+          sessionNow,
+          startedAt,
+        )
+      : computeEndsAt(startedAt, prefs.timerMinutes);
 
     // Scheduled on the AUDIO clock, not a JS timer — background tabs throttle
     // timers to roughly one tick a minute, and a bell ninety seconds late has
     // failed at its one job.
     const bell = scheduleBell((end - startedAt) / 1000, prefs.endBell);
 
-    setActivity({ kind: 'sitting', sit: { startedAt, endsAt: end, bell } });
-  }, [prefs.timerMinutes, prefs.endBell]);
+    setSetup(null);
+    setActivity({
+      kind: 'sitting',
+      sit: {
+        id: newSittingId(),
+        startedAt,
+        startedAtWall: Date.now(),
+        endsAt: end,
+        bell,
+      },
+    });
+    // Presence is never allowed to delay the ritual. The request records a
+    // server-stamped start and, if it returns in time, gives the one still
+    // sentence that says who crossed the threshold with you.
+    void recordBegin().then(setBeganWith);
+  }, [prefs.timerMinutes, prefs.untilBell, prefs.endBell, now, mix, recordBegin]);
 
   const endEarly = useCallback(() => {
     setActivity((a) => {
-      if (a.kind === 'sitting') a.sit.bell?.cancel();
+      if (a.kind === 'sitting') {
+        a.sit.bell?.cancel();
+        mix.fadeOut();
+        // Stopping early still counts, and counts for what was actually sat.
+        // Someone who set an hour and stopped at twenty sat for twenty —
+        // recording the intention instead would make the totals a wish list.
+        // Under a minute records nothing; that was a mis-tap.
+        record({
+          id: a.sit.id,
+          startedAt: a.sit.startedAtWall,
+          seconds: (performance.now() - a.sit.startedAt) / 1000,
+          completed: false,
+        });
+      }
       return { kind: 'idle' };
     });
-  }, []);
+  }, [record, mix]);
 
   // The bell rings itself, on the audio clock. This only moves the UI on.
   useEffect(() => {
     if (activity.kind !== 'sitting') return;
-    if (hasEnded(activity.sit.endsAt, mono)) setActivity({ kind: 'finished' });
-  }, [activity, mono]);
+    if (!hasEnded(activity.sit.endsAt, mono)) return;
 
+    // Passing the sitting's own id makes this safe to run twice — React runs
+    // effects twice in development, and the log de-duplicates by id rather than
+    // counting the same sitting again.
+    record({
+      id: activity.sit.id,
+      startedAt: activity.sit.startedAtWall,
+      seconds: (activity.sit.endsAt - activity.sit.startedAt) / 1000,
+      completed: true,
+    });
+
+    // The sound goes with the sitting, and it goes across the whole return
+    // rather than inside it. Four seconds put silence in the room twenty-five
+    // seconds before the camera had finished coming back, which is the gap that
+    // made the ending feel like something switching off.
+    mix.fadeOut(14);
+
+    setActivity({
+      kind: 'finished',
+      endedAt: performance.now(),
+      minutes: Math.max(1, Math.round((activity.sit.endsAt - activity.sit.startedAt) / 60_000)),
+      // Everyone who lit this hour, minus you. `litCount` rather than the live
+      // count on purpose: somebody who sat the first ten minutes of the hour
+      // and left was still in it with you, and a candle they lit does not go
+      // out because they closed the tab.
+      withOthers: litRef.current === null ? null : Math.max(0, litRef.current - 1),
+    });
+  }, [activity, mono, record, mix]);
+
+  // The room is painted before the clock has answered. `load` is the frame it
+  // arrives on, so waiting for the network to render it would mean holding the
+  // opening shot back until a fetch returns. The scene sits in the same slot in
+  // both branches below, so React keeps it mounted across the changeover and
+  // the camera moves off `load` rather than cutting to it.
   if (now === null) {
     return (
-      <p className="text-ink-3 font-mono text-sm tracking-[0.13em] uppercase">
-        Finding the hour…
-      </p>
+      <>
+        <Scene session={null} phase="load" burn={0} />
+        <p className="text-ink-3 relative flex h-full items-center justify-center text-sm">
+          Finding the hour…
+        </p>
+      </>
     );
   }
 
-  const phase = sessionPhase(now);
   const sitting = activity.kind === 'sitting';
+  // Every block of the ending shares one fade at one speed; only the moment it
+  // starts differs. Same easing throughout, so four separate arrivals still
+  // read as one continuous thing settling rather than as four events.
+  const ending = (stage: number) =>
+    `transition-opacity duration-[3500ms] ease-out ${
+      reveal >= stage ? 'opacity-100' : 'opacity-0'
+    }`;
+  const firstHere = count === 1 && litCount === 1;
+
+  /**
+   * Where the camera is.
+   *
+   * Every input here is state the room already owned; nothing new is tracked
+   * to drive it. The order is the priority: being asked something outranks
+   * what you are doing, which outranks how much of the room you have chosen
+   * to see.
+   *
+   * `open` leads, and the mixer counts as open. It used to sit below
+   * `sitting`, which was fine while the only thing that could be open was a
+   * setup question — and those cannot appear during a sitting. The mixer can:
+   * the proposal promises the sound can be adjusted without leaving the page,
+   * and it means during. Left under `sitting` the camera stayed at its 1.82
+   * push while five faders unfolded beneath the clock, and at that zoom the
+   * flame's glow is 227px of radius reaching to within 175px of the top of the
+   * frame. `End this sitting` was measured on it at 1.00:1 — the same
+   * luminance as the type. Opening the mixer is the same act as opening a
+   * question, so it gets the same camera: the room pulls back, stops down, and
+   * comes back when the drawer closes. The practice log is here for the same
+   * reason — it is a block of its own with a heatmap in it, and left in the
+   * band it would shrink the entire landing every time somebody looked at it.
+   */
+  const phase: ScenePhase = !booted
+    ? 'load'
+    : setup !== null || soundOpen || practiceOpen
+      ? 'open'
+      : activity.kind === 'sitting'
+        ? 'sitting'
+        : activity.kind === 'finished'
+          ? returned
+            ? 'finished'
+            : 'returning'
+          : !prefs.showCount
+            ? 'quiet'
+            : 'idle';
 
   return (
-    <div className="flex w-full flex-col items-center text-center">
-      {sitting ? (
-        <SittingClock remaining={remainingMs(activity.sit.endsAt, mono)} />
-      ) : (
-        <SessionClock now={now} phase={phase} />
-      )}
+    <>
+      <Scene session={session} phase={phase} burn={candleBurn(now)} />
 
-      <div className="mt-8">
-        <Candle lit={sitting} />
-      </div>
+      {/*
+        THE BAND
+        Everything the page asks anybody to read sits in here, because it is the
+        only part of the frame that is reliably dark. Its height is measured off
+        the photograph by `CandleScene` and published as `--flame-top`; the
+        fallback is the same 39% the flame sits at in the source image, for the
+        frame or two before the first measurement lands.
 
-      <div className="mt-6 flex w-full flex-col items-center">
-        {activity.kind === 'idle' && (
-          <>
-            <SessionSetup prefs={prefs} update={update} />
+        Nothing may be placed below this. The rest of the picture is a lit wax
+        cylinder, and the only ways to put type on it are to scrim the
+        photograph or to back the type — both of which turn a picture into a
+        page with panels on it.
+      */}
+      <div
+        ref={band.outer}
+        className="relative overflow-hidden text-center"
+        style={{
+          // A question being asked is the one time the band is the whole
+          // frame. `open` racks the camera to blur 4.8 and dims it by half —
+          // the room stops being a photograph of a candle for as long as it
+          // takes to answer, so there is no lit wax to keep clear of, and the
+          // question can have the middle of the picture at full size instead
+          // of being shrunk into the strip above the flame.
+          height: phase === 'open' ? '100%' : 'var(--flame-top, 39vh)',
+          transition: 'height 700ms ease-out',
+        }}
+      >
+        <div
+          ref={band.inner}
+          // Absolutely centred rather than flex-centred, and that is not a
+          // preference. As a flex child taller than the band this is laid out
+          // at a negative offset, and a scale applied on top of that does not
+          // land where the transform-origin says it should — measured, the top
+          // of the copy sat 28px above the frame and the masthead was cut in
+          // half. `translate(-50%, -50%)` puts the copy's own middle on the
+          // band's middle whatever its height, and the scale after it keeps
+          // that middle fixed.
+          //
+          // The padding is inside the measured box for a related reason: a
+          // transform does not participate in layout, so copy scaled to the
+          // band's full height would overflow straight through padding set on
+          // the band itself as if it were not there.
+          // The extra bottom padding is for the one case where the band is the
+          // whole frame *and* the foot row is on screen: the mixer, opened
+          // mid-sitting. Padding rather than a shorter band because it is
+          // inside the measured box, so the scaler counts it.
+          className={`absolute top-1/2 left-1/2 flex w-full flex-col items-center px-6 py-4 ${
+            sitting && soundOpen ? 'pb-24' : ''
+          }`}
+          style={{
+            // Lifted off centre while a question is open, so the question is
+            // near the top of the frame and read first rather than found in the
+            // middle of it. The lift is a fraction of the measured slack, never
+            // a fixed percentage: when the copy is tall enough to have been
+            // scaled down there is no slack, so there is nothing to lift and
+            // nothing can be pushed off the top of the screen.
+            transform: `translate(-50%, calc(-50% - ${
+              phase === 'open' ? Math.round(band.slack * 0.34) : 0
+            }px)) scale(${band.scale})`,
+            transition: 'transform 600ms ease-out',
+          }}
+        >
+          {/* Only after a sitting. On the landing the room is the photograph
+              and the word on it, and a title, a tagline and the hour were three
+              lines of chrome in front of that. What they said, the picture
+              already says. */}
+          {/*
+            NO MASTHEAD HERE ANY MORE
 
-            <div className="mt-7">
-              {phase === 'active' ? (
+            The name of the place and the line explaining the candle used to
+            open the ending. Between them they were 74px of a 272px band —
+            about a sixth of the scale everything else on this screen is read
+            at — spent introducing the site to somebody who has just finished
+            using it.
+
+            The one part of it that was load-bearing is when the next candle is
+            lit, because that is what you need to decide whether to sit again.
+            That has moved into the quiet row at the bottom, where it costs
+            nothing: the row was already there and already wraps.
+          */}
+
+          {sitting && (
+            <SittingRing
+              remaining={remainingMs(activity.sit.endsAt, mono)}
+              total={activity.sit.endsAt - activity.sit.startedAt}
+              live={prefs.showCount ? count : null}
+              lit={prefs.showCount ? litCount : null}
+            />
+          )}
+
+          <div className="mt-4 flex w-full flex-col items-center">
+          {/* THE LANDING
+              The photograph, and one word on it. Nothing else at all — the
+              settings, the title, the hour and the quiet links have all moved
+              behind this word or after the sitting, because a picture with
+              anything else on it stops being a picture.
+
+              It fades in behind the opening move rather than being there when
+              the lights come up: `load` spends 5.6s pushing the camera in from
+              wide and soft, and a word already sitting on top of that reads as
+              an overlay waiting for the animation to finish. Arriving as the
+              room settles makes it part of the same gesture. */}
+          {activity.kind === 'idle' && setup === null && !practiceOpen && (
+            <div
+              className="transition-opacity duration-[2600ms] ease-out"
+              style={{ opacity: booted ? 1 : 0 }}
+            >
+              <BeginWord onClick={openSetup} />
+            </div>
+          )}
+
+          {activity.kind === 'idle' && setup !== null && (
+            <SessionSetup
+              prefs={prefs}
+              update={update}
+              onSound={setSound}
+              now={now}
+              // The camera holds `open` for the whole flow; this is what tells
+              // the room which question it is holding it for.
+              onStepChange={setSetup}
+              onCancel={() => setSetup(null)}
+              // Placed by the flow rather than after it, on the last screen:
+              // "when does the start appear" is the same question as "how far
+              // through the questions are we".
+              begin={<StartButton onClick={begin} />}
+            />
+          )}
+
+          {/* The mixer only. `Sound` and `End this sitting` are now at the
+              foot of the frame — see THE FOOT below — because the ring wants
+              every pixel of the band and those two do not need to be in it. */}
+          {sitting && soundOpen && (
+            <div className="mt-8 w-full max-w-sm">
+              <SoundMixer
+                soundMix={prefs.soundMix}
+                onChange={setSound}
+                compact
+              />
+            </div>
+          )}
+
+          {activity.kind === 'finished' && reveal === 0 && (
+            <ComingBack endedAt={activity.endedAt} mono={mono} />
+          )}
+
+          {activity.kind === 'finished' && reveal > 0 && (
+            <Afterwards
+              onAgain={() => {
+                mix.restore();
+                setActivity({ kind: 'idle' });
+              }}
+              minutes={activity.minutes}
+              withOthers={activity.withOthers}
+              entries={entries}
+              now={now}
+              stage={ending}
+            />
+          )}
+
+          </div>
+
+          {/* What this hour is, and who else is in it. Text, so it is in the
+              band — the foot of the frame has room for two links and nothing
+              else. Last, because it is the least of what is being said. */}
+          {/* Your practice, with the room pulled back behind it. Collapsed by
+              default and absent entirely until there is something to show: the
+              page's job is to get somebody sitting, and a record of how
+              consistent you have been belongs after that, not between you and
+              it. */}
+          {practiceOpen && (
+            <div className="flex flex-col items-center gap-6">
+              <Practice entries={entries} now={now} />
+              <button
+                type="button"
+                onClick={() => setPracticeOpen(false)}
+                aria-expanded
+                className="text-ink-3 hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper min-h-11 px-2 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+              >
+                Hide your practice
+              </button>
+            </div>
+          )}
+
+          {activity.kind === 'sitting' && prefs.showCount && (
+            <div className="mt-3">
+              <PresenceMessage
+                count={count}
+                litCount={litCount}
+                firstHere={firstHere}
+                beganWith={beganWith}
+              />
+            </div>
+          )}
+
+          {/*
+            THE SECONDARY SELECTIONS — after a sitting, not before one.
+
+            The room you are in and your own history used to sit under `Begin.`
+            on the landing. Nothing there was anything anybody arrived for, and
+            three grey links across the bottom of a photograph is the exact
+            thing that makes a picture look like a page.
+
+            Buttons, not links. Everything on this screen is now either
+            something to read (the stat block) or something to pick, and these
+            are things to pick — set as bare words they read as a caption on the
+            picture, which is the whole complaint. Smaller and quieter than
+            `Sit again` and `Finish`, because they are the second rank.
+          */}
+          {activity.kind === 'finished' && phase !== 'open' && (
+            <div
+              className={`mt-3 flex flex-wrap items-center justify-center gap-2 ${ending(2)}`}
+            >
+              <button
+                type="button"
+                onClick={() => update({ showCount: !prefs.showCount })}
+                aria-pressed={prefs.showCount}
+                className="border-ink-3/50 text-ink-2 hover:border-ink-3 hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper flex min-h-10 items-center border px-4 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+              >
+                {prefs.showCount ? 'Hide the room' : 'Show the room'}
+              </button>
+
+              {entries.length > 0 && (
                 <button
                   type="button"
-                  onClick={begin}
-                  className="border-ember text-ember hover:bg-ember focus-visible:ring-ember focus-visible:ring-offset-paper rounded-full border px-9 py-3 font-mono text-sm tracking-[0.18em] uppercase transition-colors duration-500 hover:text-white focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                  onClick={() => setPracticeOpen(true)}
+                  aria-expanded={false}
+                  className="border-ink-3/50 text-ink-2 hover:border-ink-3 hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper flex min-h-10 items-center border px-4 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                 >
-                  Begin
+                  Your practice
                 </button>
-              ) : (
-                // Deliberately not a disabled Begin. There is nothing wrong to
-                // fix, you are simply early — so the room says when, and the
-                // button arrives on its own at the top of the hour.
-                <p className="text-ink-3 font-mono text-xs tracking-[0.13em] uppercase">
-                  Begin opens at {localTime(nextHourStart(now))}
-                </p>
               )}
             </div>
-          </>
-        )}
+          )}
 
-        {sitting && (
+          {/* All that survives of the masthead, and the only part of it anybody
+              needed at this moment: when the next one is lit.
+
+              Its own line, below the buttons. Set inline with them it was one
+              piece of plain text in a row of bordered controls, which is
+              exactly the "is this a thing I press?" ambiguity the borders were
+              added to remove. */}
+          {activity.kind === 'finished' && phase !== 'open' && (
+            <p
+              className={`text-ink-2 mt-4 text-xs tabular-nums ${ending(2)}`}
+            >
+              Next candle at {localTime(nextHourStart(now))}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/*
+        THE FOOT OF THE FRAME
+
+        Only two kinds of thing may live below the band. Bare type is not one of
+        them: at 1280x800 there is a strip in the bottom left about 480px wide
+        and 44px tall that measures 5.15:1, and it is tempting — but widen it to
+        560 and it is 4.46, raise it 44px and it is 2.66 where the dish begins,
+        and at 375 wide the photograph is cropped to the candle so there is no
+        dark foreground at all. Two links measured 3.98 and 2.19 there. The band
+        is the only part of this picture whose darkness belongs to the
+        composition rather than to the window.
+
+        What may: the presence field, which is flames and a glow and has nothing
+        to clear 4.5:1 against — and a `LIFTED` button, which carries its own
+        surface and so is measured against that rather than against whatever the
+        photograph is doing underneath it. See `LIFTED`.
+      */}
+
+      {/* Not during a sitting any more. The ring now carries the room — one
+          dot per candle lit this hour, sitting just outside the circumference
+          the timer sweeps — and two scatterings of the same flames in one frame
+          is the field competing with the thing that replaced it. It stays on
+          the landing, where there is no ring and it is the only sign that
+          anybody else is here. */}
+      {activity.kind === 'idle' && prefs.showCount && (
+        <div className="absolute inset-x-0 bottom-0 flex justify-start px-5 pb-3">
+          <PresenceField liveCount={count} litCount={litCount} />
+        </div>
+      )}
+
+      {/* Out of the band entirely, and out of the way. These are the two things
+          you might reach for mid-sitting, and neither belongs anywhere near the
+          ring — under it they crowded the one object on screen that matters,
+          and every pixel they took came off the ring's diameter. At the foot of
+          the frame they are where a hand already is on a phone, and the band
+          above is free for the clock and the room. */}
+      {sitting && (
+        // gap-10, not the gap-3 two adjacent buttons would normally take. These
+        // are not a pair of options to choose between — one opens a drawer and
+        // one ends the sitting — and side by side with a hairline between them
+        // they read as a segmented control, which invites a mis-tap on the one
+        // that cannot be undone.
+        <div className="absolute inset-x-0 bottom-0 flex justify-center gap-10 px-5 pb-7">
           <button
             type="button"
-            onClick={endEarly}
-            className="text-ink-3 hover:text-ink-2 font-mono text-xs tracking-[0.13em] uppercase transition-colors"
+            onClick={() => setSoundOpen(!soundOpen)}
+            aria-expanded={soundOpen}
+            className={LIFTED}
           >
+            {soundOpen ? 'Hide sound' : 'Sound'}
+          </button>
+          <button type="button" onClick={endEarly} className={LIFTED}>
             End this sitting
           </button>
-        )}
+        </div>
+      )}
 
-        {activity.kind === 'finished' && (
-          <Afterwards
-            onAgain={() => setActivity({ kind: 'idle' })}
-            minutes={prefs.timerMinutes}
+      {/* THE ACCOUNT OFFER, ON ITS OWN
+
+          Separated from the ending by the whole height of the photograph, which
+          is the point: everything in the band is about the sitting you just
+          did, and this is the one thing on the screen that is about the
+          product. Mixed in among the stats it read as another line of the
+          receipt. Down here it is plainly an aside, and skipping it costs
+          nothing.
+
+          Hidden while the practice log is open — that takes the whole frame. */}
+      {activity.kind === 'finished' && !practiceOpen && (
+        <div
+          className={`absolute inset-x-0 bottom-0 flex justify-center px-5 pb-7 ${ending(2)}`}
+        >
+          <SignIn
+            state={auth}
+            sync={sync}
+            signIn={signIn}
+            signOut={signOut}
+            className={LIFTED}
           />
-        )}
+        </div>
+      )}
+    </>
+  );
+}
 
-        {prefs.showCount && activity.kind !== 'finished' && (
-          <PresenceLine count={count} phase={phase} sitting={sitting} />
-        )}
-      </div>
+/**
+ * Whatever this hour asks you to look at.
+ *
+ * This is the branch the whole session architecture exists to make possible,
+ * and it is deliberately the only one. The room does not ask "are we live?" —
+ * it hands the session here and renders what it says.
+ *
+ * In v1 that is always the candle: `sessions` is empty, so every hour resolves
+ * ambient. The two remaining focus loops from the spec, and v2's live video,
+ * both arrive as cases in this function and a row in a table — not as changes
+ * to the clock, the timer, the presence count or anything else in this file.
+ *
+ * `session` is null only in the instant before the first tick. The candle is
+ * right for that instant too, so there is nothing to wait for.
+ */
+/**
+ * The background layer: the photograph, and nothing over it.
+ *
+ * Nothing may be added here to make the column readable. A scrim over the
+ * photograph is the obvious fix and it was tried and rejected — it reads as a
+ * panel pasted onto a picture, which is the opposite of what the room is for.
+ * The type belongs inside the photograph, so it is placed where the photograph
+ * is already dark. `CandleScene`'s own vignette is the only grade there is.
+ *
+ * Fixed rather than in flow, because the room is behind the page and not a
+ * block within it. `-z-10` puts it under the column and — thanks to `isolate`
+ * on `main` — no lower than that.
+ */
+function Scene(props: {
+  session: Session | null;
+  phase: ScenePhase;
+  burn: number;
+}) {
+  return (
+    <div className="fixed inset-0 -z-10">
+      <Focus {...props} />
     </div>
+  );
+}
+
+function Focus({
+  session,
+  phase,
+  burn,
+}: {
+  session: Session | null;
+  phase: ScenePhase;
+  burn: number;
+}) {
+  switch (session?.focusSlug) {
+    // 'water' and 'hourglass' from the spec are cases here once the client
+    // sources the loops. Anything unrecognised falls through on purpose: a
+    // typo in a database row should show a candle, not an empty page.
+    case 'candle':
+    default:
+      return <CandleScene phase={phase} burn={burn} />;
+  }
+}
+
+/**
+ * `Begin.`
+ *
+ * The word, not a button around the word. A bordered pill on a photograph
+ * reads as a sticker laid on top of it, and the render this room was designed
+ * from had `Begin.` set as display type inside the picture.
+ *
+ * It is the landing and only the landing. It used to appear twice, meaning two
+ * different things — opening the questions here, starting the sitting at the
+ * end of them — which read as the flow having failed to go anywhere. The one at
+ * the end is `StartButton` below.
+ */
+function BeginWord({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="font-display text-ember hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper px-4 text-5xl leading-none transition-colors duration-500 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none sm:text-6xl"
+    >
+      Begin.
+    </button>
+  );
+}
+
+/**
+ * What actually starts a sitting, at the foot of the last question.
+ *
+ * A button here and a word on the landing, and the difference is the point.
+ * `Begin.` is display type set into a photograph — it is the room inviting you
+ * in, and a border around it would make it a sticker on a picture. This is the
+ * last of three answers in a form, sitting where `Next` sat on the two screens
+ * before it, and at that moment somebody is looking for a control, not for
+ * typography. Set as display type it read as a heading that happened to be
+ * clickable, and people went looking for the real button underneath it.
+ *
+ * So: the same ember, the same shape as `Next`, one step louder because it is
+ * the one that commits — and much smaller than the landing's word, which stays
+ * the largest thing the product ever says.
+ */
+function StartButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="border-ember bg-ember-soft text-ember hover:bg-ember rounded-action focus-visible:ring-ember focus-visible:ring-offset-paper min-h-12 border px-10 text-base tracking-wide transition-colors duration-300 hover:text-white focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+    >
+      Start
+    </button>
   );
 }
 
@@ -190,114 +1014,361 @@ function localTime(d: Date): string {
   return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
-/** The personal timer. Takes the large type once a sit is running. */
-function SittingClock({ remaining }: { remaining: number }) {
+/**
+ * The personal timer, and the room, as one object.
+ *
+ * WHY THE RING CARRIES THE PEOPLE
+ * A number counting down says how long is left and nothing else, so everything
+ * about sitting *together* had to be said somewhere else — a line of text, or a
+ * scatter of flames in a corner nobody looks at while their eyes are shut. Both
+ * are a second thing on a screen that should have one thing on it.
+ *
+ * The ring says both. The arc is your time draining away; the dots on it are
+ * the candles lit this hour, one each. They are on the same circle because they
+ * are the same fact: this is the hour, and this is who is in it.
+ *
+ * WHY THE DOTS ARE SPREAD EVENLY RATHER THAN DROPPED INTO FIXED SLOTS
+ * Fixed slots mean a new arrival lights a dot and nothing moves, which is
+ * cheaper and completely wrong at the counts this will actually see. Three
+ * people in sixty slots is not a quiet room, it is a broken one. Spread evenly,
+ * one person is a single mark at the top of the ring, two are opposite each
+ * other, three are a triangle — every count is composed, because every count is
+ * the only arrangement of itself.
+ *
+ * The cost is that arrivals move everybody. That is paid for with a slow
+ * transition on each dot's angle, so the ring opens up to make room rather than
+ * snapping to a new arrangement — which is the truer picture of what just
+ * happened anyway.
+ *
+ * LIT, NOT LIVE
+ * A dot is a candle. Somebody who sat the first ten minutes of the hour and
+ * closed the tab still lit one, so it stays — dimmer, because they are not
+ * here now, but lit. That is `litCount` behind the dots and `live` behind
+ * which of them are at full strength, the same distinction `PresenceField`
+ * has always drawn.
+ */
+
+/** Past this the ring is a dotted line rather than a room. */
+const MAX_DOTS = 36;
+
+/**
+ * THE DOTS SIT OUTSIDE THE ARC, NOT ON IT
+ *
+ * Drawn on the same circle they are invisible for most of a sitting: the arc
+ * is ember, the dots are ember, and the arc covers the whole ring until the
+ * time starts running out. You would see the room appear only as your sitting
+ * ended, which is precisely backwards.
+ *
+ * Eight units out they never collide with it, and they read better for it — a
+ * ring of small lights around the clock rather than markings on it, which is
+ * much closer to what they are. Eight and not fourteen: the clearance is dead
+ * space in the box on every screen where nobody else is in the room, and it is
+ * dead space that comes straight off the diameter of the circle.
+ *
+ * These are viewBox units, not pixels. The box itself is sized in CSS against
+ * the band — see `SittingRing` — and everything in here scales with it.
+ */
+const RING = { box: 176, mid: 88, r: 74, dotR: 82 };
+
+function SittingRing({
+  remaining,
+  total,
+  live,
+  lit,
+}: {
+  remaining: number;
+  /** The whole sitting, so the arc knows what fraction is left. */
+  total: number;
+  /** Null when the count is unavailable or the room is hidden: no dots. */
+  live: number | null;
+  lit: number | null;
+}) {
+  const circumference = 2 * Math.PI * RING.r;
+  // Clamped both ways: `remaining` can overshoot by a tick either side of the
+  // bell, and an arc longer than the circle draws over itself.
+  const left = total > 0 ? Math.min(1, Math.max(0, remaining / total)) : 0;
+
+  const here = Math.max(0, live ?? 0);
+  const dots =
+    lit === null ? 0 : Math.min(MAX_DOTS, Math.max(here, Math.max(0, lit)));
+
   return (
-    <div className="space-y-3">
-      <p className="text-ember font-mono text-sm tracking-[0.13em] uppercase">
-        Sitting
-      </p>
-      <p className="font-serif text-6xl leading-none tabular-nums sm:text-7xl">
-        {mmss(remaining)}
-      </p>
-      <p className="text-ink-2">remaining in your sitting</p>
+    /*
+      SIZED AGAINST THE BAND, NOT IN PIXELS
+
+      A fixed pixel ring is either too small on a tall window or too tall for a
+      short one, and `useFitToBand` can only fix the second case — by shrinking
+      the entire screen, timer and controls and all. So the ring asks for
+      whatever is left of the band once the controls and the caption underneath
+      have taken their 132px, floored so it never becomes a token and capped so
+      it never becomes a target.
+
+      The result is that on nearly every window nothing is scaled at all: the
+      ring is exactly as big as the room allows, and the type under it is at its
+      real size rather than at 87% of it.
+
+      Everything inside is in viewBox units including the numerals, so the whole
+      thing grows and shrinks as one object.
+    */
+    <div
+      role="timer"
+      aria-label={`${mmss(remaining)} remaining`}
+      style={{
+        // 96px is what is left in the band once the presence caption and the
+        // margins have had theirs. It was 132 while `Sound` and `End this
+        // sitting` were in here too; they are at the foot of the frame now, and
+        // the ring got their space.
+        width: 'clamp(150px, calc(var(--flame-top, 39vh) - 96px), 230px)',
+        aspectRatio: '1',
+      }}
+    >
+      <svg
+        viewBox={`0 0 ${RING.box} ${RING.box}`}
+        className="h-full w-full"
+        aria-hidden
+      >
+        {/* The hour's own circle, always whole. */}
+        <circle
+          cx={RING.mid}
+          cy={RING.mid}
+          r={RING.r}
+          fill="none"
+          stroke="var(--color-rule)"
+          strokeWidth={1}
+        />
+
+        {/* What is left, draining clockwise from the top. Drains rather than
+            fills because everything else in this room does: the candle burns
+            down, the hour runs out. A filling arc would be the only thing on
+            screen measuring what has been spent. */}
+        <circle
+          cx={RING.mid}
+          cy={RING.mid}
+          r={RING.r}
+          fill="none"
+          stroke="var(--color-ember)"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference * (1 - left)}
+          transform={`rotate(-90 ${RING.mid} ${RING.mid})`}
+          opacity={0.85}
+        />
+
+        {Array.from({ length: dots }, (_, i) => {
+          // Slot zero is yours, and it is at twelve o'clock — the one place on
+          // a circle that can be found without counting.
+          const mine = i === 0;
+          const present = i < Math.max(1, here);
+          return (
+            <g
+              key={i}
+              style={{
+                transform: `rotate(${(360 / dots) * i}deg)`,
+                transformOrigin: `${RING.mid}px ${RING.mid}px`,
+                transition: 'transform 2000ms cubic-bezier(0.22, 1, 0.36, 1)',
+              }}
+            >
+              {mine && (
+                <circle
+                  cx={RING.mid}
+                  cy={RING.mid - RING.dotR}
+                  r={5.5}
+                  fill="none"
+                  stroke="var(--color-ember)"
+                  strokeWidth={1}
+                  opacity={0.45}
+                />
+              )}
+              <circle
+                cx={RING.mid}
+                cy={RING.mid - RING.dotR}
+                r={mine ? 3.25 : 2.5}
+                fill="var(--color-ember)"
+                // Lit but gone: still a candle, no longer a person in the room.
+                opacity={present ? 1 : 0.38}
+              />
+            </g>
+          );
+        })}
+
+        {/* SVG text, not an absolutely-positioned <p> over the top. The box is
+            sized in CSS against the band, so a fixed `text-3xl` inside it would
+            be the one thing that did not grow with the ring — and on a tall
+            window that reads as a large circle with a small clock in it. */}
+        <text
+          x={RING.mid}
+          y={RING.mid}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={34}
+          fill="var(--color-ink-2)"
+          className="font-numeral tabular-nums"
+        >
+          {mmss(remaining)}
+        </text>
+      </svg>
     </div>
   );
 }
 
-/** The session's own clock, always shown in the viewer's local time. */
-function SessionClock({
-  now,
-  phase,
-}: {
-  now: number;
-  phase: 'active' | 'interlude';
-}) {
-  const active = phase === 'active';
+/**
+ * The ten seconds after the bell.
+ *
+ * A meditation has no OK button, and landing straight on a stat block and two
+ * choices is being handed a receipt while the bowl is still sounding. So there
+ * is a held beat: the word, and a number going down. The gong you chose is
+ * ringing across all of it — bells decay over 18-22s — and the ambient mix is
+ * still receding underneath.
+ *
+ * The number is there so it reads as a pause rather than as a page that has
+ * failed to load; ten seconds of an unexplained blank frame is a long time. It
+ * is small and quiet for the opposite reason: a large ticking digit is the one
+ * thing that could make this feel like being timed.
+ */
+function ComingBack({ endedAt, mono }: { endedAt: number; mono: number }) {
+  const left = Math.max(0, Math.ceil((COOLDOWN_MS - (mono - endedAt)) / 1000));
 
   return (
-    <div className="space-y-3">
-      <p className="text-ember font-mono text-sm tracking-[0.13em] uppercase">
-        {active ? 'Session in progress' : 'Next session'}
+    <div
+      className="flex flex-col items-center"
+      // Announced once, not live. A polite live region ticking every second
+      // would have a screen reader counting out loud at somebody who still has
+      // their eyes shut.
+      role="status"
+      aria-label="Coming back"
+    >
+      <p className="text-ink-2 font-display text-4xl leading-none sm:text-5xl">
+        Come back.
       </p>
-
-      <p className="font-serif text-6xl leading-none tabular-nums sm:text-7xl">
-        {mmss(active ? msLeftInSession(now) : msUntilNextSession(now))}
-      </p>
-
-      {/*
-        These times are the entire point of the product: one global session
-        anchored to UTC, shown to each person in their own zone. Someone's 3pm
-        and someone else's 10pm are the same room, and saying so out loud is
-        what makes that legible.
-      */}
-      <p className="text-ink-2">
-        {active ? (
-          <>remaining · began at {localTime(hourStart(now))} your time</>
-        ) : (
-          <>begins at {localTime(nextHourStart(now))} your time</>
-        )}
+      <p
+        aria-hidden
+        // ink-2: `returning` brings the camera back at brightness 1.14 with
+        // the vignette almost off, and ink-3 does not clear 4.5 on that.
+        className="text-ink-2 font-numeral mt-5 text-lg tabular-nums"
+      >
+        {left}
       </p>
     </div>
   );
 }
 
 /**
- * After the bell.
+ * After the bell: a thing to read, then a thing to choose.
  *
- * The proposal is explicit that nothing should appear on screen for a moment
- * once the bell sounds, and that whatever follows is "a single line
- * acknowledging the sit, and nothing more". So the acknowledgement fades in
- * after the strike rather than landing on top of it.
+ * WHY THE FACTS ARE A TABLE
+ * They were four sentences of prose stacked down the middle of the frame -
+ * minutes, streak, company, an account offer - each a different length, none
+ * aligned to anything, with two buttons in the middle of them. Nothing about
+ * the shape of it said which parts were information and which were controls.
  *
- * Signing in to log the sitting belongs here and is not built: accounts are
- * step 07, and a practice log is a table, a policy and a view that nobody has
- * quoted for yet.
+ * Now they are a table with no lines in it: label left, value right, one per
+ * row, in a column of fixed width. That is enough structure to scan in a second
+ * and not enough to look like a dashboard. Every control is underneath it and
+ * every control is bordered, so the screen says which half is which before a
+ * word of it has been read.
+ *
+ * The minutes stay out of the table and above it at display size. They are the
+ * one number anybody came back for, and a row labelled "Sat for" is not the
+ * same as being told.
  */
 function Afterwards({
   onAgain,
   minutes,
+  withOthers,
+  entries,
+  now,
+  stage,
 }: {
   onAgain: () => void;
   minutes: number;
+  withOthers: number | null;
+  entries: PracticeEntry[];
+  now: number;
+  /** The shared fade, keyed to how far into the ending we are. */
+  stage: (n: number) => string;
 }) {
-  const [shown, setShown] = useState(false);
+  const [finished, setFinished] = useState(false);
 
-  useEffect(() => {
-    const t = window.setTimeout(() => setShown(true), 2600);
-    return () => window.clearTimeout(t);
-  }, []);
+  const streak = currentStreak(entries, now);
+  const total = summarise(entries, now);
+
+  /**
+   * Only rows that say something. A streak of one is "you sat today", which the
+   * line above it just said at display size; one sitting altogether is that
+   * same sitting counted again. `withOthers` null means the count was
+   * unavailable, and the row is absent rather than guessed at - a meditation
+   * site does not invent company.
+   */
+  const rows: [string, string][] = [];
+  if (streak > 1) rows.push(['Days in a row', String(streak)]);
+  if (withOthers !== null)
+    rows.push([
+      'In the room',
+      withOthers === 0
+        ? 'Just you'
+        : `${withOthers} ${withOthers === 1 ? 'other' : 'others'}`,
+    ]);
+  if (total.sittings > 1)
+    rows.push(['Altogether', `${total.sittings} sittings`]);
 
   return (
-    <div
-      className={`flex flex-col items-center transition-opacity duration-1000 ${shown ? 'opacity-100' : 'opacity-0'}`}
-    >
-      <p className="text-ink-2">
-        You sat for {minutes} {minutes === 1 ? 'minute' : 'minutes'}.
+    <div className="flex w-full flex-col items-center">
+      <p
+        className={`text-ink font-display text-5xl leading-none sm:text-6xl ${stage(1)}`}
+      >
+        {minutes} {minutes === 1 ? 'minute' : 'minutes'}.
       </p>
 
-      <div className="mt-7 flex gap-3">
-        <button
-          type="button"
-          onClick={onAgain}
-          className="border-ember text-ember hover:bg-ember hover:text-white rounded-full border px-7 py-2.5 font-mono text-xs tracking-[0.15em] uppercase transition-colors duration-500"
+      {rows.length > 0 && (
+        <dl
+          className={`mt-6 w-full max-w-[15rem] space-y-1.5 text-sm ${stage(1)}`}
         >
-          Sit again
-        </button>
-        <button
-          type="button"
-          onClick={onAgain}
-          className="border-rule text-ink-3 hover:border-ink-3 rounded-full border px-7 py-2.5 font-mono text-xs tracking-[0.15em] uppercase transition-colors"
-        >
-          Finish
-        </button>
-      </div>
+          {rows.map(([label, value]) => (
+            <div
+              key={label}
+              className="flex items-baseline justify-between gap-6"
+            >
+              {/* ink-2 and ink, not ink-3 and ink-2. `finished` is the
+                  brightest the room ever is — brightness 1.14 with the vignette
+                  almost off — and ink-3 measured 4.26-4.51 there, which is a
+                  fail or a pass with a hundredth in hand. Both ranks move up
+                  one; the hierarchy between them is unchanged. */}
+              <dt className="text-ink-2">{label}</dt>
+              <dd className="text-ink tabular-nums">{value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+
+      {!finished && (
+        <div className={`mt-7 flex gap-3 ${stage(2)}`}>
+          <button
+            type="button"
+            onClick={onAgain}
+            className="border-ember text-ember hover:bg-ember rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper min-h-11 border px-7 text-sm transition-colors duration-500 hover:text-white focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+          >
+            Sit again
+          </button>
+          <button
+            type="button"
+            onClick={() => setFinished(true)}
+            // ink-2, not the ink-3 the rest of the secondary copy uses. This
+            // is the one control that only ever appears in `finished`, and
+            // `finished` is the brightest the room gets - brightness 1.14 with
+            // the vignette almost off. Measured there, ink-3 came to 4.37.
+            className="border-ink-3/50 text-ink-2 hover:border-ink-3 hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper min-h-11 border px-7 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+          >
+            Finish
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
 /**
- * How many people are present.
+ * The one sentence the room says back.
  *
  * Counts everyone on the page, not only those who have begun — so the wording
  * is "here", which is true of both. Claiming they were all meditating would
@@ -307,33 +1378,47 @@ function Afterwards({
  * to meditate should never be shown an error, and a missing number costs far
  * less than a wrong one.
  */
-function PresenceLine({
+function PresenceMessage({
   count,
-  phase,
-  sitting,
+  litCount,
+  firstHere,
+  beganWith,
 }: {
   count: number | null;
-  phase: 'active' | 'interlude';
-  sitting: boolean;
+  litCount: number | null;
+  firstHere: boolean;
+  beganWith: number | null;
 }) {
+  if (beganWith !== null) {
+    const others = Math.max(0, beganWith - 1);
+    if (others > 0) {
+      return (
+        <p className="text-ink-3 text-xs">
+          You began with {others} {others === 1 ? 'other' : 'others'}
+        </p>
+      );
+    }
+  }
+
   if (count === null) return null;
 
-  const others = Math.max(0, count - 1);
+  if (firstHere) {
+    return (
+      <p className="text-ink-3 text-xs">
+        You are the first here this hour
+      </p>
+    );
+  }
 
-  const text =
-    phase === 'interlude' && !sitting
-      ? others === 0
-        ? 'You are the first one waiting'
-        : `${others} ${others === 1 ? 'other is' : 'others are'} waiting`
-      : others === 0
-        ? sitting
-          ? 'You are sitting alone right now'
-          : 'Nobody else is here yet'
-        : `${others} ${others === 1 ? 'other is' : 'others are'} here`;
-
+  // The dots need saying once, and only once — after that the ring reads
+  // itself. Without it a mark on a circle is decoration; with it, it is a
+  // person. Deliberately "candles lit", not "people online": that is what the
+  // dots are, including the ones that have gone dim.
+  const others = Math.max(0, (litCount ?? 1) - 1);
+  if (others === 0) return null;
   return (
-    <p className="text-ink-3 mt-8 font-mono text-xs tracking-[0.13em] uppercase">
-      {text}
+    <p className="text-ink-3 text-xs">
+      {others} {others === 1 ? 'other candle' : 'other candles'} lit this hour
     </p>
   );
 }

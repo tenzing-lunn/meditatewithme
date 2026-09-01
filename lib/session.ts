@@ -14,13 +14,25 @@
  * what lets us feed it a drift-corrected clock (see lib/clock.ts).
  */
 
-import type { Session, SessionPhase } from './types';
+import type { Session } from './types';
 
 export const HOUR_MS = 3_600_000;
 
-/** Minutes of each hour the session runs. The rest is the interlude. */
-export const SESSION_MINUTES = 45;
-export const SESSION_MS = SESSION_MINUTES * 60_000;
+/**
+ * A session fills its whole hour. There is no gap.
+ *
+ * It used to run forty-five minutes with a fifteen-minute interlude, which
+ * meant the site refused to let anyone sit for a quarter of every hour — and
+ * gated a meditation app behind a countdown, which is a strange thing to do to
+ * someone who has arrived wanting to meditate.
+ *
+ * The client's model instead: a candle is lit at the top of every hour and
+ * fades across it. Arrive late and you join a candle already burning down; sit
+ * long enough and a new one is lit under you. Nobody is ever turned away, and
+ * the shared thing is the candle's state rather than permission to begin.
+ */
+export const SESSION_MINUTES = 60;
+export const SESSION_MS = HOUR_MS;
 
 export const DEFAULT_FOCUS_SLUG = 'candle';
 
@@ -45,31 +57,19 @@ export function msUntilNextSession(atMs: number): number {
 }
 
 /**
- * Are we inside the 45-minute session, or in the interlude before the next?
+ * How far the candle has burned down, 0..1.
  *
- * The interlude is deliberate: it creates the anticipation the client's brief
- * describes, and it's where the "next session in N minutes" state lives.
+ * 0 at the top of the hour when it is lit, approaching 1 just before the next
+ * one replaces it. This is the only thing every viewer worldwide shares: two
+ * people in different timezones opening the site in the same second see a
+ * candle at exactly the same height.
+ *
+ * That is what makes the hour meaningful without gating anything. Arriving at
+ * :50 shows you a candle nearly burned through — you can see you are late
+ * without being told you cannot sit.
  */
-export function sessionPhase(atMs: number): SessionPhase {
-  return msIntoHour(atMs) < SESSION_MS ? 'active' : 'interlude';
-}
-
-/**
- * Progress through the active session, 0..1.
- * Returns 1 during the interlude (the session has completed).
- */
-export function sessionProgress(atMs: number): number {
-  const into = msIntoHour(atMs);
-  if (into >= SESSION_MS) return 1;
-  return into / SESSION_MS;
-}
-
-/**
- * Milliseconds remaining in the active session.
- * Returns 0 during the interlude.
- */
-export function msLeftInSession(atMs: number): number {
-  return Math.max(0, SESSION_MS - msIntoHour(atMs));
+export function candleBurn(atMs: number): number {
+  return msIntoHour(atMs) / HOUR_MS;
 }
 
 /**
@@ -132,4 +132,22 @@ export async function resolveSession(
  */
 export function hourKey(atMs: number): string {
   return hourStart(atMs).toISOString();
+}
+
+/**
+ * `Session` over the wire.
+ *
+ * JSON has no Date, so `hourStart` crosses as an ISO string and is revived on
+ * the other side. Naming the shape means the compiler notices when the two
+ * ends disagree, rather than the UI receiving a string where it expects a Date
+ * and rendering "Invalid Date" at the top of the page.
+ */
+export type SessionWire = Omit<Session, 'hourStart'> & { hourStart: string };
+
+export function toWire(session: Session): SessionWire {
+  return { ...session, hourStart: session.hourStart.toISOString() };
+}
+
+export function fromWire(wire: SessionWire): Session {
+  return { ...wire, hourStart: new Date(wire.hourStart) };
 }

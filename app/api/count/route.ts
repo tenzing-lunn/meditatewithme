@@ -31,16 +31,29 @@ export async function GET() {
     const supabase = serviceClient();
     const cutoff = new Date(Date.now() - LIVENESS_WINDOW_SECONDS * 1000);
 
-    const { count, error } = await supabase
-      .from('heartbeats')
-      .select('*', { count: 'exact', head: true })
-      .eq('hour_start', start.toISOString())
-      .gt('last_seen', cutoff.toISOString());
+    const [live, lit] = await Promise.all([
+      supabase
+        .from('heartbeats')
+        .select('*', { count: 'exact', head: true })
+        .eq('hour_start', start.toISOString())
+        .gt('last_seen', cutoff.toISOString()),
+      // All heartbeats written this hour. This is intentionally not a history:
+      // the table is pruned and the hour key rolls over on its own.
+      supabase
+        .from('heartbeats')
+        .select('*', { count: 'exact', head: true })
+        .eq('hour_start', start.toISOString()),
+    ]);
 
-    if (error) throw error;
+    if (live.error) throw live.error;
+    if (lit.error) throw lit.error;
 
     return NextResponse.json(
-      { count: count ?? 0, hourStart: start.toISOString() },
+      {
+        count: live.count ?? 0,
+        litCount: lit.count ?? 0,
+        hourStart: start.toISOString(),
+      },
       {
         headers: {
           // Browsers hold it 10s; the edge holds it 10s and serves stale for
@@ -54,7 +67,7 @@ export async function GET() {
     // Degrade silently. The UI hides the count rather than showing an error —
     // somebody sitting down to meditate should never see a red banner.
     return NextResponse.json(
-      { count: null, hourStart: start.toISOString() },
+      { count: null, litCount: null, hourStart: start.toISOString() },
       { status: 200, headers: { 'Cache-Control': 'no-store' } },
     );
   }
