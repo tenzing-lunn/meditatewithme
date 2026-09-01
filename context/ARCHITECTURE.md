@@ -770,9 +770,22 @@ That is what the circle is for. A number counting down says how long is left and
 nothing else, so everything about sitting *together* had to be said somewhere
 else — a line of text, or a scatter of flames in a corner nobody looks at with
 their eyes shut. Both are a second thing on a screen that should have one thing
-on it. `PresenceField` is therefore no longer rendered during a sitting; it
-stays on the landing, where there is no ring and it is the only sign anybody
-else is here.
+on it.
+
+**`PresenceField` is gone, and it is not coming back.** It was a 6x10 grid of
+identical teardrops in the bottom-left corner, half of them dimmed, and on a
+photograph it read as a sprite sheet that had failed to load rather than as
+people. `room-polish.md` §4A said exactly that from a rendered audit and flagged
+it as needing Tenzing's decision before anyone touched it; Tenzing gave that
+decision looking at it on the live site. The last of it was on the landing, kept
+on the reasoning that the landing has no ring — but the landing's whole argument
+is that it is a photograph with one word on it, and a scatter of flames in the
+corner is precisely what that argument exists to keep off.
+
+Nothing replaces it because the ring already had: the same fact, in the middle
+of the frame, where somebody is looking. The component and its `.presence-*`
+rules in `globals.css` are deleted; `usePresence` is untouched and still feeds
+the dots, the caption during a sitting, and the count carried into the ending.
 
 Four decisions in there are worth not undoing:
 
@@ -792,7 +805,8 @@ Four decisions in there are worth not undoing:
 - **Lit, not live.** `litCount` behind how many dots there are, `count` behind
   which of them are at full strength; the rest sit at 0.38. Somebody who sat the
   first ten minutes and closed the tab still lit a candle, and it does not go out
-  because they left. Same distinction `PresenceField` has always drawn.
+  because they left. That distinction came from the field this replaced, and it
+  is the one thing of the field's worth keeping.
 - **The arc drains rather than fills.** Everything else in this room does: the
   candle burns down, the hour runs out. A filling arc would be the only thing on
   screen measuring what has been spent.
@@ -947,10 +961,8 @@ region down there: at 1280×800 a strip in the bottom-left corner measures
 375 wide the photograph is cropped to the candle so the strip does not exist at
 all. Two links measured 3.98 and 2.19 there.
 
-**Two kinds of thing may live down there anyway, and neither is a sentence.**
+**One kind of thing may live down there anyway, and it is not a sentence.**
 
-- The **presence field**, because it is flames and a glow with no text in it and
-  nothing to clear 4.5:1 against.
 - A **`LIFTED` button** — `Sound` and `End this sitting` during a sitting, the
   account offer after one. The rule above is about *type*: a sentence you have
   to scrim in order to read is a panel pasted onto a picture, which is what the
