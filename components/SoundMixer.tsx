@@ -126,14 +126,19 @@ export default function SoundMixer({
       })}
 
       <div className="border-rule mt-1 flex items-center gap-3 border-t pt-2">
-        {/* No play button. `All` is not a sound, it is how loud the others are,
-            and a pause here would be a second mute competing with five. */}
+        {/* No play button. `Volume` is not a sound, it is how loud the others
+            are, and a pause here would be a second mute competing with five.
+
+            It said `All` while it sat in a column of five bed names, where the
+            row read as a sixth bed called "All" rather than as the master. The
+            others are things you can hear; this one is a quantity, and naming
+            it as one is what separates it from them. */}
         <span className="size-11 shrink-0" aria-hidden />
         <label
           htmlFor={`${prefix}-master`}
           className="text-ink-2 w-20 shrink-0 text-left text-sm"
         >
-          All
+          Volume
         </label>
         <input
           id={`${prefix}-master`}

@@ -108,6 +108,28 @@ const CAM: Record<
 /** Where the flame sits in room-base.png, measured off the photograph.
  *  If the photograph is ever re-cropped, these four numbers are the only thing
  *  that has to change. PAD is the room the sprite needs to lean past itself. */
+/**
+ * How long the room takes to come up out of the dark.
+ *
+ * The same number, and the same easing, as the copy that arrives on top of it —
+ * see THE LANDING in `Room`. They are one gesture, so they are one duration:
+ * the photograph is not a backdrop that loads and then gets captioned, it is
+ * the first half of the thing the word finishes.
+ */
+export const REVEAL_MS = 2600;
+
+/**
+ * And the same curve, which is not the same thing as the same word.
+ *
+ * The copy fades on Tailwind's `ease-out`, which is `cubic-bezier(0, 0, 0.2,
+ * 1)`. CSS's own `ease-out` keyword is `cubic-bezier(0.25, 0.1, 0.25, 1)` — a
+ * different curve under the same name, and writing the keyword here got two
+ * things starting together, ending together, and disagreeing in the middle
+ * about how fast the room was arriving. So the curve is written out once, here,
+ * and both sides are handed it.
+ */
+export const REVEAL_EASE = 'cubic-bezier(0, 0, 0.2, 1)';
+
 const PHOTO_W = 1536;
 const PHOTO_H = 1024;
 const PHOTO_FOCUS_Y = 0.46; // matches background-position: 50% 46%
@@ -121,6 +143,8 @@ export default function CandleScene({
   intensity = 1,
   breath = true,
   burn = 0,
+  reveal = true,
+  onReady,
   basePath = '/room-base.png',
   flamePath = '/flame.png',
 }: {
@@ -141,6 +165,24 @@ export default function CandleScene({
    * shorten, so it is spent on the flame instead — see the note in `step()`.
    */
   burn?: number;
+  /**
+   * Whether the room may come up out of the dark yet.
+   *
+   * False holds the whole camera — photograph, glow and flame — at zero over
+   * the dark ground, so nothing appears until whoever is orchestrating says
+   * everything can appear at once. The camera still moves underneath it, which
+   * is the point: `load` is a real frame being played, not a held still.
+   */
+  reveal?: boolean;
+  /**
+   * The photograph has decoded (or failed to, which counts — a missing file
+   * must not leave the page black forever waiting for it).
+   *
+   * This is what makes `reveal` worth having. Whoever owns the timing needs to
+   * know when the picture could be shown, or the word fades up over a dark
+   * ground and the room arrives underneath it a second later.
+   */
+  onReady?: () => void;
   basePath?: string;
   flamePath?: string;
 }) {
@@ -153,6 +195,37 @@ export default function CandleScene({
   const geo = useRef({ s: 1, dpr: 1 });
   const opts = useRef({ wind, flicker, phase, burn });
   opts.current = { wind, flicker, phase, burn };
+
+  // Held on a ref so a caller passing an unmemoised function cannot re-run the
+  // fetch below on every render.
+  const notify = useRef(onReady);
+  notify.current = onReady;
+
+  /* WHEN THE PHOTOGRAPH IS ACTUALLY THERE
+     The room is a CSS background, and a background gives no load event — which
+     is why it used to appear whenever it appeared, with the copy fading in on
+     its own schedule beside it. Asking for the same URL through an Image gets
+     the event back; the browser answers the second request out of the same
+     cache entry, so this is a cache hit and not a second download. */
+  useEffect(() => {
+    const img = new Image();
+    let told = false;
+    const done = () => {
+      if (told) return;
+      told = true;
+      notify.current?.();
+    };
+    // An error counts. A photograph that 404s is a dark room, and a dark room
+    // is still something to show — waiting forever for it is not.
+    img.onload = done;
+    img.onerror = done;
+    img.src = basePath;
+    if (img.complete) done();
+    return () => {
+      img.onload = null;
+      img.onerror = null;
+    };
+  }, [basePath]);
 
   useEffect(() => {
     const el = stage.current;
@@ -440,12 +513,18 @@ export default function CandleScene({
 
   return (
     <div ref={stage} aria-hidden className="absolute inset-0 overflow-hidden bg-[#17130f]">
+      {/* The fade is on the camera and not on the photograph, so the picture,
+          its glow and the flame come up as one object rather than three things
+          arriving at a wall. Underneath is the stage's own dark ground, which
+          is the colour the page is already painted — so this is the room
+          appearing in the dark, not a layer crossfading over a hole. */}
       <div
-        className="absolute inset-0 will-change-transform"
+        className="absolute inset-0 will-change-[transform,opacity]"
         style={{
           transformOrigin: '50% 42%',
           transform: `translate(0%, ${(c.y * I).toFixed(2)}%) scale(${(1 + (c.s - 1) * I).toFixed(4)})`,
-          transition: `transform ${c.ms}ms cubic-bezier(0.22, 0.61, 0.24, 1)`,
+          opacity: reveal ? 1 : 0,
+          transition: `transform ${c.ms}ms cubic-bezier(0.22, 0.61, 0.24, 1), opacity ${REVEAL_MS}ms ${REVEAL_EASE}`,
         }}
       >
         <div

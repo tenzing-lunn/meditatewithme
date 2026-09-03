@@ -187,11 +187,12 @@ Because the response is identical for every viewer, one edge cache entry with a 
 
 Cleanup is a nightly `delete from heartbeats where hour_start < now() - interval '2 days'`. Rows are tiny and nobody cares about history.
 
-The client renders these aggregate readings as a capped field of flames: up to
-sixty individual flames, with an edge glow and a compact overflow indication
-after that. No heartbeat ids leave the route handler. A viewer's own flame is
-a client-side ring on a stable slot, so the only personalised part of the room
-does not make the shared response uncacheable.
+The client renders these aggregate readings as dots around the sitting ring —
+one per candle lit this hour, spread evenly, the ones still here at full
+strength and the rest dimmed (§16). No heartbeat ids leave the route handler.
+Which dot is yours is decided client-side (it is always the one at twelve), so
+the only personalised part of the room does not make the shared response
+uncacheable.
 
 ### The general lesson
 
@@ -291,6 +292,29 @@ All tracks start immediately at zero gain and stay running. Fading is cheaper an
 - **Decode all buffers up front**, behind the Begin button, so no track arrives late.
 - Loops need to be **seamless at the sample level**. This is an asset-quality problem, not a code problem — a loop with a click at the seam will be audible on repeat and no amount of crossfading fully hides it.
 
+### Three bells, not three settings of one
+
+The bells are still synthesised, still stand-ins for recordings Jonny buys, and `strike()` is still the one function a real buffer replaces. But they used to run **one shared set of partials** — ratios 1, 2.76, 5.4, 8.9 — with only the pitch and the tail length changed between them. Those are *bowl* ratios, which is why the bowl was the convincing one and why the gong was a bowl pitched down.
+
+Each bell now carries its own `modes` table, plus three things none of them had:
+
+- **A mallet.** The tone was never what gave the synthesis away; the attack was. A band-passed noise burst of 22–90ms under the strike is the single biggest difference between "a bell" and "a bell sound". It does not scale with `decayScale` — a mallet is a mallet whether the tail after it is a four-second preview or a twenty-two second ending.
+- **Beating twins.** Every prominent mode is two oscillators a fraction of a hertz apart, so it warbles the way real metal does. The `hum` bed in `mix.ts` already used this trick at 110 / 110.35 Hz; the bells did not.
+- **Bloom, for the gong only.** Its upper modes arrive 0.35–1.8s *after* the beater, with an attack that lengthens with the delay. A tam-tam getting brighter before it dies is most of what makes it a gong rather than a large bowl. Clamped to a quarter of the available tail so a mode cannot arrive after a shortened bell has gone.
+
+The bell's `fundamental` means **the note you hear**, which for a cast bell is its *nominal*, not its lowest mode — so `struck-bell`'s modes are fractions of the note (hum at 0.25, prime at 0.5, tierce at 0.6) rather than multiples of the hum. The tierce is a minor third above the prime and is why a bell sounds like a bell; the old shared ratios had nothing in that region at all. The three published pitches are unchanged, deliberately: this work changed what the bells sound like, not what they play.
+
+Mode gains in the tables are **relative**. `strike()` normalises each set to `PEAK` (0.9, what the old four-partial set happened to sum to) because the three bells now have five, ten and eight modes and every beating one is two oscillators — left raw, the gong would arrive at roughly two and a half times the struck bell's level, and adding a mode later would quietly make that bell louder.
+
+### The bell rings at both ends
+
+`openingBell()` strikes the chosen bell at `Begin`, immediately — safe without ceremony, because it runs inside the click that unlocked the context. The closing bell is still scheduled ahead on the audio clock, unchanged.
+
+Two things about it are load-bearing:
+
+- **It is the same bell as the ending**, read from `endBell`. That preference name predates this and stays: it is a stored localStorage key, a jsonb field and a CHECK constraint on `preferences.end_bell`. A sitting that opened on a gong and closed on a bowl would be two different rooms.
+- **Its tail is clamped to the sitting's own length**, at 60% of the closing bell's decay or the length of the sitting, whichever is shorter. `until the bell` pressed at :59:30 is a real thirty-second sitting, and an opening bell still ringing when the closing one strikes would muddy the one moment the whole design exists to protect. The handle is held on the `Sitting` so that ending early and unmounting can silence it; a sitting that runs to its own end never needs to, because the clamp has already seen to it.
+
 ---
 
 ## 8. Subsystem 5 — Identity and preferences
@@ -306,7 +330,7 @@ logged out    → falls back to localStorage, nothing breaks
 
 This ordering is deliberate and it is what makes step 7 of the build genuinely cuttable. The account layer is a **sync mechanism bolted onto a working app**, not a foundation the app sits on. If week three disappears into coursework, we ship without it and nothing is missing except cross-device sync.
 
-Cuttable is enforced, not just intended: `components/useAuth.ts`, `components/useSyncPreferences.ts` and `components/SignIn.tsx` plus one block in `Room.tsx` are the entire feature. Delete them and the room is unchanged. `usePreferences` has no idea accounts exist.
+Cuttable is enforced, not just intended: `components/useAuth.ts`, `components/useSyncPreferences.ts` and `components/Account.tsx` plus two blocks in `Room.tsx` are the entire feature. Delete them and the room is unchanged. `usePreferences` has no idea accounts exist.
 
 ### The rule when local and server disagree
 
@@ -316,11 +340,40 @@ The build spec says "on first login, push whatever's in localStorage up", which 
 
 ### Implicit flow, not PKCE
 
-Magic links only. No password means no reset flow, which is where most auth bugs live.
+No passwords. No password means no reset flow, which is where most auth bugs live.
+
+**Two ways to finish, one call to start.** `signInWithOtp` sends an email that can carry both a link and a six-digit code; the account panel asks for the code, because ending a meditation site's only signup flow in somebody's inbox and returning them to a page reloaded from nothing is a poor last step. `verifyOtp({ email, token, type: 'email' })` finishes it in place, and `onAuthStateChange` swaps the screen underneath the form.
+
+**The code needs one hosted change this repository cannot make.** Supabase's stock Magic Link template contains only `{{ .ConfirmationURL }}`; the same email carries the code once `{{ .Token }}` is added to it in Authentication → Email Templates. Until that is done the code box has nothing to receive, which is why the panel keeps saying the link in that email works too, and why `emailRedirectTo` is still sent. `plans/launch-readiness.md` carries it beside the SMTP item it depends on.
+
+### A dead link is silent, and that had to be fixed
+
+**The link flow works on localhost, and the auth log proves it**: a `/verify` at 2026-09-01 22:41:41 returned 303 with `login_method: implicit`, and `auth.users.last_sign_in_at` carries the same timestamp. Nothing about magic links is waiting on deployment.
+
+What is not obvious is the failure. **A magic link is single-use, and issuing a new one invalidates the last.** Clicking a spent link gets `403 One-time token not found` inside Supabase — which it then returns as a **303 back to the site**, with the reason in the fragment:
+
+```
+http://localhost:3000/#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired
+```
+
+So the browser lands on the landing page, signed out, looking exactly like a cold arrival. `detectSessionInUrl` recognises the error fragment, abandons the sign-in and **keeps the reason to itself** — `onAuthStateChange` never fires, `getSession()` returns null, and there is no public API for what went wrong. The room rendered `Begin.` with the explanation sitting unread in its own address bar.
+
+`readLinkError()` in `useAuth` reads the fragment first-hand, during the first render — not in an effect, because React runs child effects before the parent's and the children reach for the Supabase client. `linkError` goes to the landing's `Account`, which opens itself on the address step with the reason showing, and the fragment is stripped from the URL so a reload is a clean arrival.
+
+**Only the landing gets it.** The flag lives for the session and the foot-of-frame instance mounts at the end of a sitting, minutes after the arrival it would be describing.
+
+Two related facts worth keeping:
+
+- **`options.data` is ignored for an address Supabase already knows.** An existing account can never gain a name by running the flow again, which is the property that stops anybody being renamed by retyping — and also means testing signup with your own address leaves `raw_user_meta_data` without a `name` and Home falling back to its own masthead.
+- **The built-in hosted SMTP rate-limits hard.** `over_email_send_rate_limit` on a 429 is what `Send it again` will usually hit within a few minutes of the previous send. Real SMTP is the fix; it is already on the launch list.
 
 PKCE keeps its verifier in the localStorage of the browser that requested the link, so requesting on a laptop and opening the mail on a phone fails. That is the normal case here, not an edge case. Implicit costs us server-side sessions, which this app does not use: the room is a client component and preferences are guarded by RLS against the user's own JWT. If a server component ever needs to know who is watching, this becomes `@supabase/ssr` and a callback route.
 
 There is no callback route. The link returns to the site origin and `detectSessionInUrl` takes the token out of the fragment.
+
+**`detectSessionInUrl` reads the URL once, when the client is built — which is on page load, and that is not the only way the token arrives.** The email is requested *from* the site, so the tab is already sitting on `/`; the link's `redirect_to` is that same `/`. A URL differing from the current one only by its fragment is a **same-document** navigation: the browser fires `hashchange` and does not reload. The client is never rebuilt, nothing re-reads the URL, and a valid access token sits in the address bar being ignored — the visitor sees `Let's begin.` and is told nothing, because there is nothing to tell them: Supabase verified the link and recorded the login. It looks exactly like "logging in is broken", and for one afternoon it was. It bites whenever the link opens into an already-open tab rather than a new one — pasting it into the address bar being the reliable way to reproduce it.
+
+`onHashChange` in `useAuth` closes that hole: on a fragment carrying `access_token`, it hands the pair to `auth.setSession()` — public API, no reload, and it fires `onAuthStateChange` so the screen changes by the same path as every other sign-in. On a fragment carrying an error it sets `linkError` instead. Either way the fragment is stripped. Because a late `linkError` arrives as a *prop change* rather than at mount, `Account` also watches it in an effect — its `open`/`step`/`error` seeds only fire on mount and would otherwise tidy the URL and say nothing.
 
 **`lib/supabase.ts` returns one browser client, not a new one per call.** Two clients share a localStorage key and race each other refreshing the same token.
 
@@ -469,18 +522,23 @@ The heartbeat table is the first thing to break, and it is a contained problem w
 ```
 meditatewithme/
 ├── app/
-│   ├── page.tsx                 # the room — one page
+│   ├── page.tsx                 # renders <Entry> — the room OR Home
 │   ├── layout.tsx
 │   └── api/
 │       ├── time/route.ts        # server clock, no-store
 │       ├── count/route.ts       # cached 10s
 │       └── heartbeat/route.ts   # upsert, service role
 ├── components/
-│   ├── Room.tsx                 # state machine host
+│   ├── Entry.tsx                # auth branch; owns every shared hook
+│   ├── Room.tsx                 # state machine host — takes props now
+│   ├── Home.tsx                 # the signed-in page (scrolls; see §17)
 │   ├── FocusLoop.tsx            # <- v2 branches here
 │   ├── Timer.tsx
 │   ├── SoundMixer.tsx
 │   └── ParticipantCount.tsx
+├── scripts/
+│   ├── contrast.mjs             # palette pairs, flat colours (npm run contrast)
+│   └── contrast-room.js         # the same question against the photograph
 ├── lib/
 │   ├── session.ts               # hourStart, resolveSession
 │   ├── clock.ts                 # syncClock, serverNow
@@ -668,11 +726,13 @@ is gated; you sit whenever you like.
 
 The shared thing is the candle's *state*. `candleBurn(now)` is a pure function
 of the clock, so two people in different timezones opening the site in the same
-second see the same height of wax. That is real synchrony, and it costs no
-coordination — no cron, no socket, no event to miss.
+second see the same candle at the same point in its hour. That is real
+synchrony, and it costs no coordination — no cron, no socket, no event to miss.
 
-It also communicates lateness honestly. Arrive at :50 and you are handed a
-stub. You can see you came late, which is a far gentler thing than a locked
+It also communicates lateness honestly. Arrive at :50 and you find a candle
+visibly further through its hour — a smaller, dimmer flame now that the room is
+a photograph (see *The candle is a photograph*, below), a stub of wax when it
+was CSS. You can see you came late, which is a far gentler thing than a locked
 button, and it preserves the reason to show up at the top of the hour without
 punishing anyone who cannot.
 
@@ -714,32 +774,153 @@ itself is unchanged and still linear, and the note it always carried still
 stands: a real candle does not burn linearly, so the mapping from `candleBurn`
 to what is on screen may want a curve rather than a straight line.
 
-### The landing is a photograph with one word on it
+### The landing is a photograph with a line of type on it
 
-`Begin.` is the only thing on the room. Not the only interactive thing — the
-only thing. The title, the tagline, the hour and the three quiet links have all
+`Let’s begin.` is the only thing on the room. Not the only interactive thing —
+the only thing.
+
+**It read `Begin.` until it didn't.** An instruction, from the room to you.
+`Let’s` makes it an invitation from somebody sitting down with you, which is the
+premise of the entire site and was being spent nowhere else on this screen — and
+this is the only copy a first-time visitor reads before deciding whether to stay.
+Two extra words is a cheap place to say what the site is. Measured after the
+change: 258px of 1280 on a laptop, 213px of 375 on a phone, no wrap and no
+scroll in either. The typographic apostrophe matches the rest of the visible
+copy; straight quotes in this project are a code-comment habit, not a copy one.
+
+Everything below still calls the control "the begin word", and the timing beats
+are still named `Begin` — the moment did not change, only what it says. The title, the tagline, the hour and the three quiet links have all
 gone, either behind that word or after the sitting, because a picture with
 anything else on it stops being a picture. It fades in over 2.6s as the opening
 camera move settles, rather than being there when the lights come up.
 
+**The room fades in with it, on the same gate.** The photograph is a CSS
+background, which has no load event, so it used to appear the instant its file
+finished downloading while the word faded up on a timer beside it — two
+arrivals, and on a cold connection the word came first, over black. `CandleScene`
+now fetches the same URL through an `Image` purely for the event (a cache hit,
+not a second download) and reports it as `onReady`; `Room` holds `booted` until
+**both** the clock has answered and that has fired, then releases the photograph,
+its glow, the flame, `Begin.` and the account control together. There is no
+"Finding the hour…" label any more — the frame it covered lasts a few
+milliseconds and is the room's own dark ground either way.
+
+`REVEAL_MS` and `REVEAL_EASE` are exported from `CandleScene` and imported by
+`Room` rather than written twice, and the reason is specific: Tailwind's
+`ease-out` is `cubic-bezier(0, 0, 0.2, 1)` while CSS's `ease-out` keyword is
+`cubic-bezier(0.25, 0.1, 0.25, 1)`. Writing the keyword in one place and the
+class in the other gave two fades that started together, ended together, and
+disagreed in the middle about how fast the room was arriving. One constant, one
+curve.
+
 The account offer, the practice log and the room toggle now live in the
 **ending**, which is where they mean something: you have just added to your
 practice, so that is when to offer to show it to you and to keep it. The
-trade-off is real and worth knowing — **a first-time visitor cannot sign in
-before their first sitting.** That was judged the right price for a landing with
-one word on it; if it ever isn't, the fix is one quiet line, not the row of
-three that used to be there.
+trade-off was real and it was named here: **a first-time visitor could not sign
+in before their first sitting.** That was judged the right price for a landing
+with one word on it, with the remedy recorded in case it stopped being — "one
+quiet line, not the row of three that used to be there."
 
-Pressing it does not start a sitting. It opens the questions: the camera settles
-back (`open`), and `SessionSetup` asks one thing per screen with a `Next` under
-it and the answers so far folded into a line above. The last screen carries the
-start. There is no "you have done this before, skip it" path — three screens
-opening on your own saved answers is a few seconds, and it is the only moment
-the product has to ask a returning visitor whether today is a ten-minute day.
+**It stopped being, and the remedy is exactly the one written down.** There is
+now a single control at the top right of the landing, fading in on the same
+`REVEAL_MS` as `Begin.` and the photograph. It is not joined by a second, and it is absent for anybody already
+signed in, who never sees this screen at all.
+
+**It says `Create account`, not `Sign in`.** `signInWithOtp` creates the user
+on first use — that has always been the signup path — so the old label described
+the API call rather than the act, and asked a first-time visitor for credentials
+they did not have. The flow behind it carries `I already have one`, which skips
+the name and goes straight to the address.
+
+**It is a dropdown, and it used to be a question. That was the mistake.** The
+form once took the band the way `How long?` does: camera to `open`, band to full
+height, back arrow. The reasoning was that sign-in is the room asking you
+something. Watching it said otherwise. Three things animate on that press — the
+band's height over 700ms, the copy's transform over 600ms, and the camera — and
+the second **chases** the first: `useFitToBand` measures `outer.clientHeight`
+through a `ResizeObserver`, that height is mid-animation, so the transform's
+target moves every frame and its ease-out restarts every frame against it. The
+form did not arrive, it drifted, overshot and settled a second and a half later.
+A repeatedly-restarted ease-out looks exactly like a bounce, and that is what
+Tenzing called it.
+
+The setup questions are worth that expense because they *are* the room. An
+account is the one thing on the landing that is about the product rather than
+the practice, and it now gets the object everybody already knows: a panel under
+the button that opened it, opacity and a 6px slide over 150ms, nothing measured
+and nothing to chase.
+
+**Moving the account out did not fix the band, and `Begin.` still bounced.**
+Predictably, in hindsight: the panel had dodged the bug rather than removed it,
+and the setup questions cannot dodge it — taking the frame is what they are. So
+the measurement itself was fixed.
+
+**`useFitToBand` now fits against the height the band is going to be, not the
+height it currently is.** Both targets are known without waiting for anything:
+open is the frame's own height, because the band is `height: 100%` of it, and
+shut is `--flame-top`, which `CandleScene` already publishes in px
+(`restingBandHeight()` reads it, falling back to the CSS's own 39%). The
+observers are unchanged — they still fire every frame of the 700ms travel — but
+every one of those callbacks now computes the same numbers, so the equality
+check drops them and the transform is written exactly once.
+
+Measured on the first question at 1280×720, counting writes to the inline
+transform through a `MutationObserver` (timing-independent, unlike sampling
+frames):
+
+| | first transform written | rewrites during the open |
+|---|---|---|
+| Before | `scale(0.574) · lift 0` | 1 here, ~40 in a browser that keeps painting |
+| After | `scale(1) · lift −80px` | 1 |
+
+**`0.574` is the whole bug in one number.** It is 279/486 — the question's copy
+fitted to the band's height *at the instant of the click*, before any of the
+700ms of travel had happened. The copy was painted at 57%, then inflated back to
+full size as the band grew under it, with a 600ms ease-out restarting against a
+target that moved every frame. Appearing small and swelling is exactly what
+"goes in and out and back in" describes.
+
+Backing out of a question is the same story in reverse and measures the same:
+one write, straight to the resting value. `signInOpen` is gone from `Room` entirely — from `phase`,
+from the band, and from the `useFitToBand` key — and `components/Account.tsx`
+owns whether it is open. It takes a `drop` of `down` (top right of the landing)
+or `up` (the foot of the frame after a sitting), which is the only difference
+between the two places it appears.
+
+**It asks for a name, and then uses it.** One question per step, the way the
+room asks anything: name, then address, then the six digits. The name goes to
+`user_metadata` on the request that creates the user — Supabase ignores it for
+an address it already knows, so nobody can be renamed by retyping the flow — and
+`displayName()` in `useAuth` is what Home's masthead greets. Asking for
+something and never showing it is what makes a signup feel like collection.
+
+Every step reserves the height of the tallest, so the panel does not move as the
+flow advances. Fixing the entrance and leaving it jumping between steps would
+have missed the point.
+
+Pressing `Begin.` does not start a sitting. It opens the questions: the camera
+settles back (`open`), and `SessionSetup` asks one thing per screen with a
+`Next` under it and the answers so far folded into a line above. The last screen
+carries the start.
+
+**A guest gets all three screens. Somebody signed in gets none of them**, and
+that reverses what this section used to say. The argument against a skip was
+that the three screens are the only moment the product has to ask a returning
+visitor whether today is a ten-minute day. That is right, and it is answered
+rather than dropped: **Home prints the settings the sitting will use directly
+under the button that starts it, with `Change` beside them.** The question is
+still put every time — it is read instead of walked. A guest has no home to have
+read it on, so a guest still walks it.
+
+The consequence to remember is in the audio, not the UI. `Begin.` unlocks the
+`AudioContext`, and autoplay policy only allows that inside a gesture. Home's
+sitting starts from an effect on mount, which is not one — so the unlock happens
+in Home's `Sit` click, in `Entry.startSitting`. **If a sitting is ever silent or
+the closing bell never rings, that is the line that has moved.**
 
 **The word and the button are different objects, and that is the point.**
-`Begin.` is display type set into a photograph — the room inviting you in, and a
-border round it would make it a sticker on a picture. What starts a sitting is
+`Let’s begin.` is display type set into a photograph — the room inviting you in,
+and a border round it would make it a sticker on a picture. What starts a sitting is
 `Start`, a bordered control at the foot of the last question, sitting exactly
 where `Next` sat on the two screens before it. It used to be `Begin.` in both
 places, which read as the flow having failed to go anywhere, and set as display
@@ -1045,6 +1226,72 @@ The current build clears 4.5:1 on every element in all six phases and on all
 three setup screens, measured at 375×812, 1280×640, 1280×800, 1440×900 and
 1280×860.
 
+**That check is now a script rather than a description of one.**
+`scripts/contrast-room.js` is pasted into the console on a running page and
+rebuilds the real stack — base fill, camera transform, cover-fit photograph with
+its blur and brightness, glow and flame both screen-blended, vignette, top
+gradient, stop — into an offscreen canvas, then samples underneath every
+readable element on screen. It reads the layer values off the live DOM rather
+than copying `CAM`, because a checker holding last month's camera passes against
+a room nobody is looking at.
+
+Three things it has to get right, all of which it got wrong first:
+
+- **Wait for transitions, not for the page to be visible.** Transitions are
+  driven by time and reach their targets in a hidden tab whether or not anything
+  is painted, so "is it visible" is the wrong question in both directions. It
+  waits for the camera's own computed values to stop changing instead.
+- **Do not wait on animations.** `room-drift` is a 23s infinite loop and the
+  glow's opacity is rewritten by `rAF` every frame. A settle check that includes
+  either waits forever. It fingerprints four named nodes — camera transform,
+  photograph filter, vignette and stop opacity — and nothing else.
+- **The drift never stops, so one reading is one phase of it.** It composites
+  six times about four seconds apart and keeps the worst ratio per element.
+
+Validated by drawing its composite over the live page and comparing: it comes
+out very slightly lighter than the real render, which means every figure it
+reports is conservative for light type on a dark room.
+
+Measured with it at 1280×720, worst pixel in each element's box:
+
+| Screen | Tightest element | Ratio | Needs |
+|---|---|---|---|
+| Landing | `Create account`, top right | now `LIFTED` — see below | 4.5 |
+| Landing | `Begin.` | 6.87 | 3.0 |
+| ~~Sign-in question~~ | ~~**`Send me a link`**~~ | ~~**4.57**~~ | — |
+| ~~Sign-in question~~ | ~~the explanation under it~~ | ~~7.38~~ | — |
+| Home | `Next candle at…` | 5.57 | 4.5 |
+| Home | `Change` / `Done changing` | 8.41 | 4.5 |
+| Home | `Sign out` | 8.07 | 4.5 |
+| `/world` | the note under the globe | 6.28 | 4.5 |
+
+The Home figures were re-measured after the controls were bounded. **The room's
+rows have not been**, because the audit cannot run while the Browser pane is
+hidden: `settle()` waits on the camera arriving, that is driven by
+`requestAnimationFrame`, and a hidden pane suspends rAF entirely — spoofing
+`document.visibilityState` fools the page's own JS but not the compositor, so
+the script waits forever rather than reporting. Front the pane before running
+it. The landing's `Sign in` moved from grey type to `LIFTED`, whose own
+measurement is recorded with it, so it did not get worse; it has simply not been
+re-measured in place.
+
+**The two struck-through rows are gone with the screen they were measured on.**
+`Send me a link` at 4.57 was the thinnest margin in the product, and it was thin
+for a specific reason: it was an ember control sitting in the band over the
+brightest thing the `open` camera leaves lit. The account flow no longer takes
+the band — it is a panel with a `#1c1410`/95 fill of its own (see §16), so its
+`Send me a code` is measured against that fill rather than against the flame,
+and the worst case that produced 4.57 cannot occur there. **The panel has not
+been run through `contrast-room.js` in place**; the arithmetic on the fill puts
+its 60% hint type near 6.9:1 over the brightest wax, but that is a calculation,
+not a measurement, and it belongs on the real-device QA pass.
+
+`Next` and `Start` in `SessionSetup` are the same `border-ember text-ember`
+control in the same place in the frame, so **they now carry the thinnest margin
+instead** — and they are still the reason `open` carries `flame: 0.3` at all.
+They are the first thing to re-measure if the flame, the stop or the ember value
+is ever touched.
+
 **Dim the flame before you dim the room.** The flame is drawn separately and
 screen-blended over the photograph, so nothing done to the picture touches it —
 it stays a hard white core exactly where a question gets asked. With it at full
@@ -1067,3 +1314,133 @@ respectively: legible, and small. Two knobs, both design decisions rather than
 bugs — `PHOTO_FOCUS_Y` (0 would anchor the crop to the top of the photograph
 and buy about 100px of band on short windows, at the cost of the dish), or
 carrying less on the landing.
+
+---
+
+## 17. The account side
+
+Three surfaces exist now, not one, and which you get is decided by a single
+fact: whether you are signed in.
+
+| | Signed out | Signed in |
+|---|---|---|
+| `/` | The room. Landing, three questions, sitting, ending, account offer. | Home. |
+| `/` after `Sit` | — | The room, starting on arrival, returning to Home. |
+| `/world` | The globe. | The globe. |
+
+### `Entry` owns every shared hook, and that is not tidiness
+
+`usePreferences`, `usePractice`, `useMix`, `useAuth` and `useSyncPreferences`
+are called in `components/Entry.tsx` and passed down. They used to be called
+inside `Room`, which was right while the room was the whole product.
+
+It is not any more, and calling them in both places breaks in ways that are
+quiet rather than loud. Two `usePreferences` would be two pieces of React state
+over one localStorage key: change the duration on Home, press `Sit`, and the
+room — mounted from that same click — is still holding the value it read when it
+mounted. Two `usePractice` would each run the sync loop against the same table.
+
+**`usePresence` deliberately did not lift.** It writes heartbeats, and a
+heartbeat is a claim to be in the room. §14 settled that the count means "here",
+and somebody reading their own streak on a dashboard is not here. Home reads the
+number through `useCount`, which polls and never writes. Duplicating the *read*
+is free — `/api/count` is one edge-cached response for the whole world, which is
+§5 — where duplicating the *write* would have been a second row per person.
+
+### The room takes one prop that carries the whole difference
+
+`home?: () => void`. Present means signed in: the sitting starts on arrival, the
+ending says `Done` and comes back here, and the account offer at the foot is not
+rendered at all. Absent means a guest: the landing, the questions, `Finish`, and
+the offer.
+
+One prop rather than two booleans, because the difference genuinely is "is there
+a home to come back to", and two booleans would allow a state that must not
+exist — a sitting that starts on arrival and then strands somebody on a
+photograph with no way off it.
+
+**That bug was real and was found by walking the flow**, not by reading it:
+`End this sitting` set the activity to `idle`, and `idle` for a signed-in
+visitor renders nothing, because the landing is guarded by `!home`. It now calls
+`home()` after recording the sitting. Anything else that returns the room to
+`idle` has to do the same.
+
+### Home is the one screen allowed not to be the room
+
+It scrolls, it has a masthead, and it shows several things at once — all three
+of which §16 forbids. §16 is a set of rules about *the room*, which is a
+photograph somebody is about to meditate inside. Home is a person deciding
+whether to, looking at what they have done. Nothing here licenses type on the
+photograph or a scrolling sitting, and the room imports nothing from `Home.tsx`.
+
+The order of the page is the order of what somebody came for: `Sit` first and
+largest, the settings it will use printed under it, then the practice, then the
+recent sittings the room has never had space for, then the world.
+
+**That order has two shapes.** Below `lg` it is one column, which is what a
+phone can hold. From `lg` up the same order is laid out as a masthead over two
+panes that together are exactly one viewport tall: the sitting on the left, the
+practice and the recent sittings on the right, and the world at the foot of the
+left pane. Reading order on a wide screen is left-then-right, so nothing has
+been reordered — but the practice log is now visible without scrolling, which in
+the column it never was.
+
+Each pane scrolls itself and the page does not, so the circle stays put while a
+long log moves beside it. Three things this depends on, all of which have
+already been got wrong once:
+
+- The row holding the panes needs `min-h-0`. A flex child will not shrink below
+  its content by default, so without it the panes' `overflow-y-auto` never
+  engages and the whole page scrolls instead.
+- The sitting is centred with `m-auto`, not `justify-center`. Centring a scroll
+  container's content clips the overflow off the *start* edge, where it cannot
+  be scrolled back to — which is what happens when the settings panel opens on
+  a short laptop.
+- Only one pair of auto margins. The world link at the foot is pinned by the
+  sitting block's own bottom auto margin; giving it `mt-auto` as well splits the
+  slack three ways and lifts the circle off centre.
+
+The world link is one component (`WorldLink`) rendered in one of two places,
+never both.
+
+### Controls have to look like controls — `components/controls.ts`
+
+**Type can be quiet. A control cannot.** A control whose only affordance is
+being a word is not a quiet control, it is an invisible one.
+
+This was found twice by Tenzing, on two different screens, and both times the
+control passed its contrast check. Contrast was never what was wrong: `Change`
+on Home cleared 5.14 and `Sign in` on the landing cleared 5.95, and neither
+looked pressable. They were dim words set directly beneath or beside dim
+sentences of almost the same weight — `Change` read as a second line of the
+caption above it, and `Sign in` read as a watermark in the darkest corner of a
+photograph.
+
+Five controls had been written that way independently, each reasonable alone:
+`Change`, `Sign out`, `Sign in`, `Hide your practice` and `Back`. That is one
+mistake made five times, because there was nowhere for the answer to live. There
+is now, and **the background picks which of the two applies**:
+
+| | Where | What it is |
+|---|---|---|
+| `QUIET` | `controls.ts` | Flat dark ground — Home, `/world`, the room's band. A `rule` outline, `ink-2`, ember on hover. |
+| `LIFTED` | `Room.tsx` | Over the photograph. Its own warm surface and white type, measured against lit wax. |
+
+A new control on the photograph takes `LIFTED`; anywhere else it takes `QUIET`.
+A third style needs a reason that is not "this one felt different".
+
+`rule` rather than `ember` for the outline is deliberate: **`ember` is the colour
+of the primary action** — `Begin.`, `Sit`, `Send me a code` — and it is worth
+more while it stays scarce. Ember comes back on hover, where it means "this one,
+now" rather than "this one, always".
+
+**One bare chevron is left, and it is left on purpose**: the back arrow in
+`SessionSetup`. What failed above was words that read as labels, and an icon has
+no adjacent prose to be mistaken for. Bounding a back arrow on a one-question
+screen would add a box to the quietest thing in the product to solve a problem
+it does not have.
+
+The account flow's own back arrow went with the band takeover. Inside a 320px
+panel the quiet words at the foot — `I already have one`, `Back`, `Send it
+again` — are underlined rather than bare, which is the third of the three
+affordances this section allows and the only one that fits at that size.
