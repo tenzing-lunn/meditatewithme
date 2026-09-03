@@ -87,7 +87,9 @@ flowchart TB
     UI <--> LS
 ```
 
-Note what is *absent*: no WebSocket server, no cron, no job queue, no Redis, no separate API service. If any of those appear later, something has gone wrong with the reasoning.
+Note what is *absent*: no WebSocket server, no job queue, no Redis, no separate API service. If any of those appear later, something has gone wrong with the reasoning.
+
+There is exactly one scheduled job, and it is the exception that proves the rule: a `pg_cron` entry that deletes old heartbeat rows (§5). Nothing on the diagram waits for it, nothing breaks if it stops — it exists because a retention promise has to be kept by something. It runs *inside* Postgres rather than as a cron in front of the app, which is why the diagram is unchanged: no new box, no new endpoint, no new secret.
 
 ---
 
@@ -196,7 +198,9 @@ wants "highlight my own light", the response is personalised and the whole
 endpoint becomes uncacheable.** Do it the way the room already does — the viewer
 knows their own cell, so let the client mark it. Never the server.
 
-Cleanup is a nightly `delete from heartbeats where hour_start < now() - interval '2 days'`. Rows are tiny and nobody cares about history.
+Cleanup is `public.prune_heartbeats()` — `delete from heartbeats where hour_start < now() - interval '2 days'` — run by `pg_cron` at seven minutes past every hour (`20260903193000_schedule_prune_heartbeats.sql`). Rows are tiny and nobody cares about history, so the schedule is not about disk. It is about the two days being a real number: we tell people in the privacy copy that the location square goes after two days, and how often this runs is what decides whether that is true. Hourly makes it true to within an hour; nightly would have made it true to within a day, i.e. nearly three days for an unlucky row.
+
+**It had never once run before 3 September 2026.** The function was written in `0001_init.sql` with a comment saying to schedule it, and nobody did; the table was holding eight days of rows, by then including grid cells. Worth remembering as a shape of bug: a scheduled job that was never scheduled looks exactly like a scheduled job that works, from inside the code.
 
 The client renders these aggregate readings as dots around the sitting ring —
 one per candle lit this hour, spread evenly, the ones still here at full
@@ -585,6 +589,7 @@ meditatewithme/
 | 7 | Bell on the audio clock | `setTimeout` | Background tabs throttle timers; a late bell is a product failure |
 | 8 | Cached focus loops | Streamed video | Cache-once vs metered-per-viewer — the entire cost argument |
 | 9 | One global session, UTC | Per-timezone sessions | 24 parallel sessions fragments the audience and multiplies staffing |
+| 10 | Pruning on `pg_cron` | `vercel.json` cron hitting a route | A route means a secret-guarded endpoint that deletes rows — the exposure `0002` closed, rebuilt with a lock. Nothing leaves the database this way |
 
 ---
 
@@ -627,14 +632,13 @@ wrong would have.
    - **It rides on `heartbeats`**, which is already anonymous and already keyed
      to one UTC hour. No new table, no new identifier, nothing durable.
 
-     ⚠️ **The two-day pruning is not currently happening.**
-     `prune_heartbeats()` exists (`0001_init.sql`) but nothing invokes it:
-     there is no `pg_cron` extension on the project and no `vercel.json`. On
-     3 September 2026 the table still held rows from 26 August — eight days.
-     This was written as "already pruned", and it was not true. It matters
-     more now than it did, because these rows have gained a location.
-     `plans/privacy-data-inventory.md` states the two-day figure as fact and
-     flags this exact failure mode; both are wrong until the job is scheduled.
+     **The two-day pruning is now actually happening**, since
+     3 September 2026. It was not before: `prune_heartbeats()` had existed
+     since `0001_init.sql` with nothing invoking it — no `pg_cron`, no
+     `vercel.json` — and the table was holding rows from 26 August, eight
+     days, by then carrying cells. It is scheduled hourly in
+     `20260903193000_schedule_prune_heartbeats.sql`; §5 has the reasoning for
+     `pg_cron` over a Vercel cron and for hourly over nightly.
    - **The city and country headers are deliberately not stored.** Both are
      available. A city name is a far stronger identifier than a cell for anyone
      living in a small one, and the globe has no use for a label.

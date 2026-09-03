@@ -56,7 +56,9 @@
       "mcp__9f64d587-ba4d-466c-97aa-097ddbef6542__get_access_to_vercel_url",
       "Bash(supabase db *)",
       "mcp__Control_Chrome__list_tabs",
-      "Bash(git diff *)"
+      "Bash(git diff *)",
+      "Bash(grep -n \"GRID_DEGREES\\\\`\\\\.\" context/ARCHITECTURE.md)",
+      "Bash(sed -n '/keep both in agreement with/,/^## 15/p' context/ARCHITECTURE.md)"
     ]
   }
 }

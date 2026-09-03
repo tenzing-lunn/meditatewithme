@@ -119,14 +119,27 @@ a data-processing agreement has said something about itself.
   unused.** Worth knowing so nobody adds them later thinking they are harmless:
   a city name identifies somebody in a small one far more sharply than a grid
   square does.
-- ⚠️ **The two-day figure is not currently true, and this notice must not ship
-  until it is.** This line used to read "the two-day figure is real, not
-  aspirational" and warned that if the job were ever turned off the notice would
-  be wrong rather than merely stale. The job was never turned *on*:
-  `prune_heartbeats()` deletes `hour_start < now() - interval '2 days'` and
-  nothing calls it — no `pg_cron` extension on the project, no `vercel.json`. On
-  3 September 2026 the table still held rows from 26 August. Schedule it, verify
-  the old rows actually go, and then this sentence can go back to what it said.
+- **The two-day figure is real again**, not aspirational: `prune_heartbeats()`
+  deletes `hour_start < now() - interval '2 days'`, and `pg_cron` runs it at
+  seven minutes past every hour, so the honest worst case is two days and an
+  hour. If that job is ever turned off, this sentence becomes untrue and the
+  notice is wrong rather than merely stale.
+
+  **It was untrue for the first two days of this document's life.** The job had
+  never been turned *on* — the function had sat in the schema since
+  `0001_init.sql` with nothing calling it, no `pg_cron` and no `vercel.json`,
+  and on 3 September 2026 the table still held rows from 26 August, cells
+  included. It was scheduled and the backlog deleted the same day
+  (`supabase/migrations/20260903193000_schedule_prune_heartbeats.sql`). Kept
+  here rather than quietly corrected, because the failure is the lesson: a
+  retention promise is worth exactly as much as the thing enforcing it, and
+  "the function exists" is not that thing. Before the notice ships, check the
+  live project rather than this paragraph:
+
+  ```sql
+  select jobname, schedule, active from cron.job;
+  select max(now() - hour_start) from public.heartbeats;
+  ```
 - **`/world` already says the substance of this on the page**, under the globe.
   That was deliberate — somebody looking at a map of where people are should not
   have to open a legal document to find out how precisely they are on it. Keep
