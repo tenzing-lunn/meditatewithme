@@ -32,10 +32,28 @@ invented one wearing a date.
 
 ## How it works — capture is automatic, confirmation is not
 
-Session hooks in `.claude/hooks/` stamp the start and end of every Claude
-session in this repo and append a row to `.timelog/pending.tsv` (gitignored,
-per-machine) with the date, the open-to-close wall-clock, and any commits that
-landed in the window. Nothing to remember and nothing to run.
+Session hooks in `.claude/hooks/` stamp the start and end of every **Claude
+Code** session opened in this repo — CLI, VS Code, or the desktop coding app —
+and append a row to `.timelog/pending.tsv` (gitignored, per-machine) with the
+date, the open-to-close wall-clock, and any commits that landed in the window,
+on any branch. Nothing to remember and nothing to run.
+
+What the capture does and does not do, so you can trust the file:
+
+- `/compact`, `/clear` and `--resume` re-fire the start hook; the stamp is
+  written once and never moved, so a long session that compacts is still one
+  row from its real start.
+- A window opened and shut inside a minute with nothing committed writes no
+  row.
+- A session that never closed (crash, killed terminal) is swept up by the next
+  start, 12 hours on, as an `unclosed` row with a start and no end. The confirm
+  script lists these separately and will not confirm them — there is no
+  ceiling to check your figure against, so that row is yours to write by hand.
+- Two windows open at once are one person working. The confirm script flags
+  rows that overlap an earlier one; count those minutes once.
+- **Not captured:** Cowork sessions, Codex, and anything done outside a Claude
+  Code session — writing to Jonny, reading, testing on a phone. Those are rows
+  you add to the table by hand, same day.
 
 **Wall-clock is not engaged time.** A session open for three hours while an
 agent ran and you made dinner is not three hours of work. So the captured
@@ -94,8 +112,14 @@ Two warnings on the reconstruction:
 | 28 Aug | 22:06–22:08 | — | Sound mixer on self-generating beds (step 05), presence plan + the message asking for it | `d985f2a` `9bb2506` |
 | 29 Aug | 00:00–00:09 | — | One question at a time; candle lit properly; candle made to look like a candle | `580c078` `bf217d0` |
 | 29 Aug | 09:29 | — | Turbopack workspace root | `1da89f6` |
-| 30 Aug | — | — | UI/UX audit, `plans/room-polish.md` | uncommitted |
+| 30 Aug | — | — | UI/UX audit, `plans/room-polish.md` | committed in `5b6b239` |
+| 31 Aug–1 Sep | hooks have it | — | Session capture, photographic room + ring + return ending (room-polish Phases 1–2), presence field deleted | `9bd6c10` `5b6b239` `8d59fba` |
+| 1 Sep | — | — | Internal docs reconciled: change-order status, README, ARCHITECTURE §5/§16, launch-readiness, `context/PRODUCT.md`, `context/VISION.md` | — |
 | | | **— / 55** | | |
+
+From 30 August onward the hooks are capturing wall-clock into
+`.timelog/pending.tsv`; confirm those rows with `npm run timelog` rather than
+adding to this table by hand.
 
 ---
 
@@ -107,3 +131,36 @@ quoted to a client is worse than no total.
 **Unbilled, and deliberately:** anything §4 of `plans/room-polish.md` turns into
 a rework of already-delivered presence work. Logged as a row with hours, marked
 `unbilled`, so the effort is visible internally without reaching an invoice.
+The presence field's deletion (`8d59fba`) is the first such row.
+
+---
+
+## Money — received and owed, as of 1 September 2026
+
+Facts only. What to do about the second line is an open decision.
+
+| | Amount | What it is |
+|---|---|---|
+| Received | **£300** | The deposit — "£300 to get started" in `docs/payment-message-to-jonny.md`. Comes off the final hourly total. |
+| Received | **$500** | Sent separately from the hourly arrangement. **$100 of it is for the Claude Max subscription** — a tool cost, not hours. The remaining **$400 has no agreed meaning yet.** |
+| Owed | £25 × confirmed hours − £300 | Cannot be computed until the `Engaged` column is filled. |
+
+**The $400.** Two honest treatments, and Jonny should be told which one is
+being used on the first invoice rather than discovering it there:
+
+1. **Credit against the hourly.** Convert at the rate on the day it was
+   received, show it as a payment line next to the £300, and the invoice
+   balance drops. Cleanest: it keeps the 55-hour cap meaning one thing.
+2. **Outside the hourly.** If Jonny intended it as something separate — a
+   thank-you, a tools allowance — it stays off the invoice and the invoice
+   shows £300 received only.
+
+The arithmetic works either way; what does not work is silence. If it is not
+clear what he meant, one line in the next status update — "the $500: I've put
+$100 against the Claude subscription as agreed; do you want the other $400
+treated as a payment towards the hours, or kept separate?" — settles it and
+costs nothing. **Never decide it unilaterally in his favour or yours.**
+
+**Not yet declared to Jonny, and must be before an invoice:** the practice log
+(~4h) and the presence work (unsent change order, `plans/presence-change-order.md`).
+`plans/launch-readiness.md` › *Before any invoice* is the checklist.
