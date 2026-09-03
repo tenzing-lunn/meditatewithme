@@ -781,6 +781,30 @@ Jonny's bill eventually — and per the payment message, hosting is meant to sit
 in his name, not Tenzing's. Worth settling before the domain is attached, since
 moving a project after DNS is pointed is the annoying order to do it in.
 
+### The migration history is not the migrations
+
+Schema changes do **not** deploy with the app. Vercel pushes code; the database
+is changed by hand, before or alongside the commit that needs it. Nothing
+automates that and nothing checks it, so a deploy can reach production expecting
+a column that is not there.
+
+Worse, the usual safety net is missing. Supabase tracks applied migrations in
+`supabase_migrations.schema_migrations`, and here that table has never matched
+this repo: seven rows on the remote against nine files in
+`supabase/migrations/`, with no row in common. The files and the table describe
+the same schema under different names, because the migrations were applied
+through a route that never wrote these filenames back.
+
+The consequence is the whole reason this is written down: **`supabase db push`
+is not usable on this project.** It compares those two lists, concludes that
+every local file is unapplied, and replays the schema from `0001` against a
+database that already has it. Use `supabase db query --linked -f <file>` for one
+migration at a time and check the result with a follow-up query — see CLAUDE.md.
+
+`supabase migration repair --status applied <version>` would reconcile the two
+and restore `db push`. It is the right fix and it has not been done, because it
+writes to production metadata and that is a decision, not a side effect.
+
 ---
 
 ## 16. The candle, and why nothing is gated
