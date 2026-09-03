@@ -1,11 +1,17 @@
 # Meditate With Me
 
-A synchronised global meditation session. A new session begins at the top of
-every UTC hour; everyone worldwide joins the same one. Set a personal timer,
-mix ambient sounds, sit with the candle, and share a quiet field of flames with
-others who are there.
+A candle is lit at the top of every UTC hour and everyone in the world is
+looking at the same one. Arrive, press Begin, answer three questions — how long,
+which bell, what to hear — and sit. The timer is a ring; the dots around it are
+the people who lit a candle this hour. Choose *until the bell* and you finish
+on the same sound, at the same second, as everyone else who chose it.
 
-**Status:** v1 is ready for launch-readiness work on `dev`. See
+**Status:** live at meditatewithme.vercel.app since 1 September 2026
+(`626ef93`), with step 08 — legal copy, real-device QA, auth SMTP, custom
+domain — still open behind it. See
+[`context/PRODUCT.md`](context/PRODUCT.md) for what the product is today and
+what is still undecided, [`context/VISION.md`](context/VISION.md) for the
+client's larger idea and where v1 sits in it,
 [`plans/launch-readiness.md`](plans/launch-readiness.md) for the live checklist,
 [`context/ARCHITECTURE.md`](context/ARCHITECTURE.md) for the system design, and
 [`plans/v1-build-spec.html`](plans/v1-build-spec.html) for the original scope.
@@ -58,11 +64,17 @@ feature we built, it's what happens when the lookup returns null.
   throttle `setTimeout` to roughly once a minute, and a meditation app whose
   bell arrives ninety seconds late has failed at its only job.
 
-**The participant count is polled, not pushed.** Realtime presence looks like
-the obvious fit and isn't: presence sync costs O(N) messages per join, and
-everyone joins at the top of the hour simultaneously. The count is low-value,
-low-frequency, and identical for every viewer — so it caches. One 10-second edge
+**The room is polled, not pushed.** Realtime presence looks like the obvious
+fit and isn't: presence sync costs O(N) messages per join, and everyone joins
+at the top of the hour simultaneously. What the room needs — how many are here
+now, how many lit a candle this hour, how many began with you — is low-value,
+low-frequency, and identical for every viewer, so it caches. One 10-second edge
 cache entry serves the whole world. Full reasoning in ARCHITECTURE.md §5.
+
+**The room is a photograph.** `components/CandleScene.tsx` composites a sprite
+flame over `public/room-base.png` and racks a camera between phases. All
+readable text lives in the band of picture above the flame, and the page never
+scrolls. ARCHITECTURE.md §16 has the rules and the measurements.
 
 **Nothing shows an error screen.** Every failure hides a control or degrades
 quietly. Supabase down still leaves you a working candle, timer, and sound mix.

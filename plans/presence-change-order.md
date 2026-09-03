@@ -1,22 +1,41 @@
 # Change order — Presence
 
-Archived commercial record. This draft was not sent externally; the quoted
-scope was nevertheless implemented on `dev` after approval to proceed.
+**Status, 1 September 2026: never sent.** Tenzing told Jonny he would show the
+work first rather than quote it up front. The scope in
+[`../docs/presence-spec.md`](../docs/presence-spec.md) was then built on `dev`
+on Tenzing's own decision: B, C and D are live; A (the flame field) was built,
+judged wrong on screen, and deleted in `8d59fba` in favour of the dots on the
+sitting ring. **None of it has been quoted to, approved by, or invoiced to
+Jonny.** Until he has said yes to a number, the presence hours sit inside the
+55-hour cap like everything else, and nothing here reaches an invoice as a
+one-off. See `TIMELOG.md` › *Money* and `context/PRODUCT.md` › *Commercial*.
 
-What it asks for is specified in `presence-spec.md`. Read that first; this is
-only the version of it Jonny sees.
+This lives in `plans/` because it is still a decision, not a record. The message
+below was written to be sent *before* building. It now has to be re-tensed —
+"I've built…", with the work visible on the preview link — or replaced by a
+paragraph in an ordinary status update. Either way the same rules apply:
+description and price in the same message, one number, no apology, a real way
+out. The way out is now "leave it in, no charge" rather than "v1 ships
+without it", which is a weaker position than the one this was drafted from —
+that is the cost of building before asking, and worth knowing before choosing
+it again.
+
+What it asks for is specified in `../docs/presence-spec.md`. Read that first;
+this is only the version of it Jonny sees.
 
 ## Record before the decision
 
-1. [x] **Reconstruct the hours.** Working estimate: about **43 of the agreed
-   55 hours**. That is the original steps 1–7 (36h), the off-scope practice log
-   (~4h), and the B/D proof (3h). It is a reconstruction from the build plan,
-   not a precise timesheet, so say "roughly 43" if asked.
+1. [ ] **Reconstruct the hours.** ~~Working estimate: about 43 of the agreed
+   55 hours.~~ Superseded: that figure was a reconstruction from the build
+   plan, not measured time, and `TIMELOG.md` now exists with every `Engaged`
+   cell still unfilled. Do not say "roughly 43" or any other number until the
+   log is confirmed by Tenzing. "Where are we against the 55?" is the first
+   thing Jonny will ask when this message lands.
 2. [x] **Build B and D first** — "you began with 14 others" and the first-here
    empty room. Three hours, unbilled, deliberately. They make this message
    obvious instead of theoretical. Implemented as the bounded proof: a
-   server-stamped start cohort and a first-arrival cue. The paid A/C scope was
-   subsequently implemented on `dev`.
+   server-stamped start cohort and a first-arrival cue. A and C were then
+   built as well, without the message going out — see the status at the top.
 3. [x] **Prepare it with a link that actually opens.** A Vercel Shareable Link for
    the `dev` preview has been created and externally verified. Keep its signed
    query parameter out of git; retrieve it from Vercel when sending rather than
