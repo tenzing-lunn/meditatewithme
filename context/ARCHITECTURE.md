@@ -164,6 +164,8 @@ create table heartbeats (
   hour_start timestamptz not null,
   last_seen  timestamptz not null default now(),
   began_at   timestamptz,              -- server-stamped at Begin only
+  cell_lat   double precision,         -- one-degree grid cell, never a reading
+  cell_lon   double precision,         -- nullable: not every request is placed
   primary key (anon_id, hour_start)
 );
 
@@ -184,6 +186,15 @@ sentence. The all-hour count is also returned with the live count, so the
 first arrival can be framed truthfully as the first person to light the hour.
 
 Because the response is identical for every viewer, one edge cache entry with a 10-second TTL serves the entire world. **A thousand concurrent users generate roughly one origin query every ten seconds.** The same thousand users would have destroyed the presence approach.
+
+**`/api/world` inherits this argument rather than working around it.** The globe
+needs where the candles are, not just how many, and an aggregate of grid cells
+is still one response identical for every viewer — so it gets the same
+`s-maxage=10, stale-while-revalidate=20` pair and the cliffs in §11 do not move.
+The property is fragile in one specific way worth naming: **the moment anybody
+wants "highlight my own light", the response is personalised and the whole
+endpoint becomes uncacheable.** Do it the way the room already does — the viewer
+knows their own cell, so let the client mark it. Never the server.
 
 Cleanup is a nightly `delete from heartbeats where hour_start < now() - interval '2 days'`. Rows are tiny and nobody cares about history.
 
@@ -523,15 +534,19 @@ The heartbeat table is the first thing to break, and it is a contained problem w
 meditatewithme/
 ├── app/
 │   ├── page.tsx                 # renders <Entry> — the room OR Home
+│   ├── world/page.tsx           # the globe, its own route
 │   ├── layout.tsx
 │   └── api/
 │       ├── time/route.ts        # server clock, no-store
 │       ├── count/route.ts       # cached 10s
-│       └── heartbeat/route.ts   # upsert, service role
+│       ├── world/route.ts       # cells + counts, cached 10s
+│       └── heartbeat/route.ts   # upsert, service role, stamps the cell
 ├── components/
 │   ├── Entry.tsx                # auth branch; owns every shared hook
 │   ├── Room.tsx                 # state machine host — takes props now
 │   ├── Home.tsx                 # the signed-in page (scrolls; see §17)
+│   ├── Globe.tsx                # three.js earth, loaded only by /world
+│   ├── World.tsx                # the globe's page chrome
 │   ├── FocusLoop.tsx            # <- v2 branches here
 │   ├── Timer.tsx
 │   ├── SoundMixer.tsx
@@ -542,9 +557,11 @@ meditatewithme/
 ├── lib/
 │   ├── session.ts               # hourStart, resolveSession
 │   ├── clock.ts                 # syncClock, serverNow
+│   ├── geo.ts                   # snapToCell, subsolarPoint
 │   ├── audio.ts                 # AudioContext graph
 │   ├── prefs.ts                 # localStorage <-> DB
 │   └── supabase.ts
+├── public/earth/                # NASA day + night maps (~1.6MB, /world only)
 ├── supabase/migrations/
 ├── context/                     # standing project knowledge
 ├── plans/                       # active plans
@@ -590,10 +607,68 @@ wrong would have.
    handled by the visibility API rather than by narrowing who counts.
 3. **Anonymous id lifetime.** A `localStorage` uuid per browser means one person
    on two devices counts twice. Acceptable, and the alternative is worse.
-4. **Do we record any analytics at all?** If nothing third-party and nothing that
-   identifies people, the cookie banner question largely disappears. Strong
-   reason to keep it that way. *Still genuinely open — it is a question for the
-   privacy notice in step 08, and the answer that needs no banner is "none".*
+4. **~~Do we record any analytics at all?~~ Settled, and the answer is no longer
+   "none".** No third-party analytics, and nothing that identifies anybody — that
+   part holds, and the cookie banner question stays closed. But the globe at
+   `/world` needs to know roughly where a candle was lit, so `heartbeats` now
+   carries `cell_lat` / `cell_lon`.
+
+   What was chosen, and why each part of it:
+
+   - **The server derives it**, from the edge's own geo headers. The browser is
+     never asked for permission and `navigator.geolocation` is never called —
+     a permission prompt on a meditation site is the wrong manner entirely, and
+     most people decline one, which would have made the globe both intrusive
+     and wrong.
+   - **It is snapped to a one-degree grid before it is stored**, by
+     `snapToCell` in `lib/geo.ts`. The row holds the cell centre, not the
+     reading. Nothing more precise than about 111km exists in the database at
+     any point, so there is no finer value to leak or to be asked for.
+   - **It rides on `heartbeats`**, which is already anonymous and already keyed
+     to one UTC hour. No new table, no new identifier, nothing durable.
+
+     ⚠️ **The two-day pruning is not currently happening.**
+     `prune_heartbeats()` exists (`0001_init.sql`) but nothing invokes it:
+     there is no `pg_cron` extension on the project and no `vercel.json`. On
+     3 September 2026 the table still held rows from 26 August — eight days.
+     This was written as "already pruned", and it was not true. It matters
+     more now than it did, because these rows have gained a location.
+     `plans/privacy-data-inventory.md` states the two-day figure as fact and
+     flags this exact failure mode; both are wrong until the job is scheduled.
+   - **The city and country headers are deliberately not stored.** Both are
+     available. A city name is a far stronger identifier than a cell for anyone
+     living in a small one, and the globe has no use for a label.
+
+   The bar this was designed against is an ordinary server access log, which
+   holds a full IP address. This is considerably coarser than that.
+
+   **Localhost can never place a heartbeat, so this cannot be tested here.**
+   The geo headers are added by Vercel's edge and simply do not exist in
+   `next dev`; `snapToCell` correctly returns null and the row is written
+   without a cell. Every one of the 65 real heartbeats written between 26
+   August and 3 September has `cell_lat = null` for exactly this reason, and
+   for a while the only placed rows in the table were a hand-seeded set of
+   demo cities. A globe that looks broken locally is a globe working as
+   designed.
+
+   **Proved on the preview on 3 September 2026**, which is the only place it
+   can be. One POST to `/api/heartbeat` on the `dev` deployment wrote
+   `cell_lat = 40.5, cell_lon = -73.5` — a real request, through the real
+   edge, coarsened and stored as a cell. The row was deleted immediately
+   afterwards; it was a test, and the count it would have inflated is read by
+   the live room. **If this ever needs re-testing, do it the same way** — one
+   request, then delete it — rather than by seeding the current hour, which
+   tells whoever is sitting at that moment that they have company.
+
+   **The privacy copy for it is written**, in
+   `plans/privacy-data-inventory.md` — the complete inventory of everything the
+   site stores, with drafted plain-language copy for each category. It is not
+   the notice, because the notice needs a named controller and that is still
+   with Jonny; it is everything about the notice that does not. `/world` also
+   says the substance of it under the globe, on the page, because somebody
+   looking at a map of where people are should not have to open a legal document
+   to find out how precisely they are on it. **Keep those two in agreement**, and
+   keep both in agreement with `GRID_DEGREES`.
 
 ---
 
@@ -1444,3 +1519,42 @@ The account flow's own back arrow went with the band takeover. Inside a 320px
 panel the quiet words at the foot — `I already have one`, `Back`, `Send it
 again` — are underlined rather than bare, which is the third of the three
 affordances this section allows and the only one that fits at that size.
+
+### The globe
+
+`/world` is its own route because it is somewhere else, with its own subject,
+that should be linkable. Sitting is not — it stays under `/` as state, because
+the room's opening move depends on `CandleScene` staying mounted while the
+camera travels off `load`, and a route change would remount it.
+
+- **`three` and two NASA textures are about 2MB**, and none of it is on the path
+  to meditating: `World` imports `Globe` behind `next/dynamic` with `ssr: false`,
+  so it lands in a chunk the room never references. Verified against the built
+  bundle — the chunk containing `WebGLRenderer` is not referenced from `/`.
+- **The terminator is real**, from `subsolarPoint(serverNow())`. It uses the
+  corrected clock for the reason §6.2 gives: a device three minutes fast must
+  not draw a different world.
+- **A light is a grid cell with a heartbeat in it**, and `lit` vs `live` is the
+  same distinction the ring draws — somebody who sat the first ten minutes and
+  closed the tab still lit a candle here.
+- **Nothing is invented.** When the endpoint is unreachable the earth is simply
+  dark and the caption says the count is unavailable. §10's rule holds: "nobody
+  is meditating anywhere on earth" is a much worse thing to say wrongly than
+  "we cannot see".
+
+Three things in the rendering cost real time to get right, all of them recorded
+in `Globe.tsx` where they can be seen next to the code:
+
+1. **`gl_PointSize` is in device pixels**, so a size tuned by eye at one
+   viewport means nothing at another. The `size` attribute is now a world-space
+   diameter and the shader converts it with `canvasHeight / (2·tan(fov/2))`.
+2. **Additive blending is `(srcAlpha, one)`**, so writing the falloff into both
+   the colour *and* the alpha multiplies it in twice and squares the bloom. The
+   alpha is 1.0 and every bit of shaping is in the colour.
+3. **Depth testing does not hide a far-side light.** The half of its bloom that
+   overhangs the limb has nothing to be occluded by, so the planet wears a ring
+   of half-haloes. The vertex shader fades by facing instead.
+
+**Backticks are not allowed in this file's GLSL.** The shaders are template
+literals and one backtick in a comment ends the shader mid-sentence and breaks
+the module.
