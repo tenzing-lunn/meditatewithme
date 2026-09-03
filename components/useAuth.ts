@@ -25,8 +25,70 @@ export type AuthState =
   | { status: 'signed-out' }
   | { status: 'signed-in'; user: User };
 
+/**
+ * What the email link came back saying, when it came back saying no.
+ *
+ * WHY THIS EXISTS AT ALL — IT COST AN EVENING TO FIND OUT
+ * A used or superseded magic link does not fail loudly. Supabase answers the
+ * `/verify` request with a 303 **to the site**, carrying the reason in the URL
+ * fragment: `#error=access_denied&error_code=otp_expired&error_description=...`.
+ * So the browser lands on the landing page, signed out, looking exactly like a
+ * cold visit — and the room, which had the explanation in its own address bar,
+ * rendered `Begin.` and said nothing. Tenzing hit this and reasonably concluded
+ * the whole flow was broken; the auth logs said `One-time token not found`,
+ * which is a used link, not a broken product.
+ *
+ * There is no public API for it. `detectSessionInUrl` recognises the error
+ * fragment, abandons the sign-in and keeps the reason to itself —
+ * `onAuthStateChange` never fires and `getSession()` just returns null. So the
+ * fragment is read here, first-hand.
+ *
+ * Both the fragment and the query string, because the parameters move between
+ * the two depending on flow and Supabase version, and looking in both costs a
+ * line.
+ */
+function readLinkError(hash: string, search: string): string | null {
+  const params = new URLSearchParams(
+    (hash.startsWith('#') ? hash.slice(1) : hash) || search.replace(/^\?/, ''),
+  );
+
+  const code = params.get('error_code');
+  const description = params.get('error_description');
+  if (!code && !description && !params.get('error')) return null;
+
+  // The overwhelmingly common one, and the stock wording for it — "invalid or
+  // has expired" — is wrong about the usual cause often enough to send somebody
+  // looking for a broken clock. A magic link is single-use, and requesting a
+  // new one kills the last, so "already used" is the answer far more often than
+  // "too old".
+  if (code === 'otp_expired' || code === 'access_denied') {
+    return 'That link had already been used, or a newer email replaced it. Each one works once — send yourself a fresh one.';
+  }
+
+  return description ?? 'That link did not work. Send yourself a fresh one.';
+}
+
 export function useAuth() {
   const [state, setState] = useState<AuthState>({ status: 'loading' });
+
+  /**
+   * Read during the first render, which is before any effect anywhere in the
+   * tree — including the ones in child components that also reach for the
+   * Supabase client. Reading it in an effect here would be a race with those,
+   * since React runs child effects before the parent's.
+   */
+  const [linkError, setLinkError] = useState<string | null>(() =>
+    typeof window === 'undefined'
+      ? null
+      : readLinkError(window.location.hash, window.location.search),
+  );
+
+  // Take it out of the address bar once it has been read, so a reload is a
+  // clean arrival rather than the same complaint again.
+  useEffect(() => {
+    if (!linkError || typeof window === 'undefined') return;
+    window.history.replaceState(null, '', window.location.pathname);
+  }, [linkError]);
 
   useEffect(() => {
     let client;
@@ -65,37 +127,165 @@ export function useAuth() {
       );
     });
 
+    /**
+     * The same token, arriving without a page load.
+     *
+     * THIS IS THE BUG THAT LOOKED LIKE "LOGGING IN DOESN'T WORK"
+     * `detectSessionInUrl` reads the URL exactly once, when the client is
+     * constructed — which is on page load. That covers the case it was written
+     * for: the link opens a new tab, the document loads, the fragment is there.
+     *
+     * It does not cover the link landing in a tab that is *already* open on the
+     * page it redirects to. The email is requested from the site, so the tab is
+     * sitting on `/`; the link's `redirect_to` is that same `/`. A URL that
+     * differs from the current one only by its fragment is a **same-document**
+     * navigation — the browser fires `hashchange` and does not reload. So the
+     * client is never rebuilt, nothing re-reads the URL, and a perfectly good
+     * access token sits in the address bar being ignored. The visitor is shown
+     * `Let's begin.` and told nothing, because there is no error to tell them
+     * about: Supabase verified the link and logged the login server-side.
+     *
+     * Reproduced by pasting a link into an open tab, or by any mail client that
+     * reuses the tab rather than opening a new one.
+     *
+     * `setSession` rather than a reload: the token is right here, already
+     * parsed, and reloading would throw away the room's mounted scene for no
+     * reason — see the note on the switch in `Entry`. It is public API, and it
+     * fires `onAuthStateChange` above, so the screen changes the same way it
+     * does on every other path.
+     */
+    const onHashChange = () => {
+      if (cancelled) return;
+
+      const hash = window.location.hash;
+      const params = new URLSearchParams(
+        hash.startsWith('#') ? hash.slice(1) : hash,
+      );
+      const accessToken = params.get('access_token');
+      const refreshToken = params.get('refresh_token');
+      const error = readLinkError(hash, '');
+
+      // Somebody navigating the page's own anchors, not arriving from an email.
+      if (!accessToken && !error) return;
+
+      // Read, so take it out of the address bar — same reason as on load: a
+      // reload should be a clean arrival, not a second attempt at a spent
+      // token. Safe before `setSession`, which reads the values, not the URL.
+      window.history.replaceState(null, '', window.location.pathname);
+
+      if (error) {
+        setLinkError(error);
+        return;
+      }
+
+      // An implicit-flow fragment always carries both. If it somehow does not,
+      // there is nothing to set and nothing worth saying.
+      if (!accessToken || !refreshToken) return;
+
+      client.auth
+        .setSession({ access_token: accessToken, refresh_token: refreshToken })
+        .then(({ error: setError }) => {
+          if (cancelled || !setError) return;
+          setLinkError(
+            'That link could not be used. Send yourself a fresh one.',
+          );
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setLinkError(
+              'Could not reach the sign-in service. Please try again.',
+            );
+          }
+        });
+    };
+
+    window.addEventListener('hashchange', onHashChange);
+
     return () => {
       cancelled = true;
       sub.subscription.unsubscribe();
+      window.removeEventListener('hashchange', onHashChange);
     };
   }, []);
 
   /**
-   * Send a magic link.
+   * Send the email that makes an account.
    *
    * No password means no password to choose, forget, reset, or reuse from
    * somewhere it has already leaked. It also means the entire reset flow —
    * which is where most auth bugs live — does not exist.
    *
+   * `signInWithOtp` is deliberately both doors: it creates the user if the
+   * address is new and signs them in if it is not. That is why the room can
+   * offer "Create account" and still let somebody who has one back in without
+   * a second form behind a second button.
+   *
+   * `name` is written to `user_metadata` and only ever takes on the request
+   * that creates the user — Supabase ignores `data` for an address it already
+   * knows. So a returning visitor cannot be renamed by retyping the flow, and
+   * the account flow can ask the question without qualifying it.
+   *
    * Returns an error string rather than throwing, because every caller wants to
    * put it on screen.
    */
-  const signIn = useCallback(async (email: string): Promise<string | null> => {
-    try {
-      const { error } = await browserClient().auth.signInWithOtp({
-        email,
-        options: {
-          // Straight back to the room. The client picks the token out of the
-          // fragment on load; there is no callback route to keep in sync.
-          emailRedirectTo: window.location.origin,
-        },
-      });
-      return error ? error.message : null;
-    } catch {
-      return 'Could not reach the sign-in service. Please try again.';
-    }
-  }, []);
+  const signIn = useCallback(
+    async (email: string, name?: string): Promise<string | null> => {
+      try {
+        const { error } = await browserClient().auth.signInWithOtp({
+          email,
+          options: {
+            // Straight back to the room. The client picks the token out of the
+            // fragment on load; there is no callback route to keep in sync.
+            //
+            // Still sent even though the flow now asks for a code instead: the
+            // same email carries both, and the link is the working path until
+            // `{{ .Token }}` is added to the Supabase email template. See the
+            // note on `verify`.
+            emailRedirectTo: window.location.origin,
+            data: name ? { name } : undefined,
+          },
+        });
+        return error ? error.message : null;
+      } catch {
+        return 'Could not reach the sign-in service. Please try again.';
+      }
+    },
+    [],
+  );
+
+  /**
+   * Finish it here, without leaving the room.
+   *
+   * The magic link works and is not going anywhere, but it ends a meditation
+   * site's only signup flow in somebody's inbox and brings them back to a page
+   * that reloads from nothing. Typing six digits keeps them where they were.
+   *
+   * REQUIRES ONE DASHBOARD CHANGE THIS REPOSITORY CANNOT MAKE
+   * Supabase's stock Magic Link template contains only `{{ .ConfirmationURL }}`.
+   * The same email will carry the code once `{{ .Token }}` is added to it in
+   * Authentication → Email Templates. Until then the code box is there and the
+   * arriving email has nothing to put in it, which is why the flow keeps saying
+   * the link in that email works too. `plans/launch-readiness.md` carries this
+   * alongside the SMTP item it depends on.
+   *
+   * Success needs no return value: `onAuthStateChange` above fires and the
+   * whole app changes screen underneath the form.
+   */
+  const verify = useCallback(
+    async (email: string, token: string): Promise<string | null> => {
+      try {
+        const { error } = await browserClient().auth.verifyOtp({
+          email,
+          token,
+          type: 'email',
+        });
+        return error ? error.message : null;
+      } catch {
+        return 'Could not reach the sign-in service. Please try again.';
+      }
+    },
+    [],
+  );
 
   const signOut = useCallback(async () => {
     try {
@@ -106,5 +296,22 @@ export function useAuth() {
     }
   }, []);
 
-  return { state, signIn, signOut };
+  return { state, linkError, signIn, verify, signOut };
+}
+
+/**
+ * What to call somebody, if they told us.
+ *
+ * Undefined rather than a fallback string, because the one caller wants to
+ * choose its own — a masthead that reads "Hello, friend" to everybody who
+ * signed up before this flow existed would be worse than the site's own name.
+ *
+ * Guarded rather than cast: `user_metadata` is a free-form JSON column and the
+ * only thing standing between it and the page is this function.
+ */
+export function displayName(user: User): string | undefined {
+  const name = user.user_metadata?.name;
+  if (typeof name !== 'string') return undefined;
+  const trimmed = name.trim();
+  return trimmed === '' ? undefined : trimmed;
 }

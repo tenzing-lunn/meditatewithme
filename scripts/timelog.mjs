@@ -23,15 +23,35 @@ if (!existsSync(PENDING)) {
   process.exit(0);
 }
 
-const rows = readFileSync(PENDING, 'utf8')
+const all = readFileSync(PENDING, 'utf8')
   .split('\n').filter(Boolean)
   .map((l) => {
     const [date, from, to, mins, reason, commits] = l.split('\t');
     return { date, from, to, mins: Number(mins), reason, commits };
-  })
+  });
+
+// A session that never closed (crash, killed terminal) has a start and no end.
+// It cannot be confirmed here because there is no ceiling to check against —
+// add its row to TIMELOG.md by hand, from memory, or skip it.
+const unclosed = all.filter((r) => r.reason === 'unclosed');
+const rows = all
+  .filter((r) => r.reason !== 'unclosed')
   .filter((r) => r.mins >= 2); // a session opened and shut is not work
 
+if (unclosed.length) {
+  console.log(`\n${unclosed.length} session(s) never closed — no end time, so not confirmable here. Log by hand:`);
+  unclosed.forEach((r) => console.log(`  ${r.date}  from ${r.from}  ${r.commits === '-' ? 'no commits' : r.commits}`));
+}
+
+// Two Claude windows open at once are one person working, not two. Flag rows
+// that overlap the previous one so the same minutes are not confirmed twice.
+const toMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+rows.forEach((r, i) => {
+  r.overlaps = rows.slice(0, i).some((p) => p.date === r.date && toMin(r.from) < toMin(p.to) && toMin(r.to) > toMin(p.from));
+});
+
 if (rows.length === 0) {
+  if (unclosed.length) writeFileSync(PENDING, unclosed.map((r) => [r.date, r.from, r.to, r.mins, r.reason, r.commits].join('\t')).join('\n') + '\n');
   console.log('Nothing to confirm.');
   process.exit(0);
 }
@@ -42,7 +62,7 @@ if (given.length === 0) {
   console.log(`\n${rows.length} unconfirmed session${rows.length === 1 ? '' : 's'}:\n`);
   rows.forEach((r, i) => {
     const h = (r.mins / 60).toFixed(2);
-    console.log(`  ${i + 1}. ${r.date}  ${r.from}–${r.to}  open ${h}h  ${r.commits === '-' ? 'no commits' : r.commits}`);
+    console.log(`  ${i + 1}. ${r.date}  ${r.from}–${r.to}  open ${h}h  ${r.commits === '-' ? 'no commits' : r.commits}${r.overlaps ? '  ⚠ overlaps an earlier row — count these minutes once' : ''}`);
   });
   console.log(`\nOpen time is a CEILING, not your engaged time.`);
   console.log(`Confirm with minutes in this order, "-" to skip:\n`);
@@ -84,7 +104,8 @@ const added = confirmed.map((c) => {
 }).join('\n');
 
 writeFileSync(LOG, log.replace(anchor, `${added}\n${anchor}`));
-writeFileSync(PENDING, '');
+// Keep unclosed rows until they are dealt with by hand; clear everything else.
+writeFileSync(PENDING, unclosed.length ? unclosed.map((r) => [r.date, r.from, r.to, r.mins, r.reason, r.commits].join('\t')).join('\n') + '\n' : '');
 
 const total = confirmed.reduce((a, c) => a + c.engaged, 0) / 60;
 console.log(`Wrote ${confirmed.length} row(s), ${total.toFixed(2)}h, to ${LOG}.`);

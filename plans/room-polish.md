@@ -1,6 +1,12 @@
 # Room polish — dead controls, and the reason it looks generated
 
-Active plan. Written 30 August 2026 against `dev` at `1da89f6`, from a rendered
+Active plan — **only §4 is still open** (the product model, and measurement).
+Phases 1 and 2 landed in `5b6b239`; §4A–C were then overtaken by the
+photographic room and the field's deletion in `8d59fba`, and are marked so
+below. Read §1 and §4 for what remains; §2–§3 are kept as the record of what
+was found and why.
+
+Written 30 August 2026 against `dev` at `1da89f6`, from a rendered
 audit rather than a code read: the room was served headless at 390×844 and
 1440×900, screenshotted in every state, and every interactive element hit-tested
 with `elementFromPoint`. Reproduce it with the harness in §6 before and after.
@@ -305,10 +311,12 @@ that flow, and test it on five people unfamiliar with the project.
 picks this up should weigh them rather than inherit the conclusion:
 
 - The model it proposes replacing was chosen deliberately in `8821de1`, argued
-  in `ARCHITECTURE.md`, extended by `presence-spec.md`, and **quoted, approved
-  and billed** as the presence change order. Reopening it is a client
-  conversation and probably a second change order — not a prerequisite an agent
-  clears on its own before touching typography.
+  in `ARCHITECTURE.md`, extended by `presence-spec.md`, and built as the
+  presence work — **which Jonny has not yet been told about**: the change
+  order in `plans/presence-change-order.md` was never sent. Reopening the model
+  is still a client conversation, now a harder one, because the work exists
+  before the conversation has happened. Not a prerequisite an agent clears on
+  its own before touching typography.
 - The cap is 55 hours with step 08 — legal copy, real-device QA, auth SMTP,
   domain, security advisors — still entirely open, and several of those are
   blocked on Jonny rather than on us. Spending the remaining hours re-deciding
@@ -332,7 +340,12 @@ Question four is the one to watch; both reviews expect it to fail.
 
 ### Items
 
-### A · The presence field
+### A · The presence field — resolved 1 September, deleted in `8d59fba`
+
+Tenzing made the call looking at it live. The field is gone; the dots on the
+sitting ring carry the same fact in the middle of the frame, keeping the
+lit-but-gone distinction. Unbilled, as this section required. The text below
+is the finding as written.
 
 It renders as a 6×10 grid of identical teardrops with visible rows and columns,
 half of them dark brown, captioned `AND 13 MORE`. It reads as a sprite sheet
@@ -344,13 +357,17 @@ selection artifact rather than as *you*.
 and quieter than sixty synthetic flames. If a visual survives, it cannot be a
 grid: varied scale and opacity, no rows, no cap message.
 
-**This is why it is not authorised.** The field is `docs/presence-spec.md` §A,
-it was quoted and approved as part of the presence change order, and it is
-delivered work. Reworking it is defensible as quality; describing it to Jonny as
-scrapped is not. Whoever picks this up raises it with Tenzing before touching
-`PresenceField.tsx`, and it is unbilled if it happens.
+**Why it was not authorised at the time.** The field is `docs/presence-spec.md`
+§A and it was built as part of the presence work. Reworking it is defensible as
+quality; describing it to Jonny as scrapped is not — he has not seen it, so
+there is nothing to describe, but the hours it cost still happened and still
+have to be accounted for somewhere. It was raised with Tenzing, who decided.
 
-### B · The ending
+### B · The ending — resolved in `5b6b239`
+
+The masthead is gone from the ending; the bell is followed by ten seconds of
+*Come back* before anything is read, then the facts, then the controls. See
+`ARCHITECTURE.md` §16, *The ending is thirty seconds long*.
 
 The bell rings, and the masthead returns at full brightness — title, tagline,
 `Lit at 12:00 AM · next at 1:00 AM` — before the acknowledgement fades in
@@ -362,7 +379,12 @@ Fix is small — hold the masthead back, or fade it in with the acknowledgement
 rather than instantly — but it changes the shape of a moment the proposal is
 specific about, so it gets decided rather than assumed.
 
-### C · The candle's dark palette
+### C · The candle's dark palette — moot since `5b6b239`
+
+`Candle.tsx` is deleted. The room is a photograph (`CandleScene.tsx`) and the
+burn is spent on the flame's scale and glow rather than the wax. Whether the
+photograph is itself the stand-in for a licensed loop from Jonny, or the thing
+that ships, is an open question for `context/PRODUCT.md`.
 
 `--color-wax-lit` is `#6b5133`, darker than the glow behind it, so the wax reads
 as a brown tube with a glowing egg balanced on top. The melted pool is
@@ -405,8 +427,9 @@ Phase 1 is done when, on 390×844 and 1440×900:
       Supabase column and the `globals.css` comment describing its switch.
 - [x] `scripts/contrast.mjs` reads the palette from `globals.css` rather than
       restating it, and its verdict is trustworthy again.
-- [ ] The always-dark change is committed with its reasoning in `context/`, or
-      reverted. The tree is clean before Phase 2 starts.
+- [x] The always-dark change is committed with its reasoning in `context/`, or
+      reverted. The tree is clean before Phase 2 starts. (`ARCHITECTURE.md` §1,
+      *The room is always dark*, in `5b6b239`.)
 
 Phase 2 is done when:
 
@@ -471,6 +494,6 @@ where an unbounded design pass would start, which is exactly why it is fenced �
 and why §3E exists: it is the one change that moves the product toward the
 gathering without reopening what the gathering is.
 
-No time log exists for this project. Reconstructing hours spent is a
+`TIMELOG.md` now exists, with every hours cell unfilled. Confirming it is a
 prerequisite for the §4 conversation, because *"where are we against the 55?"*
 is the first thing Jonny will ask.

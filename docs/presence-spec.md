@@ -1,8 +1,11 @@
 # Presence — making "with someone" felt
 
-Archived implementation record. The scope described here was completed on
-`dev` after approval to proceed; the related unsent commercial draft is in
-`presence-change-order.md`.
+Archived implementation record. B, C and D are live on `dev`. A — the flame
+field — was built and then deleted in `8d59fba`; what it was for is now carried
+by the dots on the sitting ring (`context/ARCHITECTURE.md` §16). All of it was
+built on Tenzing's decision **without the change order being sent**; that draft
+is still active in `plans/presence-change-order.md`, and the work is not
+billed as a one-off until Jonny has agreed to one.
 
 ---
 
@@ -140,8 +143,8 @@ showing a 1.
 
 ## What it costs
 
-Twelve hours. Quoted to the client as a one-off — see
-`presence-change-order.md` — rather than as hours against the cap, because a
+Twelve hours. Intended to be quoted to the client as a one-off — see
+`../plans/presence-change-order.md`, still unsent — rather than as hours against the cap, because a
 fixed price for a named thing is easier for a non-profit to budget than an open
 count, and because it sets the pattern for every one of the remaining twenty
 pages of the brief.
@@ -158,9 +161,12 @@ cheapest, and between them they make the whole idea obvious rather than
 theoretical. A client who cannot picture a thing cannot fund it, and three hours
 of unbilled work is a much better price than a paragraph of persuasion.
 
-Then A, then C, if the answer is yes. **Both are now complete on `dev` after
-approval to proceed:** A is the capped flame field and C is the persisted
-“until the bell” option with a five-minute late-arrival roll-forward.
+Then A, then C, if the answer is yes. **What actually happened:** the message
+was never sent, and A and C were built anyway on Tenzing's decision to show the
+work first. C is the persisted “until the bell” option with a five-minute
+late-arrival roll-forward and is live. A was the capped flame field; it rendered
+as a grid, not a room, and was deleted in `8d59fba` — the ring's dots carry the
+lit-but-gone distinction it was worth keeping.
 
 ## Where this goes wrong
 

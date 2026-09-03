@@ -17,22 +17,27 @@ import {
   nextSharedBellAt,
   remainingMs,
 } from '@/lib/timer';
-import type { Session } from '@/lib/types';
+import type { Session, UserPreferences } from '@/lib/types';
 import { currentStreak, summarise, type PracticeEntry } from '@/lib/practice';
-import CandleScene, { type ScenePhase } from './CandleScene';
+import CandleScene, { REVEAL_EASE, REVEAL_MS, type ScenePhase } from './CandleScene';
 import Practice from './Practice';
 import SessionSetup, { type Step } from './SessionSetup';
-import SignIn from './SignIn';
+import Account from './Account';
+import { QUIET } from './controls';
 import SoundMixer from './SoundMixer';
 import type { MASTER_KEY, TrackSlug } from './mix';
-import { useMix } from './useMix';
-import { useAuth } from './useAuth';
-import { usePractice } from './usePractice';
+import type { Mix } from './useMix';
+import type { AuthState } from './useAuth';
+import type { usePractice } from './usePractice';
 import { usePresence } from './usePresence';
-import { usePreferences } from './usePreferences';
 import { useSession } from './useSession';
-import { useSyncPreferences } from './useSyncPreferences';
-import { scheduleBell, unlockAudio, type ScheduledBell } from './audio';
+import type { SyncStatus } from './useSyncPreferences';
+import {
+  openingBell,
+  scheduleBell,
+  unlockAudio,
+  type ScheduledBell,
+} from './audio';
 
 /**
  * The room.
@@ -71,6 +76,15 @@ type Sitting = {
   startedAtWall: number;
   endsAt: number;
   bell: ScheduledBell | null;
+  /**
+   * The bell struck at Begin, held only so it can be silenced.
+   *
+   * A sitting that ends on its own never needs this — the tail is clamped to
+   * the sitting's own length, so by the time the closing bell strikes this one
+   * has already finished. It exists for the two ways a sitting stops being
+   * true: ending early, and the room going away underneath it.
+   */
+  opening: ScheduledBell | null;
 };
 
 type Activity =
@@ -113,9 +127,9 @@ type Activity =
  * recoverable where either of those is not.
  *
  * Callback refs rather than `useRef`, because the band is not in the first
- * render: `Room` returns "Finding the hour…" until the clock answers, so a
- * `useRef` read inside a `[]` effect finds null, gives up, and is never asked
- * again. This re-runs the moment the nodes actually exist.
+ * render: `Room` returns the scene alone until the clock answers, so a `useRef`
+ * read inside a `[]` effect finds null, gives up, and is never asked again.
+ * This re-runs the moment the nodes actually exist.
  *
  * WHY useLayoutEffect, AND WHY THAT IS THE WHOLE BUG FIX
  * With `useEffect` the browser paints once at whatever scale the last screen
@@ -125,16 +139,43 @@ type Activity =
  * DOM is written and before the paint, so the first frame anybody sees is
  * already the right size. There is nothing to transition and nothing to catch.
  */
-function useFitToBand(screen: string) {
+function useFitToBand(screen: string, open: boolean) {
   const [outer, setOuter] = useState<HTMLDivElement | null>(null);
   const [inner, setInner] = useState<HTMLDivElement | null>(null);
   const [fit, setFit] = useState({ scale: 1, slack: 0 });
 
   useLayoutEffect(() => {
     if (!outer || !inner) return;
+    const frame = outer.parentElement;
+    if (!frame) return;
 
     const measure = () => {
-      const available = outer.clientHeight;
+      // THE HEIGHT WE FIT AGAINST IS THE ONE THE BAND IS GOING TO BE, NOT THE
+      // ONE IT CURRENTLY IS. THIS IS THE WHOLE BUG.
+      //
+      // `outer.clientHeight` is the obvious thing to read and it is wrong for
+      // 700ms after every open and close, because that is how long the band
+      // takes to travel between the strip above the flame and the whole frame.
+      // Read mid-flight, it produced a `scale` and a `slack` that were correct
+      // for a height that existed only in that frame — and since the
+      // ResizeObserver fires *every* frame of that animation, the transform
+      // below was handed a new target roughly forty times, each one restarting
+      // its 600ms ease-out from wherever the last had got to.
+      //
+      // A repeatedly-restarted ease-out never arrives. The copy crept in,
+      // drifted past where it had appeared to be going, and settled about a
+      // second late; Tenzing saw it twice and called it bouncing both times.
+      // The account panel dodged this by leaving the band alone. The setup
+      // questions cannot dodge it — taking the frame is what they are — so the
+      // measurement is fixed here instead.
+      //
+      // Both targets are known without waiting for anything: `open` is the
+      // frame's own height, because the band is `height: 100%` of it, and shut
+      // is `--flame-top`, which `CandleScene` publishes in px. So the fit is
+      // computed once per screen, the observer's forty callbacks all compute
+      // the same numbers and are dropped by the equality check below, and the
+      // transform transitions exactly once.
+      const available = open ? frame.clientHeight : restingBandHeight(frame);
       const needed = inner.offsetHeight;
       if (!available || !needed) return;
       const scale = Math.min(1, available / needed);
@@ -164,9 +205,33 @@ function useFitToBand(screen: string) {
     // observer alone and the copy comes back at the previous screen's size.
     // Measured: the sound question rendered with the bell question's offset,
     // 127px of lift where it needed 70.
-  }, [outer, inner, screen]);
+    //
+    // `open` joins it because it changes which of the two targets is the right
+    // one, and it changes on the same click that changes `screen`.
+  }, [outer, inner, screen, open]);
 
   return { outer: setOuter, inner: setInner, ...fit };
+}
+
+/**
+ * How tall the band is when it is not travelling.
+ *
+ * `--flame-top` is published by `CandleScene` from its own cover-fit of the
+ * photograph — see the note there. It is the untransformed position of the
+ * flame in px, and the band is exactly the strip above it.
+ *
+ * The fallback mirrors the CSS's own `39vh`, which is where the flame sits in
+ * the source image, and is only ever used for the frame or two before the first
+ * measurement lands. It is taken off the frame rather than off `innerHeight`
+ * because the frame is `h-dvh`, and on a phone with a retracting toolbar those
+ * are not the same number.
+ */
+function restingBandHeight(frame: HTMLElement): number {
+  const published = getComputedStyle(document.documentElement).getPropertyValue(
+    '--flame-top',
+  );
+  const px = Number.parseFloat(published);
+  return Number.isFinite(px) && px > 0 ? px : Math.round(frame.clientHeight * 0.39);
 }
 
 /**
@@ -225,7 +290,72 @@ function newSittingId(): string {
   }
 }
 
-export default function Room() {
+/**
+ * Everything the room needs and does not own.
+ *
+ * WHY THESE ARRIVE AS PROPS NOW
+ * They were hooks called here, which was right while the room was the whole
+ * product. It is not: `Entry` may render a home instead, and Home reads the
+ * same practice log, writes the same preferences and starts the same audio
+ * graph. Two `usePreferences` would hold separate React state over one
+ * localStorage key and silently disagree about what you had chosen; two
+ * `usePractice` would both run the sync loop against the same table.
+ *
+ * So there is one of each, above both screens, and the room is handed them.
+ * `usePresence` deliberately did NOT lift — see the note on it below.
+ */
+interface RoomProps {
+  prefs: UserPreferences;
+  update: (patch: Partial<UserPreferences>) => void;
+  mix: Mix;
+  entries: PracticeEntry[];
+  record: ReturnType<typeof usePractice>['record'];
+  auth: AuthState;
+  sync: SyncStatus;
+  signIn: (email: string, name?: string) => Promise<string | null>;
+  verify: (email: string, code: string) => Promise<string | null>;
+  /**
+   * Why the link they followed did not sign them in, if they followed one.
+   *
+   * Passed straight through to `Account`, which is the only thing that can do
+   * anything about it. The room itself does not react — somebody who arrived on
+   * a dead link still gets the photograph and the word on it.
+   */
+  linkError: string | null;
+  signOut: () => void;
+  /**
+   * Where "done" goes, when there is somewhere for it to go.
+   *
+   * This one prop is the whole difference between the two ways the room is
+   * used, because that difference really is "is there a home to come back to":
+   *
+   *   absent   a guest. The landing, the word `Begin.`, the three questions,
+   *            and the account offer at the end.
+   *   present  somebody signed in. The sitting starts on arrival — they
+   *            answered the questions on Home by reading them — and the ending
+   *            comes back here instead of offering an account they have.
+   *
+   * Two booleans would let the room be asked for a state that cannot exist: a
+   * sitting that starts on arrival and then strands somebody with nowhere to
+   * go, or a landing offering an account to somebody holding one.
+   */
+  home?: () => void;
+}
+
+export default function Room({
+  prefs,
+  update,
+  mix,
+  entries,
+  record,
+  auth,
+  sync,
+  signIn,
+  verify,
+  linkError,
+  signOut,
+  home,
+}: RoomProps) {
   // Null until mounted — the server cannot know the viewer's clock, so
   // rendering any time during SSR guarantees a hydration mismatch.
   const [now, setNow] = useState<number | null>(null);
@@ -233,8 +363,15 @@ export default function Room() {
   const [activity, setActivity] = useState<Activity>({ kind: 'idle' });
 
   // The camera's opening move. `load` is the wide, soft, dim frame the room
-  // arrives on; `booted` is what releases it into the five-second settle.
+  // arrives on; `booted` is what releases it into the five-second settle — and
+  // it is also the single gate the whole arrival hangs off, because the room
+  // and the word on it fade up together or they are two events. See
+  // `sceneReady` and THE LANDING below.
   const [booted, setBooted] = useState(false);
+  // The photograph has decoded. Reported by `CandleScene`, which is the only
+  // thing that knows: it is a CSS background and has no load event of its own.
+  const [sceneReady, setSceneReady] = useState(false);
+  const onSceneReady = useCallback(() => setSceneReady(true), []);
   /**
    * Is the setup flow open, and which question is showing.
    *
@@ -274,32 +411,51 @@ export default function Room() {
    * Nothing at all for the first ten seconds. See `ComingBack`.
    */
   const [reveal, setReveal] = useState(0);
+  /**
+   * THE ACCOUNT FLOW IS NOT ROOM STATE ANY MORE, AND THAT IS THE FIX.
+   *
+   * There used to be a `signInOpen` here. It fed `phase`, so pressing `Sign in`
+   * racked the camera; it fed the band's height, so the frame grew from the
+   * strip above the flame to all of it; and it fed `useFitToBand`'s key, so the
+   * copy re-measured and re-scaled against a container that was still animating
+   * — the transform's target moving every frame while a 600ms ease-out chased
+   * it. That chase is what read as bouncing.
+   *
+   * The account panel now owns whether it is open, animates nothing but its own
+   * opacity and a six-pixel slide, and the room does not know or care. See the
+   * head of `Account.tsx` for why an account is not one of the room's
+   * questions.
+   */
 
-  const { prefs, update, replace, loaded } = usePreferences();
+  /**
+   * Whether the band is taking the whole frame, or the strip above the flame.
+   *
+   * Declared here rather than derived from `phase` below because the fit hook
+   * needs it and hooks run before `phase` exists. `phase` reads it back, so the
+   * two cannot disagree about what "open" means — which they would have to
+   * agree on anyway, since one sets the band's height and the other decides
+   * what height to measure against.
+   */
+  const bandOpen = booted && (setup !== null || soundOpen || practiceOpen);
 
   // Everything that changes what is in the band, in one string. See the hook.
   const band = useFitToBand(
     // `reveal` is in here because the ending swaps `ComingBack` for the stat
     // block at stage 1, and those are different heights.
     `${activity.kind}:${setup ?? '-'}:${soundOpen}:${practiceOpen}:${prefs.showCount}:${reveal}`,
+    bandOpen,
   );
+  /**
+   * PRESENCE DID NOT LIFT WITH THE REST, AND MUST NOT.
+   *
+   * Everything else the room needs now comes from `Entry`, because Home reads
+   * the same log and writes the same preferences. This one stays here, because
+   * heartbeating is not reading — it puts you in the count. §14 settled that
+   * the count means "here", and somebody reading their own streak on a
+   * dashboard is not here. Home reads the number; only the room writes one.
+   */
   const { count, litCount, begin: recordBegin } = usePresence();
   const [beganWith, setBeganWith] = useState<number | null>(null);
-
-  // Accounts are optional and cuttable. Removing these two lines and the
-  // <SignIn> below leaves a complete product — which is the promise the scope
-  // table makes with the word "optional", kept at runtime rather than on paper.
-  const { state: auth, signIn, signOut } = useAuth();
-  const userId = auth.status === 'signed-in' ? auth.user.id : null;
-
-  const sync = useSyncPreferences({ userId, prefs, replace, loaded });
-
-  // The log works signed out. Signing in only carries it between devices.
-  const { entries, record } = usePractice(userId);
-
-  // The ambient mix. Preferences own the levels; this only turns them into
-  // sound, which is why it is handed prefs rather than any state of its own.
-  const mix = useMix(prefs.soundMix);
 
   // Re-resolves only when the clock rolls into a new hour, which is the only
   // moment the answer can change.
@@ -334,7 +490,13 @@ export default function Room() {
       window.clearTimeout(frame);
       window.removeEventListener('focus', onFocus);
       const a = activityRef.current;
-      if (a.kind === 'sitting') a.sit.bell?.cancel();
+      if (a.kind === 'sitting') {
+        a.sit.bell?.cancel();
+        // The opening bell too: it may still be ringing when the room goes
+        // away, and a bell left sounding into a page nobody is on is the one
+        // thing this site promised never to do.
+        a.sit.opening?.cancel();
+      }
     };
   }, []);
 
@@ -364,12 +526,24 @@ export default function Room() {
     return () => timers.forEach((t) => window.clearTimeout(t));
   }, [activity.kind]);
 
+  /**
+   * When the room is allowed to arrive.
+   *
+   * Both conditions, not either: the clock, because the copy that fades in is
+   * about an hour it does not yet know, and the photograph, because a word
+   * fading up over a dark ground while the picture lands underneath it a second
+   * later is two arrivals where the design has one.
+   *
+   * The 200ms is a beat, not a wait — it lets the browser paint the `load`
+   * frame at zero before anything transitions off it, which is what makes this
+   * a fade rather than a jump.
+   */
   const hasTime = now !== null;
   useEffect(() => {
-    if (!hasTime) return;
+    if (!hasTime || !sceneReady) return;
     const t = window.setTimeout(() => setBooted(true), 200);
     return () => window.clearTimeout(t);
-  }, [hasTime]);
+  }, [hasTime, sceneReady]);
 
   /**
    * A sound slider moved.
@@ -427,7 +601,14 @@ export default function Room() {
     // Scheduled on the AUDIO clock, not a JS timer — background tabs throttle
     // timers to roughly one tick a minute, and a bell ninety seconds late has
     // failed at its one job.
-    const bell = scheduleBell((end - startedAt) / 1000, prefs.endBell);
+    const seconds = (end - startedAt) / 1000;
+    const bell = scheduleBell(seconds, prefs.endBell);
+
+    // A sitting is bounded at both ends by the same sound. Without this, Begin
+    // put you into silence and left you to work out for yourself whether
+    // anything had started — the bell was the only thing that ever marked a
+    // threshold, and it only ever marked the far one.
+    const opening = openingBell(prefs.endBell, seconds);
 
     setSetup(null);
     setActivity({
@@ -438,6 +619,7 @@ export default function Room() {
         startedAtWall: Date.now(),
         endsAt: end,
         bell,
+        opening,
       },
     });
     // Presence is never allowed to delay the ritual. The request records a
@@ -446,10 +628,56 @@ export default function Room() {
     void recordBegin().then(setBeganWith);
   }, [prefs.timerMinutes, prefs.untilBell, prefs.endBell, now, mix, recordBegin]);
 
+  /**
+   * Somebody signed in arrives already having chosen.
+   *
+   * REVERSING §16'S "NO SKIP PATH", AND WHAT PAYS FOR IT
+   * That section argued against a skip on the grounds that the three questions
+   * are "the only moment the product has to ask a returning visitor whether
+   * today is a ten-minute day". The concern is right and it is answered rather
+   * than dropped: Home prints the settings this sitting will use directly under
+   * the button that starts it, with `Change` beside them. The question is still
+   * put every time. It is now read instead of walked.
+   *
+   * A guest still gets all three screens, because a guest has no home to have
+   * read the answer on.
+   *
+   * THE AUDIO WAS ALREADY UNLOCKED BEFORE THIS RAN. `begin()` calls
+   * `unlockAudio()`, but an effect is not a user gesture and autoplay policy
+   * only starts an AudioContext inside one. Home's `Sit` handler does it in the
+   * click that brought us here — see `startSitting` in `Entry`. If a silent
+   * sitting ever appears, that is the line that has been moved.
+   */
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (!home || autoStarted.current) return;
+    // `begin` needs the corrected clock to resolve a shared bell.
+    if (now === null) return;
+    autoStarted.current = true;
+    begin();
+    // `begin` and `now` both change on every tick; the ref is what makes this
+    // run once. Depending on them without it would restart the sitting four
+    // times a second.
+  }, [home, now, begin]);
+
+  /**
+   * `End this sitting`.
+   *
+   * WHERE IT LEAVES YOU DEPENDS ON WHETHER YOU HAVE ANYWHERE TO GO.
+   * A guest goes back to `idle`, which is the landing: the photograph and the
+   * word on it. Somebody signed in has no landing — the room starts a sitting
+   * on arrival, so `idle` renders nothing at all for them — and returning them
+   * to it would leave them looking at a photograph with no way off it. They go
+   * home, which is where they came from.
+   */
   const endEarly = useCallback(() => {
     setActivity((a) => {
       if (a.kind === 'sitting') {
         a.sit.bell?.cancel();
+        // Somebody who stops ten seconds in is stopping while the opening bell
+        // is still going. Leaving it to ring over the return would answer
+        // "I've changed my mind" with the sound that means "begin".
+        a.sit.opening?.cancel();
         mix.fadeOut();
         // Stopping early still counts, and counts for what was actually sat.
         // Someone who set an hour and stopped at twenty sat for twenty —
@@ -464,7 +692,10 @@ export default function Room() {
       }
       return { kind: 'idle' };
     });
-  }, [record, mix]);
+    // After the log, not instead of it: the sitting is recorded either way, and
+    // only then does the room hand somebody back to where they came from.
+    home?.();
+  }, [record, mix, home]);
 
   // The bell rings itself, on the audio clock. This only moves the UI on.
   useEffect(() => {
@@ -504,13 +735,24 @@ export default function Room() {
   // opening shot back until a fetch returns. The scene sits in the same slot in
   // both branches below, so React keeps it mounted across the changeover and
   // the camera moves off `load` rather than cutting to it.
+  //
+  // Nothing is said while that happens. This frame lasts a few milliseconds and
+  // a label in it only flickers — the scene at `load` is already the first frame
+  // of the room either way, so the clock arriving changes nothing anybody sees.
+  //
+  // The fragment matters: returning the scene bare would put a different fiber
+  // type at the root than the branch below, and React would remount it —
+  // throwing away the photograph, the canvas and the camera's position.
   if (now === null) {
     return (
       <>
-        <Scene session={null} phase="load" burn={0} />
-        <p className="text-ink-3 relative flex h-full items-center justify-center text-sm">
-          Finding the hour…
-        </p>
+        <Scene
+          session={null}
+          phase="load"
+          burn={0}
+          reveal={booted}
+          onReady={onSceneReady}
+        />
       </>
     );
   }
@@ -549,7 +791,12 @@ export default function Room() {
    */
   const phase: ScenePhase = !booted
     ? 'load'
-    : setup !== null || soundOpen || practiceOpen
+    : // `bandOpen` is the same condition, declared above because the fit hook
+      // needs it too. The account panel is deliberately absent from it: it is a
+      // dropdown with its own surface, not a question taking the frame, and
+      // racking the whole photograph behind a 320px panel was most of what
+      // made opening it feel like the page lurching.
+      bandOpen
       ? 'open'
       : activity.kind === 'sitting'
         ? 'sitting'
@@ -563,7 +810,13 @@ export default function Room() {
 
   return (
     <>
-      <Scene session={session} phase={phase} burn={candleBurn(now)} />
+      <Scene
+        session={session}
+        phase={phase}
+        burn={candleBurn(now)}
+        reveal={booted}
+        onReady={onSceneReady}
+      />
 
       {/*
         THE BAND
@@ -666,15 +919,30 @@ export default function Room() {
               the lights come up: `load` spends 5.6s pushing the camera in from
               wide and soft, and a word already sitting on top of that reads as
               an overlay waiting for the animation to finish. Arriving as the
-              room settles makes it part of the same gesture. */}
-          {activity.kind === 'idle' && setup === null && !practiceOpen && (
-            <div
-              className="transition-opacity duration-[2600ms] ease-out"
-              style={{ opacity: booted ? 1 : 0 }}
-            >
-              <BeginWord onClick={openSetup} />
-            </div>
-          )}
+              room settles makes it part of the same gesture.
+
+              THE SAME GESTURE MEANS THE SAME NUMBER
+              The photograph comes up on `REVEAL_MS` too, off this same
+              `booted`, which is why the duration is imported rather than typed
+              here. The room used to appear whenever its file finished loading
+              and the word faded in on a timer of its own; nothing was wrong
+              with either, and together they read as a page assembling itself.
+              One gate, one duration, one easing. */}
+          {activity.kind === 'idle' &&
+            setup === null &&
+            !practiceOpen &&
+            !home && (
+              <div
+                className="transition-opacity"
+                style={{
+                  opacity: booted ? 1 : 0,
+                  transitionDuration: `${REVEAL_MS}ms`,
+                  transitionTimingFunction: REVEAL_EASE,
+                }}
+              >
+                <BeginWord onClick={openSetup} />
+              </div>
+            )}
 
           {activity.kind === 'idle' && setup !== null && (
             <SessionSetup
@@ -713,9 +981,18 @@ export default function Room() {
           {activity.kind === 'finished' && reveal > 0 && (
             <Afterwards
               onAgain={() => {
+                // Signed in, "again" means again — not back to a landing to
+                // press `Begin.` and answer three questions that were already
+                // answered on Home. This click is a real gesture, so the
+                // AudioContext `begin` needs is allowed to start in it.
+                if (home) {
+                  begin();
+                  return;
+                }
                 mix.restore();
                 setActivity({ kind: 'idle' });
               }}
+              onDone={home}
               minutes={activity.minutes}
               withOthers={activity.withOthers}
               entries={entries}
@@ -741,7 +1018,7 @@ export default function Room() {
                 type="button"
                 onClick={() => setPracticeOpen(false)}
                 aria-expanded
-                className="text-ink-3 hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper min-h-11 px-2 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                className={QUIET}
               >
                 Hide your practice
               </button>
@@ -817,6 +1094,75 @@ export default function Room() {
       </div>
 
       {/*
+        THE WAY IN, TOP RIGHT
+
+        §16 recorded the cost of having no way to sign in before a first
+        sitting, and named the remedy if that cost ever stopped being worth
+        paying: "the fix is one quiet line, not the row of three that used to be
+        there." This is the one quiet line. It is not joined by a second.
+
+        Why bare type is allowed here when it is not allowed at the foot: this
+        is inside the band. The band is the top of the frame — the strip above
+        the flame — and it is the one region of the photograph whose darkness
+        belongs to the composition rather than to the window. The foot is lit
+        wax, which is why the controls down there carry their own surface.
+
+        It fades in on the same `REVEAL_MS` as `Begin.` and as the photograph
+        itself, off the same `booted`. Arriving
+        before the opening move has settled would make it an overlay waiting for
+        an animation to finish, which is the exact complaint that took the old
+        row of three off this screen.
+
+        Absent for anybody signed in: they have a home, and this is the door to
+        it. Absent while a question is open, because one thing is being asked.
+
+        IT SAYS WHAT IT DOES, WHICH IS NOT `Sign in`
+        `signInWithOtp` creates the account on first use — that has always been
+        the signup path, and the button was describing the API call rather than
+        the act. To a first-time visitor `Sign in` asks for credentials they do
+        not have and offers no way to get them. `Create account` is the offer,
+        and the flow behind it carries "I already have one" for the other case.
+      */}
+      {!home &&
+        auth.status === 'signed-out' &&
+        activity.kind === 'idle' &&
+        setup === null &&
+        !practiceOpen && (
+          <div
+            className="absolute top-0 right-0 z-20 p-3 transition-opacity sm:p-5"
+            style={{
+              opacity: booted ? 1 : 0,
+              transitionDuration: `${REVEAL_MS}ms`,
+              transitionTimingFunction: REVEAL_EASE,
+            }}
+          >
+            {/*
+              LIFTED, not a bare word.
+
+              This corner is the photograph — the same surface as the foot of
+              the frame — so it takes the same treatment the foot does. As grey
+              type it cleared 4.5:1 and was still effectively invisible: it sat
+              in the darkest corner of a picture at 12px with nothing bounding
+              it, and read as a watermark. Contrast was never the problem;
+              nothing said it could be pressed.
+
+              The panel that drops from it carries the same surface for the same
+              reason, one step more opaque because it is read rather than
+              pressed.
+            */}
+            <Account
+              state={auth}
+              sync={sync}
+              signIn={signIn}
+              verify={verify}
+              linkError={linkError}
+              signOut={signOut}
+              className={LIFTED}
+            />
+          </div>
+        )}
+
+      {/*
         THE FOOT OF THE FRAME
 
         Only one kind of thing may live below the band, and bare type is not it:
@@ -884,17 +1230,33 @@ export default function Room() {
           receipt. Down here it is plainly an aside, and skipping it costs
           nothing.
 
-          Hidden while the practice log is open — that takes the whole frame. */}
-      {activity.kind === 'finished' && !practiceOpen && (
+          Hidden while the practice log is open — that takes the whole frame.
+
+          GUESTS ONLY, NOW. `Account` used to render `Sign out` here for anybody
+          signed in, which put the least wanted control in the product at the
+          foot of the one screen somebody has just finished meditating on. There
+          is a home for that now, and `Sign out` lives on it. What is left here
+          is only ever the offer — made to the only people it means anything to.
+
+          `drop="up"`, because this one is already at the bottom of the window
+          and the panel has nowhere below it to go.
+      */}
+      {activity.kind === 'finished' && !practiceOpen && !home && (
         <div
-          className={`absolute inset-x-0 bottom-0 flex justify-center px-5 pb-7 ${ending(2)}`}
+          className={`absolute inset-x-0 bottom-0 z-20 flex justify-center px-5 pb-7 ${ending(2)}`}
         >
-          <SignIn
+          <Account
             state={auth}
             sync={sync}
             signIn={signIn}
+            verify={verify}
+            // Deliberately NOT `linkError`. That flag lives for the whole
+            // session, and this instance mounts at the end of a sitting —
+            // minutes after the arrival it describes. Only the landing can be
+            // reached by following a link, so only the landing reports on one.
             signOut={signOut}
             className={LIFTED}
+            drop="up"
           />
         </div>
       )}
@@ -934,6 +1296,8 @@ function Scene(props: {
   session: Session | null;
   phase: ScenePhase;
   burn: number;
+  reveal: boolean;
+  onReady: () => void;
 }) {
   return (
     <div className="fixed inset-0 -z-10">
@@ -946,10 +1310,14 @@ function Focus({
   session,
   phase,
   burn,
+  reveal,
+  onReady,
 }: {
   session: Session | null;
   phase: ScenePhase;
   burn: number;
+  reveal: boolean;
+  onReady: () => void;
 }) {
   switch (session?.focusSlug) {
     // 'water' and 'hourglass' from the spec are cases here once the client
@@ -957,16 +1325,26 @@ function Focus({
     // typo in a database row should show a candle, not an empty page.
     case 'candle':
     default:
-      return <CandleScene phase={phase} burn={burn} />;
+      return <CandleScene phase={phase} burn={burn} reveal={reveal} onReady={onReady} />;
   }
 }
 
 /**
- * `Begin.`
+ * `Let’s begin.`
  *
- * The word, not a button around the word. A bordered pill on a photograph
- * reads as a sticker laid on top of it, and the render this room was designed
- * from had `Begin.` set as display type inside the picture.
+ * The words, not a button around them. A bordered pill on a photograph reads as
+ * a sticker laid on top of it, and the render this room was designed from had
+ * this set as display type inside the picture.
+ *
+ * It said `Begin.` — an instruction, from the room to you. `Let’s` makes it an
+ * invitation from someone sitting down with you, which is the entire premise of
+ * the site and was being spent nowhere else on this screen. It is the only copy
+ * a first-time visitor reads before deciding, so it is worth the two extra
+ * words.
+ *
+ * A typographic apostrophe, matching the rest of the visible copy — `You’ll
+ * finish with everyone else at…` in `SessionSetup`. Straight quotes in this
+ * project are a code-comment habit, not a copy one.
  *
  * It is the landing and only the landing. It used to appear twice, meaning two
  * different things — opening the questions here, starting the sitting at the
@@ -980,7 +1358,7 @@ function BeginWord({ onClick }: { onClick: () => void }) {
       onClick={onClick}
       className="font-display text-ember hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper px-4 text-5xl leading-none transition-colors duration-500 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none sm:text-6xl"
     >
-      Begin.
+      Let’s begin.
     </button>
   );
 }
@@ -1276,6 +1654,7 @@ function ComingBack({ endedAt, mono }: { endedAt: number; mono: number }) {
  */
 function Afterwards({
   onAgain,
+  onDone,
   minutes,
   withOthers,
   entries,
@@ -1283,6 +1662,15 @@ function Afterwards({
   stage,
 }: {
   onAgain: () => void;
+  /**
+   * Where finishing goes, when there is a home to go to.
+   *
+   * Absent for a guest, and then `Finish` does what it has always done: clears
+   * the two buttons and leaves the room. There is nowhere else for a guest to
+   * be, and sending them back to `Begin.` would read as the site asking them to
+   * go again the instant they said they were done.
+   */
+  onDone?: () => void;
   minutes: number;
   withOthers: number | null;
   entries: PracticeEntry[];
@@ -1354,14 +1742,16 @@ function Afterwards({
           </button>
           <button
             type="button"
-            onClick={() => setFinished(true)}
+            onClick={() => (onDone ? onDone() : setFinished(true))}
             // ink-2, not the ink-3 the rest of the secondary copy uses. This
             // is the one control that only ever appears in `finished`, and
             // `finished` is the brightest the room gets - brightness 1.14 with
             // the vignette almost off. Measured there, ink-3 came to 4.37.
             className="border-ink-3/50 text-ink-2 hover:border-ink-3 hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper min-h-11 border px-7 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
           >
-            Finish
+            {/* The word changes because the act does. A guest is finishing;
+                somebody signed in is going back to somewhere. */}
+            {onDone ? 'Done' : 'Finish'}
           </button>
         </div>
       )}
