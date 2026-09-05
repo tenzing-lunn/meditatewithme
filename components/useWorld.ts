@@ -33,6 +33,36 @@ export function useWorld(): World {
   });
 
   useEffect(() => {
+    // `/world?demo=1`, in `next dev` only — see `worldDemo.ts` for why this
+    // exists and why it must not reach production.
+    //
+    // THE IMPORT IS DYNAMIC AND THAT IS THE POINT, NOT A STYLE CHOICE.
+    // NODE_ENV is inlined at build time, so this whole block is `if (false)`
+    // in a production build and the code is dead either way. But a *static*
+    // `import { DEMO_POINTS }` at the top of this file is not dead: the module
+    // computes its points at module scope, the bundler cannot prove that is
+    // side-effect free, and it keeps it. Written that way first, and the
+    // fixture — Kathmandu, Reykjavik and all — was sitting in the production
+    // chunk, unreachable but shipped. Behind a dynamic import inside the dead
+    // branch, the call goes with the branch and the chunk is never emitted.
+    // Verified by grepping the built output; do that again if this is touched.
+    //
+    // Returns before the poll is ever started, so the demo earth is never a
+    // real response with invented lights mixed into it.
+    if (process.env.NODE_ENV === 'development') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has('demo')) {
+        let cancelled = false;
+        void import('./worldDemo').then(({ DEMO_POINTS, DEMO_PLACED }) => {
+          if (cancelled) return;
+          setWorld({ points: DEMO_POINTS, placed: DEMO_PLACED, loaded: true });
+        });
+        return () => {
+          cancelled = true;
+        };
+      }
+    }
+
     let stopped = false;
     let timer: number | undefined;
 
