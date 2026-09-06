@@ -189,7 +189,7 @@ first arrival can be framed truthfully as the first person to light the hour.
 
 Because the response is identical for every viewer, one edge cache entry with a 10-second TTL serves the entire world. **A thousand concurrent users generate roughly one origin query every ten seconds.** The same thousand users would have destroyed the presence approach.
 
-**`/api/world` inherits this argument rather than working around it.** The globe
+**`/api/world` inherits this argument rather than working around it.** The map
 needs where the candles are, not just how many, and an aggregate of grid cells
 is still one response identical for every viewer — so it gets the same
 `s-maxage=10, stale-while-revalidate=20` pair and the cliffs in §11 do not move.
@@ -538,7 +538,7 @@ The heartbeat table is the first thing to break, and it is a contained problem w
 meditatewithme/
 ├── app/
 │   ├── page.tsx                 # renders <Entry> — the room OR Home
-│   ├── world/page.tsx           # the globe, its own route
+│   ├── world/page.tsx           # the map, its own route
 │   ├── layout.tsx
 │   └── api/
 │       ├── time/route.ts        # server clock, no-store
@@ -549,8 +549,8 @@ meditatewithme/
 │   ├── Entry.tsx                # auth branch; owns every shared hook
 │   ├── Room.tsx                 # state machine host — takes props now
 │   ├── Home.tsx                 # the signed-in page (scrolls; see §17)
-│   ├── Globe.tsx                # three.js earth, loaded only by /world
-│   ├── World.tsx                # the globe's page chrome
+│   ├── WorldMap.tsx             # canvas earth, loaded only by /world
+│   ├── World.tsx                # the map's page chrome
 │   ├── FocusLoop.tsx            # <- v2 branches here
 │   ├── Timer.tsx
 │   ├── SoundMixer.tsx
@@ -562,6 +562,7 @@ meditatewithme/
 │   ├── session.ts               # hourStart, resolveSession
 │   ├── clock.ts                 # syncClock, serverNow
 │   ├── geo.ts                   # snapToCell, subsolarPoint
+│   ├── projection.ts            # Equal Earth, for the map at /world
 │   ├── audio.ts                 # AudioContext graph
 │   ├── prefs.ts                 # localStorage <-> DB
 │   └── supabase.ts
@@ -572,7 +573,7 @@ meditatewithme/
 └── docs/                        # finished writing
 ```
 
-`lib/` holds no React and no I/O beyond explicit fetches — it should be testable with plain functions. `session.ts` and `clock.ts` in particular are pure enough to unit test properly, and they are the two places a bug would be least visible in manual testing.
+`lib/` holds no React and no I/O beyond explicit fetches — it should be testable with plain functions. `session.ts` and `clock.ts` in particular are pure enough to unit test properly, and they are the two places a bug would be least visible in manual testing. `projection.ts` is there for the same reason and a sharper one: a projection with a flipped sign draws a perfectly convincing map with every light in the wrong place.
 
 ---
 
@@ -614,7 +615,7 @@ wrong would have.
    on two devices counts twice. Acceptable, and the alternative is worse.
 4. **~~Do we record any analytics at all?~~ Settled, and the answer is no longer
    "none".** No third-party analytics, and nothing that identifies anybody — that
-   part holds, and the cookie banner question stays closed. But the globe at
+   part holds, and the cookie banner question stays closed. But the map at
    `/world` needs to know roughly where a candle was lit, so `heartbeats` now
    carries `cell_lat` / `cell_lon`.
 
@@ -623,7 +624,7 @@ wrong would have.
    - **The server derives it**, from the edge's own geo headers. The browser is
      never asked for permission and `navigator.geolocation` is never called —
      a permission prompt on a meditation site is the wrong manner entirely, and
-     most people decline one, which would have made the globe both intrusive
+     most people decline one, which would have made the map both intrusive
      and wrong.
    - **It is snapped to a one-degree grid before it is stored**, by
      `snapToCell` in `lib/geo.ts`. The row holds the cell centre, not the
@@ -641,7 +642,7 @@ wrong would have.
      `pg_cron` over a Vercel cron and for hourly over nightly.
    - **The city and country headers are deliberately not stored.** Both are
      available. A city name is a far stronger identifier than a cell for anyone
-     living in a small one, and the globe has no use for a label.
+     living in a small one, and the map has no use for a label.
 
    The bar this was designed against is an ordinary server access log, which
    holds a full IP address. This is considerably coarser than that.
@@ -652,7 +653,7 @@ wrong would have.
    without a cell. Every one of the 65 real heartbeats written between 26
    August and 3 September has `cell_lat = null` for exactly this reason, and
    for a while the only placed rows in the table were a hand-seeded set of
-   demo cities. A globe that looks broken locally is a globe working as
+   demo cities. A map that looks empty locally is a map working as
    designed.
 
    **Proved on the preview on 3 September 2026**, which is the only place it
@@ -669,7 +670,7 @@ wrong would have.
    site stores, with drafted plain-language copy for each category. It is not
    the notice, because the notice needs a named controller and that is still
    with Jonny; it is everything about the notice that does not. `/world` also
-   says the substance of it under the globe, on the page, because somebody
+   says the substance of it under the map, on the page, because somebody
    looking at a map of where people are should not have to open a legal document
    to find out how precisely they are on it. **Keep those two in agreement**, and
    keep both in agreement with `GRID_DEGREES`.
@@ -1366,7 +1367,7 @@ Measured with it at 1280×720, worst pixel in each element's box:
 | Home | `Next candle at…` | 5.57 | 4.5 |
 | Home | `Change` / `Done changing` | 8.41 | 4.5 |
 | Home | `Sign out` | 8.07 | 4.5 |
-| `/world` | the note under the globe | 6.28 | 4.5 |
+| `/world` | the note under the map | 6.28 | 4.5 |
 
 The Home figures were re-measured after the controls were bounded. **The room's
 rows have not been**, because the audit cannot run while the Browser pane is
@@ -1429,7 +1430,7 @@ fact: whether you are signed in.
 |---|---|---|
 | `/` | The room. Landing, three questions, sitting, ending, account offer. | Home. |
 | `/` after `Sit` | — | The room, starting on arrival, returning to Home. |
-| `/world` | The globe. | The globe. |
+| `/world` | The map. | The map. |
 
 ### `Entry` owns every shared hook, and that is not tidiness
 
@@ -1548,26 +1549,41 @@ panel the quiet words at the foot — `I already have one`, `Back`, `Send it
 again` — are underlined rather than bare, which is the third of the three
 affordances this section allows and the only one that fits at that size.
 
-### The globe
+### The map
 
 `/world` is its own route because it is somewhere else, with its own subject,
 that should be linkable. Sitting is not — it stays under `/` as state, because
 the room's opening move depends on `CandleScene` staying mounted while the
 camera travels off `load`, and a route change would remount it.
 
-- **`three` is the weight, and none of it is on the path to meditating**:
-  `World` imports `Globe` behind `next/dynamic` with `ssr: false`, so it lands
-  in a chunk the room never references. Verified against the built bundle — the
-  chunk containing `WebGLRenderer` is not referenced from `/`.
+**It was a three.js globe until 6 September 2026**, when Jonny asked for a flat
+map. The trade goes both ways and is worth having written down: a sphere shows
+half a planet and has to be turned to see the rest, and turning it was the only
+thing on this page anybody touched. A map shows everybody at once. On a page
+whose whole subject is how many people there are and where, that is the better
+answer — and it cost the drag, the coasting and the slow drift under the sun,
+which are gone rather than reimplemented. `WorldMap.tsx` is canvas 2D, like
+`CandleScene`; `Globe.tsx`, `three` and `@types/three` were deleted with it,
+taking about 600KB off the route.
+
+- **The projection is Equal Earth** (Šavrič, Patterson & Jenny, 2018), not the
+  plain longitude/latitude rectangle that `land.json` and the sun maths would
+  both have handed us for free. The rectangle inflates everything away from the
+  equator — Greenland the size of Africa, Antarctica a bar across the bottom —
+  and on a page that counts people, giving the northern hemisphere more room
+  per person is a claim laid over a picture whose only job is to say where
+  people actually are. Equal Earth is equal-area, and its curve keeps this an
+  object rather than a chart. `project()` is the paper's formula; `unproject()`
+  is four turns of Newton, and it is what makes per-pixel shading possible.
 - **The earth is two layers, and each does what the other cannot.**
-  `land.json` is 53KB of Natural Earth 1:110m coastline, rasterised into an
-  equirectangular canvas at runtime by `landTexture()`: crisp edges, an exact
-  land/ocean split, tones tuned in code. `relief.jpg` is 220KB — the Blue
-  Marble desaturated and downscaled — and is never displayed, only used to
-  *modulate* what the vector already decided and to take a gradient from for
-  the slope shading. The vector draws the shape; the photograph supplies the
-  terrain. Together 273KB, against 1.5MB of NASA day and night imagery before
-  5 September 2026. See "Why the globe lost its colour" below.
+  `land.json` is 53KB of Natural Earth 1:110m coastline, now projected and
+  drawn as a `Path2D` at the size it is seen — vector edges at device
+  resolution, which is the one thing the flat map gets for free over a texture
+  stretched across a sphere. `relief.jpg` is 220KB — the Blue Marble
+  desaturated and downscaled — never displayed, only used to *modulate* what
+  the vector already decided. Together 273KB, against 1.5MB of NASA day and
+  night imagery before 5 September 2026. See "Why the earth lost its colour"
+  below.
 - **The terminator is real**, from `subsolarPoint(serverNow())`. It uses the
   corrected clock for the reason §6.2 gives: a device three minutes fast must
   not draw a different world.
@@ -1579,20 +1595,36 @@ camera travels off `load`, and a route change would remount it.
   is meditating anywhere on earth" is a much worse thing to say wrongly than
   "we cannot see".
 
-Three things in the rendering cost real time to get right, all of them recorded
-in `Globe.tsx` where they can be seen next to the code:
+Three things about the rendering, all of them recorded in `WorldMap.tsx` where
+they can be seen next to the code:
 
-1. **`gl_PointSize` is in device pixels**, so a size tuned by eye at one
-   viewport means nothing at another. The `size` attribute is now a world-space
-   diameter and the shader converts it with `canvasHeight / (2·tan(fov/2))`.
-2. **Additive blending is `(srcAlpha, one)`**, so writing the falloff into both
-   the colour *and* the alpha multiplies it in twice and squares the bloom. The
-   alpha is 1.0 and every bit of shaping is in the colour.
-3. **Depth testing does not hide a far-side light.** The half of its bloom that
-   overhangs the limb has nothing to be occluded by, so the planet wears a ring
-   of half-haloes. The vertex shader fades by facing instead.
+1. **Two passes, on two clocks.** The ground — ocean, land, terrain, coast — is
+   built once per resize, because nothing in it changes with time. The
+   terminator is its own layer, rebuilt on the minute (the sun moves a quarter
+   of a degree a minute, which is under a pixel), at a two-hundredth of the
+   map's width and scaled up: it is the softest gradient on the page and there
+   is nothing there for the resolution to lose. The frame loop is two
+   `drawImage`s and the lights.
+2. **The terrain pass is per-pixel and runs at half resolution**, which is
+   invisible because the terrain has no edges of its own — every edge on this
+   earth belongs to the coastline, and that is stroked over the top at full
+   resolution.
+3. **A light's footprint is a fraction of the map's width, with a floor.** The
+   fraction is what keeps a candle the same size relative to the earth on every
+   screen; the floor is for the phone, where the whole world is 375px wide and
+   the fraction alone comes out at four pixels — a sub-pixel core, which is a
+   dead grey dot. There a light is deliberately oversized against the
+   geography: this page is a count of people before it is a map.
 
-### Why the globe lost its colour
+**The map has an aspect of its own, and the page had to make room for it.** A
+sphere filled whatever frame it was given; a map is a shade over 2:1, so on a
+phone it is a band about 190px tall and a caption pinned to the foot of the
+screen ended up stranded 400px below the earth it described. `World` centres the
+two together instead, and caps the map's box at `48.7vw` — the height it can
+actually use — so a short window cannot hand it space it does not want and push
+the caption off a frame that does not scroll.
+
+### Why the earth lost its colour
 
 The earth was NASA's Blue Marble and its night-lights companion until 5
 September 2026. Dropping them was Tenzing's call and it paid for itself three
@@ -1600,16 +1632,16 @@ times:
 
 - **It deleted a lie.** Additive blending can only brighten what is already
   bright, so a candle drawn over a sunlit ocean was invisible unless its
-  brightness was overstated — and it was, by ×2.2, with a comment in
-  `Globe.tsx` admitting it was "the one place the page overstates something".
-  There is no sunlit ocean now. The multiplier that remains is carrying a tight
-  sprite's falloff, not covering for the ground.
+  brightness was overstated — and it was, by ×2.2, with a comment admitting it
+  was "the one place the page overstates something". There is no sunlit ocean
+  now; on the flat map a light is drawn with `lighter` at an alpha that is its
+  own honest brightness, and nothing is covering for the ground.
 - **1.5MB → 273KB**, on the heaviest route in a project whose §1 is a page of
   reasons to be suspicious of weight.
 - **It stopped competing with the room.** A photograph of the earth was the
   only photorealism here apart from the room itself, and the two are doing
-  opposite jobs: the room is a picture you sit *inside*, the globe is an
-  instrument you *read*.
+  opposite jobs: the room is a picture you sit *inside*, this is an instrument
+  you *read*.
 
 **The risk it was drawn against was looking like a dashboard**, which is the
 same failure Home is closest to (§17). Four rules hold it off, and a change
@@ -1617,36 +1649,29 @@ that breaks one of them will bring it straight back: land is **filled**, a hair
 above the ocean, so the eye reads masses and not wireframe; there are **no
 political borders, no graticule and no labels** — the only line on the earth is
 where water meets land; **nothing is pure black or pure white**; and the
-**brightness ranking is fixed** — candles first, coastlines second, the limb
-last. The atmosphere rim was tuned twice for that last rule: at the settings
-that read as air around a bright photograph it read as a machined bezel around
-a dark disc, and pulled the eye to the edge instead of to the people.
+**brightness ranking is fixed** — candles first, coastlines second, the edge of
+the world last.
 
 **The terrain came back, monochrome, once the flat version was on screen.**
 Coastlines alone made continents read as cut-out shapes. `relief.jpg` restores
-the surface, and two things about it are easy to get wrong:
+the surface, and one thing about it is easy to get wrong: **its distribution is
+nothing like uniform.** Measured on the shipped file: mean 0.29 but median
+0.149, because most of the earth is ocean near 0.03 while ice and desert run to
+0.94. Centring the modulation on the mean — the obvious first guess, and the one
+tried — puts nearly all land *below* centre, so it darkened the continents
+instead of texturing them and spent its range on the ice caps. The band
+0.06–0.61 is taken explicitly instead, clamped at both ends. (On the globe there
+was a second trap: the texture had to be uploaded `NoColorSpace` or the GPU
+decoded it to linear and crushed the useful range. Canvas reads the file's own
+bytes through `getImageData`, so that one is gone with the sphere.)
 
-- **It is uploaded with `NoColorSpace`, and must stay that way.** It is a
-  control map, not a picture. Marking it sRGB has the GPU decode it to linear
-  on every fetch, which crushes a mid-grey of 0.30 to about 0.07 and leaves the
-  whole modulation happening in the bottom tenth of the range, where JPEG has
-  least precision to give.
-- **Its distribution is nothing like uniform.** Measured on the shipped file:
-  mean 0.29 but median 0.149, because most of the earth is ocean near 0.03
-  while ice and desert run to 0.94. Centring the modulation on the mean — the
-  obvious first guess, and the one tried — puts nearly all land *below* centre,
-  so it darkened the continents instead of texturing them and spent its range
-  on the ice caps. The band 0.06–0.61 is taken explicitly instead, clamped at
-  both ends.
-
-**The slope shading is the one thing on this globe that is not a fact.** Two
-neighbouring samples give a gradient, lit by the real sun, so ranges pick out
-as the terminator crosses them. But the map is albedo, not elevation — pale
-desert shades as though raised, dark forest as though sunken. It is kept gentle
-for that reason. The strength was found by exaggerating to ×70 until the relief
-was unmistakable (which also confirmed the sign was right), then coming back to
-×34; past about ×45 the earth becomes a relief map of its own brightness, which
-is inventing topography.
+**The slope shading went with the globe, and it is not missed.** It lit the
+gradient of the relief map from the real sun, so ranges picked out as the
+terminator crossed them — and it was the one thing on that page that was not a
+fact, because albedo is not elevation: pale desert shaded as though raised, dark
+forest as though sunken. A flat map is read rather than orbited and does not
+want the drama. Anyone tempted to put it back should know it was deleted on
+purpose, not lost in the port.
 
 **The lights are pinpricks that ping.** Small enough to stay countable —
 twenty lights must read as twenty places rather than merging into one glow —
@@ -1658,7 +1683,9 @@ four soft spikes on the sprite, which is what makes the eye read something as
 *emitting* rather than as a painted disc, and is most of the difference
 between a light and a yellow sticker. **Its own colour**, warm to pale, within
 the ember family — so no two neighbours are the same and a cluster reads as
-several people rather than one symbol stamped repeatedly. **Its own rate**,
+several people rather than one symbol stamped repeatedly, and on a canvas that
+means five pre-tinted sprites rather than a colour handed to a shader per
+light. **Its own rate**,
 not merely its own offset: equal rates at scattered phases produce an even
 shimmer, and evenness is the tell that gives away a dataset with an animation
 on it. **A flare**, from a second much slower wave at an unrelated frequency,
@@ -1669,16 +1696,12 @@ Two traps here, both paid for once:
 
 - **The sprite's core is 30% of its footprint.** Filling the sprite with core
   and putting the glints near its edge is correct in the texture and invisible
-  on screen, because the whole quad is about six pixels across and the spikes
-  land sub-pixel. Growing the light would trade the pinprick for the star.
-  Instead the footprint grew and the core shrank inside it by more, so the
-  visible point is smaller than before and the spikes reach four times
-  further. `sizes[i]` and that fraction have to move together.
+  on screen, because the whole sprite is drawn about twenty pixels across and
+  the spikes land sub-pixel. Growing the light would trade the pinprick for the
+  star. Instead the footprint is large and the core small inside it, so the
+  visible point stays small and the spikes reach four times further. `sizes[i]`
+  and that fraction have to move together.
 - **Phase and rate come from the cell's coordinates, not `Math.random()`.**
-  The point geometry is rebuilt on every poll, so random values would be
-  reassigned every fifteen seconds — which does not look like twinkling, it
-  looks like the whole earth flinching in unison on a timer.
-
-**Backticks are not allowed in this file's GLSL.** The shaders are template
-literals and one backtick in a comment ends the shader mid-sentence and breaks
-the module.
+  The points are rebuilt on every poll, so random values would be reassigned
+  every fifteen seconds — which does not look like twinkling, it looks like the
+  whole earth flinching in unison on a timer.

@@ -90,6 +90,17 @@ account offer.
 in local time and not sitting today does not break it. With an account it
 syncs across devices. Not in the proposal — see §4.
 
+**This hour, on the earth.** `/world`, reached from Home, is a flat map of the
+planet with a light where a candle was lit this hour. It was a globe you turned
+with your finger until 6 September 2026, when Jonny asked for a 2D map; the
+projection is Equal Earth, so the whole world is visible at once without the
+north being given more room per person than the south. The night side is the
+real one, from the same corrected clock the candle uses. Under it, the count of
+candles this hour, and — said on the page rather than only in a privacy notice —
+that each light is placed to within about a hundred kilometres and nobody is
+asked for their location. On localhost the map is correctly empty: the edge
+headers it places people from do not exist in `next dev`.
+
 **Accounts.** Optional. `Create account` sits at the top right of the landing
 and alone at the foot of the frame after a sitting; both open the same panel,
 which drops from the control that opened it in 150ms and takes no other part of
