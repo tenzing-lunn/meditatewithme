@@ -12,7 +12,8 @@ import World from '@/components/World';
  * link to and come back from.
  *
  * Nothing in the room imports anything from here, and this route's weight (about
- * 2MB of `three` and NASA imagery) is loaded by `World` behind `next/dynamic`,
+ * 600KB of `three`, plus 273KB of earth) is loaded by `World` behind
+ * `next/dynamic`,
  * so it is not on any path that leads to meditating.
  */
 export const metadata: Metadata = {

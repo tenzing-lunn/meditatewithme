@@ -10,7 +10,7 @@ import { QUIET } from './controls';
  * The page the globe sits on.
  *
  * WHY THE GLOBE IS LOADED THIS WAY
- * `three` and two NASA textures are about 2MB between them, and §1 is a page of
+ * `three` is about 600KB and the earth 273KB, and §1 is a page of
  * reasons to be suspicious of weight. `ssr: false` keeps all of it off the
  * server render and out of every bundle but this route's, so somebody who only
  * ever sits never downloads a byte of it. It is also required rather than

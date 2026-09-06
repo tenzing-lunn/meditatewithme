@@ -565,7 +565,7 @@ meditatewithme/
 │   ├── audio.ts                 # AudioContext graph
 │   ├── prefs.ts                 # localStorage <-> DB
 │   └── supabase.ts
-├── public/earth/                # NASA day + night maps (~1.6MB, /world only)
+├── public/earth/                # land.json + relief.jpg — 273KB (/world only)
 ├── supabase/migrations/
 ├── context/                     # standing project knowledge
 ├── plans/                       # active plans
@@ -780,6 +780,30 @@ Donations would likely push this to Pro. Not a blocker now, but it lands on
 Jonny's bill eventually — and per the payment message, hosting is meant to sit
 in his name, not Tenzing's. Worth settling before the domain is attached, since
 moving a project after DNS is pointed is the annoying order to do it in.
+
+### The migration history is not the migrations
+
+Schema changes do **not** deploy with the app. Vercel pushes code; the database
+is changed by hand, before or alongside the commit that needs it. Nothing
+automates that and nothing checks it, so a deploy can reach production expecting
+a column that is not there.
+
+Worse, the usual safety net is missing. Supabase tracks applied migrations in
+`supabase_migrations.schema_migrations`, and here that table has never matched
+this repo: seven rows on the remote against nine files in
+`supabase/migrations/`, with no row in common. The files and the table describe
+the same schema under different names, because the migrations were applied
+through a route that never wrote these filenames back.
+
+The consequence is the whole reason this is written down: **`supabase db push`
+is not usable on this project.** It compares those two lists, concludes that
+every local file is unapplied, and replays the schema from `0001` against a
+database that already has it. Use `supabase db query --linked -f <file>` for one
+migration at a time and check the result with a follow-up query — see CLAUDE.md.
+
+`supabase migration repair --status applied <version>` would reconcile the two
+and restore `db push`. It is the right fix and it has not been done, because it
+writes to production metadata and that is a decision, not a side effect.
 
 ---
 
@@ -1531,10 +1555,19 @@ that should be linkable. Sitting is not — it stays under `/` as state, because
 the room's opening move depends on `CandleScene` staying mounted while the
 camera travels off `load`, and a route change would remount it.
 
-- **`three` and two NASA textures are about 2MB**, and none of it is on the path
-  to meditating: `World` imports `Globe` behind `next/dynamic` with `ssr: false`,
-  so it lands in a chunk the room never references. Verified against the built
-  bundle — the chunk containing `WebGLRenderer` is not referenced from `/`.
+- **`three` is the weight, and none of it is on the path to meditating**:
+  `World` imports `Globe` behind `next/dynamic` with `ssr: false`, so it lands
+  in a chunk the room never references. Verified against the built bundle — the
+  chunk containing `WebGLRenderer` is not referenced from `/`.
+- **The earth is two layers, and each does what the other cannot.**
+  `land.json` is 53KB of Natural Earth 1:110m coastline, rasterised into an
+  equirectangular canvas at runtime by `landTexture()`: crisp edges, an exact
+  land/ocean split, tones tuned in code. `relief.jpg` is 220KB — the Blue
+  Marble desaturated and downscaled — and is never displayed, only used to
+  *modulate* what the vector already decided and to take a gradient from for
+  the slope shading. The vector draws the shape; the photograph supplies the
+  terrain. Together 273KB, against 1.5MB of NASA day and night imagery before
+  5 September 2026. See "Why the globe lost its colour" below.
 - **The terminator is real**, from `subsolarPoint(serverNow())`. It uses the
   corrected clock for the reason §6.2 gives: a device three minutes fast must
   not draw a different world.
@@ -1558,6 +1591,93 @@ in `Globe.tsx` where they can be seen next to the code:
 3. **Depth testing does not hide a far-side light.** The half of its bloom that
    overhangs the limb has nothing to be occluded by, so the planet wears a ring
    of half-haloes. The vertex shader fades by facing instead.
+
+### Why the globe lost its colour
+
+The earth was NASA's Blue Marble and its night-lights companion until 5
+September 2026. Dropping them was Tenzing's call and it paid for itself three
+times:
+
+- **It deleted a lie.** Additive blending can only brighten what is already
+  bright, so a candle drawn over a sunlit ocean was invisible unless its
+  brightness was overstated — and it was, by ×2.2, with a comment in
+  `Globe.tsx` admitting it was "the one place the page overstates something".
+  There is no sunlit ocean now. The multiplier that remains is carrying a tight
+  sprite's falloff, not covering for the ground.
+- **1.5MB → 273KB**, on the heaviest route in a project whose §1 is a page of
+  reasons to be suspicious of weight.
+- **It stopped competing with the room.** A photograph of the earth was the
+  only photorealism here apart from the room itself, and the two are doing
+  opposite jobs: the room is a picture you sit *inside*, the globe is an
+  instrument you *read*.
+
+**The risk it was drawn against was looking like a dashboard**, which is the
+same failure Home is closest to (§17). Four rules hold it off, and a change
+that breaks one of them will bring it straight back: land is **filled**, a hair
+above the ocean, so the eye reads masses and not wireframe; there are **no
+political borders, no graticule and no labels** — the only line on the earth is
+where water meets land; **nothing is pure black or pure white**; and the
+**brightness ranking is fixed** — candles first, coastlines second, the limb
+last. The atmosphere rim was tuned twice for that last rule: at the settings
+that read as air around a bright photograph it read as a machined bezel around
+a dark disc, and pulled the eye to the edge instead of to the people.
+
+**The terrain came back, monochrome, once the flat version was on screen.**
+Coastlines alone made continents read as cut-out shapes. `relief.jpg` restores
+the surface, and two things about it are easy to get wrong:
+
+- **It is uploaded with `NoColorSpace`, and must stay that way.** It is a
+  control map, not a picture. Marking it sRGB has the GPU decode it to linear
+  on every fetch, which crushes a mid-grey of 0.30 to about 0.07 and leaves the
+  whole modulation happening in the bottom tenth of the range, where JPEG has
+  least precision to give.
+- **Its distribution is nothing like uniform.** Measured on the shipped file:
+  mean 0.29 but median 0.149, because most of the earth is ocean near 0.03
+  while ice and desert run to 0.94. Centring the modulation on the mean — the
+  obvious first guess, and the one tried — puts nearly all land *below* centre,
+  so it darkened the continents instead of texturing them and spent its range
+  on the ice caps. The band 0.06–0.61 is taken explicitly instead, clamped at
+  both ends.
+
+**The slope shading is the one thing on this globe that is not a fact.** Two
+neighbouring samples give a gradient, lit by the real sun, so ranges pick out
+as the terminator crosses them. But the map is albedo, not elevation — pale
+desert shades as though raised, dark forest as though sunken. It is kept gentle
+for that reason. The strength was found by exaggerating to ×70 until the relief
+was unmistakable (which also confirmed the sign was right), then coming back to
+×34; past about ×45 the earth becomes a relief map of its own brightness, which
+is inventing topography.
+
+**The lights are pinpricks that ping.** Small enough to stay countable —
+twenty lights must read as twenty places rather than merging into one glow —
+over the shared breath, which is retained: everybody swells together and each
+candle flickers inside it.
+
+They are meant to read as people, and four things do that work. **A glint**:
+four soft spikes on the sprite, which is what makes the eye read something as
+*emitting* rather than as a painted disc, and is most of the difference
+between a light and a yellow sticker. **Its own colour**, warm to pale, within
+the ember family — so no two neighbours are the same and a cluster reads as
+several people rather than one symbol stamped repeatedly. **Its own rate**,
+not merely its own offset: equal rates at scattered phases produce an even
+shimmer, and evenness is the tell that gives away a dataset with an animation
+on it. **A flare**, from a second much slower wave at an unrelated frequency,
+so the two drift in and out and a light occasionally pings harder before
+settling — unscheduled, never repeating.
+
+Two traps here, both paid for once:
+
+- **The sprite's core is 30% of its footprint.** Filling the sprite with core
+  and putting the glints near its edge is correct in the texture and invisible
+  on screen, because the whole quad is about six pixels across and the spikes
+  land sub-pixel. Growing the light would trade the pinprick for the star.
+  Instead the footprint grew and the core shrank inside it by more, so the
+  visible point is smaller than before and the spikes reach four times
+  further. `sizes[i]` and that fraction have to move together.
+- **Phase and rate come from the cell's coordinates, not `Math.random()`.**
+  The point geometry is rebuilt on every poll, so random values would be
+  reassigned every fifteen seconds — which does not look like twinkling, it
+  looks like the whole earth flinching in unison on a timer.
 
 **Backticks are not allowed in this file's GLSL.** The shaders are template
 literals and one backtick in a comment ends the shader mid-sentence and breaks

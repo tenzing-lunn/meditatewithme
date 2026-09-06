@@ -58,7 +58,9 @@
       "mcp__Control_Chrome__list_tabs",
       "Bash(git diff *)",
       "Bash(grep -n \"GRID_DEGREES\\\\`\\\\.\" context/ARCHITECTURE.md)",
-      "Bash(sed -n '/keep both in agreement with/,/^## 15/p' context/ARCHITECTURE.md)"
+      "Bash(sed -n '/keep both in agreement with/,/^## 15/p' context/ARCHITECTURE.md)",
+      "Bash(git stash *)",
+      "Bash(supabase migration *)"
     ]
   }
 }

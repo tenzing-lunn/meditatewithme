@@ -15,8 +15,11 @@ import { serverNow } from '@/lib/clock';
  * silently isn't shared. A globe is the same claim drawn as a picture, so it
  * has to survive the same scrutiny:
  *
- *   * The imagery is photographs of the earth (NASA, public domain), not a
- *     stylisation of it.
+ *   * The geography is two real layers. Natural Earth's coastlines at 1:110m
+ *     draw the shape; a desaturated Blue Marble supplies the terrain within
+ *     it. It used to be the photograph alone; the change is stylisation of the
+ *     *rendering*, not of the facts — every coast is where the coast is, and
+ *     the Sahara is pale because the Sahara is pale.
  *   * The terminator is computed from `subsolarPoint(serverNow())`, so the lit
  *     half of the earth is the lit half of the earth, to well under a degree.
  *     It uses the corrected clock for exactly the reason §6.2 gives: a device
@@ -27,21 +30,70 @@ import { serverNow } from '@/lib/clock';
  *     invent it at planetary scale either.
  *
  * WHAT IS NOT REAL, DELIBERATELY
- * The lights bloom and breathe. Nobody's candle flickers on a schedule. That is
- * the one piece of theatre here and it earns its place: a hard dot at a cell
- * centre would claim a precision the data does not have — the cell is a degree
- * across, about 111km — where a soft bloom reads as "somebody around here",
- * which is exactly what is known.
+ * The lights breathe together and each one pings on its own. Nobody's candle
+ * flickers on a schedule. That is the one piece of theatre here and it earns
+ * its place twice over: the shared breath is the claim the product is built on
+ * drawn as motion, and the halo around each ping keeps a light from being a
+ * hard dot at a cell centre — which would claim a precision the data does not
+ * have, the cell being a degree across.
+ *
+ * The tuning is a balance between those two and a third thing: **the lights
+ * have to stay countable.** Small and sharp reads as twenty places; soft and
+ * broad merges into one glow, and on a page whose subject is how many people
+ * there are, that is a picture of a mood instead of a number.
  *
  * WHY THIS IS ITS OWN ROUTE AND LOADS ITSELF
- * `three` and two NASA textures are about 2MB. The room is one photograph and
- * §1 is a page of reasons to be suspicious of weight. None of this is on the
- * critical path: it is imported by `World` behind `next/dynamic`, so a person
- * who only ever sits never downloads a byte of it.
+ * `three` is the weight now — the geography is 273KB, coastline and terrain.
+ * The room is
+ * one photograph and §1 is a page of reasons to be suspicious of weight. None
+ * of this is on the critical path: it is imported by `World` behind
+ * `next/dynamic`, so a person who only ever sits never downloads a byte of it.
  */
 
 /** The sphere is one unit. Everything else is expressed against that. */
 const EARTH_RADIUS = 1;
+
+/**
+ * Where a cell sits in the ping cycle, from the cell itself.
+ *
+ * Deterministic, and that is the requirement rather than a nicety: the point
+ * geometry is rebuilt from scratch every time `/api/world` returns, and a
+ * `Math.random()` phase would hand every light a new one every fifteen
+ * seconds. The visible result is not "random twinkling" but the entire earth
+ * jumping at once on the poll, which is worse than no twinkle at all.
+ *
+ * The usual hash-a-float trick. It does not need to be uniform or unbiased; it
+ * needs neighbouring cells not to share a phase, which sin() at this frequency
+ * comfortably manages.
+ */
+function pingPhase(lat: number, lon: number): number {
+  return hash(lat, lon, 12.9898, 78.233) * Math.PI * 2;
+}
+
+/**
+ * The other half of a light's identity: how fast it pings and what colour it
+ * is, as one 0–1 number the shader unpacks.
+ *
+ * WHY EACH LIGHT NEEDS TO DIFFER AND NOT JUST BE OFFSET
+ * Giving every light the same rhythm at a different phase produces a field
+ * that shimmers evenly, and evenness is the tell — it reads as an effect
+ * applied to a dataset. Real crowds are not evenly anything. Varying the rate
+ * as well means the pattern never repeats and no two neighbours stay in step,
+ * which is the difference between "these are points with an animation on them"
+ * and "these are people".
+ *
+ * A different hash from the phase, or the two would correlate and the fastest
+ * lights would all be at the same point in their cycle.
+ */
+function pingSeed(lat: number, lon: number): number {
+  return hash(lat, lon, 39.3467, 11.135);
+}
+
+/** The usual hash-a-float trick. Stability is the requirement, not quality. */
+function hash(lat: number, lon: number, a: number, b: number): number {
+  const n = Math.sin(lat * a + lon * b) * 43758.5453;
+  return n - Math.floor(n);
+}
 
 /** Just clear of the surface, so a light is never z-fought with the ground. */
 const LIGHT_RADIUS = EARTH_RADIUS * 1.008;
@@ -70,21 +122,22 @@ function latLonToVector3(lat: number, lon: number, radius: number): THREE.Vector
 /**
  * The sprite every light is drawn with.
  *
- * Generated rather than shipped: it is a radial gradient, and a 20KB PNG of one
- * would be 20KB more than the page needs.
+ * Generated rather than shipped: it is a radial gradient, and a PNG of one
+ * would be bytes the page does not need.
  *
- * THE STOPS ARE THE WHOLE DIFFICULTY, AND THEY WERE WRONG FIRST TIME
- * The first version put the bright core inside 12% of the radius and fell away
- * hard after it. On a daylit ocean everything past the core was below the
- * threshold of visible, so a light rendered at sixty pixels across appeared as
- * a seven-pixel dot — and the fix looked like "the points are too small", which
- * led to sizing them thirty times too large. Then a single candle covered North
- * America, and the core was the only part visible even so.
+ * A PINPRICK WITH A SHORT HALO, NOT A BLOOM
+ * The broad version of this was written against a photographic earth, where a
+ * light had to survive being drawn over a sunlit ocean; it needed a wide bright
+ * middle and its brightness overstated to be visible at all. The ground is dark
+ * everywhere now, so all of that is gone. What is left is a hard core inside a
+ * tenth of the radius, most of the falloff spent by 40%, and a faint skirt that
+ * exists only to keep the edge from aliasing.
  *
- * So: a broad, bright middle that carries most of the light, and a shorter tail
- * that reads as bloom rather than as an invisible skirt. The sprite is what
- * decides how big a light looks; the size attribute only decides how much of
- * the earth it stands on.
+ * The change is not only aesthetic. Something small and sharp can be *counted*
+ * — twenty of them read as twenty places — where the same twenty soft blooms
+ * merge into a smear that reads as one glow. On a globe whose whole subject is
+ * how many people there are, that is the difference between a picture of a
+ * number and a mood.
  */
 function flameSprite(): THREE.Texture {
   const size = 128;
@@ -94,26 +147,176 @@ function flameSprite(): THREE.Texture {
 
   const ctx = canvas.getContext('2d');
   if (ctx) {
-    const g = ctx.createRadialGradient(
-      size / 2,
-      size / 2,
-      0,
-      size / 2,
-      size / 2,
-      size / 2,
-    );
-    g.addColorStop(0, 'rgba(255,253,247,1)');
-    g.addColorStop(0.18, 'rgba(255,238,203,0.98)');
-    g.addColorStop(0.36, 'rgba(255,193,116,0.72)');
-    g.addColorStop(0.58, 'rgba(232,152,72,0.3)');
-    g.addColorStop(0.8, 'rgba(224,160,87,0.09)');
-    g.addColorStop(1, 'rgba(224,160,87,0)');
-    ctx.fillStyle = g;
+    const c = size / 2;
+
+    // Additive within the sprite as well as outside it, so the glints lie on
+    // top of the core and brighten it rather than painting over it.
+    ctx.globalCompositeOperation = 'lighter';
+
+    /*
+      THE CORE OCCUPIES A THIRD OF THE SPRITE, NOT ALL OF IT — AND THAT IS WHY
+      THE STAR IS VISIBLE AT ALL.
+
+      First attempt filled the sprite with the core and put the glints at 96%
+      of its radius. Both were correct in the texture and neither could be seen,
+      because the whole sprite is drawn about six pixels across: the spikes were
+      comfortably sub-pixel. Making the light bigger would have fixed the star
+      and lost the pinprick, which was the point of the exercise.
+
+      So the sprite footprint grew and the core shrank inside it by more. The
+      bright point a person actually sees is *smaller* than before; the quad it
+      is drawn on is two and a half times larger, and all of that extra room is
+      spikes and falloff. Countability is preserved — the core is what the eye
+      counts — and the star has somewhere to live.
+
+      Anything that changes one of these two numbers has to change the other:
+      `sizes[i]` in `setPoints` is the footprint, and this is the fraction of it
+      that is bright.
+    */
+    const core = ctx.createRadialGradient(c, c, 0, c, c, c * 0.3);
+    core.addColorStop(0, 'rgba(255,252,245,1)');
+    core.addColorStop(0.28, 'rgba(255,238,203,0.92)');
+    core.addColorStop(0.55, 'rgba(255,198,124,0.4)');
+    core.addColorStop(1, 'rgba(230,150,70,0)');
+    ctx.fillStyle = core;
     ctx.fillRect(0, 0, size, size);
+
+    // The bloom the cell's coarseness earns — a degree is 111km, so a light is
+    // a region and not a pin. Faint and wide, under the core rather than
+    // around it.
+    const halo = ctx.createRadialGradient(c, c, 0, c, c, c * 0.62);
+    halo.addColorStop(0, 'rgba(255,206,140,0.16)');
+    halo.addColorStop(0.5, 'rgba(232,160,86,0.06)');
+    halo.addColorStop(1, 'rgba(224,160,87,0)');
+    ctx.fillStyle = halo;
+    ctx.fillRect(0, 0, size, size);
+
+    /**
+     * A glint: a soft streak out from the centre.
+     *
+     * This is what turns a dot into a light. A disc of any size reads as a
+     * painted mark; the moment it has spikes the eye reads it as something
+     * *emitting*, because that is what a bright point does to a lens and to a
+     * squinted eye. It is the cheapest possible piece of life and it is why
+     * these stopped looking like yellow stickers.
+     *
+     * The gradient is built after the transform on purpose — canvas gradients
+     * live in user space, so creating it inside the scale is what stretches a
+     * circle into a streak. Building it first and scaling after would move the
+     * streak instead of shaping it.
+     */
+    const glint = (angle: number, reach: number, width: number, a: number) => {
+      ctx.save();
+      ctx.translate(c, c);
+      ctx.rotate(angle);
+      ctx.scale(reach, width);
+      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+      g.addColorStop(0, `rgba(255,244,224,${a})`);
+      g.addColorStop(0.35, `rgba(255,216,156,${a * 0.3})`);
+      g.addColorStop(1, 'rgba(255,200,130,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(-1, -1, 2, 2);
+      ctx.restore();
+    };
+
+    // Four spikes, the diagonals shorter and fainter than the axes. Kept well
+    // under the core's brightness: this should read as a twinkle at the size
+    // these are drawn, never as a lens flare on a photograph.
+    glint(0, c * 0.98, c * 0.022, 0.62);
+    glint(Math.PI / 2, c * 0.98, c * 0.022, 0.62);
+    glint(Math.PI / 4, c * 0.46, c * 0.016, 0.26);
+    glint(-Math.PI / 4, c * 0.46, c * 0.016, 0.26);
   }
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+/** What `public/earth/land.json` holds — see the note on `landTexture`. */
+interface LandData {
+  /** Coordinates are integers; divide by this to get degrees. */
+  scale: number;
+  /** Each polygon is an outer ring followed by its holes; each ring is flat. */
+  polygons: number[][][];
+}
+
+/**
+ * The ground: coastlines drawn into an equirectangular canvas.
+ *
+ * WHY THIS REPLACED TWO PHOTOGRAPHS
+ * The globe used to be NASA's Blue Marble plus its night-lights companion,
+ * about 1.5MB between them, and being photographic cost more than bytes:
+ *
+ *   * Half the planet was sunlit, and additive blending can only brighten what
+ *     is already bright — so a candle over a lit ocean was invisible unless its
+ *     brightness was overstated. That fudge is gone with the daylight.
+ *   * A photograph of the earth is the only photorealism in the product apart
+ *     from the room, and those two are doing opposite jobs. The room is a
+ *     picture you sit inside; this is an instrument you read.
+ *
+ * 53KB of coastline vectors, rasterised here at runtime.
+ *
+ * THE RISK THIS IS DRAWN AGAINST
+ * Hairline outlines on black is the visual language of a dashboard, which is
+ * the one thing this page must not become. Three rules keep it an object:
+ * **land is filled, not outlined** — a hair above the ocean value, so the eye
+ * reads masses rather than wireframe; **no political borders, no graticule, no
+ * labels** — the only line on the earth is where water meets land, which is a
+ * fact about the planet rather than about people; and **nothing is pure black
+ * or pure white**, so it sits in the same dim register as the rest of the site.
+ */
+function landTexture(data: LandData): THREE.CanvasTexture {
+  // 2048×1024 is one texel per ~10km at the equator. The globe is ~600px
+  // across and shows half the texture's width, so this is comfortably past
+  // what the screen can resolve — and it is 8MB of VRAM against the 33MB a
+  // 4096-wide version would cost for no visible gain.
+  const width = 2048;
+  const height = 1024;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    // Values, not colours. Ocean sits barely above the page's own ground so
+    // the sphere reads as an object rather than a hole, land sits a hair above
+    // the ocean, and the coast is the brightest thing on the earth — which is
+    // still far below the dimmest candle.
+    ctx.fillStyle = '#1b2026';
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.fillStyle = '#2b3138';
+    ctx.strokeStyle = '#3f4854';
+    ctx.lineWidth = 1.15;
+    ctx.lineJoin = 'round';
+
+    const s = data.scale;
+    for (const polygon of data.polygons) {
+      ctx.beginPath();
+      for (const ring of polygon) {
+        for (let i = 0; i < ring.length; i += 2) {
+          const lon = ring[i]! / s;
+          const lat = ring[i + 1]! / s;
+          const x = ((lon + 180) / 360) * width;
+          const y = ((90 - lat) / 180) * height;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+      }
+      // Even-odd, so a hole ring inside an outer ring is punched out rather
+      // than filled over — lakes stay water.
+      ctx.fill('evenodd');
+      ctx.stroke();
+    }
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  // The seam at ±180° is a real join, not an edge to clamp.
+  texture.wrapS = THREE.RepeatWrapping;
   return texture;
 }
 
@@ -133,33 +336,117 @@ const EARTH_VERTEX = /* glsl */ `
 `;
 
 const EARTH_FRAGMENT = /* glsl */ `
-  uniform sampler2D dayMap;
-  uniform sampler2D nightMap;
+  uniform sampler2D landMap;
+  uniform sampler2D reliefMap;
   uniform vec3 sunDirection;
+  uniform vec2 reliefTexel;
+  uniform float reliefMix;
 
   varying vec2 vUv;
   varying vec3 vWorldNormal;
 
-  void main() {
-    vec3 day = texture2D(dayMap, vUv).rgb;
-    vec3 night = texture2D(nightMap, vUv).rgb;
+  // Read as a raw control value, not as a colour. The relief texture is
+  // uploaded with NoColorSpace precisely so this comes back as the number
+  // stored in the file rather than sRGB-decoded to linear — a decoded one is
+  // crushed into the bottom tenth of the range and useless as a modulator.
+  float relief(vec2 uv) {
+    return texture2D(reliefMap, uv).r;
+  }
 
-    float lambert = dot(normalize(vWorldNormal), sunDirection);
+  void main() {
+    vec3 base = texture2D(landMap, vUv).rgb;
+    vec3 n = normalize(vWorldNormal);
+
+    /*
+      TWO LAYERS, AND EACH IS DOING A JOB THE OTHER CANNOT.
+
+      landMap is the vector coastline rasterised at runtime: crisp edges, an
+      exact land/ocean split, no compression. reliefMap is the Blue Marble
+      desaturated and cut to 220KB: real terrain — the Sahara pale, the Congo
+      dark, the ice sheets bright — but far too soft at this size to be trusted
+      with a coastline.
+
+      So the vector draws the shape and the photograph only ever *modulates*
+      what the vector already decided. Centred on 0.30, the map's rough mean,
+      so it lightens and darkens around the tuned tone rather than shifting the
+      whole planet one way.
+    */
+    /*
+      REMAPPED AGAINST THE MAP'S ACTUAL DISTRIBUTION, NOT AN ASSUMED ONE.
+
+      Measured over the shipped file: mean 0.29 but median 0.149, because most
+      of the earth is ocean sitting near 0.03 while ice and desert run to 0.94.
+      Centring the modulation on the mean — the obvious first guess, and the
+      one tried — puts almost all land *below* centre, so the effect darkened
+      the continents instead of texturing them, and spent its whole range on
+      the ice caps.
+
+      So the useful band is taken explicitly: 0.06 to 0.61 covers ocean floor
+      up to bright desert, clamped at both ends so Antarctica does not blow
+      out, and stretched across a multiplier from 0.70 to 1.75.
+    */
+    float h = relief(vUv);
+    float t = clamp((h - 0.06) / 0.55, 0.0, 1.0);
+    vec3 ground = base * mix(1.0, 0.70 + t * 1.05, reliefMix);
+
+    float lambert = dot(n, sunDirection);
 
     // The terminator is soft because the sun is not a point source and the
     // atmosphere scatters light round the edge. A hard step here is the single
     // most obvious tell that a globe is a computer graphic.
     float daylight = smoothstep(-0.14, 0.24, lambert);
 
-    // The night side is the city lights and almost nothing else. Warmed
-    // slightly toward the room's ember rather than left sodium-orange, so the
-    // inhabited earth and the candles on it belong to one picture.
-    vec3 lights = night * vec3(1.0, 0.84, 0.62) * 1.15;
-    vec3 unlitGround = day * 0.05;
+    // WHAT SURVIVED DROPPING THE PHOTOGRAPHS.
+    //
+    // The terminator stays, because it is the only thing on this page carrying
+    // "this hour" — you can see that the lights in one place are at dawn and
+    // the ones opposite are at midnight, and that is the subject. It is a wash
+    // over one monochrome ground now rather than a blend between a lit
+    // photograph and a dark one.
+    //
+    // The night floor is 0.42, not 0. Geography has to stay readable all the
+    // way round or half the candles sit on nothing, and an earth whose dark
+    // side is genuinely black is a crescent, not a planet.
+    //
+    // ---- The small shadows ------------------------------------------------
+    //
+    // Slope shading. Two neighbouring samples give the gradient of the relief
+    // map across the surface, and lighting that gradient from the real sun is
+    // what puts a shadow on the side of a mountain range away from it — so the
+    // Andes and the Himalaya pick out as the terminator crosses them, and the
+    // whole planet stops looking like a decal.
+    //
+    // BE HONEST ABOUT WHAT THIS IS. The relief map is albedo, not elevation:
+    // it is how bright the ground is, not how high. Pale desert therefore
+    // shades as though it were raised and dark forest as though sunken, which
+    // is wrong in detail and convincing at a glance. It is kept deliberately
+    // gentle for that reason, and it is the only thing on this globe that is
+    // not a fact — everything else here, the coasts, the terminator, the
+    // lights, is true. Turning it up until it looks dramatic would be
+    // inventing topography, which is a small lie of exactly the kind the rest
+    // of this file refuses.
+    // 34.0 was found by exaggerating to 70 until the relief was unmistakable,
+    // confirming the sign and the wiring were right, and then coming back down
+    // to where it reads as ground rather than as embossing. At 16 it was doing
+    // nothing visible; past about 45 the earth turns into a relief map of its
+    // own albedo, which is the dishonest version.
+    float hx = relief(vUv + vec2(reliefTexel.x, 0.0));
+    float hy = relief(vUv + vec2(0.0, reliefTexel.y));
 
-    vec3 colour = mix(unlitGround + lights, day, daylight);
+    // The surface's own east/north at this point. v grows southward on a
+    // sphere's default UVs, hence the negated north for the second term.
+    vec3 east = normalize(cross(vec3(0.0, 1.0, 0.0), n));
+    vec3 north = cross(n, east);
+    float slope =
+      (hx - h) * dot(east, sunDirection) +
+      (hy - h) * dot(-north, sunDirection);
 
-    gl_FragColor = vec4(colour, 1.0);
+    // Only where the sun is. Nothing casts a shadow on the night side, and a
+    // relief that keeps shading in the dark is the giveaway that it is a
+    // texture trick rather than light.
+    float shaded = 1.0 - clamp(slope * 34.0, -0.6, 0.6) * daylight * reliefMix;
+
+    gl_FragColor = vec4(ground * shaded * mix(0.42, 1.0, daylight), 1.0);
 
     #include <colorspace_fragment>
   }
@@ -187,13 +474,29 @@ const ATMOSPHERE_FRAGMENT = /* glsl */ `
     // Rim: brightest where the surface turns away from the eye, which is the
     // limb of the planet. Drawn on the inside of a slightly larger sphere, so
     // this is the halo standing off the edge rather than a glow on the ground.
-    float rim = pow(1.0 - abs(dot(vWorldNormal, view)), 3.2);
+    // Tightened from 3.2 when the ground went dark. A band that read as
+    // atmosphere around a bright photograph reads as a machined bezel around a
+    // dark disc — it became the brightest thing in the frame and the eye went
+    // to the edge instead of to the lights. Higher power, thinner band.
+    float rim = pow(1.0 - abs(dot(vWorldNormal, view)), 4.5);
 
-    // And only where the sun actually is. An atmosphere that glows all the way
-    // round the night side is the second most obvious tell.
-    float lit = smoothstep(-0.45, 0.35, dot(normalize(vWorldNormal), sunDirection));
+    // Mostly where the sun is — an atmosphere glowing evenly all the way round
+    // is the second most obvious tell — but no longer *only* there. The 0.22
+    // floor is a deliberate relaxation of that rule: on a photographic globe
+    // the night limb was still visibly a lit planet against space, and on this
+    // one it is dark grey on near-black, so without a faint rim the earth
+    // reads as a disc with a bite out of it. The floor is what says "object".
+    float sun = smoothstep(-0.45, 0.35, dot(normalize(vWorldNormal), sunDirection));
+    float lit = 0.10 + 0.90 * sun;
 
-    gl_FragColor = vec4(vec3(0.42, 0.62, 0.92) * rim * lit * 1.1, rim * lit);
+    // Neutral, not blue. Blue would be the only hue left on the page now that
+    // the ground is monochrome, and the one colour here is the candle.
+    //
+    // Held well under the lights on purpose. Everything here is competing for
+    // the same small amount of brightness the page allows itself, and the
+    // ranking is not negotiable: candles first, coastlines second, the edge of
+    // the world last.
+    gl_FragColor = vec4(vec3(0.52, 0.56, 0.62) * rim * lit * 0.5, rim * lit * 0.62);
 
     #include <colorspace_fragment>
   }
@@ -202,8 +505,11 @@ const ATMOSPHERE_FRAGMENT = /* glsl */ `
 const LIGHT_VERTEX = /* glsl */ `
   attribute float size;
   attribute float glow;
+  attribute float phase;
+  attribute float seed;
 
   uniform float breath;
+  uniform float time;
 
   // canvasHeight / (2 * tan(fov / 2)), recomputed on resize.
   //
@@ -219,6 +525,7 @@ const LIGHT_VERTEX = /* glsl */ `
   uniform float pointScale;
 
   varying float vGlow;
+  varying vec3 vTint;
 
   void main() {
     vec3 worldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
@@ -234,10 +541,57 @@ const LIGHT_VERTEX = /* glsl */ `
     vec3 toCamera = normalize(cameraPosition - worldPosition);
     float facing = dot(normalize(worldPosition), toCamera);
 
-    vGlow = glow * smoothstep(-0.02, 0.32, facing);
+    // THE PING.
+    //
+    // Squared rather than a plain sine, and that is the whole character of it:
+    // sin·0.5+0.5 spends as long bright as dim and reads as a pulse, where
+    // squaring it makes each light sit low most of the time and flare briefly.
+    // That is what separates a field of candles from a row of indicator LEDs.
+    //
+    // The phase comes from the cell's own coordinates rather than a random
+    // number — see pingPhase() in the module. It has to be stable, because the
+    // geometry is
+    // rebuilt every time the poll returns and re-randomising would make the
+    // whole earth twinkle in lockstep once every fifteen seconds.
+    //
+    // This does NOT replace the shared breath. That is still here, on size, in
+    // the line below: every candle on earth swells and settles together at a
+    // resting breath, and each one pings on its own inside that. The togetherness
+    // was the point of the page and it has not been traded away for the effect.
+    // Its own rate, not just its own offset. 1.45 to 2.35 is narrow enough
+    // that the field still reads as one rhythm and wide enough that no two
+    // neighbours hold step — see pingSeed() in the module.
+    float rate = 1.45 + seed * 0.9;
+
+    float pulse = sin(time * rate + phase) * 0.5 + 0.5;
+
+    // THE FLARE. A second, much slower wave at an unrelated frequency, so the
+    // two drift in and out of alignment and a light occasionally pings harder
+    // than usual before settling back. Nothing schedules it and it never
+    // repeats — which is the whole reason it reads as alive rather than as an
+    // animation running on a list. Without this the earth shimmers evenly, and
+    // evenness is what gives away that these are datapoints.
+    float slow = sin(time * rate * 0.31 + phase * 1.7) * 0.5 + 0.5;
+
+    float ping = 0.66 + 0.34 * pulse * pulse * (0.5 + 0.5 * slow);
+
+    // Warm to pale, per light. Kept inside the ember family on purpose — the
+    // palette allows exactly one colour and this is a variation within it, not
+    // a second hue. What it buys is that no two adjacent candles are the same
+    // colour, so a cluster reads as a handful of people rather than as one
+    // symbol stamped repeatedly.
+    vTint = mix(vec3(1.06, 0.94, 0.80), vec3(0.98, 1.0, 1.04), seed);
+
+    vGlow = glow * ping * smoothstep(-0.02, 0.28, facing);
 
     vec4 viewPosition = modelViewMatrix * vec4(position, 1.0);
-    gl_PointSize = size * breath * pointScale / -viewPosition.z;
+    // The ping is on brightness AND, faintly, on size. A light that only
+    // changes brightness reads as a bulb on a dimmer; a real one appears to
+    // swell as it brightens, because the dim outer part of it crosses the
+    // threshold of visible. 6% either way is under conscious notice and does
+    // all the work.
+    float swell = 0.97 + 0.06 * pulse;
+    gl_PointSize = size * breath * swell * pointScale / -viewPosition.z;
     gl_Position = projectionMatrix * viewPosition;
   }
 `;
@@ -245,6 +599,7 @@ const LIGHT_VERTEX = /* glsl */ `
 const LIGHT_FRAGMENT = /* glsl */ `
   uniform sampler2D map;
   varying float vGlow;
+  varying vec3 vTint;
 
   void main() {
     vec4 sprite = texture2D(map, gl_PointCoord);
@@ -255,17 +610,20 @@ const LIGHT_FRAGMENT = /* glsl */ `
     // framebuffer is rgb * a. Writing the falloff into BOTH — rgb scaled by
     // sprite.a, and sprite.a again as the alpha — multiplies it in twice, so
     // the bloom is squared and the whole light is dimmed by whatever vGlow is,
-    // squared, as well. At the dim end of the range (0.42, a candle whose
-    // person has left) that is 0.18 of the intended brightness, which over a
-    // daylit ocean is nothing at all. The light was being drawn at the right
-    // size in the right place and was simply invisible.
+    // squared, as well. The light was being drawn at the right size in the
+    // right place and was simply invisible.
     //
-    // The 2.2 is there because half of this planet is in daylight and additive
-    // blending can only brighten what is already bright. A physically honest
-    // candle is invisible over a lit ocean, which is true and useless — this is
-    // the one place the page overstates something, and it overstates how bright
-    // a light is rather than how many there are or where they are.
-    gl_FragColor = vec4(sprite.rgb * sprite.a * vGlow * 2.2, 1.0);
+    // THE OVERSTATEMENT IS GONE. This was ×2.2 for as long as the earth was a
+    // photograph: additive blending can only brighten what is already bright,
+    // so an honest candle over a sunlit ocean was nothing at all, and the fix
+    // was to lie about brightness. There is no sunlit ocean now — the ground is
+    // dark everywhere. The multiplier that remains is not the old fudge in a
+    // smaller coat: it is here because the sprite is now a tight pinprick that
+    // spends almost all of its area at nearly zero, so the peak has to carry
+    // the light the old broad skirt used to. What it buys is a candle that is
+    // *bright*, which is the point — small and dim is a dead pixel, small and
+    // bright is a light seen from a long way off.
+    gl_FragColor = vec4(sprite.rgb * vTint * sprite.a * vGlow * 2.9, 1.0);
   }
 `;
 
@@ -317,6 +675,11 @@ export default function Globe({
     renderer.setClearColor(0x000000, 0);
     host.appendChild(renderer.domElement);
 
+    // Declared up here rather than beside the frame loop, because the land
+    // fetch below closes over it to know whether the component is still
+    // mounted when the file lands.
+    let disposed = false;
+
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(
       32,
@@ -326,27 +689,79 @@ export default function Globe({
     );
 
     // ---- The earth ------------------------------------------------------
-    const loader = new THREE.TextureLoader();
-    const dayMap = loader.load('/earth/day.jpg');
-    const nightMap = loader.load('/earth/night.jpg');
-    for (const map of [dayMap, nightMap]) {
-      // Both are photographs, so both are sRGB. Without this the GPU samples
-      // them as linear and the whole planet comes out washed and pale.
-      map.colorSpace = THREE.SRGBColorSpace;
-      map.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    //
+    // A flat ocean-coloured texture to begin with, replaced by the drawn
+    // coastlines when they arrive. The sphere is therefore correct from the
+    // first frame and simply gains its geography — which matters because the
+    // globe fades up as soon as it is ready, and a sphere that pops from
+    // nothing would be the one abrupt thing on the page. If the fetch fails
+    // the earth stays a plain dark ball: featureless, but not broken, and the
+    // lights still sit in the right places on it.
+    const blank = document.createElement('canvas');
+    blank.width = 1;
+    blank.height = 1;
+    const blankCtx = blank.getContext('2d');
+    if (blankCtx) {
+      blankCtx.fillStyle = '#1b2026';
+      blankCtx.fillRect(0, 0, 1, 1);
     }
+    const placeholder = new THREE.CanvasTexture(blank);
+    placeholder.colorSpace = THREE.SRGBColorSpace;
 
+    let ground: THREE.CanvasTexture = placeholder;
     const sunDirection = new THREE.Vector3(1, 0, 0);
+
+    /*
+      THE TERRAIN, AS A CONTROL MAP RATHER THAN A PICTURE.
+
+      `NoColorSpace` is the load-bearing line. This is the Blue Marble
+      desaturated to 220KB, and it is never displayed — the shader reads it as
+      a number to modulate the drawn ground with and to take a gradient from
+      for the slope shading. Marking it sRGB would have the GPU decode it to
+      linear on every fetch, which crushes a mid-grey of 0.30 down to about
+      0.07 and leaves the whole modulation happening in the bottom tenth of the
+      range, where JPEG has the least precision to give.
+
+      `reliefMix` ramps 0 → 1 when it arrives, so the terrain fades in over the
+      flat ground instead of snapping on a frame or two after the coastlines.
+    */
+    const reliefMix = { value: 0 };
+    const reliefTexel = new THREE.Vector2(1 / 2048, 1 / 1024);
+    const relief = new THREE.TextureLoader().load('/earth/relief.jpg');
+    relief.colorSpace = THREE.NoColorSpace;
+    relief.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    relief.wrapS = THREE.RepeatWrapping;
 
     const earthMaterial = new THREE.ShaderMaterial({
       uniforms: {
-        dayMap: { value: dayMap },
-        nightMap: { value: nightMap },
+        landMap: { value: placeholder },
+        reliefMap: { value: relief },
+        reliefTexel: { value: reliefTexel },
+        reliefMix,
         sunDirection: { value: sunDirection },
       },
       vertexShader: EARTH_VERTEX,
       fragmentShader: EARTH_FRAGMENT,
     });
+
+    const landAbort = new AbortController();
+    void (async () => {
+      try {
+        const res = await fetch('/earth/land.json', {
+          signal: landAbort.signal,
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as LandData;
+        if (disposed) return;
+        const drawn = landTexture(data);
+        drawn.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        earthMaterial.uniforms.landMap!.value = drawn;
+        ground = drawn;
+        placeholder.dispose();
+      } catch {
+        // Aborted on unmount, offline, or a bad file. The plain ball stands.
+      }
+    })();
 
     const earth = new THREE.Mesh(
       new THREE.SphereGeometry(EARTH_RADIUS, 96, 64),
@@ -380,11 +795,13 @@ export default function Globe({
     // cannot be missing.
     const breath = { value: 1 };
     const pointScale = { value: 1000 };
+    const time = { value: 0 };
     const lightMaterial = new THREE.ShaderMaterial({
       uniforms: {
         map: { value: sprite },
         breath,
         pointScale,
+        time,
       },
       vertexShader: LIGHT_VERTEX,
       fragmentShader: LIGHT_FRAGMENT,
@@ -412,6 +829,8 @@ export default function Globe({
       const positions = new Float32Array(next.length * 3);
       const sizes = new Float32Array(next.length);
       const glows = new Float32Array(next.length);
+      const phases = new Float32Array(next.length);
+      const seeds = new Float32Array(next.length);
 
       next.forEach((point, i) => {
         const v = latLonToVector3(point.lat, point.lon, LIGHT_RADIUS);
@@ -419,14 +838,28 @@ export default function Globe({
         positions[i * 3 + 1] = v.y;
         positions[i * 3 + 2] = v.z;
 
-        // A world-space diameter, in earth radii — so this is a light about 5%
-        // of the planet across, bloom and all, for a cell holding one person.
+        // A world-space diameter, in earth radii, against a sphere of radius 1
+        // — so a cell holding one person is a light about 1% of the planet
+        // across, which is six or seven pixels at the size this is drawn.
+        //
+        // A QUARTER OF WHAT IT WAS. The old figure was tuned to survive being
+        // drawn over a sunlit ocean and made every candle a soft blot; against
+        // dark ground a pinprick reads better and, more importantly, twenty of
+        // them still read as twenty rather than merging into one glow.
         //
         // Grows with the room, but as a square root. A cell with forty people
         // in it is not forty times the place a cell with one person in it is,
         // and growing linearly turns a single city into a blot over a
         // continent — which is exactly what the first version of this did.
-        sizes[i] = 0.05 + Math.sqrt(point.lit) * 0.022;
+        // The FOOTPRINT of the quad, not the size of the bright point. The
+        // core is 30% of this and the rest is spikes and falloff — see the
+        // note in `flameSprite`. The visible pinprick is therefore about
+        // 0.014 world units for a single sitter, slightly smaller than when
+        // the sprite was solid, while the star reaches four times further.
+        sizes[i] = 0.046 + Math.sqrt(point.lit) * 0.019;
+
+        phases[i] = pingPhase(point.lat, point.lon);
+        seeds[i] = pingSeed(point.lat, point.lon);
 
         // Lit, not live — the same distinction the room's ring draws. Somebody
         // who sat the first ten minutes of the hour and closed the tab lit a
@@ -446,6 +879,8 @@ export default function Globe({
       );
       lightGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
       lightGeometry.setAttribute('glow', new THREE.BufferAttribute(glows, 1));
+      lightGeometry.setAttribute('phase', new THREE.BufferAttribute(phases, 1));
+      lightGeometry.setAttribute('seed', new THREE.BufferAttribute(seeds, 1));
       lightGeometry.setDrawRange(0, next.length);
 
       // Turn to the busiest place on earth, once, on the first data to arrive.
@@ -533,7 +968,6 @@ export default function Globe({
     ).matches;
 
     let frame = 0;
-    let disposed = false;
     const startedAt = performance.now();
 
     const render = () => {
@@ -571,6 +1005,17 @@ export default function Globe({
       // out, which is roughly a resting breath and slower than anybody watches
       // for. Every light does it together, which is the point of the page.
       breath.value = 1 + Math.sin(elapsed * 1.15) * 0.075;
+
+      // The terrain fading in behind the coastlines, once decoded.
+      if (relief.image && reliefMix.value < 1) {
+        reliefMix.value = Math.min(1, reliefMix.value + 0.02);
+      }
+
+      // And the individual ping on top of it, in the vertex shader. Reduced
+      // motion stops the clock rather than the render: the lights hold at
+      // whatever they were instead of flickering, and the earth still turns
+      // under the check above.
+      if (!reducedMotion) time.value = elapsed;
 
       renderer.render(scene, camera);
     };
@@ -642,8 +1087,12 @@ export default function Globe({
             else material.dispose();
           }
         });
-        dayMap.dispose();
-        nightMap.dispose();
+        // Whichever the material ended up holding. `ground` is the placeholder
+        // until the coastlines land and the drawn texture after, and disposing
+        // the placeholder twice would be a no-op but a confusing one.
+        landAbort.abort();
+        ground.dispose();
+        relief.dispose();
         sprite.dispose();
         renderer.dispose();
         canvas.remove();

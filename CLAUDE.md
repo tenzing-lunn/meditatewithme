@@ -85,6 +85,33 @@ commit until the next piece of work lands on `dev`.
 - `supabase/migrations/` — SQL, forward-only
 - `tests/` — mirrors `lib/`
 
+## Applying a migration — never `db push`
+
+```bash
+supabase db query --linked -f supabase/migrations/<file>.sql
+```
+
+**`supabase db push` would replay the entire schema against a database that
+already has it.** The remote history table and this folder have never agreed:
+as of 3 September 2026 `supabase_migrations.schema_migrations` holds **seven**
+rows, this folder holds **nine** files, and **not one of them matches** — the
+migrations were applied by some route that never wrote these filenames back
+(the dashboard SQL editor, most likely). `supabase migration list --linked`
+shows the two columns side by side with nothing lining up, and that is the
+normal state here, not a problem to be tidied mid-task.
+
+`supabase link --project-ref qcwgquwjazhsettuemgt` needs no database password
+and writes only to the gitignored `supabase/.temp/`, so linking leaves the tree
+clean — no `config.toml` appears. `db query --linked` then runs through the
+Management API as `postgres`, which is enough for DDL and for `create
+extension`. **Verify the effect with a second `db query` afterwards**; the
+command reports the last statement only, so a multi-statement file can half
+apply and still look fine.
+
+Reconciling the two histories with `supabase migration repair` is the real fix
+and it is Tenzing's call — it writes to production metadata. Don't fold it into
+work that was about something else.
+
 ## The one thing that must not break
 
 `SUPABASE_SERVICE_ROLE_KEY` bypasses RLS entirely. It has no `NEXT_PUBLIC_`
