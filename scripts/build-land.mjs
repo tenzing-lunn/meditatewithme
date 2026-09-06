@@ -8,17 +8,23 @@
 //     https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_land.geojson
 //   node scripts/build-land.mjs
 //
-// The sibling asset, public/earth/relief.jpg, comes from public/earth/day.jpg
-// (NASA Blue Marble, public domain) via macOS `sips`:
+// The sibling asset, public/earth/relief.jpg, is derived from NASA's Blue
+// Marble (public domain) via macOS `sips`:
 //
 //   sips -Z 2048 day.jpg --out relief.jpg
 //   sips -s format jpeg -s formatOptions 45 \
 //     --matchTo '/System/Library/ColorSync/Profiles/Generic Gray Gamma 2.2 Profile.icc' \
 //     relief.jpg --out relief.jpg
 //
-// KEEP day.jpg. It is no longer referenced by any code, but it is the only
-// source relief.jpg can be regenerated from, and it is 1.3MB that never
-// reaches a browser because nothing links it.
+// day.jpg and its night-lights companion are no longer in the tree. They were
+// the globe's surface until the earth went monochrome, and were then 1.6MB
+// deployed to a CDN that nothing linked to. To get the source back:
+//
+//   git show 33a0c12:public/earth/day.jpg > day.jpg
+//
+// Nothing is lost by their absence — that path holds them for as long as the
+// history does, and the imagery is public domain and re-downloadable. What is
+// gone is only the copy that was being uploaded on every deploy.
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const SCALE = 50; // 1/50 degree ~= 2.2km. Far finer than a 600px globe resolves.
