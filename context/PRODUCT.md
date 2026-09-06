@@ -53,7 +53,7 @@ before deciding.
 
 **Begin → three questions, one per screen.** *How long* (1 minute, then 5 to
 60 in fives, or *until the bell*), *which bell* (singing bowl, gong, struck
-bell — each can be auditioned), *what to hear* (five ambient beds, each with
+bell — each can be auditioned), *any ambiance* (five ambient beds, each with
 its own fader and play button, over one master fader named *Volume* — it was
 *All*, which read as a sixth bed rather than as the master). Answers are
 remembered. A back arrow leaves
