@@ -10,7 +10,7 @@ import {
 } from './mix';
 
 /**
- * What you hear underneath.
+ * The ambiance.
  *
  * Five beds, each with its own level, and one master. Not a preset list —
  * the proposal is explicit that people build "the exact atmosphere they want",
@@ -62,7 +62,7 @@ export default function SoundMixer({
   return (
     <div className={compact ? 'w-full space-y-2' : 'w-full space-y-1'}>
       {compact && (
-        <span className="text-ink-3 block text-sm">Underneath</span>
+        <span className="text-ink-3 block text-sm">Ambiance</span>
       )}
 
       {TRACKS.map((track) => {

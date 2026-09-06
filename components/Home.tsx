@@ -670,7 +670,7 @@ function Settings({
         </div>
       </Field>
 
-      <Field label="Underneath">
+      <Field label="Ambiance">
         <SoundMixer soundMix={prefs.soundMix} onChange={onSound} />
       </Field>
 

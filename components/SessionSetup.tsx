@@ -45,7 +45,7 @@ export type Step = (typeof STEPS)[number];
 const QUESTION: Record<Step, string> = {
   duration: 'How long?',
   bell: 'How should it end?',
-  sound: 'Anything underneath?',
+  sound: 'Any ambiance?',
 };
 
 /** "rain", "rain and wind", "rain, wind and night" */
@@ -104,7 +104,7 @@ export default function SessionSetup({
   const soundSummary = (() => {
     const on = TRACKS.filter((t) => (prefs.soundMix[t.slug] ?? 0) > 0);
     if (on.length === 0) return 'In silence';
-    return `With ${sentenceList(on.map((t) => t.label.toLowerCase()))} underneath`;
+    return `With ${sentenceList(on.map((t) => t.label.toLowerCase()))}`;
   })();
 
   const SUMMARY: Record<Step, string> = {
