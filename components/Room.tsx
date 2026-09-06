@@ -1520,7 +1520,25 @@ function SittingRing({
         {/* What is left, draining clockwise from the top. Drains rather than
             fills because everything else in this room does: the candle burns
             down, the hour runs out. A filling arc would be the only thing on
-            screen measuring what has been spent. */}
+            screen measuring what has been spent.
+
+            The offset is `1 + left` and that is not a typo. The dash pattern is
+            [C dash, C gap], and the offset shifts it backwards along the path,
+            so what the number chooses is which of the two lands at the start —
+            twelve o'clock, after the rotate.
+
+              C * (1 - left)  puts the *dash* at twelve. The arc is anchored
+                              there and its tip retreats 9 → 6 → 3, which reads
+                              as a countdown running backwards.
+              C * (1 + left)  puts the *gap* at twelve, C * (1 - left) long. The
+                              spent time is the hole, it opens at the top and
+                              widens 3 → 6 → 9, and the arc that survives is
+                              always the part still ahead of it.
+
+            Both draw the same amount of ember; only the end that moves differs.
+            The second is the one a clock does. Twelve stays covered either way —
+            the dash still finishes there — so the dot in that slot is hidden
+            until the last moment, as the block above assumes. */}
         <circle
           cx={RING.mid}
           cy={RING.mid}
@@ -1530,7 +1548,7 @@ function SittingRing({
           strokeWidth={2}
           strokeLinecap="round"
           strokeDasharray={circumference}
-          strokeDashoffset={circumference * (1 - left)}
+          strokeDashoffset={circumference * (1 + left)}
           transform={`rotate(-90 ${RING.mid} ${RING.mid})`}
           opacity={0.85}
         />
