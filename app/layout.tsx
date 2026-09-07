@@ -57,6 +57,12 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   colorScheme: 'dark',
   themeColor: '#131518',
+  // Without this, `env(safe-area-inset-bottom)` is always zero on iOS and the
+  // controls at the foot of the sitting sit inside the home-indicator zone.
+  // The room is a full-bleed photograph that does not scroll, so drawing
+  // under the insets is what it wants anyway; the padding at the foot of the
+  // frame is the only thing that has to know they exist.
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({

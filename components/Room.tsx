@@ -1255,7 +1255,13 @@ export default function Room({
         // one ends the sitting — and side by side with a hairline between them
         // they read as a segmented control, which invites a mis-tap on the one
         // that cannot be undone.
-        <div className="absolute inset-x-0 bottom-0 flex justify-center gap-10 px-5 pb-7">
+        //
+        // The bottom padding grows by the safe-area inset. `pb-7` alone put
+        // `End this sitting` inside the iOS home-indicator zone — the one
+        // control that cannot be undone, where the system swipe-up gesture
+        // lives. The inset is zero everywhere that has no such zone, so the
+        // 28px stands on every other device.
+        <div className="absolute inset-x-0 bottom-0 flex justify-center gap-10 px-5 pb-[calc(1.75rem+env(safe-area-inset-bottom))]">
           <button
             type="button"
             onClick={() => setSoundOpen(!soundOpen)}
@@ -1292,7 +1298,7 @@ export default function Room({
       */}
       {activity.kind === 'finished' && !practiceOpen && !home && (
         <div
-          className={`absolute inset-x-0 bottom-0 z-20 flex justify-center px-5 pb-7 ${ending(2)}`}
+          className={`absolute inset-x-0 bottom-0 z-20 flex justify-center px-5 pb-[calc(1.75rem+env(safe-area-inset-bottom))] ${ending(2)}`}
         >
           <Account
             state={auth}
