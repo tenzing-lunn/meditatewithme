@@ -2,8 +2,12 @@
 
 Unsent. Move to `docs/` once it's gone out.
 
-Jonny's 55/5 decision (7 September 2026) is built — `ARCHITECTURE.md` §6.3.
+Jonny's 55-minute cap (7 September 2026) is built — `ARCHITECTURE.md` §6.3.
 This is the one thing left that he has to decide, and it is small.
+
+Say "the 55 minutes", not "55/5". The second was shorthand invented while
+building it; it appears nowhere Jonny has ever seen, and it reads as a version
+number or a ratio rather than as the thing he asked for.
 
 **Scope, deliberately.** An earlier draft of this built the whole thing around
 the house of lighters and asked whether sitting together should become the
@@ -29,9 +33,9 @@ was noise in a message whose whole job is to get one answer back.
 
 ---
 
-Hi Jonny — 55/5 is done, it's on the test site.
+Hi Jonny — the 55 minutes is done, it's on the test site.
 
-One question. If someone arrives in the last few minutes before :55, we currently offer them the next hour's bell — a 63-minute sitting, over the cap you've just set. Drop the shared option in that window, or leave it?
+One question. If someone arrives in the last few minutes before the bell, we currently offer them the next hour's bell instead — a 63-minute sitting, over the cap you've just set. Drop the shared option in that window, or leave it?
 
 ---
 
