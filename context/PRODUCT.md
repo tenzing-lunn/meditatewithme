@@ -30,7 +30,8 @@ Known open at the moment of launch, and still open:
   too") is the working path, and the link is still sent.
 - The custom domain is unattached; Supabase Site URL points at the Vercel
   address.
-- No favicon or Open Graph metadata; no real-device QA pass recorded.
+- No real-device QA pass recorded. *(The favicon and Open Graph card landed 7
+  September 2026 — see §2.)*
 
 Rollback candidate named in the launch commit: `defa583`.
 
@@ -124,6 +125,19 @@ the page lurching; `ARCHITECTURE.md` §16 has the mechanism.
 **Always dark, never scrolls, always works.** One palette regardless of system
 setting. One viewport; all type in the band above the flame. Supabase down
 still leaves a candle, a timer and a mix — nothing shows an error screen.
+
+**Before a visitor arrives.** A shared link now unfurls into a card — the
+flame, the name in Instrument Serif, and *A candle is lit at the top of every
+hour. Everyone is looking at the same one.* The tab and the iPhone home screen
+carry the same flame. It is drawn (`components/FlameMark.tsx`), not the
+photograph: `flame.png` is a composite that turns to a smudge below about
+200px, and a favicon is 32.
+
+The card deliberately shows a **full** flame rather than this hour's. Crawlers
+fetch it once and cache it, so an image that burned down would freeze at
+whatever height the first crawl caught and show a half-spent candle to everyone
+thereafter — the opposite of an invitation. The mark is ours and provisional:
+if Jonny licenses his own candle imagery (§5), it is one file to replace.
 
 ## 3. Decisions that shaped it, in order
 

@@ -138,7 +138,10 @@ invoice you weren't expecting" promise forbids.
   inventory and drafted copy for every category, including the approximate
   location the globe added. Only `[CONTROLLER]` and `[CONTACT EMAIL]` are
   outstanding, so this is now a fill-in rather than a write-up.
-- [ ] Add favicon and Open Graph metadata.
+- [x] Add favicon and Open Graph metadata. Done 7 September 2026: `app/icon.tsx`,
+  `app/apple-icon.tsx` and `app/opengraph-image.tsx`, all generated from one
+  flame in `components/FlameMark.tsx`. All three prerender static, so the
+  Google Fonts fetch happens at build and never on a crawler's request.
 - [ ] Perform real-phone QA and review keyboard navigation, contrast, and
   `prefers-reduced-motion` behaviour.
 - [ ] Configure Auth URL allow-list and production SMTP; complete the

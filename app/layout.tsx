@@ -23,10 +23,35 @@ const instrumentSerif = Instrument_Serif({
   display: 'swap',
 });
 
+/**
+ * Absolute base for the OG card's URL, which crawlers will not resolve from a
+ * relative path. `VERCEL_PROJECT_PRODUCTION_URL` is the production hostname
+ * whichever deployment is reading it, so this follows the custom domain the
+ * day it is attached without anyone remembering to come back here.
+ */
+const siteUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
+  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  : 'http://localhost:3000';
+
+const description =
+  'A new session begins at the top of every hour. Everyone worldwide sits in the same one.';
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: 'Meditate With Me',
-  description:
-    'A new session begins at the top of every hour. Everyone worldwide sits in the same one.',
+  description,
+  openGraph: {
+    title: 'Meditate With Me',
+    description,
+    url: '/',
+    siteName: 'Meditate With Me',
+    type: 'website',
+    locale: 'en_GB',
+  },
+  twitter: { card: 'summary_large_image', title: 'Meditate With Me', description },
+  // The room is one page that does not scroll and has nothing to crawl, but
+  // it should still be findable.
+  robots: { index: true, follow: true },
 };
 
 export const viewport: Viewport = {
