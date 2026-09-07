@@ -185,6 +185,13 @@ The same applies to anything else a test leaves behind: a completed sitting
 writes a real entry to the practice log. Say so rather than leaving it to be
 discovered.
 
+**The preview pane is signed in, so `localhost:3000` is Home, not the landing.**
+To see what a guest sees, open **`http://127.0.0.1:3000`** instead: a different
+origin with its own empty localStorage, so it is signed out without signing
+anybody out. `allowedDevOrigins` in `next.config.ts` exists for exactly this —
+without it Next serves that origin a black page and 403s. Never sign the pane
+out to get there; the session is Tenzing's.
+
 ## Time
 
 This is billed work: **£25/hr, capped at 55 hours.** `TIMELOG.md` at the repo
