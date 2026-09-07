@@ -32,12 +32,46 @@ import {
  * synchronously from inside the event handler, not from a `useEffect` reacting
  * to it.
  */
+/**
+ * UNLOCKING IS NOT PLAYING
+ *
+ * These were the same act until 7 September 2026, and that was the one thing
+ * `VISION.md` says v1 must not become: *"Something that plays sound at you.
+ * The only sound you did not ask for is the bell you chose."*
+ *
+ * Pressing `Let’s begin.` called `ensure()`, which built the graph at the
+ * stored levels. So a returning visitor with rain at 0.6 heard rain the
+ * instant they pressed the word — two screens before being asked whether they
+ * wanted any background noise, with no indicator and no control on screen to
+ * stop it. The tell that this had stopped being a decision was that it had to
+ * be written into `CLAUDE.md` as a hazard to our own developers: *"there is no
+ * silent path through the setup flow."*
+ *
+ * The autoplay reason for building early is real and unchanged — a context can
+ * only start inside a gesture, and the five audition buttons on the sound step
+ * are far too late to be the first one. So the graph is still built on
+ * `Begin.`, but silent: `ensure({ silent: true })` starts the master at zero
+ * and `unmute()` raises it when the sound question is actually on screen.
+ *
+ * The beds' own levels are left alone throughout, which is what makes this
+ * safe rather than clever: saying *No* to the question writes real zeros to
+ * preferences, so raising the master on a declined mix plays nothing at all.
+ * The master is about *when*, never about *whether*.
+ */
 export interface Mix {
   /**
    * Build the graph if it does not exist yet. MUST be called from inside a
    * user gesture. Safe to call repeatedly.
+   *
+   * `silent` builds it with the master at zero — audible only once `unmute`,
+   * `restore`, or a deliberate move of the master fader raises it.
    */
-  ensure: () => void;
+  ensure: (opts?: { silent?: boolean }) => void;
+  /**
+   * Raise the master to the stored level, once there is a reason to. A no-op
+   * on a graph that was never built silent.
+   */
+  unmute: () => void;
   /** Take the mix down gently. Used once the bell has sounded — the caller
    *  sets how gently, because the ending is thirty seconds long. */
   fadeOut: (seconds?: number) => void;
@@ -54,11 +88,32 @@ export function useMix(soundMix: Record<string, number>): Mix {
   const latest = useRef(soundMix);
   latest.current = soundMix;
 
-  const ensure = useCallback(() => {
-    if (!handle.current) handle.current = startMix(latest.current);
-    // Already running: this is also the iOS resume path, since unlockAudio
-    // resumes a suspended context.
-    else unlockAudio();
+  /**
+   * The graph exists but the master is being held at zero.
+   *
+   * A ref rather than state because the effect below reads it while pushing
+   * preferences into the graph, and that effect must not re-run when this
+   * changes — every path that clears the flag also sets the gain itself.
+   */
+  const muted = useRef(false);
+
+  const ensure = useCallback((opts?: { silent?: boolean }) => {
+    if (!handle.current) {
+      muted.current = opts?.silent === true;
+      handle.current = startMix(
+        muted.current ? { ...latest.current, [MASTER_KEY]: 0 } : latest.current,
+      );
+    } else {
+      // Already running: this is also the iOS resume path, since unlockAudio
+      // resumes a suspended context.
+      unlockAudio();
+    }
+  }, []);
+
+  const unmute = useCallback(() => {
+    if (!muted.current) return;
+    muted.current = false;
+    handle.current?.set(MASTER_KEY, latest.current[MASTER_KEY] ?? DEFAULT_MASTER);
   }, []);
 
   // Depend on the values, not the object. Room re-renders four times a second
@@ -75,7 +130,14 @@ export function useMix(soundMix: Record<string, number>): Mix {
     const mix = handle.current;
     if (!mix) return;
     for (const slug of TRACK_SLUGS) mix.set(slug, soundMix[slug] ?? 0);
-    mix.set(MASTER_KEY, soundMix[MASTER_KEY] ?? DEFAULT_MASTER);
+    // The beds always take their stored levels; only the master is withheld.
+    // Without this branch, any change to the mix — a fader dragged, a sync
+    // arriving from another device — would push the stored master in and
+    // undo the silence by a side door.
+    mix.set(
+      MASTER_KEY,
+      muted.current ? 0 : (soundMix[MASTER_KEY] ?? DEFAULT_MASTER),
+    );
     // soundMix is read through the fingerprint deliberately — see above.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fingerprint]);
@@ -103,10 +165,12 @@ export function useMix(soundMix: Record<string, number>): Mix {
     [],
   );
 
-  const restore = useCallback(
-    () => handle.current?.restore(latest.current[MASTER_KEY] ?? DEFAULT_MASTER),
-    [],
-  );
+  // Clears the hold too. A sitting has started: the question has been asked
+  // and answered, and whatever the beds are set to is now what was asked for.
+  const restore = useCallback(() => {
+    muted.current = false;
+    handle.current?.restore(latest.current[MASTER_KEY] ?? DEFAULT_MASTER);
+  }, []);
 
-  return { ensure, fadeOut, restore };
+  return { ensure, unmute, fadeOut, restore };
 }

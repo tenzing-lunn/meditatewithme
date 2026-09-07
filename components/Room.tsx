@@ -578,9 +578,21 @@ export default function Room({
    */
   const openSetup = useCallback(() => {
     unlockAudio();
-    mix.ensure();
+    // Silent. The context has to start inside this gesture or the audition
+    // buttons three screens later have nothing to play through — but starting
+    // it is not the same as playing through it, and this word is not where
+    // anybody agreed to hear rain. See `useMix`.
+    mix.ensure({ silent: true });
     setSetup('duration');
   }, [mix]);
+
+  // The sound question is on screen, so sound may now be heard: the auditions
+  // need it, and anyone who is going to say No is looking at the switch that
+  // says so. Not a gesture, and it does not need to be — the context is
+  // already running and this only moves a gain.
+  useEffect(() => {
+    if (setup === 'sound') mix.unmute();
+  }, [setup, mix]);
 
   const begin = useCallback(() => {
     // Must happen inside the click. Autoplay policy will not let an

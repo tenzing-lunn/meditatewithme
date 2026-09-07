@@ -152,12 +152,20 @@ checked, it is a label change" is a fine answer.
 
 **When you do open it, it plays out of Tenzing's speakers. Leave it silent.**
 
-Pressing the landing's begin word calls `unlockAudio()` and `mix.ensure()` in
-`openSetup` (`components/Room.tsx`), so **the stored ambient beds start playing
-the moment the flow opens** — before any mixer is on screen. There is no silent
-path through the setup flow. The five beds are loudness-matched to −16 LUFS as
-of 7 September 2026, so no single one ambushes you any more — `rain` used to be
-12.5 dB above `waterfall` and this note used to warn you about it. A hidden preview
+Pressing the landing's begin word calls `unlockAudio()` and
+`mix.ensure({ silent: true })` in `openSetup` (`components/Room.tsx`), which
+builds the graph with the master at zero. **The first two questions are silent.
+Sound starts when the sound question reaches the screen**, where `mix.unmute()`
+raises the master so the audition buttons work — so the step to stay off is the
+third one, and everything before it is safe.
+
+That is true as of 7 September 2026 and it used to be the opposite: the beds
+started at the begin word, two screens early, and this note warned you there was
+no silent path through the flow. There is one now, and it is most of the flow.
+
+The five beds are loudness-matched to −16 LUFS as of the same day, so no single
+one ambushes you either — `rain` used to be 12.5 dB above `waterfall` and this
+note used to warn you about that too. A hidden preview
 pane keeps playing: the `visibilitychange` handler in `components/useMix.ts`
 only ever *resumes*, deliberately, because a sitting must not stop when someone
 glances at another tab.

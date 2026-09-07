@@ -97,7 +97,14 @@ Saying `No` silences the beds for real rather than hiding them, and saying
 `Yes` again within the flow puts back what was there. Answers are
 remembered. A back arrow leaves
 from the first screen and steps back from the others. *Start* is at the foot of
-the last screen. The audio context is unlocked on *Begin*, not on *Start*.
+the last screen. The audio context is unlocked on *Begin*, not on *Start* —
+but it is unlocked **silent**, and nothing is audible until the background-noise
+question is on screen. Until 7 September 2026 those were the same act, so a
+returning visitor with a stored mix heard it start under the words *How long?*,
+two screens before being asked whether they wanted any. That is the one thing
+`VISION.md` says v1 must not become, and the fix is a master held at zero rather
+than a change to anybody's stored levels: saying *No* still writes real zeros to
+the beds, so raising the master on a declined mix plays nothing.
 
 **The bell rings twice.** The one you chose sounds at *Start* as well as at the
 end, so a sitting is bounded at both ends by the same sound rather than
