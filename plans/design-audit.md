@@ -491,13 +491,8 @@ But it means `npm run typecheck` is the only gate catching that class of error, 
 - **No browser was opened**, deliberately — opening the room plays audio out of the
   speakers and there is no silent path through the flow. So: nothing here is
   verified as *rendered*. Specifically unverified —
-- **Text contrast over the photograph.** `--color-ink-3` (`#9a9792`) is used in
-  ~20 places over a lit photograph whose composite luminance varies per pixel and
-  per camera phase (7 phases, `br` 0.58→1.14, vignette 0.04→0.6). No static
-  calculation settles these. `globals.css:55-63` already records that the value was
-  raised from `#87847f` after an on-composite measurement found 4.03:1. **These are
-  flagged not-computable, not passing.** Settling them needs pixel sampling in a
-  browser.
+- ~~**Text contrast over the photograph.**~~ **Measured 7 September 2026 — see
+  §10.**
 - **The band-scale touch-target multiplier** in P1 is computed from the CSS, not
   measured on a device. The arithmetic is straightforward; the exact scale at a
   given viewport is not.
@@ -559,3 +554,79 @@ reopening the product model or needing a client conversation to start.
    `begin()` gates on `now !== null` while the reveal gates on
    `hasTime && sceneReady` (`Room.tsx:542-546`). Whose experience was optimised, and
    is it the one we will be judged on in month three?
+
+---
+
+## 10. Text over the photograph — measured
+
+The one thing §7 said could not be settled statically. Sampled in the browser on
+7 September 2026, against `dev` at `09edbdd`.
+
+**Method.** The scene's own `/room-base.avif` drawn to a canvas through the
+browser's real CSS filter pipeline, then the layers that darken it composited in
+the order `CandleScene` stacks them: the camera's
+`blur() brightness() saturate(1.04)` and `scale` per phase, the vignette
+(`radial-gradient … at 50% 42%`, at `CAM.dim`), the top gradient, and the flat
+stop at `CAM.stop`. Sampled in ten horizontal strips across the central 64% of
+the width — where every word in the room is set — at 390×844 and 1440×900. The
+figure taken per strip is the **95th-percentile** luminance, not the single
+brightest pixel: one specular highlight under a descender is not what a reader
+sees.
+
+**The band is the top 39% of the viewport** (`Room.tsx:862`,
+`height: var(--flame-top, 39vh)`), so strips 0-3 are the ones that carry text.
+The exception is `open`, where the band is `100%` and every strip counts.
+
+Worst `--color-ink-3` (`#9a9792`) contrast per phase, within the strips that
+actually hold text, at 390×844:
+
+| Phase | Strips that matter | Worst ratio | |
+|---|---|---|---|
+| `load` | 0-3 | **5.59** | pass |
+| `idle` | 0-3 | **4.43** | marginal — 0.07 under AA |
+| `quiet` | 0-3 | **4.57** | pass |
+| `open` | 0-9 (full frame) | **4.00** | **fail** |
+| `sitting` | 0-3 | **4.96** | pass |
+| `finished` | 0-3 | **3.70** | **fail** |
+
+The laptop viewport tracks within ±0.1 of these throughout.
+
+**Two real failures, and they are the two phases the palette comment did not
+anticipate.**
+
+`finished` is the worst and the reason is legible in `CAM`: it is the only phase
+that turns the vignette almost off (`dim: 0.04`) *and* brightens the photograph
+past unity (`br: 1.14`). The device that makes cream type readable on a lit
+photograph is deliberately withdrawn at exactly the moment `Afterwards` puts its
+quiet stat rows on screen. `globals.css:55-63` records the last fix here —
+raising `ink-3` from `#87847f` after an on-composite reading of 4.03:1 — and it
+was the right move, but it was measured against a sitting, not against the
+ending. The ending is darker in intent and brighter in fact.
+
+`open` fails only in the lower half, which is the half the band reaches into
+when the questions take the full frame. `SessionSetup`'s folded summary rows sit
+there.
+
+**What this does not model, and which way it errs.** The flame canvas and the
+`mix-blend-screen` glow are excluded — both brighten, both are local to the
+flame, and no text is set on the flame. Excluding them makes the figures
+slightly *optimistic* in a band immediately around the flame and correct
+elsewhere. The lit wax in the lower half of the frame, which is where the
+brightest sampled values come from, is in the photograph itself and is modelled.
+
+**Recommended, and not done here — it is a look decision, not a defect fix.**
+Three options, in increasing cost:
+
+1. Raise `CAM.finished.dim` and `CAM.returning.dim` from `0.04` to about `0.18`.
+   One number each, no palette change, and it buys roughly 1.2 of ratio. It
+   costs the ending some of its openness, which is the whole point of that
+   phase — so this is Tenzing's call, not a fix to be applied quietly.
+2. Set `Afterwards`' quiet rows in `ink-2` rather than `ink-3`. `ink-2`
+   (`#b5b2ad`, relative luminance 0.447 against `ink-3`'s 0.311) is the
+   *lighter* of the two and therefore the stronger one on a dark ground — which
+   is why the new landing sentence uses it. Narrow, and it puts two greys in the
+   ending.
+3. Extend `scripts/contrast.mjs` to run this composite check in CI, so the next
+   camera change cannot quietly re-break it. This is the §3 P2 item and it is
+   the one worth doing whichever of the above is chosen — the gate currently
+   reports twelve green pairs while two phases are red.
