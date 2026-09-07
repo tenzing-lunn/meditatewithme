@@ -101,10 +101,15 @@ before deciding.
 55 in fives, or *until the bell*, which now rings at :55), *which bell* (singing bowl, gong, struck
 bell — each can be auditioned), *any sound* — a switch, `No` by
 default, and only when it is flipped to `Yes` do the five ambient beds appear,
-each with its own fader and play button over one master fader named *Volume*
-(it was *All*, which read as a sixth bed rather than as the master). The five
-beds *were* the question until 7 September 2026, which asked somebody who
-wanted to sit in silence to understand a mixer before they could decline one.
+as five named chips in a row: tap one and it plays at its stored level (or an
+audition level if it has never been heard), tap again and it stops. The
+faders — one per bed and a master named *Volume* (it was *All*, which read as
+a sixth bed rather than as the master) — sit behind *Adjust levels* under the
+chips, one tap away. Until the evening of 7 September 2026 the whole mixer
+opened here, eleven controls on the last screen of a flow built on one thing
+at a time. The five beds *were* the question until earlier that day, which
+asked somebody who wanted to sit in silence to understand a mixer before they
+could decline one.
 Saying `No` silences the beds for real rather than hiding them, and saying
 `Yes` again within the flow puts back what was there. Answers are
 remembered. A back arrow leaves

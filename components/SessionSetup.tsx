@@ -17,8 +17,9 @@ import {
   timerStopIndex,
 } from '@/lib/timer';
 import { BELLS, type BellKind, previewBell } from './audio';
+import { QUIET } from './controls';
 import { TRACKS, type MASTER_KEY, type TrackSlug } from './mix';
-import SoundMixer from './SoundMixer';
+import SoundMixer, { BedToggles } from './SoundMixer';
 
 /**
  * What you settle before you sit — asked one thing at a time, on its own
@@ -115,6 +116,9 @@ export default function SessionSetup({
    * five silent faders exactly as a first visit does.
    */
   const beforeSilence = useRef<Record<string, number>>({});
+
+  /** The faders, shown only when asked for. Closed again on every visit. */
+  const [levelsOpen, setLevelsOpen] = useState(false);
 
   const toggleNoise = () => {
     if (noise) {
@@ -402,9 +406,28 @@ export default function SessionSetup({
                   sliders in the tab order and still five rows the band has to
                   fit — and the band measures what is actually there, so leaving
                   them in would shrink the question to make room for controls
-                  nobody asked for. */}
+                  nobody asked for.
+
+                  Five chips, then the faders only on request. The mixer used
+                  to open here whole — eleven controls on the last screen of a
+                  flow built on asking one thing — and it was the design
+                  audit's clearest cognitive-load failure. Which sounds is the
+                  question; how loud is a refinement, and it is one tap away. */}
               {noise && (
-                <SoundMixer soundMix={prefs.soundMix} onChange={onSound} />
+                <div className="space-y-4">
+                  <BedToggles soundMix={prefs.soundMix} onChange={onSound} />
+                  <button
+                    type="button"
+                    onClick={() => setLevelsOpen((v) => !v)}
+                    aria-expanded={levelsOpen}
+                    className={QUIET}
+                  >
+                    {levelsOpen ? 'Done adjusting' : 'Adjust levels'}
+                  </button>
+                  {levelsOpen && (
+                    <SoundMixer soundMix={prefs.soundMix} onChange={onSound} />
+                  )}
+                </div>
               )}
             </div>
           )}
