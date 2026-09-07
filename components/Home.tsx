@@ -212,7 +212,14 @@ export default function Home({
               margins centre and give way.
             */}
             <div className="m-auto flex w-full flex-col items-center pt-14 pb-4 lg:py-12">
-              <p className="text-ink-3 h-4 text-xs tabular-nums">
+              {/* text-sm ink-2, not the text-xs ink-3 it was. This is the
+                  shared fact — the one thing on the page that is about the
+                  hour rather than about you — and it was set at the size of a
+                  legal footnote under a text-6xl Sit. One rank up: still
+                  secondary, no longer a footnote. `h-5` is the line-height of
+                  text-sm, reserved so the circle does not jump when the clock
+                  arrives. */}
+              <p className="text-ink-2 h-5 text-sm tabular-nums">
                 {now !== null &&
                   `Next candle at ${localTime(nextHourStart(now))}`}
               </p>
@@ -736,7 +743,7 @@ function WorldLink({
         {/* Absent rather than zero when the count is unavailable. A meditation
             site does not invent company, and it does not report an empty earth
             it has not actually looked at. */}
-        <span className="text-ink-3 text-xs tabular-nums">
+        <span className="text-ink-2 text-sm tabular-nums">
           {litCount === null
             ? 'The earth, and this hour on it'
             : litCount === 0

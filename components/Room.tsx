@@ -1131,7 +1131,10 @@ export default function Room({
               added to remove. */}
           {activity.kind === 'finished' && phase !== 'open' && (
             <p
-              className={`text-ink-2 mt-4 text-xs tabular-nums ${ending(2)}`}
+              // text-sm, not text-xs: the same rank as the stat rows above it.
+              // This is the shared fact and it was the smallest type on the
+              // screen, under a text-6xl personal one.
+              className={`text-ink-2 mt-4 text-sm tabular-nums ${ending(2)}`}
             >
               Next candle at {localTime(nextHourStart(now))}
             </p>
