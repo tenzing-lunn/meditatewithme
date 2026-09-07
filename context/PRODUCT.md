@@ -202,3 +202,23 @@ faders. That is the next thing to fix if the recordings stay blocked.
 
 **The other two focus loops.** Only `candle` exists. `Focus()` in `Room.tsx`
 is where the others go when Jonny chooses them.
+
+**An iPhone app, possibly.** Raised 6 September 2026. Not decided, not
+planned, not scoped, and **not mentioned to Jonny** — it would be a new
+commercial arrangement, not a v1 remainder, and it does not fit inside the 55
+hours. The web app remains the work.
+
+One thing was done about it and it is the only thing worth doing yet:
+`tests/portability.test.ts` fails the build if a browser-only global reaches
+`lib/`. All ten files there are portable today — about 1,370 lines including
+the whole shared-hour scheduler — and that is only cheap to keep while
+something enforces it. `ARCHITECTURE.md` §12 has the reasoning. Nothing else
+has been built and nothing else should be: no storage adapters, no audio
+wrappers, no monorepo. The audio graph would be rewritten natively whichever
+route is taken, so an abstraction over it is work thrown away twice.
+
+The route, if it happens, is Expo — same TypeScript, `lib/` moves unchanged,
+the UI and the audio engine are rebuilt. The risk sits entirely in one
+question: whether a bell reliably rings on a locked phone forty-five minutes
+later. That is a day's throwaway spike and it should be the first thing done,
+before any plan is written, because a bad answer reshapes all of it.

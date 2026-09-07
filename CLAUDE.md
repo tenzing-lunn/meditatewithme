@@ -85,10 +85,11 @@ commit until the next piece of work lands on `dev`.
 - `supabase/migrations/` — SQL, forward-only
 - `tests/` — mirrors `lib/`
 
-## An iOS app is coming — keep `lib/` portable
+## An iPhone app is possible one day — keep `lib/` portable
 
-Decided 6 September 2026. Nothing is being built for it yet and no plan is
-approved, but one rule applies to every commit from now on:
+Raised 6 September 2026, **not decided and not scoped**; see `PRODUCT.md` §5.
+The web app is the work. Nothing is being built for iOS and no plan exists,
+but one rule applies to every commit from now on:
 
 **Never put a browser-only global in `lib/`.** No `window`, `document`,
 `localStorage`, `navigator`, `AudioContext`. `tests/portability.test.ts` fails
@@ -100,8 +101,8 @@ in React Native.
 That is the whole rule. `lib/` is the ~1,370 lines an iOS port keeps unchanged,
 including the entire shared-hour scheduler, and it is only cheap to move while
 it stays clean. Do **not** build abstraction layers, storage adapters or audio
-wrappers in anticipation — the audio graph is being rewritten natively whatever
-happens, and the three `localStorage` call sites are all in hooks already.
+wrappers in anticipation — the audio graph would be rewritten natively on any
+route taken, and the three `localStorage` call sites are all in hooks already.
 Speculative plumbing is the expensive kind of preparation; the boundary is the
 cheap kind.
 
