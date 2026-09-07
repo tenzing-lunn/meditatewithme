@@ -1,6 +1,12 @@
 'use client';
 
-import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react';
 
 import type { UserPreferences } from '@/lib/types';
 import {
@@ -45,7 +51,7 @@ export type Step = (typeof STEPS)[number];
 const QUESTION: Record<Step, string> = {
   duration: 'How long?',
   bell: 'How should it end?',
-  sound: 'Any ambiance?',
+  sound: 'Any background noise?',
 };
 
 /** "rain", "rain and wind", "rain, wind and night" */
@@ -84,6 +90,52 @@ export default function SessionSetup({
   onCancel: () => void;
 }) {
   const [step, setStep] = useState<Step>('duration');
+
+  /**
+   * Whether the last question is being answered yes.
+   *
+   * Its own state rather than `TRACKS.some(up)` read live, and the difference
+   * matters exactly once: pulling every fader down by hand would otherwise flip
+   * the switch and pull the mixer out from under the fingers doing it. The
+   * derivation is right for the *initial* value and wrong as a permanent
+   * identity, so it is used for the first and not the second.
+   */
+  const [noise, setNoise] = useState(() =>
+    TRACKS.some((t) => (prefs.soundMix[t.slug] ?? 0) > 0),
+  );
+
+  /**
+   * The mix as it was when the switch was last turned off.
+   *
+   * Saying no silences the beds for real — the levels in preferences are the
+   * only thing the graph reads, so a mixer that is merely hidden would still be
+   * playing — and this is what makes saying no again reversible within the
+   * flow. It does not outlive the flow: leave with the switch off and the mix
+   * is genuinely silent, which is what was chosen, and the next `yes` opens on
+   * five silent faders exactly as a first visit does.
+   */
+  const beforeSilence = useRef<Record<string, number>>({});
+
+  const toggleNoise = () => {
+    if (noise) {
+      const kept: Record<string, number> = {};
+      const silent: Record<string, number> = { ...prefs.soundMix };
+      for (const track of TRACKS) {
+        const level = prefs.soundMix[track.slug] ?? 0;
+        if (level > 0) kept[track.slug] = level;
+        silent[track.slug] = 0;
+      }
+      beforeSilence.current = kept;
+      // `update` rather than five calls to `onSound`, which spreads the
+      // preferences its own closure captured — five of those in one handler
+      // and only the last survives. The graph does not need a gesture here
+      // either way: `openSetup` ensures it before this flow can be reached.
+      update({ soundMix: silent });
+    } else {
+      update({ soundMix: { ...prefs.soundMix, ...beforeSilence.current } });
+    }
+    setNoise(!noise);
+  };
 
   useEffect(() => {
     onStepChange?.(step);
@@ -201,7 +253,7 @@ export default function SessionSetup({
                 )}
               </p>
 
-              {/* Thirteen stops, not sixty. The value is an INDEX into
+              {/* Twelve stops, not sixty. The value is an INDEX into
                   TIMER_STOPS — the jump from one minute to five is not a step
                   any `step` attribute can describe — which is why it carries an
                   aria-valuetext. The last stop past the end is the shared bell,
@@ -295,7 +347,55 @@ export default function SessionSetup({
           )}
 
           {step === 'sound' && (
-            <SoundMixer soundMix={prefs.soundMix} onChange={onSound} />
+            <div className="space-y-6">
+              {/* A switch, because this is the one question with two answers
+                  and no middle — and a switch says which one is showing without
+                  a word being read. The five beds were the question here until
+                  now, which asked somebody who wanted to sit in silence to
+                  understand a mixer before they could decline one. */}
+              <button
+                type="button"
+                role="switch"
+                aria-checked={noise}
+                aria-label="Background noise"
+                onClick={toggleNoise}
+                className="rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper group flex min-h-11 items-center gap-3 self-start focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+              >
+                <span
+                  aria-hidden
+                  className={`flex h-8 w-14 shrink-0 items-center rounded-full border p-1 transition-colors ${
+                    noise
+                      ? 'border-ember bg-ember-soft'
+                      : 'border-rule group-hover:border-ink-3'
+                  }`}
+                >
+                  <span
+                    className={`size-5 rounded-full transition-[transform,background-color] duration-300 ease-out ${
+                      noise
+                        ? 'bg-ember translate-x-6'
+                        : 'bg-ink-3 group-hover:bg-ink-2 translate-x-0'
+                    }`}
+                  />
+                </span>
+                <span
+                  aria-hidden
+                  className={`text-base transition-colors ${
+                    noise ? 'text-ember' : 'text-ink-2'
+                  }`}
+                >
+                  {noise ? 'Yes' : 'No'}
+                </span>
+              </button>
+
+              {/* Unmounted rather than hidden. A collapsed mixer is still five
+                  sliders in the tab order and still five rows the band has to
+                  fit — and the band measures what is actually there, so leaving
+                  them in would shrink the question to make room for controls
+                  nobody asked for. */}
+              {noise && (
+                <SoundMixer soundMix={prefs.soundMix} onChange={onSound} />
+              )}
+            </div>
           )}
         </div>
       </section>

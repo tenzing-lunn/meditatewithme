@@ -279,8 +279,13 @@ const COOLDOWN_MS = 10_000;
  * measurement above, not by taste, and lightening it further is what would
  * start failing on the dish.
  */
-const LIFTED =
-  'flex min-h-11 items-center justify-center rounded-control border border-white/20 bg-[#1c1410]/65 px-6 text-sm tracking-wide text-white transition-colors hover:border-white/40 hover:bg-[#1c1410]/85 focus-visible:ring-ember focus-visible:ring-offset-paper focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none';
+const LIFTED_SURFACE =
+  'flex min-h-11 items-center justify-center rounded-control border border-white/20 bg-[#1c1410]/65 text-sm tracking-wide text-white transition-colors hover:border-white/40 hover:bg-[#1c1410]/85 focus-visible:ring-ember focus-visible:ring-offset-paper focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none';
+
+const LIFTED = `${LIFTED_SURFACE} px-6`;
+
+/** The same surface, square, for a control that is an icon rather than a word. */
+const LIFTED_ICON = `${LIFTED_SURFACE} w-11`;
 
 function newSittingId(): string {
   try {
@@ -1116,12 +1121,14 @@ export default function Room({
         Absent for anybody signed in: they have a home, and this is the door to
         it. Absent while a question is open, because one thing is being asked.
 
-        IT SAYS WHAT IT DOES, WHICH IS NOT `Sign in`
-        `signInWithOtp` creates the account on first use — that has always been
-        the signup path, and the button was describing the API call rather than
-        the act. To a first-time visitor `Sign in` asks for credentials they do
-        not have and offers no way to get them. `Create account` is the offer,
-        and the flow behind it carries "I already have one" for the other case.
+        IT IS THREE LINES, AND IT OFFERS BOTH DOORS BY NAME
+        It said `Create account`, with "I already have one" as a footnote inside
+        the panel — chosen over `Sign in` because `signInWithOtp` creates the
+        account on first use, and `Sign in` alone asks a first-time visitor for
+        credentials they do not have. Jonny asked (7 September 2026) for a
+        three-line settings button here instead, opening a menu that offers
+        `Create account` and `Sign in` as two separate choices. Both lead into
+        the same panel at different steps; `Account` owns the menu.
       */}
       {!home &&
         auth.status === 'signed-out' &&
@@ -1157,7 +1164,8 @@ export default function Room({
               verify={verify}
               linkError={linkError}
               signOut={signOut}
-              className={LIFTED}
+              className={LIFTED_ICON}
+              menu
             />
           </div>
         )}

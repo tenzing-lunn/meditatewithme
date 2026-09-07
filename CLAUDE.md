@@ -85,6 +85,27 @@ commit until the next piece of work lands on `dev`.
 - `supabase/migrations/` — SQL, forward-only
 - `tests/` — mirrors `lib/`
 
+## An iPhone app is possible one day — keep `lib/` portable
+
+Raised 6 September 2026, **not decided and not scoped**; see `PRODUCT.md` §5.
+The web app is the work. Nothing is being built for iOS and no plan exists,
+but one rule applies to every commit from now on:
+
+**Never put a browser-only global in `lib/`.** No `window`, `document`,
+`localStorage`, `navigator`, `AudioContext`. `tests/portability.test.ts` fails
+the build if you do, and it will tell you what to do instead — take the value
+as a parameter, the way `lib/clock.ts` takes `fetchImpl`. Platform access lives
+in `components/`, behind a hook. `fetch` and `performance` are fine; both exist
+in React Native.
+
+That is the whole rule. `lib/` is the ~1,370 lines an iOS port keeps unchanged,
+including the entire shared-hour scheduler, and it is only cheap to move while
+it stays clean. Do **not** build abstraction layers, storage adapters or audio
+wrappers in anticipation — the audio graph would be rewritten natively on any
+route taken, and the three `localStorage` call sites are all in hooks already.
+Speculative plumbing is the expensive kind of preparation; the boundary is the
+cheap kind.
+
 ## Applying a migration — never `db push`
 
 ```bash
@@ -134,8 +155,9 @@ checked, it is a label change" is a fine answer.
 Pressing the landing's begin word calls `unlockAudio()` and `mix.ensure()` in
 `openSetup` (`components/Room.tsx`), so **the stored ambient beds start playing
 the moment the flow opens** — before any mixer is on screen. There is no silent
-path through the setup flow, and `rain` is white noise, so it is perceptually
-much louder than the other four at the same fader position. A hidden preview
+path through the setup flow. The five beds are loudness-matched to −16 LUFS as
+of 7 September 2026, so no single one ambushes you any more — `rain` used to be
+12.5 dB above `waterfall` and this note used to warn you about it. A hidden preview
 pane keeps playing: the `visibilitychange` handler in `components/useMix.ts`
 only ever *resumes*, deliberately, because a sitting must not stop when someone
 glances at another tab.

@@ -22,15 +22,27 @@ Known open at the moment of launch, and still open:
   and minimum-age decisions. The site sets a localStorage id, writes
   heartbeats, and now asks for a name and an email address, so this is not a
   cosmetic gap — and the name is a new category the inventory has to cover.
-- Production SMTP is not configured: the account email will not arrive for an
-  ordinary visitor. Everything works signed out.
+- Production SMTP is not configured: mail still leaves Supabase's shared
+  sender, `noreply@mail.app.supabase.io`, confirmed in the auth logs on 7
+  September 2026. Everything works signed out. **This has already cost a real
+  sign-up:** of the four accounts on the project, one — created 4 September at
+  13:50, thirty-nine minutes after the one before it — never confirmed and
+  never signed in, and its confirmation token is still pending. The shared
+  sender is rate-limited per hour and is documented as unsuitable for anyone
+  outside the project team, which fits what happened; the auth logs for that
+  day have since aged out, so the cause cannot now be proven from here.
 - The account flow asks for a six-digit code, and the stock Supabase email
-  template does not contain one — `{{ .Token }}` has to be added to it in the
-  dashboard. Until then the panel's own note ("the link in that email works
+  template does not contain one — `{{ .Token }}` has to be added to it. That
+  edit is **refused on the free tier while the default sender is in use**
+  (tried through the Management API, 7 September 2026), so it waits on the
+  SMTP item above. The auth server's own code length was moved from eight
+  digits to six the same day and proved with a throwaway user. Until the
+  template can change, the panel's own note ("the link in that email works
   too") is the working path, and the link is still sent.
 - The custom domain is unattached; Supabase Site URL points at the Vercel
   address.
-- No favicon or Open Graph metadata; no real-device QA pass recorded.
+- No real-device QA pass recorded. *(The favicon and Open Graph card landed 7
+  September 2026 — see §2.)*
 
 Rollback candidate named in the launch commit: `defa583`.
 
@@ -52,10 +64,15 @@ and it was being spent nowhere else on the one screen a first-time visitor reads
 before deciding.
 
 **Begin → three questions, one per screen.** *How long* (1 minute, then 5 to
-60 in fives, or *until the bell*), *which bell* (singing bowl, gong, struck
-bell — each can be auditioned), *any ambiance* (five ambient beds, each with
-its own fader and play button, over one master fader named *Volume* — it was
-*All*, which read as a sixth bed rather than as the master). Answers are
+55 in fives, or *until the bell*, which now rings at :55), *which bell* (singing bowl, gong, struck
+bell — each can be auditioned), *any background noise* — a switch, `No` by
+default, and only when it is flipped to `Yes` do the five ambient beds appear,
+each with its own fader and play button over one master fader named *Volume*
+(it was *All*, which read as a sixth bed rather than as the master). The five
+beds *were* the question until 7 September 2026, which asked somebody who
+wanted to sit in silence to understand a mixer before they could decline one.
+Saying `No` silences the beds for real rather than hiding them, and saying
+`Yes` again within the flow puts back what was there. Answers are
 remembered. A back arrow leaves
 from the first screen and steps back from the others. *Start* is at the foot of
 the last screen. The audio context is unlocked on *Begin*, not on *Start*.
@@ -101,13 +118,36 @@ that each light is placed to within about a hundred kilometres and nobody is
 asked for their location. On localhost the map is correctly empty: the edge
 headers it places people from do not exist in `next dev`.
 
-**Accounts.** Optional. `Create account` sits at the top right of the landing
-and alone at the foot of the frame after a sitting; both open the same panel,
-which drops from the control that opened it in 150ms and takes no other part of
-the picture. It asks one thing at a time — your name, then your email, then the
-six-digit code from that email, with `Confirm and enter` under it. `I already
-have one` skips the name. Nothing is asked for that is not used: the name is
-what Home's masthead greets you by.
+**Accounts.** Optional. A three-line menu button sits at the top right of the
+landing and opens two choices, `Create account` and `Sign in` — Jonny's ask on
+7 September 2026, replacing a single `Create account` button that carried the
+other case as a footnote. `Create account` alone still sits at the foot of the
+frame after a sitting. All of them open the same panel, which drops from the
+control that opened it in 150ms and takes no other part of the picture. It asks
+one thing at a time — your name, then your email, then the six-digit code from
+that email, with `Confirm and enter` under it. `Sign in`, and `I already have
+one` inside the panel, skip the name. Nothing is asked for that is not used:
+the name is what Home's masthead greets you by.
+
+**Signing in once is enough.** The session is stored in the browser and renews
+itself, with no expiry and no inactivity cutoff, so somebody who signs in is
+remembered across tabs, restarts and days — confirmed against the live project,
+where a session created on 3 September was still refreshing itself on the 7th.
+`Sign out` now ends the session **on that device only**; until 7 September 2026
+it quietly ended every session the account had, so signing out on a laptop
+signed you out on your phone as well.
+
+**Closing an account.** *Your account* is the last thing on Home, under the
+practice log, showing the email the account is held under and a `Delete
+account` control. Pressing it opens a confirmation naming what goes — the email
+address, the name, the settings and the sittings, counted — and saying that the
+practice log on this device stays, because it does. `Keep it` carries the ember
+treatment and the destructive control does not: the emphasis belongs on the
+safe answer. Deletion is immediate and total; `profiles`, `preferences` and
+`sittings` all cascade from the auth row, and nothing is soft-deleted.
+
+Deliberately nowhere near `Sign out` in the masthead. The two are close enough
+in meaning that putting them close together in space invites the wrong one.
 
 **A link that does not work says so.** Magic links are single-use and a new one
 kills the last; clicking a spent one bounces you back to the landing signed out,
@@ -124,6 +164,19 @@ the page lurching; `ARCHITECTURE.md` §16 has the mechanism.
 **Always dark, never scrolls, always works.** One palette regardless of system
 setting. One viewport; all type in the band above the flame. Supabase down
 still leaves a candle, a timer and a mix — nothing shows an error screen.
+
+**Before a visitor arrives.** A shared link now unfurls into a card — the
+flame, the name in Instrument Serif, and *A candle is lit at the top of every
+hour. Everyone is looking at the same one.* The tab and the iPhone home screen
+carry the same flame. It is drawn (`components/FlameMark.tsx`), not the
+photograph: `flame.png` is a composite that turns to a smudge below about
+200px, and a favicon is 32.
+
+The card deliberately shows a **full** flame rather than this hour's. Crawlers
+fetch it once and cache it, so an image that burned down would freeze at
+whatever height the first crawl caught and show a half-spent candle to everyone
+thereafter — the opposite of an invitation. The mark is ours and provisional:
+if Jonny licenses his own candle imagery (§5), it is one file to replace.
 
 ## 3. Decisions that shaped it, in order
 
@@ -195,10 +248,65 @@ The bells have since been rebuilt as three separate instruments — their own
 modes, a mallet, beating twins, and bloom on the gong (`ARCHITECTURE.md` §7).
 That was worth doing because `strike()` is thrown away wholesale when
 recordings arrive, so none of it is debt; it does **not** reduce the case for
-buying the real thing. **The beds have not been touched and are still four
-filtered-noise variants plus a drone** — rain, wind, waterfall and night are one
-generator with different filters, everything is mono, dry, and on linear
-faders. That is the next thing to fix if the recordings stay blocked.
+buying the real thing. **The beds are still four filtered-noise variants plus a
+drone** — rain, wind, waterfall and night are one generator with different
+filters, and everything is mono and dry. That is the next thing to fix if the
+recordings stay blocked.
+
+One fault in them has been fixed, on 7 September 2026, and it was a defect
+rather than a matter of taste. Rendered offline and measured K-weighted
+(ITU-R BS.1770), the five sat 12.5 dB apart — rain at −7.84 LUFS against
+waterfall at −20.33 — so a fader at half meant about four times as much sound
+under rain as under waterfall. Rain also peaked at 1.34, above full scale:
+at the top of its fader it was distorting, not getting louder. Each bed now
+carries a fixed trim to −16 LUFS, the loudest common target at which nothing
+clips. Re-measured after: 0.12 dB apart, worst peak 0.933.
+
+**The faders are still linear**, which is the other half of what that
+paragraph used to say and is deliberately not fixed here. Mapping the position
+through a taper is a change to how everybody's stored mix sounds, and it is a
+judgement no measurement settles — it needs somebody to listen. The
+loudness-matching did not need ears and could be proved.
 
 **The other two focus loops.** Only `candle` exists. `Focus()` in `Room.tsx`
 is where the others go when Jonny chooses them.
+
+**A house of lighters in Thailand.** Said by Jonny on 7 September 2026, for
+"later on", around the app launch: several meditators living in one house and
+leading the hours in rotation, switching off on the hour. That is his answer to
+the staffing problem that deferred the live Candle Lighter — 8,760 sessions a
+year is impossible for one volunteer and merely hard for a household — and it
+is the reason the timer's ceiling moved to 55 the same day. **It is a stated
+intention, not a plan**: nothing about it is scoped, costed, or in the v1 cap,
+and the two things that deferred the Candle Lighter besides staffing are
+untouched by it. Streaming still costs real money annually, and broadcasting
+identifiable people to an anonymous audience is still a safeguarding question
+that needs a solicitor before it needs a developer — more so, not less, if the
+volunteers live at the address they broadcast from.
+
+What was built for it is only the gap: the last five minutes of every hour are
+now clear of the shared bell (`ARCHITECTURE.md` §6.3). That is the cheap half
+of the preparation and it is worth having whether or not the house happens —
+it costs one number and it is the kind of thing that is expensive to retrofit
+once people have habits built on a bell at :00. Nothing else should be built
+ahead of the decision: no rota, no lighter accounts, no handover UI.
+
+**An iPhone app, possibly.** Raised 6 September 2026. Not decided, not
+planned, not scoped, and **not mentioned to Jonny** — it would be a new
+commercial arrangement, not a v1 remainder, and it does not fit inside the 55
+hours. The web app remains the work.
+
+One thing was done about it and it is the only thing worth doing yet:
+`tests/portability.test.ts` fails the build if a browser-only global reaches
+`lib/`. All ten files there are portable today — about 1,370 lines including
+the whole shared-hour scheduler — and that is only cheap to keep while
+something enforces it. `ARCHITECTURE.md` §12 has the reasoning. Nothing else
+has been built and nothing else should be: no storage adapters, no audio
+wrappers, no monorepo. The audio graph would be rewritten natively whichever
+route is taken, so an abstraction over it is work thrown away twice.
+
+The route, if it happens, is Expo — same TypeScript, `lib/` moves unchanged,
+the UI and the audio engine are rebuilt. The risk sits entirely in one
+question: whether a bell reliably rings on a locked phone forty-five minutes
+later. That is a day's throwaway spike and it should be the first thing done,
+before any plan is written, because a bad answer reshapes all of it.

@@ -41,7 +41,7 @@ describe('normalize', () => {
 
   test('snaps timerMinutes onto a slider stop', () => {
     assert.equal(normalize({ timerMinutes: 43 }).timerMinutes, 45);
-    assert.equal(normalize({ timerMinutes: 999 }).timerMinutes, 60);
+    assert.equal(normalize({ timerMinutes: 999 }).timerMinutes, 55);
     assert.equal(normalize({ timerMinutes: 0 }).timerMinutes, 1);
   });
 

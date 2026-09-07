@@ -287,16 +287,78 @@ export function useAuth() {
     [],
   );
 
+  /**
+   * Sign out of this device, and only this device.
+   *
+   * `scope: 'local'` is not a detail and not the library's default — bare
+   * `signOut()` is `scope: 'global'`, which revokes **every** session the
+   * account has anywhere. So pressing `Sign out` on a laptop would silently
+   * sign the same person out on their phone, and the next time they opened the
+   * room there they would be a stranger to it: no practice log carried across,
+   * no name in the masthead, and another email to wait for. Nobody pressing a
+   * button on one machine is asking for that to happen on another.
+   *
+   * Signing out everywhere is a real thing to want, but it is a deliberate
+   * security action — the answer to a lost phone — and it belongs behind its
+   * own control saying so, not silently attached to the ordinary one.
+   */
   const signOut = useCallback(async () => {
     try {
-      await browserClient().auth.signOut();
+      await browserClient().auth.signOut({ scope: 'local' });
     } catch {
       // onAuthStateChange still fires locally; and a failed sign-out on a
       // preferences-only account is not worth an error message.
     }
   }, []);
 
-  return { state, linkError, signIn, verify, signOut };
+  /**
+   * Delete the account, for good.
+   *
+   * The browser cannot do this itself — see the note in `app/api/account`. All
+   * this does is present the current access token to that handler, which is the
+   * only thing that proves which account to remove.
+   *
+   * `scope: 'local'` on the way out, and that is not a detail. The default
+   * sign-out POSTs to `/logout` with a token belonging to a user who no longer
+   * exists, which fails — and a caught failure there would leave the session in
+   * localStorage, so the app would carry on rendering Home for a deleted
+   * account until the token expired. A local sign-out has no server to disagree
+   * with: it clears the stored session and fires `onAuthStateChange`, which is
+   * exactly what is wanted once the account is already gone.
+   *
+   * Returns an error string rather than throwing, like `signIn` and `verify`,
+   * because the caller puts it on screen. A null return means the account is
+   * deleted and the app is already changing screen underneath the panel.
+   */
+  const deleteAccount = useCallback(async (): Promise<string | null> => {
+    try {
+      const client = browserClient();
+      const { data } = await client.auth.getSession();
+      const token = data.session?.access_token;
+
+      if (!token) {
+        return 'You are no longer signed in, so there is nothing here to delete.';
+      }
+
+      const response = await fetch('/api/account', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        return response.status === 401
+          ? 'That session has expired. Sign in again and you can delete the account from here.'
+          : 'The account could not be deleted just now. Nothing has been changed — please try again.';
+      }
+
+      await client.auth.signOut({ scope: 'local' });
+      return null;
+    } catch {
+      return 'Could not reach the server. Nothing has been changed — please try again.';
+    }
+  }, []);
+
+  return { state, linkError, signIn, verify, signOut, deleteAccount };
 }
 
 /**

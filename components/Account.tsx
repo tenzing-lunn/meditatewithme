@@ -45,6 +45,15 @@ import type { SyncStatus } from './useSyncPreferences';
  * `signInWithOtp` creates the user if the address is new and signs them in if
  * it is not, so there is no second form for people who already have an account
  * — only a quieter way into the same one, skipping the name.
+ *
+ * THE TWO DOORS ARE NOW ON A MENU
+ * Jonny asked (7 September 2026) for the top-right control to be a three-line
+ * settings button that offers `Create account` and `Sign in` as two separate
+ * choices, rather than one button labelled with the first and carrying the
+ * second as a footnote. So with `menu` set the trigger is the icon, pressing it
+ * opens a two-item menu, and each item opens the same panel at a different
+ * step — name for a new account, address for an existing one. The flow behind
+ * the panel is unchanged; only the door into it is.
  */
 
 /**
@@ -65,6 +74,10 @@ const FIELD =
 const SUBMIT =
   'min-h-11 w-full rounded-control border border-ember px-6 text-sm text-ember transition-colors duration-300 hover:bg-ember hover:text-white focus-visible:ring-2 focus-visible:ring-ember focus-visible:ring-offset-2 focus-visible:ring-offset-[#1c1410] focus-visible:outline-none disabled:opacity-50';
 
+/** One choice on the menu. Full width of it, lit on hover, nothing else. */
+const ITEM =
+  'min-h-11 px-5 text-left text-sm text-white/85 transition-colors hover:bg-white/10 hover:text-white focus-visible:bg-white/10 focus-visible:text-white focus-visible:outline-none';
+
 /** The quiet word under the button. Bounded by an underline, never bare. */
 const FOOT =
   'text-xs text-white/50 underline decoration-white/25 underline-offset-4 transition-colors hover:text-white/80 hover:decoration-white/60 focus-visible:ring-1 focus-visible:ring-ember focus-visible:outline-none';
@@ -78,6 +91,7 @@ export default function Account({
   signOut,
   className,
   drop = 'down',
+  menu = false,
 }: {
   state: AuthState;
   sync: SyncStatus;
@@ -98,8 +112,17 @@ export default function Account({
   /** The trigger's style, handed in by the room. `LIFTED`, in practice. */
   className?: string;
   drop?: Drop;
+  /**
+   * The three-line trigger and the two-item menu, instead of a labelled
+   * button. Only ever `down`: it lives in the top corner of the landing.
+   */
+  menu?: boolean;
 }) {
   const [open, setOpen] = useState(Boolean(linkError));
+  const [menuOpen, setMenuOpen] = useState(false);
+  // Either surface is on screen. One flag, so switching from the menu to the
+  // panel in the same press is a swap in place rather than a second entrance.
+  const shown = open || menuOpen;
   // One frame behind `open`, so the panel has a state to transition *from*.
   const [entered, setEntered] = useState(false);
 
@@ -125,6 +148,7 @@ export default function Account({
 
   const wrap = useRef<HTMLDivElement>(null);
   const firstField = useRef<HTMLInputElement>(null);
+  const firstItem = useRef<HTMLButtonElement>(null);
   const nameId = useId();
   const emailId = useId();
   const codeId = useId();
@@ -153,13 +177,13 @@ export default function Account({
   // and painted once before the class swap can be a transition rather than a
   // jump.
   useEffect(() => {
-    if (!open) {
+    if (!shown) {
       setEntered(false);
       return;
     }
     const id = requestAnimationFrame(() => setEntered(true));
     return () => cancelAnimationFrame(id);
-  }, [open]);
+  }, [shown]);
 
   // Straight into the field. The panel is small and there is exactly one thing
   // to do in it, so making somebody find the box with a second click is a step
@@ -168,16 +192,25 @@ export default function Account({
     if (open) firstField.current?.focus();
   }, [open, step]);
 
+  // And straight onto the first choice, for the same reason.
+  useEffect(() => {
+    if (menuOpen) firstItem.current?.focus();
+  }, [menuOpen]);
+
   // Escape, and a press anywhere else. Both are what a dropdown is expected to
   // do, and neither loses the flow — see the state note above.
   useEffect(() => {
-    if (!open) return;
+    if (!shown) return;
 
+    const close = () => {
+      setOpen(false);
+      setMenuOpen(false);
+    };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
+      if (e.key === 'Escape') close();
     };
     const onDown = (e: PointerEvent) => {
-      if (!wrap.current?.contains(e.target as Node)) setOpen(false);
+      if (!wrap.current?.contains(e.target as Node)) close();
     };
 
     document.addEventListener('keydown', onKey);
@@ -186,7 +219,7 @@ export default function Account({
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('pointerdown', onDown);
     };
-  }, [open]);
+  }, [shown]);
 
   // Nothing to offer, or we don't know yet. Render nothing rather than a
   // control that flickers into existence under someone's cursor.
@@ -245,6 +278,20 @@ export default function Account({
     if (message) setError(message);
   };
 
+  /**
+   * A door on the menu. `name` is `Create account`, `email` is `Sign in`.
+   *
+   * A code already sent is not thrown away by choosing a door again: somebody
+   * who closed the panel to go and read their email comes back to the code box,
+   * whichever item they press to get there — see the state note above.
+   */
+  const openAt = (at: Step) => {
+    setError(null);
+    if (step !== 'code') setStep(at);
+    setMenuOpen(false);
+    setOpen(true);
+  };
+
   const heading =
     step === 'name'
       ? 'Create account.'
@@ -261,15 +308,75 @@ export default function Account({
 
   return (
     <div ref={wrap} className="relative inline-block">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        aria-haspopup="dialog"
-        className={className}
-      >
-        Create account
-      </button>
+      {menu ? (
+        <button
+          type="button"
+          onClick={() => {
+            // Pressing the icon while the panel is up closes it, the way it
+            // closes a menu — the icon is the one control, whichever it shows.
+            if (open) {
+              setOpen(false);
+              return;
+            }
+            setMenuOpen((v) => !v);
+          }}
+          aria-expanded={shown}
+          aria-haspopup="menu"
+          aria-label="Menu"
+          className={className}
+        >
+          <svg viewBox="0 0 24 24" className="size-5" fill="none" aria-hidden>
+            <path
+              d="M4 7h16M4 12h16M4 17h16"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-haspopup="dialog"
+          className={className}
+        >
+          Create account
+        </button>
+      )}
+
+      {/* The two doors. Same surface and same entrance as the panel below,
+          because the panel is what replaces it in place when one is chosen. */}
+      {menuOpen && (
+        <div className="absolute top-full right-0 z-20 mt-2">
+          <div
+            role="menu"
+            aria-label="Account"
+            className={`rounded-control flex min-w-44 flex-col overflow-hidden border border-white/20 bg-[#1c1410]/95 py-1 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none ${
+              entered ? 'translate-y-0 opacity-100' : '-translate-y-1.5 opacity-0'
+            }`}
+          >
+            <button
+              ref={firstItem}
+              type="button"
+              role="menuitem"
+              onClick={() => openAt('name')}
+              className={ITEM}
+            >
+              Create account
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => openAt('email')}
+              className={ITEM}
+            >
+              Sign in
+            </button>
+          </div>
+        </div>
+      )}
 
       {/*
         THE PANEL, IN TWO LAYERS.
@@ -293,7 +400,7 @@ export default function Account({
         >
           <div
             role="dialog"
-            aria-label="Create account"
+            aria-label={step === 'name' ? 'Create account' : 'Sign in'}
             // The whole animation, and all of it on the compositor. 160ms
             // because the panel has not far to come and nothing to explain;
             // anything slower and the press and the arrival stop feeling like

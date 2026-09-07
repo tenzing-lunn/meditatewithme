@@ -250,7 +250,13 @@ Every session calculation uses `serverNow()`. Never `Date.now()` directly. Re-sy
 
 ### 6.3 The personal timer (local, private)
 
-Independent of the session, and five to sixty minutes in five-minute steps. Someone can sit for five minutes starting at :37, or for an hour starting at :50 and carry straight through two candles.
+Independent of the session, and one minute to fifty-five. Someone can sit for five minutes starting at :37, or for fifty-five starting at :50 and carry straight through two candles.
+
+**The ceiling is 55, not the hour** — the client's decision of 7 September 2026. The last five minutes of every hour are a handover window: when an hour is led by a person rather than by nobody, whoever lit this candle has to hand over to whoever lights the next one, and a handover with no gap lands on top of somebody's closing bell. `nextSharedBellAt` moved to :55 in the same change, so *until the bell* and the slider share one ceiling instead of the shared path running five minutes past anything the slider could offer.
+
+That window gates nothing. The candle is untouched — `lib/session.ts` still lights one at :00 and burns it across the whole hour — and a personal timer starts at :57 exactly as it did before. This is not the old forty-five-plus-fifteen interlude returning: that one refused to let anyone begin for a quarter of every hour, which is why it went. This one refuses nobody; it only means the people who chose to finish *together* finish with room to spare.
+
+One consequence worth knowing before it is reported as a bug: `SHARED_BELL_MIN_LEAD_MS` sends a late arrival to the bell after next, so a shared sit can still exceed 55 — arrive at :52 and the next bell worth offering is sixty-three minutes away. The overshoot is not new (before the move, arriving at :56 gave sixty-four) and it is not a hole in the cap. *Until the bell* is a promise about finishing with other people, not a duration; the alternative is handing someone a three-minute sit they did not ask for.
 
 The session no longer occupies part of its hour — it fills the whole one, and nothing gates the start. See §16.
 
@@ -361,6 +367,42 @@ No passwords. No password means no reset flow, which is where most auth bugs liv
 
 **The code needs one hosted change this repository cannot make.** Supabase's stock Magic Link template contains only `{{ .ConfirmationURL }}`; the same email carries the code once `{{ .Token }}` is added to it in Authentication → Email Templates. Until that is done the code box has nothing to receive, which is why the panel keeps saying the link in that email works too, and why `emailRedirectTo` is still sent. `plans/launch-readiness.md` carries it beside the SMTP item it depends on.
 
+**And that dependency is hard, not a matter of sequencing.** Tried on 7 September 2026 through the Management API (`PATCH /v1/projects/{ref}/config/auth`): the project is on the free tier with the default sender, and the API refuses any template change on that combination — *"Email template modification is not available for free tier projects using the default email provider. Please upgrade your plan or configure a custom SMTP provider."* So the sender is a precondition for the code, not a sibling item. What *could* be set was: `mailer_otp_length` went from 8 to 6 the same day, re-read from the API afterwards, and a throwaway user's `generate_link` returned a six-digit `email_otp` that verified with a 200. The UI's six-digit box is right; the email is what is missing.
+
+### Signing in once is meant to be enough
+
+`persistSession` and `autoRefreshToken` are both on, the session lives in
+localStorage under `sb-<ref>-auth-token`, and no session on this project carries
+a `not_after` — there is no timebox and no inactivity cutoff. So a session
+survives closing the tab, quitting the browser and restarting the machine, and
+renews itself indefinitely.
+
+That is observed, not inferred. On 7 September 2026 the live `auth.sessions`
+held a session created 3 September and last refreshed four days later, through
+four rotations of its refresh token, with no re-authentication in between —
+and another from the same day with ten rotations. Somebody who signs in stays
+signed in.
+
+**`signOut()` must always pass `scope: 'local'`, and the library default is
+wrong for this product.** Bare `signOut()` is `scope: 'global'`: it revokes
+every session the account holds, everywhere. Pressing `Sign out` on a laptop
+therefore signed the same person out on their phone, where the next visit would
+find them a stranger — no name in the masthead, no synced log, another email to
+wait for. Proved rather than read off the documentation: two devices signed in,
+the laptop signs out, and the phone's `refreshSession()` comes back *Invalid
+Refresh Token: Refresh Token Not Found* under the default and succeeds under
+`local`.
+
+Signing out everywhere is a real thing to want — it is the answer to a lost
+phone — but it is a deliberate security action and belongs behind a control
+that says so, not silently attached to the ordinary one. There is no such
+control yet, and there does not need to be one until somebody asks.
+
+Note that `deleteAccount` passes `scope: 'local'` too, for an unrelated reason:
+after the account is gone a global sign-out would POST `/logout` on behalf of a
+user who no longer exists, fail, and leave the dead session sitting in
+localStorage.
+
 ### A dead link is silent, and that had to be fixed
 
 **The link flow works on localhost, and the auth log proves it**: a `/verify` at 2026-09-01 22:41:41 returned 303 with `login_method: implicit`, and `auth.users.last_sign_in_at` carries the same timestamp. Nothing about magic links is waiting on deployment.
@@ -432,7 +474,7 @@ create trigger on_auth_user_created
 
 What `0003` had to fix, all of it invisible while the tables were empty:
 
-1. **`timer_minutes between 1 and 45`** was left over from the 45-minute session. The slider is 1–60, so picking the hour — the value the presets deliberately put on offer — would have been rejected by the database. (0003 replaced it with a 5–60 multiple-of-five check; `0005_timer_stops.sql` then replaced *that* with an explicit `in` list when the one-minute stop came back. The constraint has now chased the slider twice, which is the argument for keeping it a literal list that can be compared to `TIMER_STOPS` by eye.)
+1. **`timer_minutes between 1 and 45`** was left over from the 45-minute session. The slider is 1–60, so picking the hour — the value the presets deliberately put on offer — would have been rejected by the database. (0003 replaced it with a 5–60 multiple-of-five check; `0005_timer_stops.sql` then replaced *that* with an explicit `in` list when the one-minute stop came back; `20260907140000_timer_ceiling_55.sql` dropped 60 from that list when the ceiling moved to 55. The constraint has now chased the slider three times, which is the argument for keeping it a literal list that can be compared to `TIMER_STOPS` by eye.)
 2. **`end_bell` was unconstrained text.** `BellKind` is a union in TypeScript precisely so a bad value cannot reach the audio graph; that guarantee stopped at the database, which would have stored anything and synced it to every device.
 3. **Nothing created a profile row,** so the foreign key above would have failed on every user's first sync.
 4. `updated_at` never updated — it held the creation time forever, which is worse than not having the column.
@@ -459,6 +501,45 @@ Three decisions worth not re-litigating:
 The display is deliberately not a scoreboard: no goal, no target, nothing turns red, and the personal best is hidden until it is genuinely longer than the current run. A meditation practice whose progress screen makes you feel you are failing at meditation has been made worse by it.
 
 `sittings` is the most sensitive table here. A preference reveals that you like a gong; this reveals when you were awake, how often, and for how long. Its RLS was tested the same way as `preferences` — all six attacks refused, including writing into another user's history and reassigning your own row to them.
+
+### Deleting an account
+
+`DELETE /api/account`, and it is the one operation in the product that
+genuinely cannot happen in the browser. RLS governs `public`, not `auth`, and
+the only API that removes a user — `auth.admin.deleteUser` — needs the service
+role key. Hence a route handler.
+
+**The id comes from `getUser(token)` and never from the request.** There is no
+body to parse and no `userId` parameter to tamper with, so the only account the
+endpoint can delete is the one whose token it just verified against the Auth
+server. Taking an id from the caller here — however carefully checked — would
+be a service-role endpoint that deletes arbitrary users on request. The token
+is verified over the network rather than decoded locally, because a locally
+parsed JWT still looks valid after its session has been revoked.
+
+Everything else goes by cascade, which is why this needed no migration:
+
+```
+auth.users → profiles → preferences
+                     → sittings
+```
+
+All three were already `ON DELETE CASCADE`. That was checked against
+`pg_constraint` on the live database rather than read off the migration files,
+and then checked again by doing it: a throwaway account with a profile, a
+preferences row and two sittings, deleted through the real endpoint, left zero
+rows in all three tables and did not touch a second account created alongside
+it. The delete is hard, not soft — a soft delete would leave the row and the
+email address on it, which is not what "delete my account" means and not what
+App Store guideline 5.1.1(v) means either.
+
+**`heartbeats` is not deleted, and that is the privacy property working.** It
+is keyed by `anon_id` and has no `user_id` column, so a signed-in person's
+heartbeats are not linked to their account at all — see §5, where that is the
+whole point. There is nothing to find and nothing to delete, and the rows are
+pruned on a schedule regardless. The practice log in localStorage is also left
+alone: it is the visitor's own copy on their own device, they asked to close an
+account rather than to destroy it, and the confirmation panel says so plainly.
 
 ### Validation happens in one place
 
@@ -512,6 +593,7 @@ Everything degrades to "you can still meditate."
 | Audio file 404s | That track is hidden from the mixer. Others play. | Yes |
 | Focus loop 404s | Static fallback image. | Yes |
 | Auth down | Guests unaffected. Sign-in shows a plain message. | Yes |
+| Account deletion fails | Panel stays open saying nothing was changed. Never reports success it did not get. | Yes |
 
 **Design rule: nothing in this app should ever show an error screen.** Every failure hides a control or silently degrades. Somebody sitting down to meditate should never be shown a stack trace or a red banner.
 
@@ -574,6 +656,10 @@ meditatewithme/
 ```
 
 `lib/` holds no React and no I/O beyond explicit fetches — it should be testable with plain functions. `session.ts` and `clock.ts` in particular are pure enough to unit test properly, and they are the two places a bug would be least visible in manual testing. `projection.ts` is there for the same reason and a sharper one: a projection with a flipped sign draws a perfectly convincing map with every light in the wrong place.
+
+**That boundary is now enforced rather than described.** `tests/portability.test.ts` reads every file in `lib/`, strips comments and string literals, and fails on any browser-only global — `window`, `document`, `localStorage`, `AudioContext` and the rest. It was a sentence in a comment in `usePresence.ts` until 6 September 2026, which is the same condition `scripts/contrast.mjs` was written to fix: a claim nobody can re-measure stops being true without anybody noticing, because importing `localStorage` into `lib/` breaks nothing on the web.
+
+It breaks something later. `lib/` is what an iOS port keeps — all ten files are portable today, `clock.ts` included, because it takes `fetchImpl` as a parameter instead of reaching for `fetch`. `fetch` and `performance` are deliberately *not* banned: both exist in React Native, and a rule we do not have should not be enforced. Platform access belongs in `components/`, behind a hook.
 
 ---
 
@@ -850,9 +936,10 @@ than stored.
 - `sessionPhase` and the `SessionPhase` type are gone. They encoded a design
   that no longer exists, and a phase that always returns `'active'` is worse
   than no phase at all.
-- The personal timer is 1–60 minutes over thirteen explicit stops — 1, then
-  every five minutes to the hour. Nobody sitting down to meditate has an opinion
-  about seventeen minutes versus eighteen.
+- The personal timer is 1–55 minutes over twelve explicit stops — 1, then
+  every five minutes to fifty-five. Nobody sitting down to meditate has an
+  opinion about seventeen minutes versus eighteen. The hour itself is not a stop:
+  see §6.3 for the five minutes at the end of every hour and what they are for.
 - The stops are a list (`TIMER_STOPS`), not a min/max/step, because the jump
   from one minute to five is not a uniform step and no `step` value can describe
   it. The slider's value is an index into that list, which is why it carries an
@@ -930,11 +1017,20 @@ now a single control at the top right of the landing, fading in on the same
 `REVEAL_MS` as `Begin.` and the photograph. It is not joined by a second, and it is absent for anybody already
 signed in, who never sees this screen at all.
 
-**It says `Create account`, not `Sign in`.** `signInWithOtp` creates the user
-on first use — that has always been the signup path — so the old label described
-the API call rather than the act, and asked a first-time visitor for credentials
-they did not have. The flow behind it carries `I already have one`, which skips
-the name and goes straight to the address.
+**It said `Create account`, not `Sign in`; now it is a menu offering both.**
+`signInWithOtp` creates the user on first use — that has always been the signup
+path — so `Sign in` alone described the API call rather than the act, and asked
+a first-time visitor for credentials they did not have. `Create account` was
+the answer, with `I already have one` inside the panel for the other case. On
+7 September 2026 Jonny asked for a three-line settings button there instead,
+offering `Create account` and `Sign in` as two separate choices. So the control
+is the icon (`LIFTED_ICON`, the same surface made square), pressing it opens a
+two-item menu on the panel's own surface, and each item opens the panel at its
+own step — the name for a new account, the address for an existing one. A code
+already sent survives either choice, for the same reason the flow survives the
+panel closing. `Account` owns the menu as it owns the panel (`menu` prop); the
+foot-of-frame instance after a sitting keeps the labelled button, because that
+one is an offer rather than a settings corner.
 
 **It is a dropdown, and it used to be a question. That was the mistake.** The
 form once took the band the way `How long?` does: camera to `open`, band to full
