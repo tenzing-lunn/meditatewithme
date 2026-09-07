@@ -76,6 +76,12 @@ type Sitting = {
    *  nothing about what day it is. */
   startedAtWall: number;
   endsAt: number;
+  /**
+   * Ends on the shared bell, with everyone else who chose it. Read by the ring
+   * for its last minute — the one sitting whose end is a meeting rather than
+   * a timer running out, and the only one where it should look like it.
+   */
+  together: boolean;
   bell: ScheduledBell | null;
   /**
    * The bell struck at Begin, held only so it can be silenced.
@@ -636,6 +642,7 @@ export default function Room({
         startedAt,
         startedAtWall: Date.now(),
         endsAt: end,
+        together: prefs.untilBell,
         bell,
         opening,
       },
@@ -928,6 +935,7 @@ export default function Room({
               total={activity.sit.endsAt - activity.sit.startedAt}
               live={prefs.showCount ? count : null}
               lit={prefs.showCount ? litCount : null}
+              together={activity.sit.together}
             />
           )}
 
@@ -1585,6 +1593,7 @@ function SittingRing({
   total,
   live,
   lit,
+  together,
 }: {
   remaining: number;
   /** The whole sitting, so the arc knows what fraction is left. */
@@ -1592,6 +1601,8 @@ function SittingRing({
   /** Null when the count is unavailable or the room is hidden: no dots. */
   live: number | null;
   lit: number | null;
+  /** Ends on the shared bell. Only then does the last minute gather. */
+  together: boolean;
 }) {
   const circumference = 2 * Math.PI * RING.r;
   // Clamped both ways: `remaining` can overshoot by a tick either side of the
@@ -1601,6 +1612,39 @@ function SittingRing({
   const here = Math.max(0, live ?? 0);
   const dots =
     lit === null ? 0 : Math.min(MAX_DOTS, Math.max(here, Math.max(0, lit)));
+
+  /* THE LAST MINUTE, WHEN IT IS SHARED
+
+     For most of a sitting the dots are the room: spread evenly round the
+     clock, dimmer for the people who lit a candle and left. For a sitting
+     that ends on the shared bell, the bell is the one moment in the product
+     when strangers actually do something at the same second — and until now
+     nothing on screen said so. The arc drained, the bell rang, `Come back.`
+     appeared, and the meeting the whole site is built around passed without
+     a mark.
+
+     So over the final sixty seconds, and only for those sittings, the dots
+     come in. Every candle brightens to full, and each one travels from its
+     place on the circle toward twelve — yours — so that by the bell the room
+     is a small bright cluster around your own light rather than a scatter
+     around the clock. The angle is scaled about twelve rather than toward
+     zero so they arrive from both sides, and never fully to zero: eight
+     percent of the circle keeps them a cluster rather than a pile.
+
+     `gather` is 0 for the whole sitting until a minute out, then eases to 1.
+     It is derived from `remaining`, so it costs nothing on the ticks that
+     are not the last minute, and the 2000ms transition each dot already has
+     on its transform is what makes the quarter-second ticks read as a drift
+     rather than a march. Somebody on their own timer sees none of this: for
+     them the end is their own, and it should look like it. */
+  const gather =
+    together && remaining < 60_000
+      ? (() => {
+          const g = 1 - Math.max(0, remaining) / 60_000;
+          return g < 0.5 ? 2 * g * g : 1 - Math.pow(-2 * g + 2, 2) / 2;
+        })()
+      : 0;
+  const spread = 1 - gather * 0.92;
 
   return (
     /*
@@ -1688,11 +1732,14 @@ function SittingRing({
           // a circle that can be found without counting.
           const mine = i === 0;
           const present = i < Math.max(1, here);
+          // Signed about twelve, so the gather closes from both sides.
+          const around = (360 / dots) * i;
+          const signed = around > 180 ? around - 360 : around;
           return (
             <g
               key={i}
               style={{
-                transform: `rotate(${(360 / dots) * i}deg)`,
+                transform: `rotate(${(signed * spread).toFixed(2)}deg)`,
                 transformOrigin: `${RING.mid}px ${RING.mid}px`,
                 transition: 'transform 2000ms cubic-bezier(0.22, 1, 0.36, 1)',
               }}
@@ -1714,7 +1761,9 @@ function SittingRing({
                 r={mine ? 3.25 : 2.5}
                 fill="var(--color-ember)"
                 // Lit but gone: still a candle, no longer a person in the room.
-                opacity={present ? 1 : 0.38}
+                // In the shared last minute every candle comes up to full.
+                opacity={present ? 1 : 0.38 + 0.62 * gather}
+                style={{ transition: 'opacity 2000ms ease-out' }}
               />
             </g>
           );

@@ -140,7 +140,12 @@ turns the dots off for anyone who finds them distracting.
 
 **Until the bell.** Everyone who chooses it hears the same bell at the same
 second, at the top of the next hour. Arriving with under five minutes to go
-rolls forward to the hour after. Nobody is refused.
+rolls forward to the hour after. Nobody is refused. Over the last minute
+before that bell — and only for sittings that end on it — the ring's dots
+brighten to full and draw in toward twelve from both sides, so that at the
+bell the room is a small bright cluster around your own light. It is the one
+moment strangers do something at the same second, and until 7 September 2026
+nothing on screen marked it. A sitting on its own timer gets none of this.
 
 **The ending, thirty seconds long.** Ten seconds of *Come back.* with the
 bowl still ringing and the mix receding; then the minutes sat at display size
