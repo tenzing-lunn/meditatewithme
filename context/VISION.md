@@ -29,10 +29,10 @@ As summarised in the proposal, in the brief's own words where they are known:
 | **The session** | One shared meditation at the top of every hour, worldwide, on one clock | **v1**, built |
 | **The candle** | Something to rest the eyes on; the shared object | **v1**, built — a photograph, see `PRODUCT.md` |
 | **Sounds** | Layered ambient beds, each with its own volume; a choice of closing bells | **v1**, built on synthesised stand-ins pending Jonny's licensed recordings |
-| **The personal timer** | Each person chooses how long they sit | **v1**, built (1–60 min, or *until the bell*) |
+| **The personal timer** | Each person chooses how long they sit | **v1**, built (1–55 min, or *until the bell* at :55) |
 | **Others present** | Knowing how many are sitting alongside you | **v1**, built — as dots on the ring, not a number |
 | **Accounts** | Optional; preferences remembered across devices | **v1**, built; sign-in email not yet deliverable in production |
-| **The live Candle Lighter** | A volunteer on camera lighting and tending the candle, every hour of every day | Deferred — cost (streaming, potentially thousands a year), safeguarding (broadcasting volunteers to an anonymous audience), and staffing 8,760 sessions a year. Needs a solicitor before it needs a developer. |
+| **The live Candle Lighter** | A volunteer on camera lighting and tending the candle, every hour of every day | Deferred — cost (streaming, potentially thousands a year), safeguarding (broadcasting volunteers to an anonymous audience), and staffing 8,760 sessions a year. Needs a solicitor before it needs a developer. Jonny's answer to the staffing third, 7 September 2026: a house of meditators in Thailand leading the hours in rotation — an intention, not a plan; see `PRODUCT.md` §5. The hour now leaves its last five minutes clear for that handover. |
 | **Dharma Circles / the Waiting Room** | People gathering before and around a session; a small social layer | Deferred — a social network with moderation questions, its own phase |
 | **Distant Blessings Now** | A photograph or video of someone unwell, for others to hold in mind | Deferred — private medical data about a person who may not be able to consent; solicitor first |
 | **Donations** | Support the site | Deferred until a registered organisation exists to receive them; then about a day's work |

@@ -60,7 +60,7 @@ and it was being spent nowhere else on the one screen a first-time visitor reads
 before deciding.
 
 **Begin → three questions, one per screen.** *How long* (1 minute, then 5 to
-60 in fives, or *until the bell*), *which bell* (singing bowl, gong, struck
+55 in fives, or *until the bell*, which now rings at :55), *which bell* (singing bowl, gong, struck
 bell — each can be auditioned), *any ambiance* (five ambient beds, each with
 its own fader and play button, over one master fader named *Volume* — it was
 *All*, which read as a sixth bed rather than as the master). Answers are
@@ -258,6 +258,26 @@ loudness-matching did not need ears and could be proved.
 
 **The other two focus loops.** Only `candle` exists. `Focus()` in `Room.tsx`
 is where the others go when Jonny chooses them.
+
+**A house of lighters in Thailand.** Said by Jonny on 7 September 2026, for
+"later on", around the app launch: several meditators living in one house and
+leading the hours in rotation, switching off on the hour. That is his answer to
+the staffing problem that deferred the live Candle Lighter — 8,760 sessions a
+year is impossible for one volunteer and merely hard for a household — and it
+is the reason the timer's ceiling moved to 55 the same day. **It is a stated
+intention, not a plan**: nothing about it is scoped, costed, or in the v1 cap,
+and the two things that deferred the Candle Lighter besides staffing are
+untouched by it. Streaming still costs real money annually, and broadcasting
+identifiable people to an anonymous audience is still a safeguarding question
+that needs a solicitor before it needs a developer — more so, not less, if the
+volunteers live at the address they broadcast from.
+
+What was built for it is only the gap: the last five minutes of every hour are
+now clear of the shared bell (`ARCHITECTURE.md` §6.3). That is the cheap half
+of the preparation and it is worth having whether or not the house happens —
+it costs one number and it is the kind of thing that is expensive to retrofit
+once people have habits built on a bell at :00. Nothing else should be built
+ahead of the decision: no rota, no lighter accounts, no handover UI.
 
 **An iPhone app, possibly.** Raised 6 September 2026. Not decided, not
 planned, not scoped, and **not mentioned to Jonny** — it would be a new

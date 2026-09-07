@@ -250,7 +250,13 @@ Every session calculation uses `serverNow()`. Never `Date.now()` directly. Re-sy
 
 ### 6.3 The personal timer (local, private)
 
-Independent of the session, and five to sixty minutes in five-minute steps. Someone can sit for five minutes starting at :37, or for an hour starting at :50 and carry straight through two candles.
+Independent of the session, and one minute to fifty-five. Someone can sit for five minutes starting at :37, or for fifty-five starting at :50 and carry straight through two candles.
+
+**The ceiling is 55, not the hour** — the client's decision of 7 September 2026. The last five minutes of every hour are a handover window: when an hour is led by a person rather than by nobody, whoever lit this candle has to hand over to whoever lights the next one, and a handover with no gap lands on top of somebody's closing bell. `nextSharedBellAt` moved to :55 in the same change, so *until the bell* and the slider share one ceiling instead of the shared path running five minutes past anything the slider could offer.
+
+That window gates nothing. The candle is untouched — `lib/session.ts` still lights one at :00 and burns it across the whole hour — and a personal timer starts at :57 exactly as it did before. This is not the old forty-five-plus-fifteen interlude returning: that one refused to let anyone begin for a quarter of every hour, which is why it went. This one refuses nobody; it only means the people who chose to finish *together* finish with room to spare.
+
+One consequence worth knowing before it is reported as a bug: `SHARED_BELL_MIN_LEAD_MS` sends a late arrival to the bell after next, so a shared sit can still exceed 55 — arrive at :52 and the next bell worth offering is sixty-three minutes away. The overshoot is not new (before the move, arriving at :56 gave sixty-four) and it is not a hole in the cap. *Until the bell* is a promise about finishing with other people, not a duration; the alternative is handing someone a three-minute sit they did not ask for.
 
 The session no longer occupies part of its hour — it fills the whole one, and nothing gates the start. See §16.
 
@@ -466,7 +472,7 @@ create trigger on_auth_user_created
 
 What `0003` had to fix, all of it invisible while the tables were empty:
 
-1. **`timer_minutes between 1 and 45`** was left over from the 45-minute session. The slider is 1–60, so picking the hour — the value the presets deliberately put on offer — would have been rejected by the database. (0003 replaced it with a 5–60 multiple-of-five check; `0005_timer_stops.sql` then replaced *that* with an explicit `in` list when the one-minute stop came back. The constraint has now chased the slider twice, which is the argument for keeping it a literal list that can be compared to `TIMER_STOPS` by eye.)
+1. **`timer_minutes between 1 and 45`** was left over from the 45-minute session. The slider is 1–60, so picking the hour — the value the presets deliberately put on offer — would have been rejected by the database. (0003 replaced it with a 5–60 multiple-of-five check; `0005_timer_stops.sql` then replaced *that* with an explicit `in` list when the one-minute stop came back; `20260907140000_timer_ceiling_55.sql` dropped 60 from that list when the ceiling moved to 55. The constraint has now chased the slider three times, which is the argument for keeping it a literal list that can be compared to `TIMER_STOPS` by eye.)
 2. **`end_bell` was unconstrained text.** `BellKind` is a union in TypeScript precisely so a bad value cannot reach the audio graph; that guarantee stopped at the database, which would have stored anything and synced it to every device.
 3. **Nothing created a profile row,** so the foreign key above would have failed on every user's first sync.
 4. `updated_at` never updated — it held the creation time forever, which is worse than not having the column.
@@ -928,9 +934,10 @@ than stored.
 - `sessionPhase` and the `SessionPhase` type are gone. They encoded a design
   that no longer exists, and a phase that always returns `'active'` is worse
   than no phase at all.
-- The personal timer is 1–60 minutes over thirteen explicit stops — 1, then
-  every five minutes to the hour. Nobody sitting down to meditate has an opinion
-  about seventeen minutes versus eighteen.
+- The personal timer is 1–55 minutes over twelve explicit stops — 1, then
+  every five minutes to fifty-five. Nobody sitting down to meditate has an
+  opinion about seventeen minutes versus eighteen. The hour itself is not a stop:
+  see §6.3 for the five minutes at the end of every hour and what they are for.
 - The stops are a list (`TIMER_STOPS`), not a min/max/step, because the jump
   from one minute to five is not a uniform step and no `step` value can describe
   it. The slider's value is an index into that list, which is why it carries an

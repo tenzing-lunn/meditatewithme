@@ -598,7 +598,7 @@ function Settings({
           )}
         </p>
 
-        {/* Thirteen stops, not sixty, and the value is an INDEX into
+        {/* Twelve stops, not sixty, and the value is an INDEX into
             TIMER_STOPS — the jump from one minute to five is not a step any
             `step` attribute can describe, which is why it carries an
             aria-valuetext. Identical behaviour to the flow's slider on purpose:

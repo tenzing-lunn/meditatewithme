@@ -20,19 +20,38 @@ import {
 } from '../lib/timer.ts';
 
 describe('shared bell target', () => {
-  test('uses the upcoming hour when there is enough time to choose it', () => {
+  test('rings at :55, not on the hour', () => {
     const now = 10 * 3_600_000 + 30 * 60_000;
-    assert.equal(nextSharedBellAt(now), 11 * 3_600_000);
+    assert.equal(nextSharedBellAt(now), 10 * 3_600_000 + 55 * 60_000);
   });
 
-  test('rolls a late arrival to the following hour', () => {
-    const now = 10 * 3_600_000 + 57 * 60_000;
-    assert.equal(nextSharedBellAt(now), 12 * 3_600_000);
+  test('the longest shared sit is the slider’s ceiling, not the hour', () => {
+    // Arriving exactly on the hour is the longest a shared sit can be planned
+    // for, and it is 55 minutes — the same number the slider stops at. Before
+    // the bell moved this was a full hour, five minutes past anything the
+    // slider could offer.
+    const onTheHour = 10 * 3_600_000;
+    assert.equal(
+      nextSharedBellAt(onTheHour) - onTheHour,
+      TIMER_MAX_MINUTES * 60_000,
+    );
+  });
+
+  test('leaves the last five minutes of the hour clear', () => {
+    // The handover window. A bell during it would land on top of the next
+    // candle being lit, which is the whole reason the bell moved.
+    const inTheGap = 10 * 3_600_000 + 57 * 60_000;
+    assert.ok(nextSharedBellAt(inTheGap) > 11 * 3_600_000);
+  });
+
+  test('rolls a late arrival to the following bell', () => {
+    const now = 10 * 3_600_000 + 52 * 60_000;
+    assert.equal(nextSharedBellAt(now), 11 * 3_600_000 + 55 * 60_000);
   });
 
   test('keeps exactly five minutes as a viable shared sit', () => {
-    const now = 11 * 3_600_000 - SHARED_BELL_MIN_LEAD_MS;
-    assert.equal(nextSharedBellAt(now), 11 * 3_600_000);
+    const now = 10 * 3_600_000 + 55 * 60_000 - SHARED_BELL_MIN_LEAD_MS;
+    assert.equal(nextSharedBellAt(now), 10 * 3_600_000 + 55 * 60_000);
   });
 
   test('converts the absolute target to monotonic time once', () => {
@@ -50,7 +69,7 @@ describe('clampMinutes', () => {
     assert.equal(clampMinutes(TIMER_MAX_MINUTES), TIMER_MAX_MINUTES);
   });
 
-  test('clamps outside one minute to an hour', () => {
+  test('clamps outside one minute to fifty-five', () => {
     assert.equal(clampMinutes(0), TIMER_MIN_MINUTES);
     assert.equal(clampMinutes(-5), TIMER_MIN_MINUTES);
     assert.equal(clampMinutes(1000), TIMER_MAX_MINUTES);
@@ -77,11 +96,21 @@ describe('clampMinutes', () => {
     assert.equal(TIMER_MIN_MINUTES, 1);
   });
 
-  test('honours both documents: 45 and 60 are reachable', () => {
-    // 45 is the proposal's ceiling, 60 the build spec's. The range is the
-    // superset, so neither promise is broken.
+  test('45 is still reachable, and the hour is not', () => {
+    // 45 is the proposal's ceiling and is untouched. 60 was the build spec's
+    // and is gone: an hour now snaps back to 55, which is the client's cap and
+    // leaves the handover window clear.
     assert.equal(clampMinutes(45), 45);
-    assert.equal(clampMinutes(60), 60);
+    assert.equal(clampMinutes(60), 55);
+    assert.equal(TIMER_MAX_MINUTES, 55);
+  });
+
+  test('an hour saved under the old range comes back as 55', () => {
+    // Preferences written before the cap are still in localStorage and in the
+    // database. They are not migrated in the browser; they are clamped on the
+    // way in, every time, which is why nothing downstream has to know.
+    assert.equal(clampMinutes(60), TIMER_MAX_MINUTES);
+    assert.equal(timerStopIndex(60), TIMER_STOPS.length - 1);
   });
 
   test('every stop survives a round trip', () => {
@@ -121,13 +150,13 @@ describe('durationLabel', () => {
     assert.deepEqual(durationLabel(1), { value: '1', unit: 'minute' });
   });
 
-  test('an hour is an hour, not sixty minutes', () => {
-    assert.deepEqual(durationLabel(60), { value: '1', unit: 'hour' });
-  });
-
-  test('everything else is plural minutes', () => {
+  test('everything else is plural minutes, including the ceiling', () => {
     assert.deepEqual(durationLabel(10), { value: '10', unit: 'minutes' });
     assert.deepEqual(durationLabel(45), { value: '45', unit: 'minutes' });
+    assert.deepEqual(durationLabel(TIMER_MAX_MINUTES), {
+      value: '55',
+      unit: 'minutes',
+    });
   });
 });
 
@@ -140,8 +169,8 @@ describe('endsAt', () => {
     assert.equal(endsAt(0, 99), TIMER_MAX_MINUTES * 60_000);
   });
 
-  test('an hour is reachable', () => {
-    assert.equal(endsAt(0, 60), 3_600_000);
+  test('the longest sit is fifty-five minutes, not the hour', () => {
+    assert.equal(endsAt(0, 60), 55 * 60_000);
   });
 
   test('a one-minute sit is a minute, not five', () => {
