@@ -78,9 +78,19 @@ const SUBMIT =
 const ITEM =
   'min-h-11 px-5 text-left text-sm text-white/85 transition-colors hover:bg-white/10 hover:text-white focus-visible:bg-white/10 focus-visible:text-white focus-visible:outline-none';
 
-/** The quiet word under the button. Bounded by an underline, never bare. */
+/**
+ * The quiet word under the button. Bounded by an underline, never bare.
+ *
+ * `min-h-11` and the padding are not decoration. Set as bare text this was
+ * about 16px tall — the underline is the whole of its height — so *I already
+ * have one*, *Back* and *Send it again* were 16px targets on a phone, under
+ * WCAG 2.5.8's 24px floor and well under the 44px everything else in this
+ * project already clears. The type stays `text-xs`: what grew is the thing you
+ * hit, not the thing you read. `inline-flex` so the underline still wraps the
+ * words rather than the box.
+ */
 const FOOT =
-  'text-xs text-white/50 underline decoration-white/25 underline-offset-4 transition-colors hover:text-white/80 hover:decoration-white/60 focus-visible:ring-1 focus-visible:ring-ember focus-visible:outline-none';
+  'inline-flex min-h-11 items-center px-2 text-xs text-white/50 underline decoration-white/25 underline-offset-4 transition-colors hover:text-white/80 hover:decoration-white/60 focus-visible:ring-1 focus-visible:ring-ember focus-visible:outline-none';
 
 export default function Account({
   state,
@@ -350,9 +360,36 @@ export default function Account({
           because the panel is what replaces it in place when one is chosen. */}
       {menuOpen && (
         <div className="absolute top-full right-0 z-20 mt-2">
+          {/* `role="menu"` is a promise about the keyboard, and it was made
+              without being kept: the two items were reachable by Tab and by
+              nothing else, so anyone who took the ARIA at its word and pressed
+              Down got silence. Two items is small enough that the honest fix
+              is to keep the role and wire the keys, rather than drop to a
+              group and lose the pattern people already know.
+
+              Up and Down wrap, Home and End go to the ends, and Escape is
+              handled by the panel's own close. `preventDefault` because Up and
+              Down would otherwise scroll the page behind the menu. */}
           <div
             role="menu"
             aria-label="Account"
+            onKeyDown={(e) => {
+              const items = Array.from(
+                e.currentTarget.querySelectorAll<HTMLButtonElement>(
+                  '[role="menuitem"]',
+                ),
+              );
+              if (items.length === 0) return;
+              const at = items.indexOf(document.activeElement as HTMLButtonElement);
+              const go = (i: number) => {
+                e.preventDefault();
+                items[(i + items.length) % items.length]?.focus();
+              };
+              if (e.key === 'ArrowDown') go(at + 1);
+              else if (e.key === 'ArrowUp') go(at - 1);
+              else if (e.key === 'Home') go(0);
+              else if (e.key === 'End') go(items.length - 1);
+            }}
             className={`rounded-control flex min-w-44 flex-col overflow-hidden border border-white/20 bg-[#1c1410]/95 py-1 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none ${
               entered ? 'translate-y-0 opacity-100' : '-translate-y-1.5 opacity-0'
             }`}

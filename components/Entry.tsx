@@ -119,6 +119,20 @@ export default function Entry() {
     // `isolate` keeps the scene's -z-10 behind the column but in front of the
     // page.
     <main className="relative isolate h-dvh overflow-hidden">
+      {/* THE ROOM HAS A NAME, EVEN THOUGH IT DOES NOT SHOW ONE
+          Every surface here is a picture with a few words on it, so there was
+          no `h1` anywhere on `/` — not on the landing, not through the three
+          questions, not at the ending. Home and `/world` both have one; the
+          room was the exception, and it is the screen everybody arrives on.
+
+          Somebody navigating by headings landed in this `<main>`, found two
+          buttons and no structure, and had no way to learn what the site was
+          without pressing an unexplained word. The masthead was deliberately
+          removed from these screens and should stay removed — a name in the
+          picture is the thing the composition is built to avoid. So the name
+          is here for the people who need it and nowhere for the people who
+          do not, which is what `sr-only` is for. */}
+      <h1 className="sr-only">Meditate With Me</h1>
       <Room
         prefs={prefs}
         update={update}
