@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * The room, as a photograph with a live flame in it.
@@ -143,7 +143,18 @@ const PHOTO_FOCUS_Y = 0.46; // matches background-position: 50% 46%
 const F = { x: 720, y: 400, w: 98, h: 138 };
 const PAD = { l: 52, r: 52, t: 36, b: 6 };
 
-export default function CandleScene({
+/**
+ * Memoised, because the animation deliberately lives outside React and every
+ * render of this component is therefore waste. `Room` re-renders four times a
+ * second on its clock tick, and without this the scene re-rendered with it —
+ * the simulation reading its props off a ref made that harmless, but "does
+ * nothing four times a second" is not a property worth relying on. The memo
+ * only holds if the props hold: `onReady` is a stable callback in `Room`, and
+ * `burn` is quantised there before it is passed.
+ */
+export default memo(CandleScene);
+
+function CandleScene({
   phase,
   wind = 1,
   flicker = 1,
@@ -566,8 +577,14 @@ export default function CandleScene({
           overscanned: `.room-drift` is a no-op under the same query, but a
           scale of exactly 1 would put the picture's edge on the viewport's,
           and any rounding at all would show a seam. */}
+      {/* No `will-change` here. This layer moves only when the phase changes,
+          on a transition, and the browser promotes it for the length of a
+          transform or opacity transition by itself. Declaring it permanently
+          kept a full-viewport layer composited for the life of the page for
+          moves that happen a handful of times an hour. The glow below keeps
+          its own: that one is written every frame. */}
       <div
-        className="absolute inset-0 will-change-[transform,opacity]"
+        className="absolute inset-0"
         style={{
           transformOrigin: '50% 42%',
           transform: still

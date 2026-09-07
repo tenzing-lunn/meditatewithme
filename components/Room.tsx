@@ -831,7 +831,12 @@ export default function Room({
       <Scene
         session={session}
         phase={phase}
-        burn={candleBurn(now)}
+        // Quantised to half-minute steps, so the prop only changes 120 times an
+        // hour rather than on every 250ms tick. `CandleScene` is memoised and
+        // this is the one prop that would otherwise defeat it. The flame spends
+        // `burn` on a 22% scale falloff across the hour, so a step is under a
+        // fifth of a percent — nothing anybody can see move.
+        burn={Math.floor(candleBurn(now) * 120) / 120}
         reveal={booted}
         onReady={onSceneReady}
       />

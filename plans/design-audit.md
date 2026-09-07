@@ -524,13 +524,14 @@ the same day as each landed on `dev`. None of it reopened the product model in
 | 6 | **[P1]** `<h1>` on the room surface; keyboard on the menu; `FOOT` target height | `09edbdd`; the safe-area inset under the sitting's controls `d13a865` |
 | 7 | **[P2]** The four contrast failures, and extend `scripts/contrast.mjs` to reach them | `a52b454` |
 | 8 | **[P2]** One vocabulary: one label per concept, across all four surfaces | `547bcfa` sound · `cdba30f` the room · `669df67` until-bell toggles in the flow |
-| 9 | **[P2]** `will-change`, the `height` animation, the 4 Hz re-render, dead `.glow` | **open** — the `height` animation stays by decision (`ARCHITECTURE.md` §16); the rest is undecided |
+| 9 | **[P2]** `will-change`, the `height` animation, the 4 Hz re-render, dead `.glow` | `will-change` off the camera layer, `CandleScene` memoised with `burn` quantised to half-minutes, `.glow` deleted; the `height` animation stays by decision (`ARCHITECTURE.md` §16) |
 | 10 | The shared fact one rank up on Home and the ending (§5) | `15e1b95` |
 
-Not done, and not planned here: the band's unfloored fit scaler (`Room.tsx:126`,
-an explicit decision), the mixer's fifteen controls and Home's seventeen (§5,
-product-shaped), the mono-caps guard, and the duplicated helpers and repeated
-focus-ring string in the last P2. §9 is for Jonny.
+Not done, and parked by decision on 7 September 2026: the band's unfloored fit
+scaler (`Room.tsx:126`, an explicit decision), the mixer's fifteen controls and
+Home's seventeen (§5, product-shaped), the mono-caps guard, the `#1c1410`
+token, and the duplicated helpers and repeated focus-ring string in the last
+P2. §9 is for Jonny.
 
 **Items 1 and 2 are the ones that matter.** They are about fifteen and about five
 lines respectively, they land on the same screen, and together they are the
