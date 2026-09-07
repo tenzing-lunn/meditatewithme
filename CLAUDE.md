@@ -187,10 +187,13 @@ discovered.
 
 **The preview pane is signed in, so `localhost:3000` is Home, not the landing.**
 To see what a guest sees, open **`http://127.0.0.1:3000`** instead: a different
-origin with its own empty localStorage, so it is signed out without signing
-anybody out. `allowedDevOrigins` in `next.config.ts` exists for exactly this —
-without it Next serves that origin a black page and 403s. Never sign the pane
-out to get there; the session is Tenzing's.
+origin with its own localStorage, so it is signed out without signing anybody
+out. `allowedDevOrigins` in `next.config.ts` exists for exactly this — without
+it Next serves that origin a black page and 403s. Never sign the pane out to
+get there; the session is Tenzing's. That origin is not necessarily *empty*:
+on 7 September 2026 it already held a stored mix from an earlier run (rain
+0.5, hum 0.3, master 0), so read `mwm.preferences` there before walking to the
+sound question rather than assuming silence.
 
 ## Time
 
