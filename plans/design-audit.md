@@ -510,21 +510,27 @@ But it means `npm run typecheck` is the only gate catching that class of error, 
 
 ## 8. Recommended order
 
-Nothing below has been done. The first four are cheap, self-contained, and none of
-them reopens the product model in `plans/room-polish.md` §4.
+Written 7 September 2026 with nothing done; the status column was filled in
+the same day as each landed on `dev`. None of it reopened the product model in
+`plans/room-polish.md` §4.
 
-| | Work | Command |
+| | Work | Status |
 |---|---|---|
-| 1 | **[P0]** The landing sentence, live from `useCount` | `/impeccable clarify` |
-| 2 | **[P1]** The guest door to `/world`, under it | `/impeccable shape` |
-| 3 | **[P1]** `room-base.png` → AVIF/WebP with a `srcset` | `/impeccable optimize` |
-| 4 | **[P1]** Reduced motion reaches the camera; fix the false comment | `/impeccable animate` |
-| 5 | **[P1]** Separate unlocking audio from playing it | `/impeccable harden` |
-| 6 | **[P1]** `<h1>` on the room surface; keyboard on the menu; `FOOT` target height | `/impeccable harden` |
-| 7 | **[P2]** The four contrast failures, and extend `scripts/contrast.mjs` to reach them | `/impeccable colorize` |
-| 8 | **[P2]** One vocabulary: one label per concept, across all four surfaces | `/impeccable distill` |
-| 9 | **[P2]** `will-change`, the `height` animation, the 4 Hz re-render, dead `.glow` | `/impeccable optimize` |
-| 10 | | `/impeccable polish` |
+| 1 | **[P0]** The landing sentence, live from `useCount` | `854d755` |
+| 2 | **[P1]** The guest door to `/world`, under it | `854d755` |
+| 3 | **[P1]** `room-base.png` → AVIF/WebP with a `srcset` | `37308a1` — AVIF + JPEG; no `srcset`, at 39 KB the widths cost more than they save |
+| 4 | **[P1]** Reduced motion reaches the camera; fix the false comment | `62b34ed` |
+| 5 | **[P1]** Separate unlocking audio from playing it | `680e6e1` |
+| 6 | **[P1]** `<h1>` on the room surface; keyboard on the menu; `FOOT` target height | `09edbdd`; the safe-area inset under the sitting's controls `d13a865` |
+| 7 | **[P2]** The four contrast failures, and extend `scripts/contrast.mjs` to reach them | `a52b454` |
+| 8 | **[P2]** One vocabulary: one label per concept, across all four surfaces | `547bcfa` sound · `cdba30f` the room · `669df67` until-bell toggles in the flow |
+| 9 | **[P2]** `will-change`, the `height` animation, the 4 Hz re-render, dead `.glow` | **open** — the `height` animation stays by decision (`ARCHITECTURE.md` §16); the rest is undecided |
+| 10 | The shared fact one rank up on Home and the ending (§5) | `15e1b95` |
+
+Not done, and not planned here: the band's unfloored fit scaler (`Room.tsx:126`,
+an explicit decision), the mixer's fifteen controls and Home's seventeen (§5,
+product-shaped), the mono-caps guard, and the duplicated helpers and repeated
+focus-ring string in the last P2. §9 is for Jonny.
 
 **Items 1 and 2 are the ones that matter.** They are about fifteen and about five
 lines respectively, they land on the same screen, and together they are the
