@@ -155,8 +155,9 @@ checked, it is a label change" is a fine answer.
 Pressing the landing's begin word calls `unlockAudio()` and `mix.ensure()` in
 `openSetup` (`components/Room.tsx`), so **the stored ambient beds start playing
 the moment the flow opens** — before any mixer is on screen. There is no silent
-path through the setup flow, and `rain` is white noise, so it is perceptually
-much louder than the other four at the same fader position. A hidden preview
+path through the setup flow. The five beds are loudness-matched to −16 LUFS as
+of 7 September 2026, so no single one ambushes you any more — `rain` used to be
+12.5 dB above `waterfall` and this note used to warn you about it. A hidden preview
 pane keeps playing: the `visibilitychange` handler in `components/useMix.ts`
 only ever *resumes*, deliberately, because a sitting must not stop when someone
 glances at another tab.

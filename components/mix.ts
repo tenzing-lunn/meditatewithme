@@ -49,7 +49,61 @@ interface TrackDef {
   label: string;
   /** The end of this track's chain, ready to connect to its own gain node. */
   createNode: (ctx: AudioContext) => AudioNode;
+  /**
+   * Fixed gain putting this bed at the same loudness as the other four, so a
+   * fader at half means the same amount of sound whichever one it is under.
+   * See LOUDNESS below for where the number comes from.
+   */
+  trim: number;
 }
+
+/**
+ * WHY EACH BED HAS A TRIM
+ *
+ * The five were built to sound right one at a time and never measured against
+ * each other, and they were not close. Rendered offline through an
+ * `OfflineAudioContext` — no sound, just samples — and measured K-weighted to
+ * ITU-R BS.1770, thirty seconds each so the slow LFOs average out:
+ *
+ *     bed          LUFS     peak
+ *     rain         -7.84    1.341   ← clipped
+ *     hum         -14.60    0.642
+ *     wind        -16.27    0.841
+ *     night       -20.22    0.560
+ *     waterfall   -20.33    0.373
+ *
+ * Two separate faults. The spread is 12.5 dB, so rain at half fader was about
+ * four times the loudness of waterfall at half fader — the thing CLAUDE.md
+ * warns testers about, which is a sign it should have been fixed rather than
+ * documented. And rain's peak was above full scale: at the top of its fader it
+ * was not loud, it was distorting.
+ *
+ * K-weighted rather than plain RMS because these differ enormously in spectrum
+ * — `hum` is a 110 Hz drone, `night` has a 4.6 kHz band — and equal RMS at
+ * those two frequencies is nothing like equal loudness. Plain RMS put them 7 dB
+ * apart; K-weighting puts them 5.6 dB apart, and the second number is the one
+ * an ear would agree with.
+ *
+ * Target is -16 LUFS. Not chosen for taste: it is the loudest common target at
+ * which no bed's peak reaches full scale. `night` is the binding constraint at
+ * -15.2, so -16 leaves a little under a decibel of margin.
+ *
+ * Re-derive by rendering each bed offline and measuring; the numbers below
+ * should reproduce within a few tenths, noise being noise.
+ */
+const TARGET_LUFS = -16;
+
+/** Measured K-weighted loudness of each bed at trim 1. */
+const MEASURED_LUFS: Record<TrackSlug, number> = {
+  rain: -7.84,
+  wind: -16.27,
+  waterfall: -20.33,
+  hum: -14.6,
+  night: -20.22,
+};
+
+const trimFor = (slug: TrackSlug) =>
+  10 ** ((TARGET_LUFS - MEASURED_LUFS[slug]) / 20);
 
 // ---------------------------------------------------------------------------
 // Noise
@@ -113,6 +167,7 @@ export const TRACKS: readonly TrackDef[] = [
   {
     slug: 'rain',
     label: 'Rain',
+    trim: trimFor('rain'),
     createNode: (ctx) => {
       // White through a high-pass is close to steady rain on a hard surface.
       // The low-pass takes the top off so it is not a hiss on headphones.
@@ -137,6 +192,7 @@ export const TRACKS: readonly TrackDef[] = [
   {
     slug: 'wind',
     label: 'Wind',
+    trim: trimFor('wind'),
     createNode: (ctx) => {
       const lp = ctx.createBiquadFilter();
       lp.type = 'lowpass';
@@ -153,6 +209,7 @@ export const TRACKS: readonly TrackDef[] = [
   {
     slug: 'waterfall',
     label: 'Waterfall',
+    trim: trimFor('waterfall'),
     createNode: (ctx) => {
       // Wide and steady, with the mid emphasis that distance gives water.
       const bp = ctx.createBiquadFilter();
@@ -167,6 +224,7 @@ export const TRACKS: readonly TrackDef[] = [
   {
     slug: 'hum',
     label: 'Hum',
+    trim: trimFor('hum'),
     createNode: (ctx) => {
       // A shruti-box bed: a root, a very slightly detuned twin so the two beat
       // against each other, and the fifth above. The beating is the whole
@@ -195,6 +253,7 @@ export const TRACKS: readonly TrackDef[] = [
   {
     slug: 'night',
     label: 'Night',
+    trim: trimFor('night'),
     createNode: (ctx) => {
       // Two layers: a low bed of air, and a narrow high band that reads as
       // insects at a distance. Neither is convincing alone.
@@ -280,7 +339,15 @@ export function startMix(initial: Record<string, number>): MixHandle | null {
   for (const track of TRACKS) {
     const gain = ctx.createGain();
     gain.gain.value = clamp01(initial[track.slug] ?? 0);
-    track.createNode(ctx).connect(gain).connect(master);
+
+    // Trim sits before the fader, not after: the fader is what the visitor
+    // moves and what gets stored, so it has to stay 0..1 and mean the same
+    // thing on every bed. Putting the correction upstream is what makes that
+    // true — see the LOUDNESS note above.
+    const trim = ctx.createGain();
+    trim.gain.value = track.trim;
+
+    track.createNode(ctx).connect(trim).connect(gain).connect(master);
     gains.set(track.slug, gain);
   }
 

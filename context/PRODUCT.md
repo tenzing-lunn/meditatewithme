@@ -209,10 +209,25 @@ The bells have since been rebuilt as three separate instruments — their own
 modes, a mallet, beating twins, and bloom on the gong (`ARCHITECTURE.md` §7).
 That was worth doing because `strike()` is thrown away wholesale when
 recordings arrive, so none of it is debt; it does **not** reduce the case for
-buying the real thing. **The beds have not been touched and are still four
-filtered-noise variants plus a drone** — rain, wind, waterfall and night are one
-generator with different filters, everything is mono, dry, and on linear
-faders. That is the next thing to fix if the recordings stay blocked.
+buying the real thing. **The beds are still four filtered-noise variants plus a
+drone** — rain, wind, waterfall and night are one generator with different
+filters, and everything is mono and dry. That is the next thing to fix if the
+recordings stay blocked.
+
+One fault in them has been fixed, on 7 September 2026, and it was a defect
+rather than a matter of taste. Rendered offline and measured K-weighted
+(ITU-R BS.1770), the five sat 12.5 dB apart — rain at −7.84 LUFS against
+waterfall at −20.33 — so a fader at half meant about four times as much sound
+under rain as under waterfall. Rain also peaked at 1.34, above full scale:
+at the top of its fader it was distorting, not getting louder. Each bed now
+carries a fixed trim to −16 LUFS, the loudest common target at which nothing
+clips. Re-measured after: 0.12 dB apart, worst peak 0.933.
+
+**The faders are still linear**, which is the other half of what that
+paragraph used to say and is deliberately not fixed here. Mapping the position
+through a taper is a change to how everybody's stored mix sounds, and it is a
+judgement no measurement settles — it needs somebody to listen. The
+loudness-matching did not need ears and could be proved.
 
 **The other two focus loops.** Only `candle` exists. `Focus()` in `Room.tsx`
 is where the others go when Jonny chooses them.
