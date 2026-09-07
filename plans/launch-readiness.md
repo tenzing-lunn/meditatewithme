@@ -50,14 +50,15 @@ Complete this in Supabase Dashboard → **Authentication → URL Configuration**
 The hosted dashboard settings are infrastructure, so they cannot be committed
 as a migration.
 
-1. Set **Site URL** to the live canonical origin. Until the custom domain is
-   attached, use `https://meditatewithme.vercel.app`; replace it with the
-   `https://<custom-domain>` origin when DNS is live.
-2. Add these **Redirect URLs**:
+1. ~~Set **Site URL** to the live canonical origin.~~ **Done** — read back from
+   the live config on 7 September 2026: `https://meditatewithme.vercel.app`.
+   Replace it with the `https://<custom-domain>` origin when DNS is live.
+2. ~~Add these **Redirect URLs**:~~ **Done**, same read-back — all three below
+   are in the allow-list:
    - `http://localhost:3000/**`
    - `https://meditatewithme.vercel.app/**`
    - `https://*-10zinglunn-afks-projects.vercel.app/**`
-   - `https://<custom-domain>/**` once the custom domain exists.
+   - `https://<custom-domain>/**` once the custom domain exists — still to add.
 3. In **Authentication → Providers → Email**, confirm Email/Magic Link remains
    enabled. `signInWithOtp` intentionally creates a new user on first use;
    that is the account-creation path, not a separate registration form.
@@ -69,18 +70,34 @@ as a migration.
    template does not contain one.** Everything else works without this: the
    panel says "the link in that email works too", `emailRedirectTo` is still
    sent, and the link still signs people in. But until this is done the code box
-   on the last step has nothing to receive, so it must be done in the same pass
-   as the SMTP sender rather than after it.
-4c. In **Authentication → Providers → Email**, set **Email OTP Length** to `6`.
-   **The project currently issues eight-digit codes** — confirmed against the
-   live project on 3 September 2026: `admin/generate_link` returned an
-   `email_otp` of `8` digits, and all eight verified against `/verify` with a
-   200. The account flow's code box is `maxLength={6}` with
-   `pattern="[0-9]{6}"`, so an emailed code would be truncated to its first six
-   digits and rejected. Doing 4b without this fixes nothing: the code arrives
-   and still cannot be entered. Decided in favour of moving the project rather
-   than the UI, so that the six-digit copy, pattern and placeholder in
-   `Account.tsx` all stay as written.
+   on the last step has nothing to receive.
+
+   **Blocked until item 4 is done, and not by choice.** Tried on 7 September
+   2026 through the Management API and refused: *"Email template modification
+   is not available for free tier projects using the default email provider.
+   Please upgrade your plan or configure a custom SMTP provider."* So the order
+   is fixed: SMTP first, then this, in the dashboard or with the same API call.
+   The template to paste once it is allowed:
+
+   ```html
+   <h2>Your code</h2>
+   <p>Enter this on the site to sign in:</p>
+   <p style="font-size:28px;letter-spacing:0.3em;font-weight:bold">{{ .Token }}</p>
+   <p>Or <a href="{{ .ConfirmationURL }}">follow this link</a> instead. Either works once, within the hour.</p>
+   ```
+
+   with the subject *Your code for Meditate With Me*.
+4c. ~~In **Authentication → Providers → Email**, set **Email OTP Length** to
+   `6`.~~ **Done 7 September 2026**, through the Management API
+   (`mailer_otp_length: 6`), re-read afterwards, and proved end to end with a
+   throwaway user on `example.invalid`: `admin/generate_link` returned a
+   six-digit `email_otp`, it verified against `/verify` with a 200, and the user
+   was deleted. Until that day the project issued eight-digit codes (confirmed
+   3 September), which the code box — `maxLength={6}`, `pattern="[0-9]{6}"` —
+   would have truncated and rejected. Decided in favour of moving the project
+   rather than the UI, so the six-digit copy, pattern and placeholder in
+   `Account.tsx` all stay as written. The auth server is now right; only the
+   email is missing, and that is 4 then 4b.
 5. Review **Authentication → Rate Limits** after choosing the sender. Keep the
    default per-email resend delay unless there is a demonstrated support need.
    Add CAPTCHA before public promotion if abuse is observed or the sender has a
@@ -105,10 +122,14 @@ What this establishes:
   `https://meditatewithme.vercel.app`. Three of four accounts confirmed within
   a minute of asking.
 - **Everyone is signing in with the link, not the code.** Every login recorded
-  is `implicit`, which is the link path. That is expected: 4b and 4c below are
-  both still open, so the code box cannot yet work for anybody.
+  is `implicit`, which is the link path. That is expected: the email carries no
+  code, and cannot until the sender is replaced (4, then 4b). 4c was done later
+  the same day.
 - **The sender is still Supabase's shared one.** `mail_from` is
-  `noreply@mail.app.supabase.io`. Item 4 has never been done.
+  `noreply@mail.app.supabase.io`. Item 4 has never been done. The live config
+  also shows `rate_limit_email_sent = 2` — two emails an hour, project-wide,
+  which is the default sender's ceiling and the likeliest explanation for the
+  lost sign-up below.
 - **One sign-up was lost.** The fourth account was created 39 minutes after
   the third, in the same hour, and never confirmed — its `confirmation_token`
   is still pending and `email_confirmed_at` is null, so Supabase accepted the
@@ -191,9 +212,10 @@ invoice you weren't expecting" promise forbids.
   item on the list, and it is no longer hypothetical** — see *Evidence from
   the live project*, below. One of the four accounts created since launch
   never confirmed, and mail is still leaving Supabase's shared sender.
-- [ ] In the same dashboard pass, add `{{ .Token }}` to the Magic Link template
-  (4b) **and** set Email OTP Length to 6 (4c). Neither works without the other,
-  and until both are done the code box on the last step is decorative.
+- [ ] After the SMTP sender is in, add `{{ .Token }}` to the Magic Link
+  template (4b) — refused on the free tier while the default sender is in use,
+  so it cannot go first. 4c (OTP length 6) is done. Until 4b is done the code
+  box on the last step is decorative.
 - [ ] Attach and verify the custom domain/DNS, update Supabase Site URL, and
   repeat the production auth test.
 - [ ] Review the existing Supabase security-advisor notices before launch:

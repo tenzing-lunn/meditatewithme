@@ -367,6 +367,8 @@ No passwords. No password means no reset flow, which is where most auth bugs liv
 
 **The code needs one hosted change this repository cannot make.** Supabase's stock Magic Link template contains only `{{ .ConfirmationURL }}`; the same email carries the code once `{{ .Token }}` is added to it in Authentication → Email Templates. Until that is done the code box has nothing to receive, which is why the panel keeps saying the link in that email works too, and why `emailRedirectTo` is still sent. `plans/launch-readiness.md` carries it beside the SMTP item it depends on.
 
+**And that dependency is hard, not a matter of sequencing.** Tried on 7 September 2026 through the Management API (`PATCH /v1/projects/{ref}/config/auth`): the project is on the free tier with the default sender, and the API refuses any template change on that combination — *"Email template modification is not available for free tier projects using the default email provider. Please upgrade your plan or configure a custom SMTP provider."* So the sender is a precondition for the code, not a sibling item. What *could* be set was: `mailer_otp_length` went from 8 to 6 the same day, re-read from the API afterwards, and a throwaway user's `generate_link` returned a six-digit `email_otp` that verified with a 200. The UI's six-digit box is right; the email is what is missing.
+
 ### Signing in once is meant to be enough
 
 `persistSession` and `autoRefreshToken` are both on, the session lives in
@@ -1015,11 +1017,20 @@ now a single control at the top right of the landing, fading in on the same
 `REVEAL_MS` as `Begin.` and the photograph. It is not joined by a second, and it is absent for anybody already
 signed in, who never sees this screen at all.
 
-**It says `Create account`, not `Sign in`.** `signInWithOtp` creates the user
-on first use — that has always been the signup path — so the old label described
-the API call rather than the act, and asked a first-time visitor for credentials
-they did not have. The flow behind it carries `I already have one`, which skips
-the name and goes straight to the address.
+**It said `Create account`, not `Sign in`; now it is a menu offering both.**
+`signInWithOtp` creates the user on first use — that has always been the signup
+path — so `Sign in` alone described the API call rather than the act, and asked
+a first-time visitor for credentials they did not have. `Create account` was
+the answer, with `I already have one` inside the panel for the other case. On
+7 September 2026 Jonny asked for a three-line settings button there instead,
+offering `Create account` and `Sign in` as two separate choices. So the control
+is the icon (`LIFTED_ICON`, the same surface made square), pressing it opens a
+two-item menu on the panel's own surface, and each item opens the panel at its
+own step — the name for a new account, the address for an existing one. A code
+already sent survives either choice, for the same reason the flow survives the
+panel closing. `Account` owns the menu as it owns the panel (`menu` prop); the
+foot-of-frame instance after a sitting keeps the labelled button, because that
+one is an offer rather than a settings corner.
 
 **It is a dropdown, and it used to be a question. That was the mistake.** The
 form once took the band the way `How long?` does: camera to `open`, band to full

@@ -32,8 +32,12 @@ Known open at the moment of launch, and still open:
   outside the project team, which fits what happened; the auth logs for that
   day have since aged out, so the cause cannot now be proven from here.
 - The account flow asks for a six-digit code, and the stock Supabase email
-  template does not contain one — `{{ .Token }}` has to be added to it in the
-  dashboard. Until then the panel's own note ("the link in that email works
+  template does not contain one — `{{ .Token }}` has to be added to it. That
+  edit is **refused on the free tier while the default sender is in use**
+  (tried through the Management API, 7 September 2026), so it waits on the
+  SMTP item above. The auth server's own code length was moved from eight
+  digits to six the same day and proved with a throwaway user. Until the
+  template can change, the panel's own note ("the link in that email works
   too") is the working path, and the link is still sent.
 - The custom domain is unattached; Supabase Site URL points at the Vercel
   address.
@@ -114,13 +118,16 @@ that each light is placed to within about a hundred kilometres and nobody is
 asked for their location. On localhost the map is correctly empty: the edge
 headers it places people from do not exist in `next dev`.
 
-**Accounts.** Optional. `Create account` sits at the top right of the landing
-and alone at the foot of the frame after a sitting; both open the same panel,
-which drops from the control that opened it in 150ms and takes no other part of
-the picture. It asks one thing at a time — your name, then your email, then the
-six-digit code from that email, with `Confirm and enter` under it. `I already
-have one` skips the name. Nothing is asked for that is not used: the name is
-what Home's masthead greets you by.
+**Accounts.** Optional. A three-line menu button sits at the top right of the
+landing and opens two choices, `Create account` and `Sign in` — Jonny's ask on
+7 September 2026, replacing a single `Create account` button that carried the
+other case as a footnote. `Create account` alone still sits at the foot of the
+frame after a sitting. All of them open the same panel, which drops from the
+control that opened it in 150ms and takes no other part of the picture. It asks
+one thing at a time — your name, then your email, then the six-digit code from
+that email, with `Confirm and enter` under it. `Sign in`, and `I already have
+one` inside the panel, skip the name. Nothing is asked for that is not used:
+the name is what Home's masthead greets you by.
 
 **Signing in once is enough.** The session is stored in the browser and renews
 itself, with no expiry and no inactivity cutoff, so somebody who signs in is
