@@ -20,22 +20,18 @@ in `docs/blockers-email-to-jonny.md`; and the streaming-cost and safeguarding
 points, which are real but belong to a video conversation that is not happening
 in v1.
 
-**Not built ahead of the answer.** The `:50`–`:55` behaviour below is unchanged
-in the code. It is one small edit either way and it waits for him.
+**Not built ahead of the answer.** The `:50`–`:55` behaviour is unchanged in
+the code. It is one small edit either way and it waits for him.
+
+**One question, not two.** A draft also told him nothing happens during the
+five minutes themselves. True, and right, and it asked him for nothing — so it
+was noise in a message whose whole job is to get one answer back.
 
 ---
 
-Hi Jonny — the 55/5 is done and on the test site. Slider stops at 55, the shared bell rings at :55, so every hour has five clear minutes at the end.
+Hi Jonny — 55/5 is done, it's on the test site.
 
-Two small things, no rush.
-
-If someone turns up in the last few minutes before :55, we currently offer them the *next* hour's bell instead — over an hour away. So they'd either sit for 63 minutes, which is the thing you've just capped, or more likely give up and sit on their own. I'd rather we quietly drop the shared option in that five-minute window than offer one that contradicts the cap. Fine either way, just say which.
-
-And nothing happens in the five minutes themselves — no screen, no message, the candle just carries on. I think that's right. Say if you pictured something there.
-
-Nothing else changes.
-
-Tenzing
+One question. If someone arrives in the last few minutes before :55, we currently offer them the next hour's bell — a 63-minute sitting, over the cap you've just set. Drop the shared option in that window, or leave it?
 
 ---
 
