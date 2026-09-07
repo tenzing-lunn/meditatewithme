@@ -67,7 +67,7 @@ is you, so it is never reported as company — the same rule the ring, the
 ending, Home and `/world` all keep. With *Hide the room* set, the standing
 sentence is the only one shown.
 
-Added 7 September 2026, from the design audit in `plans/design-audit.md`. Until
+Added 7 September 2026, from the design audit in `docs/design-audit.md`. Until
 then the screen carried the word alone, and the sentence explaining the site
 existed only in `app/opengraph-image.tsx` and the meta description — served to
 crawlers and withheld from visitors, so a link preview said more about the

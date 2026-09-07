@@ -11,7 +11,7 @@
  *
  * What this cannot see: text set over the photograph. Those ratios depend on
  * the camera phase and were sampled in the browser instead — see
- * `plans/design-audit.md` §10 for the method and the numbers.
+ * `docs/design-audit.md` §10 for the method and the numbers.
  *
  * Thresholds (WCAG 2.1):
  *   4.5  normal text

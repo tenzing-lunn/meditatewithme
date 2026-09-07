@@ -34,7 +34,7 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react';
  *
  * This comment said exactly that from the day the scene was written, and half
  * of it was untrue for as long: the flame honoured the query, the camera never
- * asked. It was found by the design audit in `plans/design-audit.md`, not by a
+ * asked. It was found by the design audit in `docs/design-audit.md`, not by a
  * reader — a wrong comment about an accessibility guarantee is worse than none,
  * because it stops the next person checking. What the query reaches is now a
  * branch you can see, at `still` below.
