@@ -1,12 +1,37 @@
-# The timing conversation — message to Jonny
+# The timing conversation with Jonny
 
-Unsent. Move to `docs/` once it's gone out.
+Unsent. Move to `docs/` once the call has happened.
 
 **What this is.** Jonny's 55/5 decision (7 September 2026) is built and live on
 `dev` — see `ARCHITECTURE.md` §6.3. Building it surfaced four questions that
 can't be answered from here, and they turn out to be the same conversation as
 `plans/room-polish.md` §4, which has been waiting on a Jonny call since 1
-September. This message merges the two rather than having them separately.
+September. This merges the two rather than having them separately.
+
+## Send this
+
+A text, not an email. It carries one question and books the call; everything
+below is for the call itself.
+
+> Hi Jonny — the 55/5 is done and on the test site. Every hour now has five
+> clear minutes at the end.
+>
+> One thing came out of building it that I'd rather ask than guess at: right
+> now the site's good at people *finishing* together but not *starting*
+> together — sitting with everyone else is opt-in, tucked under the first
+> question. Your Thailand idea is the first real reason for anyone to turn up
+> on the hour, so it might be time to make that the main way in rather than the
+> side option.
+>
+> Worth a quick call. When's good?
+
+## Then have this in front of you on the call
+
+Not to be sent. It is the long-form version of the same argument, in the order
+the questions actually depend on each other: the rota news first because it is
+reassuring and cheap, then the one real decision, then the four that follow
+from it, then the two warnings — which belong in a conversation and nowhere
+near a text message.
 
 **What is deliberately *not* in it.**
 
@@ -21,16 +46,11 @@ September. This message merges the two rather than having them separately.
   the sound files are all still outstanding and all already chased in
   `docs/blockers-email-to-jonny.md`. Adding them here dilutes both.
 
-**Before sending:** adjust the opening to however you two actually talk. The
-last section is the one to keep even if the rest gets cut — it is the part he
-may not have thought about, and it is cheaper for him to hear now than after he
-has told people about the house.
+Of everything below, the last section is the one that must not get dropped for
+time — it is the part he may not have thought about, and it is cheaper for him
+to hear before he has told people about the house than after.
 
 ---
-
-**Subject:** The 55 minutes — and what we're actually building toward
-
-Hi Jonny,
 
 Your 55/5 change is done and it's on the test site. The slider now stops at 55 minutes, and *until the bell* — the option where you finish at the same moment as everyone else who chose it — now rings at :55 rather than on the hour. So every hour has five clear minutes at the end of it, which is what you asked for.
 
@@ -76,8 +96,4 @@ Staffing was one of three reasons the live video was parked, and a household of 
 
 **What I'd suggest.**
 
-Nothing here blocks anything. The 55 minutes is done and the site is fine as it is. But question one — whether sitting *together* becomes the front door — is worth half an hour on the phone, and the other four mostly answer themselves once you've decided it.
-
-Have a think and give me a ring whenever suits.
-
-Tenzing
+Nothing here blocks anything. The 55 minutes is done and the site is fine as it is. But question one — whether sitting *together* becomes the front door — is the one worth the time, and the other four mostly answer themselves once it's decided.
