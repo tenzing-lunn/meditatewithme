@@ -304,10 +304,17 @@ export default function SessionSetup({
               {/* Its own line and its own weight. This is the only control in
                   the product that makes two strangers finish at the same
                   moment, and as a fourth preset chip it read as a fourth
-                  preset. */}
+                  preset.
+
+                  A toggle, as it is on Home. It used to only ever set — pressing
+                  it again did nothing, and the way back to your own duration
+                  was to move the slider, which nothing said — while carrying
+                  `aria-pressed`, which promises a toggle. Pressing it again
+                  returns to the slider's stop; `timerMinutes` was never
+                  changed, so that is still where you were. */}
               <button
                 type="button"
-                onClick={() => update({ untilBell: true })}
+                onClick={() => update({ untilBell: !prefs.untilBell })}
                 aria-pressed={prefs.untilBell}
                 className={`rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper flex min-h-14 w-full items-center justify-center border px-4 text-base font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none ${
                   prefs.untilBell
