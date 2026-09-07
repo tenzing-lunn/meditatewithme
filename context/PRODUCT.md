@@ -47,11 +47,17 @@ Known open at the moment of launch, and still open:
   been moved from eight digits to six earlier that day.
 - The custom domain is unattached; Supabase Site URL points at the Vercel
   address. **This is now the one thing between visitors and a working
-  sign-in email:** Jonny already owns one, twenty years old, never pointed —
-  its name is recorded nowhere in this repository, so ask him. Verify it in
-  Resend (DKIM, SPF, DMARC), change only the sender email in Supabase's SMTP
-  page to an address at it, and the spam placement and the own-inbox
-  restriction both go.
+  sign-in email.** The domain is **`meditatewithme.com`** — looked up 7
+  September 2026: registered February 2013 at GoDaddy, DNS served by
+  Cloudflare, and at present it **302-redirects to
+  `susantaylor.org/meditate-with-me/`**, so pointing it at this site takes
+  that redirect away and Jonny has to say yes to that. No MX records exist,
+  so no mailbox at the domain is disturbed by adding Resend's. Tenzing added
+  `meditatewithme.com` and `www` to the Vercel project the same evening
+  (apex redirecting to `www`); both read *Invalid Configuration* until the
+  records go in at Cloudflare. Then: verify it in Resend (DKIM, SPF, DMARC),
+  change only the sender email in Supabase's SMTP page to an address at it,
+  and the spam placement and the own-inbox restriction both go.
 - No real-device QA pass recorded. *(The favicon and Open Graph card landed 7
   September 2026 — see §2.)*
 

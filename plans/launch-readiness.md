@@ -76,11 +76,11 @@ as a migration.
    Resend's test one, `onboarding@resend.dev`, because there is no domain
    yet.** That delivers only to the Resend account's own inbox and Gmail put
    the first message in spam on the domain's reputation. The other half:
-   Jonny's domain — he already owns it, and its name is not recorded in this
-   repository, so get it from him along with registrar access. Add it in
-   Resend → Domains, put its DKIM/SPF/DMARC records at the registrar, wait
-   for *Verified*, then change **only the sender email** on the same Supabase
-   page to an address at it. Nothing else changes.
+   `meditatewithme.com` (GoDaddy registration, DNS at Cloudflare — see the
+   domain row below). Add it in Resend → Domains, put its DKIM/SPF/DMARC
+   records in the Cloudflare zone, wait for *Verified*, then change **only
+   the sender email** on the same Supabase page to `signin@meditatewithme.com`.
+   Nothing else changes.
 4b. ~~In **Authentication → Email Templates → Magic Link**, add `{{ .Token }}`
    to the template.~~ **Done 7 September 2026 (evening)**, minutes after item
    4 unblocked it, through the Management API (the earlier refusal, *"Email
@@ -224,8 +224,17 @@ invoice you weren't expecting" promise forbids.
 - [x] ~~After the SMTP sender is in, add `{{ .Token }}` to the Magic Link
   template (4b).~~ Done 7 September 2026, proved with a real code in a real
   inbox. The code box on the last step is no longer decorative.
-- [ ] **Attach Jonny's domain.** He owns it; the name is not written down
-  here, so ask him, and get registrar access. This is now the single item
+- [ ] **Attach `meditatewithme.com`.** Looked up 7 September 2026: created
+  25 February 2013 at GoDaddy (expires February 2027, auto-renew unknown),
+  nameservers `bruce`/`kim.ns.cloudflare.com`, so **the records go in a
+  Cloudflare account, not GoDaddy**, and somebody has its login. The apex
+  currently 302-redirects to `susantaylor.org/meditate-with-me/`; pointing
+  it here ends that, which is Jonny's to approve. No MX records, so Resend's
+  records disturb no mailbox. Added to the Vercel project the same evening
+  (apex → `www`, both *Invalid Configuration* pending DNS). Records needed
+  in Cloudflare, all **DNS only / grey cloud**, not proxied: the A and CNAME
+  Vercel shows under *View DNS configuration*, and the DKIM/SPF/DMARC set
+  Resend shows under *Domains*. This is now the single item
   between visitors and a sign-in email that arrives: verify it in Resend,
   change the SMTP sender address to it (item 4), attach it to Vercel, update
   Supabase Site URL and the redirect allow-list, and repeat the production
