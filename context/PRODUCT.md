@@ -48,10 +48,26 @@ Rollback candidate named in the launch commit: `defa583`.
 
 ## 2. What a visitor gets
 
-**Landing.** A photograph of a candle in a dark room, and the words *Let’s
-begin.* Nothing else — no title, no count, no hour, no links. The candle is the
-one lit at the top of this UTC hour; its flame is smaller and dimmer the further
-through the hour you arrive.
+**Landing.** A photograph of a candle in a dark room, the words *Let’s begin.*,
+one sentence saying what the place is, and one link to the world map. No title
+and no settings. The candle is the one lit at the top of this UTC hour; its
+flame is smaller and dimmer the further through the hour you arrive.
+
+The sentence is live when it can be and standing when it cannot: *A candle was
+lit at 12:00. 11 people are looking at the same one.* whenever two or more have
+lit this hour, and otherwise the Open Graph card's own words, *A candle is lit
+at the top of every hour. Everyone is looking at the same one.* One candle lit
+is you, so it is never reported as company — the same rule the ring, the
+ending, Home and `/world` all keep. With *Hide the room* set, the standing
+sentence is the only one shown.
+
+Added 7 September 2026, from the design audit in `plans/design-audit.md`. Until
+then the screen carried the word alone, and the sentence explaining the site
+existed only in `app/opengraph-image.tsx` and the meta description — served to
+crawlers and withheld from visitors, so a link preview said more about the
+product than the product did. The world map had exactly one link in the whole
+codebase, on Home, which is signed in; a guest could reach the site's strongest
+piece of evidence for its own claim only by typing the address.
 
 The room and the words come up out of the dark together, over 2.6 seconds, while
 the camera settles out of its opening push. Nothing is shown and nothing is said

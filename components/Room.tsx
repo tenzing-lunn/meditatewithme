@@ -7,8 +7,9 @@ import {
   useRef,
   useState,
 } from 'react';
+import Link from 'next/link';
 import { serverNow, syncClock } from '@/lib/clock';
-import { candleBurn, hourKey, nextHourStart } from '@/lib/session';
+import { candleBurn, hourKey, hourStart, nextHourStart } from '@/lib/session';
 import {
   endsAt as computeEndsAt,
   hasEnded,
@@ -915,10 +916,26 @@ export default function Room({
 
           <div className="mt-4 flex w-full flex-col items-center">
           {/* THE LANDING
-              The photograph, and one word on it. Nothing else at all — the
-              settings, the title, the hour and the quiet links have all moved
-              behind this word or after the sitting, because a picture with
-              anything else on it stops being a picture.
+              The photograph, one word on it, and one line saying what the
+              place is. The settings, the title and the quiet links have all
+              moved behind this word or after the sitting, because a picture
+              with anything else on it stops being a picture.
+
+              THE LINE IS THE EXCEPTION, AND IT IS PAID FOR
+              This screen said `Let’s begin.` and nothing else until 7
+              September 2026, which is a picture with no product in it. The
+              sentence that explains the site was written and shipped — to
+              `opengraph-image.tsx` and to the meta description — so a stranger
+              who saw a *link* to this place was told more than one who typed
+              the address. That is not restraint, it is an omission with a
+              tidy edge on it, and it made the comprehension test in
+              `plans/room-polish.md` §4 unrunnable: four of its five questions
+              had no answer anywhere on screen.
+
+              The cost is one line and one link against a photograph. The trade
+              is written down here rather than assumed, because the argument
+              for emptiness is a real one and the next person to shorten this
+              screen should have to argue with something.
 
               It fades in behind the opening move rather than being there when
               the lights come up: `load` spends 5.6s pushing the camera in from
@@ -938,7 +955,7 @@ export default function Room({
             !practiceOpen &&
             !home && (
               <div
-                className="transition-opacity"
+                className="flex flex-col items-center transition-opacity"
                 style={{
                   opacity: booted ? 1 : 0,
                   transitionDuration: `${REVEAL_MS}ms`,
@@ -946,6 +963,14 @@ export default function Room({
                 }}
               >
                 <BeginWord onClick={openSetup} />
+                {/* `showCount` off means the room is hidden, so the live half
+                    is withheld and the standing sentence stands in. Somebody
+                    who asked not to be shown the others is not shown them
+                    here either. */}
+                <WhatThisIs
+                  now={now}
+                  litCount={prefs.showCount ? litCount : null}
+                />
               </div>
             )}
 
@@ -1368,6 +1393,63 @@ function BeginWord({ onClick }: { onClick: () => void }) {
     >
       Let’s begin.
     </button>
+  );
+}
+
+/**
+ * What this place is, under the word that opens it.
+ *
+ * ONE SENTENCE, AND IT IS THE ONE WE ALREADY WROTE
+ * The standing form is the Open Graph card's, verbatim — `opengraph-image.tsx`
+ * and the meta description have both been saying it to crawlers since the
+ * launch. Repeating it here rather than writing a third version is the point:
+ * one product, one sentence, and the person in the room hears the same thing
+ * the link preview promised them.
+ *
+ * LIVE WHEN THERE IS SOMETHING TRUE TO SAY, STANDING WHEN THERE IS NOT
+ * `A candle was lit at 12:00. 11 people are looking at the same one.` says the
+ * premise *and* proves it in one breath, which no static sentence can. But it
+ * is only said when it is true: `litCount` of one is you, on your own, and
+ * `A candle was lit at 12:00. 1 person is looking at it` is a lonely sentence
+ * dressed as company. Below two, and whenever the count is unknown, the
+ * standing sentence stands — the same rule `PresenceMessage`, `Afterwards`,
+ * `Home` and `World` all keep. A missing number costs far less than a wrong
+ * one, and an invented one costs the most of all.
+ *
+ * `ink-2`, not `ink-3`. This sits over a photograph, and it is the sentence
+ * the whole screen exists to deliver — the quiet tone is for the things that
+ * can afford to be missed.
+ */
+function WhatThisIs({
+  now,
+  litCount,
+}: {
+  now: number | null;
+  litCount: number | null;
+}) {
+  const company = now !== null && litCount !== null && litCount > 1;
+
+  return (
+    <div className="mt-6 flex flex-col items-center gap-4">
+      <p className="text-ink-2 max-w-[34ch] text-center text-sm text-balance">
+        {company
+          ? `A candle was lit at ${localTime(hourStart(now))}. ${litCount} people are looking at the same one.`
+          : 'A candle is lit at the top of every hour. Everyone is looking at the same one.'}
+      </p>
+
+      {/* The door to `/world`, which had none. It is the strongest evidence
+          the product owns for its own claim — strangers' candles on the real
+          earth — and until now the only link to it was on Home, which is
+          signed in. The persuasion asset was behind the conversion.
+
+          `QUIET`, not `LIFTED`: this is the band, where the composition
+          supplies its own contrast. See `controls.ts`.
+
+          The same words as Home's link, deliberately. One thing, one name. */}
+      <Link href="/world" className={QUIET}>
+        See where the candles are
+      </Link>
+    </div>
   );
 }
 
