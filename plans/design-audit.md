@@ -303,6 +303,15 @@ figure is 7.76, so the written claim is conservative and safe.
 **Extend `scripts/contrast.mjs` to cover the composited surfaces.** A green gate
 over a partial set is the same failure mode as the mono-caps guard below.
 
+**Done, 7 September 2026.** The placeholder is `white/50` (5.31), the `FIELD`
+border `white/40` (3.83), and the room's secondary buttons `border-ink-2/65`
+(4.33 on the runtime palette, 3.36 on the build-time one) — each the lowest
+opacity that clears with something in hand. `scripts/contrast.mjs` now has a
+`COMPOSITES` table and blends a foreground at its opacity over its ground
+before taking the ratio, so all four pairs are gated. The `open` phase's
+`change` labels, the one `ink-3` text §10 found under AA where it is rendered,
+moved to `ink-2`.
+
 ---
 
 ### [P2] Four cases of one thing wearing several faces

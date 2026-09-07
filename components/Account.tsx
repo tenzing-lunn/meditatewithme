@@ -68,8 +68,12 @@ type Drop = 'down' | 'up';
 /** name → email → code. Two questions and a confirmation, one at a time. */
 type Step = 'name' | 'email' | 'code';
 
+// white/40 for the border and white/50 for the placeholder, measured against
+// the panel's own `#1c1410`: white/25 was 2.25 for a boundary that owes 3.0,
+// and white/35 was 3.22 for placeholder text that owes 4.5. Both are the
+// lowest opacity that clears with something in hand — see scripts/contrast.mjs.
 const FIELD =
-  'min-h-11 w-full rounded-control border border-white/25 bg-transparent px-4 text-center text-sm text-white placeholder:text-white/35 focus-visible:border-ember focus-visible:ring-1 focus-visible:ring-ember focus-visible:outline-none';
+  'min-h-11 w-full rounded-control border border-white/40 bg-transparent px-4 text-center text-sm text-white placeholder:text-white/50 focus-visible:border-ember focus-visible:ring-1 focus-visible:ring-ember focus-visible:outline-none';
 
 const SUBMIT =
   'min-h-11 w-full rounded-control border border-ember px-6 text-sm text-ember transition-colors duration-300 hover:bg-ember hover:text-white focus-visible:ring-2 focus-visible:ring-ember focus-visible:ring-offset-2 focus-visible:ring-offset-[#1c1410] focus-visible:outline-none disabled:opacity-50';

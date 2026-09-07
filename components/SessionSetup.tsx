@@ -214,7 +214,11 @@ export default function SessionSetup({
           <span className="text-ink-2 group-hover:text-ink text-[0.95rem] transition-colors">
             {SUMMARY[done]}
           </span>
-          <span className="text-ink-3 group-hover:text-ember shrink-0 text-xs transition-colors">
+          {/* ink-2, not ink-3. These rows sit in the lower half of the frame
+              when the questions take all of it, and on `open` the photograph
+              there is bright enough that ink-3 measured 4.00 — under AA for
+              text this small. */}
+          <span className="text-ink-2 group-hover:text-ember shrink-0 text-xs transition-colors">
             change
           </span>
         </button>

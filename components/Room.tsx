@@ -1100,7 +1100,11 @@ export default function Room({
                 type="button"
                 onClick={() => update({ showCount: !prefs.showCount })}
                 aria-pressed={prefs.showCount}
-                className="border-ink-3/50 text-ink-2 hover:border-ink-3 hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper flex min-h-10 items-center border px-4 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                // border-ink-2/65, not border-ink-3/50. A border is a UI
+                // boundary and owes 3:1; ink-3 at half strength measured 2.49
+                // on the palette ground and less over the ending's bright
+                // photograph. ink-2 at 65% clears it on both.
+                className="border-ink-2/65 text-ink-2 hover:border-ink-2 hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper flex min-h-10 items-center border px-4 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
               >
                 {prefs.showCount ? 'Hide the room' : 'Show the room'}
               </button>
@@ -1110,7 +1114,7 @@ export default function Room({
                   type="button"
                   onClick={() => setPracticeOpen(true)}
                   aria-expanded={false}
-                  className="border-ink-3/50 text-ink-2 hover:border-ink-3 hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper flex min-h-10 items-center border px-4 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                  className="border-ink-2/65 text-ink-2 hover:border-ink-2 hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper flex min-h-10 items-center border px-4 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                 >
                   Your practice
                 </button>
@@ -1867,7 +1871,9 @@ function Afterwards({
             // is the one control that only ever appears in `finished`, and
             // `finished` is the brightest the room gets - brightness 1.14 with
             // the vignette almost off. Measured there, ink-3 came to 4.37.
-            className="border-ink-3/50 text-ink-2 hover:border-ink-3 hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper min-h-11 border px-7 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+            // The border follows the same reasoning: ink-3/50 is 2.49 against
+            // a 3:1 floor for a boundary, and lower still on this phase.
+            className="border-ink-2/65 text-ink-2 hover:border-ink-2 hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper min-h-11 border px-7 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
           >
             {/* The word changes because the act does. A guest is finishing;
                 somebody signed in is going back to somewhere. */}
