@@ -10,18 +10,17 @@ to paste in what we send. The auto-renew check is the same one the blockers
 email asked for and was never answered; the expiry is now a date.
 
 Kept out: what the records are, Resend, Vercel, DNS. He does not need any of
-it to say yes, and the earlier messages to him never used those words.
+it to say yes, and the earlier messages to him never used those words. It is
+a WhatsApp message, so no bold, no dashes, no sign-off.
 
 ---
 
-Hi Jonny — the site is ready to move onto meditatewithme.com. Two things I need from you to do that.
+Hi Jonny, the site's ready to go on meditatewithme.com. Need two things from you.
 
-**First, a yes.** At the moment anyone who types meditatewithme.com is sent to Susan Taylor's page. Once I switch it over, they'll land on the new site instead, and that redirect will stop. I'd rather you decide that than find it changed, and Susan may want to know.
+First a yes. Right now anyone typing meditatewithme.com gets sent to Susan Taylor's page. Once I switch it over they'll land on the new site instead and that stops. Wanted you to decide that rather than find it changed, and Susan might want a heads up.
 
-**Second, a login.** The domain's settings live in an account with a company called Cloudflare, set up by whoever arranged the redirect. Could you send me the login for it, or if you'd rather keep that yourself, I'll send you the few lines to paste in and it takes five minutes on the phone together. Either is fine.
+Second, a login. The domain's settings sit in an account with a company called Cloudflare, probably set up by whoever did the redirect. If you can send me the login I'll sort it. If you'd rather keep it to yourself, I'll send you a few lines to paste in and we can do it on the phone in five minutes.
 
-Same switch also means the sign-in emails will come from an @meditatewithme.com address rather than a generic one, which makes them land in inboxes instead of spam.
+Same change means the sign in emails will come from an @meditatewithme.com address instead of a generic one, so they'll stop going to spam.
 
-Nothing about your ownership changes. It stays your domain, on your GoDaddy account. While you're there, worth checking auto-renew is on. It runs out February 2027.
-
-Tenzing
+Domain stays yours on your GoDaddy account, nothing changes there. While you're in it, worth checking auto renew is on. Runs out Feb 2027.
