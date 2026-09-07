@@ -67,22 +67,27 @@ as a migration.
 3. In **Authentication → Providers → Email**, confirm Email/Magic Link remains
    enabled. `signInWithOtp` intentionally creates a new user on first use;
    that is the account-creation path, not a separate registration form.
-4. In **Authentication → SMTP**, configure a branded, production sender and
-   verify its domain. The default hosted SMTP is only suitable for team-address
-   testing and does not deliver ordinary visitors' login emails.
-4b. In **Authentication → Email Templates → Magic Link**, add `{{ .Token }}` to
-   the template. **The account flow asks for a six-digit code and the stock
-   template does not contain one.** Everything else works without this: the
-   panel says "the link in that email works too", `emailRedirectTo` is still
-   sent, and the link still signs people in. But until this is done the code box
-   on the last step has nothing to receive.
-
-   **Blocked until item 4 is done, and not by choice.** Tried on 7 September
-   2026 through the Management API and refused: *"Email template modification
-   is not available for free tier projects using the default email provider.
-   Please upgrade your plan or configure a custom SMTP provider."* So the order
-   is fixed: SMTP first, then this, in the dashboard or with the same API call.
-   The template to paste once it is allowed:
+4. ~~In **Authentication → SMTP**, configure a branded, production sender and
+   verify its domain.~~ **Half done, 7 September 2026 (evening).** Tenzing
+   set custom SMTP in the dashboard (Authentication → Emails → SMTP Settings):
+   host `smtp.resend.com`, port 465, user `resend`, sender name *Meditate
+   With Me*. Read back through the Management API; enabling it moved
+   `rate_limit_email_sent` from 2 to 30 on its own. **The sender address is
+   Resend's test one, `onboarding@resend.dev`, because there is no domain
+   yet.** That delivers only to the Resend account's own inbox and Gmail put
+   the first message in spam on the domain's reputation. The other half: buy
+   the domain, add it in Resend → Domains, put its DKIM/SPF/DMARC records at
+   the registrar, wait for *Verified*, then change **only the sender email**
+   on the same Supabase page to `hello@` that domain. Nothing else changes.
+4b. ~~In **Authentication → Email Templates → Magic Link**, add `{{ .Token }}`
+   to the template.~~ **Done 7 September 2026 (evening)**, minutes after item
+   4 unblocked it, through the Management API (the earlier refusal, *"Email
+   template modification is not available for free tier projects using the
+   default email provider"*, went away with the default provider). Subject
+   *Your code for Meditate With Me*; body as below. Proved end to end: a real
+   `/otp` request against the live project at 19:59 UTC produced an email in
+   Tenzing's Gmail with a six-digit code rendered in large type and the link
+   underneath. The code box on the last step now has something to receive.
 
    ```html
    <h2>Your code</h2>
@@ -90,8 +95,6 @@ as a migration.
    <p style="font-size:28px;letter-spacing:0.3em;font-weight:bold">{{ .Token }}</p>
    <p>Or <a href="{{ .ConfirmationURL }}">follow this link</a> instead. Either works once, within the hour.</p>
    ```
-
-   with the subject *Your code for Meditate With Me*.
 4c. ~~In **Authentication → Providers → Email**, set **Email OTP Length** to
    `6`.~~ **Done 7 September 2026**, through the Management API
    (`mailer_otp_length: 6`), re-read afterwards, and proved end to end with a
@@ -126,15 +129,15 @@ What this establishes:
   `magic_link`, `/verify` 303, `Login` with `login_method: implicit` — from
   `https://meditatewithme.vercel.app`. Three of four accounts confirmed within
   a minute of asking.
-- **Everyone is signing in with the link, not the code.** Every login recorded
-  is `implicit`, which is the link path. That is expected: the email carries no
-  code, and cannot until the sender is replaced (4, then 4b). 4c was done later
-  the same day.
-- **The sender is still Supabase's shared one.** `mail_from` is
-  `noreply@mail.app.supabase.io`. Item 4 has never been done. The live config
-  also shows `rate_limit_email_sent = 2` — two emails an hour, project-wide,
-  which is the default sender's ceiling and the likeliest explanation for the
-  lost sign-up below.
+- **Everyone had been signing in with the link, not the code.** Every login
+  recorded up to that afternoon is `implicit`, which is the link path. That
+  was expected: the email carried no code until the sender was replaced (4,
+  then 4b), both done that evening. 4c was done earlier the same day.
+- **The sender was Supabase's shared one until that evening.** `mail_from`
+  was `noreply@mail.app.supabase.io` with `rate_limit_email_sent = 2` — two
+  emails an hour, project-wide, the default sender's ceiling and the likeliest
+  explanation for the lost sign-up below. Now Resend, limit 30, sender
+  address still the test one (item 4).
 - **One sign-up was lost.** The fourth account was created 39 minutes after
   the third, in the same hour, and never confirmed — its `confirmation_token`
   is still pending and `email_confirmed_at` is null, so Supabase accepted the
@@ -213,17 +216,18 @@ invoice you weren't expecting" promise forbids.
   5.1.1(v) and is what the privacy notice's erasure paragraph will point at.
 - [ ] Perform real-phone QA and review keyboard navigation, contrast, and
   `prefers-reduced-motion` behaviour.
-- [ ] Configure Auth URL allow-list and production SMTP; complete the
-  cross-device magic-link acceptance test above. **This is now the most urgent
-  item on the list, and it is no longer hypothetical** — see *Evidence from
-  the live project*, below. One of the four accounts created since launch
-  never confirmed, and mail is still leaving Supabase's shared sender.
-- [ ] After the SMTP sender is in, add `{{ .Token }}` to the Magic Link
-  template (4b) — refused on the free tier while the default sender is in use,
-  so it cannot go first. 4c (OTP length 6) is done. Until 4b is done the code
-  box on the last step is decorative.
-- [ ] Attach and verify the custom domain/DNS, update Supabase Site URL, and
-  repeat the production auth test.
+- [x] ~~Configure Auth URL allow-list and production SMTP.~~ URL allow-list
+  done earlier on 7 September 2026; SMTP through Resend that evening (item 4).
+  What remains of it is the domain, below.
+- [x] ~~After the SMTP sender is in, add `{{ .Token }}` to the Magic Link
+  template (4b).~~ Done 7 September 2026, proved with a real code in a real
+  inbox. The code box on the last step is no longer decorative.
+- [ ] **Buy and attach the custom domain.** This is now the single item
+  between visitors and a sign-in email that arrives: verify it in Resend,
+  change the SMTP sender address to it (item 4), attach it to Vercel, update
+  Supabase Site URL and the redirect allow-list, and repeat the production
+  auth test from a second device. Until then sign-in mail delivers only to
+  Tenzing's own inbox, and to its spam folder.
 - [ ] Review the existing Supabase security-advisor notices before launch:
   heartbeats has deliberately no browser RLS policy; `touch_updated_at` has a
   mutable search-path warning that needs a separate, tested migration.

@@ -27,25 +27,29 @@ Known open at the moment of launch, and still open:
   and minimum-age decisions. The site sets a localStorage id, writes
   heartbeats, and now asks for a name and an email address, so this is not a
   cosmetic gap — and the name is a new category the inventory has to cover.
-- Production SMTP is not configured: mail still leaves Supabase's shared
-  sender, `noreply@mail.app.supabase.io`, confirmed in the auth logs on 7
-  September 2026. Everything works signed out. **This has already cost a real
-  sign-up:** of the four accounts on the project, one — created 4 September at
-  13:50, thirty-nine minutes after the one before it — never confirmed and
-  never signed in, and its confirmation token is still pending. The shared
-  sender is rate-limited per hour and is documented as unsuitable for anyone
-  outside the project team, which fits what happened; the auth logs for that
-  day have since aged out, so the cause cannot now be proven from here.
-- The account flow asks for a six-digit code, and the stock Supabase email
-  template does not contain one — `{{ .Token }}` has to be added to it. That
-  edit is **refused on the free tier while the default sender is in use**
-  (tried through the Management API, 7 September 2026), so it waits on the
-  SMTP item above. The auth server's own code length was moved from eight
-  digits to six the same day and proved with a throwaway user. Until the
-  template can change, the panel's own note ("the link in that email works
-  too") is the working path, and the link is still sent.
+- Mail leaves through Resend, not Supabase's shared sender, since the evening
+  of 7 September 2026: Tenzing set custom SMTP in the dashboard (host
+  `smtp.resend.com`, sender name *Meditate With Me*), which also lifted the
+  hourly send limit from 2 to 30. **The sender address is still Resend's test
+  one, `onboarding@resend.dev`**, because there is no domain yet. That address
+  delivers only to the Resend account's own inbox, and Gmail filed the first
+  message from it as spam ("similar to messages identified as spam in the
+  past" — the domain's reputation, not the message). So sign-in mail is still
+  not reaching ordinary visitors. Before Resend, the shared Supabase sender
+  had already cost a real sign-up: of the four accounts on the project, one,
+  created 4 September at 13:50, never confirmed and never signed in.
+- The email now carries the six-digit code. With the default sender gone the
+  template could be edited, and it was, the same evening, through the
+  Management API: subject *Your code for Meditate With Me*, the code in large
+  type, the link underneath as the alternative. Proved end to end: a real
+  request from the live site produced an email with `754334` rendered where
+  `{{ .Token }}` was, in Tenzing's inbox. The auth server's code length had
+  been moved from eight digits to six earlier that day.
 - The custom domain is unattached; Supabase Site URL points at the Vercel
-  address.
+  address. **This is now the one thing between visitors and a working
+  sign-in email:** buy the domain, verify it in Resend (DKIM, SPF, DMARC),
+  change only the sender email in Supabase's SMTP page to `hello@` that
+  domain, and the spam placement and the own-inbox restriction both go.
 - No real-device QA pass recorded. *(The favicon and Open Graph card landed 7
   September 2026 — see §2.)*
 
