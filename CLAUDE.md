@@ -85,6 +85,26 @@ commit until the next piece of work lands on `dev`.
 - `supabase/migrations/` — SQL, forward-only
 - `tests/` — mirrors `lib/`
 
+## An iOS app is coming — keep `lib/` portable
+
+Decided 6 September 2026. Nothing is being built for it yet and no plan is
+approved, but one rule applies to every commit from now on:
+
+**Never put a browser-only global in `lib/`.** No `window`, `document`,
+`localStorage`, `navigator`, `AudioContext`. `tests/portability.test.ts` fails
+the build if you do, and it will tell you what to do instead — take the value
+as a parameter, the way `lib/clock.ts` takes `fetchImpl`. Platform access lives
+in `components/`, behind a hook. `fetch` and `performance` are fine; both exist
+in React Native.
+
+That is the whole rule. `lib/` is the ~1,370 lines an iOS port keeps unchanged,
+including the entire shared-hour scheduler, and it is only cheap to move while
+it stays clean. Do **not** build abstraction layers, storage adapters or audio
+wrappers in anticipation — the audio graph is being rewritten natively whatever
+happens, and the three `localStorage` call sites are all in hooks already.
+Speculative plumbing is the expensive kind of preparation; the boundary is the
+cheap kind.
+
 ## Applying a migration — never `db push`
 
 ```bash
