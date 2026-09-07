@@ -75,10 +75,12 @@ as a migration.
    `rate_limit_email_sent` from 2 to 30 on its own. **The sender address is
    Resend's test one, `onboarding@resend.dev`, because there is no domain
    yet.** That delivers only to the Resend account's own inbox and Gmail put
-   the first message in spam on the domain's reputation. The other half: buy
-   the domain, add it in Resend → Domains, put its DKIM/SPF/DMARC records at
-   the registrar, wait for *Verified*, then change **only the sender email**
-   on the same Supabase page to `hello@` that domain. Nothing else changes.
+   the first message in spam on the domain's reputation. The other half:
+   Jonny's domain — he already owns it, and its name is not recorded in this
+   repository, so get it from him along with registrar access. Add it in
+   Resend → Domains, put its DKIM/SPF/DMARC records at the registrar, wait
+   for *Verified*, then change **only the sender email** on the same Supabase
+   page to an address at it. Nothing else changes.
 4b. ~~In **Authentication → Email Templates → Magic Link**, add `{{ .Token }}`
    to the template.~~ **Done 7 September 2026 (evening)**, minutes after item
    4 unblocked it, through the Management API (the earlier refusal, *"Email
@@ -222,7 +224,8 @@ invoice you weren't expecting" promise forbids.
 - [x] ~~After the SMTP sender is in, add `{{ .Token }}` to the Magic Link
   template (4b).~~ Done 7 September 2026, proved with a real code in a real
   inbox. The code box on the last step is no longer decorative.
-- [ ] **Buy and attach the custom domain.** This is now the single item
+- [ ] **Attach Jonny's domain.** He owns it; the name is not written down
+  here, so ask him, and get registrar access. This is now the single item
   between visitors and a sign-in email that arrives: verify it in Resend,
   change the SMTP sender address to it (item 4), attach it to Vercel, update
   Supabase Site URL and the redirect allow-list, and repeat the production

@@ -47,9 +47,11 @@ Known open at the moment of launch, and still open:
   been moved from eight digits to six earlier that day.
 - The custom domain is unattached; Supabase Site URL points at the Vercel
   address. **This is now the one thing between visitors and a working
-  sign-in email:** buy the domain, verify it in Resend (DKIM, SPF, DMARC),
-  change only the sender email in Supabase's SMTP page to `hello@` that
-  domain, and the spam placement and the own-inbox restriction both go.
+  sign-in email:** Jonny already owns one, twenty years old, never pointed —
+  its name is recorded nowhere in this repository, so ask him. Verify it in
+  Resend (DKIM, SPF, DMARC), change only the sender email in Supabase's SMTP
+  page to an address at it, and the spam placement and the own-inbox
+  restriction both go.
 - No real-device QA pass recorded. *(The favicon and Open Graph card landed 7
   September 2026 — see §2.)*
 
