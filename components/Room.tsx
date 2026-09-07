@@ -1097,7 +1097,17 @@ export default function Room({
             picture, which is the whole complaint. Smaller and quieter than
             `Sit again` and `Finish`, because they are the second rank.
           */}
-          {activity.kind === 'finished' && phase !== 'open' && (
+          {/* GUESTS ONLY. Thirteen seconds after a bell is not the moment for
+              a settings row, and for somebody signed in these two are on Home
+              — the practice log is most of that page, and the room switch is
+              in its settings. So the signed-in ending is Sit again and Done,
+              and nothing else to read.
+
+              A guest has no Home. This is the only place they can see their
+              own log or turn the dots off, so they keep both. The design audit
+              called these "the two nobody came back for", and that is true of
+              the person with somewhere else to find them. */}
+          {activity.kind === 'finished' && phase !== 'open' && !home && (
             <div
               className={`mt-3 flex flex-wrap items-center justify-center gap-2 ${ending(2)}`}
             >

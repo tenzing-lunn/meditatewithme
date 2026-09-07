@@ -145,9 +145,11 @@ rolls forward to the hour after. Nobody is refused.
 **The ending, thirty seconds long.** Ten seconds of *Come back.* with the
 bowl still ringing and the mix receding; then the minutes sat at display size
 and a table of facts (streak and total, shown only when they say something;
-how many you sat with, read once at the bell); then the controls — sit again,
-your practice, hide/show the room — and, alone at the foot of the frame, the
-account offer.
+how many you sat with, read once at the bell); then the controls, and, alone
+at the foot of the frame, the account offer. Signed in, the controls are *Sit
+again* and *Done* and nothing else — the practice log and the room switch are
+on Home. A guest has no Home, so their ending keeps *Your practice* and
+*Hide the room* as well: it is the only place they can reach either.
 
 **The practice log.** Every sitting is recorded locally; a streak is computed
 in local time and not sitting today does not break it. With an account it
