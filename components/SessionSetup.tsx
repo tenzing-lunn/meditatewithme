@@ -51,7 +51,7 @@ export type Step = (typeof STEPS)[number];
 const QUESTION: Record<Step, string> = {
   duration: 'How long?',
   bell: 'How should it end?',
-  sound: 'Any background noise?',
+  sound: 'Any sound?',
 };
 
 /** "rain", "rain and wind", "rain, wind and night" */
@@ -361,7 +361,7 @@ export default function SessionSetup({
                 type="button"
                 role="switch"
                 aria-checked={noise}
-                aria-label="Background noise"
+                aria-label="Sound"
                 onClick={toggleNoise}
                 className="rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper group flex min-h-11 items-center gap-3 self-start focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
               >

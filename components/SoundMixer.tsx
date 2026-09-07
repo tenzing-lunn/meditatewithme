@@ -62,7 +62,7 @@ export default function SoundMixer({
   return (
     <div className={compact ? 'w-full space-y-2' : 'w-full space-y-1'}>
       {compact && (
-        <span className="text-ink-3 block text-sm">Ambiance</span>
+        <span className="text-ink-3 block text-sm">Sound</span>
       )}
 
       {TRACKS.map((track) => {

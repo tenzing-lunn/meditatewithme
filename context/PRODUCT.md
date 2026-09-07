@@ -87,7 +87,7 @@ before deciding.
 
 **Begin → three questions, one per screen.** *How long* (1 minute, then 5 to
 55 in fives, or *until the bell*, which now rings at :55), *which bell* (singing bowl, gong, struck
-bell — each can be auditioned), *any background noise* — a switch, `No` by
+bell — each can be auditioned), *any sound* — a switch, `No` by
 default, and only when it is flipped to `Yes` do the five ambient beds appear,
 each with its own fader and play button over one master fader named *Volume*
 (it was *All*, which read as a sixth bed rather than as the master). The five
