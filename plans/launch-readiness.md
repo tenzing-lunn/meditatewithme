@@ -8,7 +8,7 @@ sets an anonymous id, records heartbeats and offers email sign-in, with no
 privacy notice. The original build brief is retained as a historical baseline
 in `plans/v1-build-spec.html`.
 
-## Current state — verified 1 September 2026, `dev` at `8d59fba`
+## Current state — verified 7 September 2026, `dev` at `353aee0`
 
 - [x] Steps 01–07 are implemented on `dev`: room, timing, audio, presence,
   optional accounts, preference sync, and practice-log sync.
@@ -31,6 +31,11 @@ in `plans/v1-build-spec.html`.
 - [x] 133 tests, typecheck and a clean production build at `5b6b239`; no
   scrolling and no AA contrast failure at 1280×800 or 375×812.
 - [x] Launched: `main` serves the room. Rollback candidate `defa583`.
+- [x] Released 7 September 2026 (`cc712c6`, `dev` at `353aee0` merged into
+  `main`, on Tenzing's word): account menu, account deletion, the 55-minute
+  hour, matched beds, icon and share image, per-device sign-out. Typecheck,
+  168 tests and the build passed first; the timer migration was read back
+  from production before the merge. Rollback candidate `7026657`.
 - [ ] Step 08: legal, real-device QA, and launch configuration — all still
   open on the live site.
 

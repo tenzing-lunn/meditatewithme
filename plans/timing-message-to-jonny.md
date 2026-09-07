@@ -2,8 +2,10 @@
 
 Unsent. Move to `docs/` once it's gone out.
 
-Jonny's 55-minute cap (7 September 2026) is built — `ARCHITECTURE.md` §6.3.
-This is the one thing left that he has to decide, and it is small.
+Jonny's 55-minute cap (7 September 2026) is built — `ARCHITECTURE.md` §6.3 —
+and **live since the release merge `cc712c6` later that day**, on Tenzing's
+word, before this message went out. This is the one thing left that he has to
+decide, and it is small.
 
 Say "the 55 minutes", not "55/5". The second was shorthand invented while
 building it; it appears nowhere Jonny has ever seen, and it reads as a version
@@ -43,7 +45,7 @@ a rebuild of his expectations if they surface after launch.
 
 ---
 
-Hi Jonny — the 55 minutes is done and on the test site.
+Hi Jonny — the 55 minutes is done and live on the site.
 
 Five things about the timing I'd like settled so we're not coming back to it. I've put what I'd do next to each — if you're happy with the lot, just say so and I'll crack on.
 

@@ -5,8 +5,8 @@ to get it here, and what is still undecided. `VISION.md` is the idea;
 `ARCHITECTURE.md` is how it runs; this is the thing in between. **When a commit
 changes what a visitor sees, fix this file in the same commit.**
 
-Last verified 1 September 2026 at `8d59fba` (`dev`), which is also what
-`main` serves.
+Last verified 7 September 2026 at `353aee0` (`dev`), which is what `main`
+serves as of the release merge `cc712c6` the same day.
 
 ---
 
@@ -15,6 +15,11 @@ Last verified 1 September 2026 at `8d59fba` (`dev`), which is also what
 **The room is live at meditatewithme.vercel.app.** `main` was merged from
 `dev` at `626ef93` on 1 September 2026 (11:55 local), replacing the holding
 page. Every push to `main` is now a release of the room, not of a placeholder.
+The latest release is `cc712c6` on 7 September 2026, which put live the
+three-line account menu, in-app account deletion, the 55-minute hour with the
+shared bell at :55, the loudness-matched beds, the icon and share image, and
+per-device sign-out. **The 55-minute hour went live before Jonny answered the
+timing questions** in `plans/timing-message-to-jonny.md`; Tenzing's call.
 
 Known open at the moment of launch, and still open:
 
@@ -44,7 +49,8 @@ Known open at the moment of launch, and still open:
 - No real-device QA pass recorded. *(The favicon and Open Graph card landed 7
   September 2026 — see §2.)*
 
-Rollback candidate named in the launch commit: `defa583`.
+Rollback candidate named in the launch commit: `defa583`; in the latest
+release, `7026657`.
 
 ## 2. What a visitor gets
 
