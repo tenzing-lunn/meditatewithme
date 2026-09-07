@@ -418,28 +418,31 @@ function useCorrectedClock(): number | null {
 }
 
 /** "10 minutes · singing bowl · rain and wind" */
+/** "Until 12:55" or "10 minutes" — the answer to How long, as words. */
+function durationAnswer(prefs: UserPreferences, now: number | null): string {
+  if (prefs.untilBell) {
+    return now === null
+      ? 'Until the next bell'
+      : `Until ${localTime(nextSharedBellAt(now))}`;
+  }
+  const d = durationLabel(prefs.timerMinutes);
+  return `${d.value} ${d.unit}`;
+}
+
+/** "in silence" or "rain and wind" — the answer to Sound, as words. */
+function soundAnswer(prefs: UserPreferences): string {
+  const on = TRACKS.filter((t) => (prefs.soundMix[t.slug] ?? 0) > 0);
+  return on.length === 0
+    ? 'in silence'
+    : sentenceList(on.map((t) => t.label.toLowerCase()));
+}
+
 function settingsLine(
   prefs: UserPreferences,
   now: number | null,
 ): string {
-  const duration = prefs.untilBell
-    ? now === null
-      ? 'Until the next bell'
-      : `Until ${localTime(nextSharedBellAt(now))}`
-    : (() => {
-        const d = durationLabel(prefs.timerMinutes);
-        return `${d.value} ${d.unit}`;
-      })();
-
   const bell = BELLS[prefs.endBell].label.toLowerCase();
-
-  const on = TRACKS.filter((t) => (prefs.soundMix[t.slug] ?? 0) > 0);
-  const sound =
-    on.length === 0
-      ? 'in silence'
-      : sentenceList(on.map((t) => t.label.toLowerCase()));
-
-  return `${duration} · ${bell} · ${sound}`;
+  return `${durationAnswer(prefs, now)} · ${bell} · ${soundAnswer(prefs)}`;
 }
 
 /**
@@ -555,17 +558,25 @@ function dayLabel(atMs: number): string {
   });
 }
 
+type Section = 'duration' | 'bell' | 'sound' | 'room';
+
 /**
- * All three questions at once.
+ * The four questions, one open at a time.
  *
- * The flow asks one thing per screen because somebody is standing at the door
- * of a meditation and every extra thing on that screen is something between
- * them and it. Here there is no door — this is a person deliberately changing a
- * setting — so the reason for the flow does not apply, and three screens to
- * change one number would be the friction the flow exists to avoid, wearing the
- * costume of consistency.
+ * This was every control at once — slider, the shared-bell button, three
+ * bells, five play buttons, six faders and the room switch, seventeen in one
+ * disclosure — on the argument that there is no door here, so the flow's
+ * one-thing-at-a-time reason did not apply. That was fair about why it was one
+ * panel and silent about why it was seventeen controls: somebody who came to
+ * change the length still had to read past the mixer to find out they had.
  *
- * Everything below writes straight through `update`, which persists to
+ * Now `Change` opens four rows, each carrying its current answer in words, and
+ * a row opens only its own controls. The person who wants ten minutes instead
+ * of twenty taps one row and moves one slider; the mixer exists only for the
+ * person who asked for it. The answers on the closed rows are the same words
+ * the line above the circle uses, so the panel reads as that line, unfolded.
+ *
+ * Everything still writes straight through `update`, which persists to
  * localStorage and syncs to the account. There is no save button because there
  * is nothing to save: the line above the circle changes as you change it, and
  * that line is the confirmation.
@@ -589,9 +600,21 @@ function Settings({
     ? TIMER_STOPS.length
     : timerStopIndex(prefs.timerMinutes);
 
+  // Nothing open until a row is chosen: the panel's first job is to say what
+  // the answers are, and four closed rows do that in four lines.
+  const [open, setOpen] = useState<Section | null>(null);
+  const toggle = (s: Section) => setOpen((v) => (v === s ? null : s));
+
+  const sound = soundAnswer(prefs);
+
   return (
-    <div className="border-rule mt-8 w-full max-w-md space-y-9 border-t pt-8">
-      <Field label="How long">
+    <div className="border-rule mt-8 w-full max-w-md border-t">
+      <Row
+        label="How long"
+        answer={durationAnswer(prefs, now)}
+        open={open === 'duration'}
+        onToggle={() => toggle('duration')}
+      >
         <p aria-hidden className="font-display text-ember text-3xl leading-none">
           {prefs.untilBell ? (
             <>
@@ -660,9 +683,14 @@ function Settings({
             {bellLabel || 'the next bell'}
           </span>
         </button>
-      </Field>
+      </Row>
 
-      <Field label="How it ends">
+      <Row
+        label="How it ends"
+        answer={BELLS[prefs.endBell].label}
+        open={open === 'bell'}
+        onToggle={() => toggle('bell')}
+      >
         <div className="flex gap-2">
           {(Object.keys(BELLS) as BellKind[]).map((kind) => (
             <button
@@ -687,13 +715,23 @@ function Settings({
             </button>
           ))}
         </div>
-      </Field>
+      </Row>
 
-      <Field label="Sound">
+      <Row
+        label="Sound"
+        answer={sound.charAt(0).toUpperCase() + sound.slice(1)}
+        open={open === 'sound'}
+        onToggle={() => toggle('sound')}
+      >
         <SoundMixer soundMix={prefs.soundMix} onChange={onSound} />
-      </Field>
+      </Row>
 
-      <Field label="The room">
+      <Row
+        label="The room"
+        answer={prefs.showCount ? 'Shown' : 'Hidden'}
+        open={open === 'room'}
+        onToggle={() => toggle('room')}
+      >
         <button
           type="button"
           onClick={() => update({ showCount: !prefs.showCount })}
@@ -711,7 +749,60 @@ function Settings({
             {prefs.showCount ? 'On' : 'Off'}
           </span>
         </button>
-      </Field>
+      </Row>
+    </div>
+  );
+}
+
+/**
+ * One question on the settings panel: its name, its current answer, and the
+ * controls for it when opened. The answer is the same words the line above
+ * the circle uses, so reading the four closed rows is reading that line
+ * unfolded.
+ */
+function Row({
+  label,
+  answer,
+  open,
+  onToggle,
+  children,
+}: {
+  label: string;
+  answer: string;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className="border-rule border-b">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper flex min-h-14 w-full items-center justify-between gap-4 text-left text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+      >
+        <span className="text-ink-3">{label}</span>
+        <span className="flex items-center gap-3">
+          <span className={open ? 'text-ember' : 'text-ink'}>{answer}</span>
+          <svg
+            viewBox="0 0 24 24"
+            className={`text-ink-3 size-3.5 transition-transform duration-300 ${
+              open ? 'rotate-180' : ''
+            }`}
+            fill="none"
+            aria-hidden
+          >
+            <path
+              d="m6 9 6 6 6-6"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+      </button>
+      {open && <div className="pt-1 pb-7">{children}</div>}
     </div>
   );
 }
@@ -895,13 +986,3 @@ function AccountCard({
   );
 }
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div>
-      <p className="text-ink-3 mb-3 text-xs tracking-[0.14em] uppercase">
-        {label}
-      </p>
-      {children}
-    </div>
-  );
-}
