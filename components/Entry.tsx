@@ -38,7 +38,8 @@ import { useSyncPreferences } from './useSyncPreferences';
  * is a route because it genuinely is another page; sitting is not.
  */
 export default function Entry() {
-  const { state: auth, linkError, signIn, verify, signOut } = useAuth();
+  const { state: auth, linkError, signIn, verify, signOut, deleteAccount } =
+    useAuth();
   const { prefs, update, replace, loaded } = usePreferences();
 
   const userId = auth.status === 'signed-in' ? auth.user.id : null;
@@ -155,6 +156,7 @@ export default function Entry() {
       // a name. Home falls back to its own masthead rather than inventing one.
       name={displayName(auth.user)}
       signOut={signOut}
+      deleteAccount={deleteAccount}
     />
   );
 }

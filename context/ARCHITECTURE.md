@@ -460,6 +460,45 @@ The display is deliberately not a scoreboard: no goal, no target, nothing turns 
 
 `sittings` is the most sensitive table here. A preference reveals that you like a gong; this reveals when you were awake, how often, and for how long. Its RLS was tested the same way as `preferences` — all six attacks refused, including writing into another user's history and reassigning your own row to them.
 
+### Deleting an account
+
+`DELETE /api/account`, and it is the one operation in the product that
+genuinely cannot happen in the browser. RLS governs `public`, not `auth`, and
+the only API that removes a user — `auth.admin.deleteUser` — needs the service
+role key. Hence a route handler.
+
+**The id comes from `getUser(token)` and never from the request.** There is no
+body to parse and no `userId` parameter to tamper with, so the only account the
+endpoint can delete is the one whose token it just verified against the Auth
+server. Taking an id from the caller here — however carefully checked — would
+be a service-role endpoint that deletes arbitrary users on request. The token
+is verified over the network rather than decoded locally, because a locally
+parsed JWT still looks valid after its session has been revoked.
+
+Everything else goes by cascade, which is why this needed no migration:
+
+```
+auth.users → profiles → preferences
+                     → sittings
+```
+
+All three were already `ON DELETE CASCADE`. That was checked against
+`pg_constraint` on the live database rather than read off the migration files,
+and then checked again by doing it: a throwaway account with a profile, a
+preferences row and two sittings, deleted through the real endpoint, left zero
+rows in all three tables and did not touch a second account created alongside
+it. The delete is hard, not soft — a soft delete would leave the row and the
+email address on it, which is not what "delete my account" means and not what
+App Store guideline 5.1.1(v) means either.
+
+**`heartbeats` is not deleted, and that is the privacy property working.** It
+is keyed by `anon_id` and has no `user_id` column, so a signed-in person's
+heartbeats are not linked to their account at all — see §5, where that is the
+whole point. There is nothing to find and nothing to delete, and the rows are
+pruned on a schedule regardless. The practice log in localStorage is also left
+alone: it is the visitor's own copy on their own device, they asked to close an
+account rather than to destroy it, and the confirmation panel says so plainly.
+
 ### Validation happens in one place
 
 `lib/preferences.ts` `normalize()` is the only thing that decides what a valid preference is. Both sources go through it: localStorage, which a user can hand-edit in devtools, and the `preferences` table, which syncs to every device someone owns. Validating in two places means one path drifts, and the failures are quiet — a bad bell does nothing at all until a sitting ends.
@@ -512,6 +551,7 @@ Everything degrades to "you can still meditate."
 | Audio file 404s | That track is hidden from the mixer. Others play. | Yes |
 | Focus loop 404s | Static fallback image. | Yes |
 | Auth down | Guests unaffected. Sign-in shows a plain message. | Yes |
+| Account deletion fails | Panel stays open saying nothing was changed. Never reports success it did not get. | Yes |
 
 **Design rule: nothing in this app should ever show an error screen.** Every failure hides a control or silently degrades. Somebody sitting down to meditate should never be shown a stack trace or a red banner.
 

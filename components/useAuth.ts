@@ -296,7 +296,54 @@ export function useAuth() {
     }
   }, []);
 
-  return { state, linkError, signIn, verify, signOut };
+  /**
+   * Delete the account, for good.
+   *
+   * The browser cannot do this itself — see the note in `app/api/account`. All
+   * this does is present the current access token to that handler, which is the
+   * only thing that proves which account to remove.
+   *
+   * `scope: 'local'` on the way out, and that is not a detail. The default
+   * sign-out POSTs to `/logout` with a token belonging to a user who no longer
+   * exists, which fails — and a caught failure there would leave the session in
+   * localStorage, so the app would carry on rendering Home for a deleted
+   * account until the token expired. A local sign-out has no server to disagree
+   * with: it clears the stored session and fires `onAuthStateChange`, which is
+   * exactly what is wanted once the account is already gone.
+   *
+   * Returns an error string rather than throwing, like `signIn` and `verify`,
+   * because the caller puts it on screen. A null return means the account is
+   * deleted and the app is already changing screen underneath the panel.
+   */
+  const deleteAccount = useCallback(async (): Promise<string | null> => {
+    try {
+      const client = browserClient();
+      const { data } = await client.auth.getSession();
+      const token = data.session?.access_token;
+
+      if (!token) {
+        return 'You are no longer signed in, so there is nothing here to delete.';
+      }
+
+      const response = await fetch('/api/account', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        return response.status === 401
+          ? 'That session has expired. Sign in again and you can delete the account from here.'
+          : 'The account could not be deleted just now. Nothing has been changed — please try again.';
+      }
+
+      await client.auth.signOut({ scope: 'local' });
+      return null;
+    } catch {
+      return 'Could not reach the server. Nothing has been changed — please try again.';
+    }
+  }, []);
+
+  return { state, linkError, signIn, verify, signOut, deleteAccount };
 }
 
 /**

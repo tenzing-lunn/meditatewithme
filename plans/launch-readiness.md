@@ -86,6 +86,38 @@ as a migration.
    Add CAPTCHA before public promotion if abuse is observed or the sender has a
    low tolerance for unsolicited email.
 
+### Evidence from the live project — 7 September 2026
+
+Checked against `qcwgquwjazhsettuemgt` rather than assumed. Four accounts exist.
+
+| Created | Confirmed | Signed in | Sittings |
+|---|---|---|---|
+| 28 Aug 23:41 | yes, 29s later | 3 Sep | 28 |
+| 4 Sep 05:03 | yes, 33s later | **7 Sep 08:12** | 3 |
+| 4 Sep 13:11 | yes, 12s later | 4 Sep | 0 |
+| 4 Sep 13:50 | **never** | **never** | 0 |
+
+What this establishes:
+
+- **Account creation works in production.** The 7 September sign-in is a
+  complete round trip in the auth logs — `/otp` 200, `mail.send` of type
+  `magic_link`, `/verify` 303, `Login` with `login_method: implicit` — from
+  `https://meditatewithme.vercel.app`. Three of four accounts confirmed within
+  a minute of asking.
+- **Everyone is signing in with the link, not the code.** Every login recorded
+  is `implicit`, which is the link path. That is expected: 4b and 4c below are
+  both still open, so the code box cannot yet work for anybody.
+- **The sender is still Supabase's shared one.** `mail_from` is
+  `noreply@mail.app.supabase.io`. Item 4 has never been done.
+- **One sign-up was lost.** The fourth account was created 39 minutes after
+  the third, in the same hour, and never confirmed — its `confirmation_token`
+  is still pending and `email_confirmed_at` is null, so Supabase accepted the
+  send and the visitor never came back. The shared sender's per-hour rate
+  limit is the obvious candidate and a spam folder is the other; the auth logs
+  only retain 24 hours on this plan, so 4 September is gone and **the cause
+  cannot be proven from here.** What is certain is that a real person tried to
+  make an account on this site and did not get one.
+
 ### End-to-end acceptance test — required after configuration
 
 Use a real, non-team inbox and test both desktop and phone:
@@ -142,10 +174,23 @@ invoice you weren't expecting" promise forbids.
   `app/apple-icon.tsx` and `app/opengraph-image.tsx`, all generated from one
   flame in `components/FlameMark.tsx`. All three prerender static, so the
   Google Fonts fetch happens at build and never on a crawler's request.
+- [x] In-app account deletion. Done 7 September 2026: `DELETE /api/account`
+  plus *Your account* at the foot of Home. Needed no migration — every
+  foreign key from `auth.users` down through `profiles` to `preferences` and
+  `sittings` was already `ON DELETE CASCADE`, verified against the live
+  database rather than read off the migration files. Verified end to end
+  against the live project with a throwaway account on `example.invalid`:
+  13/13, including that the cascade really empties all three tables, that a
+  second account alongside it is untouched, and that no-token, bad-token and
+  bare-service-key requests are all 401. Satisfies App Store guideline
+  5.1.1(v) and is what the privacy notice's erasure paragraph will point at.
 - [ ] Perform real-phone QA and review keyboard navigation, contrast, and
   `prefers-reduced-motion` behaviour.
 - [ ] Configure Auth URL allow-list and production SMTP; complete the
-  cross-device magic-link acceptance test above.
+  cross-device magic-link acceptance test above. **This is now the most urgent
+  item on the list, and it is no longer hypothetical** — see *Evidence from
+  the live project*, below. One of the four accounts created since launch
+  never confirmed, and mail is still leaving Supabase's shared sender.
 - [ ] In the same dashboard pass, add `{{ .Token }}` to the Magic Link template
   (4b) **and** set Email OTP Length to 6 (4c). Neither works without the other,
   and until both are done the code box on the last step is decorative.

@@ -97,6 +97,7 @@ export default function Home({
   email,
   name,
   signOut,
+  deleteAccount,
 }: {
   prefs: UserPreferences;
   update: (patch: Partial<UserPreferences>) => void;
@@ -114,6 +115,8 @@ export default function Home({
    */
   name: string | undefined;
   signOut: () => void;
+  /** Removes the account and everything synced to it. See `AccountCard`. */
+  deleteAccount: () => Promise<string | null>;
 }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const now = useCorrectedClock();
@@ -353,6 +356,15 @@ export default function Home({
                 <WorldLink count={count} litCount={litCount} />
               </Card>
             </div>
+
+            {/* ---- The way out, last on the page in both layouts ---------- */}
+            <Card title="Your account">
+              <AccountCard
+                email={email}
+                sittings={entries.length}
+                deleteAccount={deleteAccount}
+              />
+            </Card>
           </aside>
         </div>
       </div>
@@ -738,6 +750,138 @@ function WorldLink({
         →
       </span>
     </Link>
+  );
+}
+
+/**
+ * The account, and the way out of it.
+ *
+ * WHY THIS EXISTS
+ * Somebody who can make an account in two taps should not have to write an
+ * email to leave. It is also required of anything that reaches the App Store —
+ * guideline 5.1.1(v): an app offering account creation must offer account
+ * deletion inside the app, not a link to a support address — and it is the
+ * first thing the privacy notice in `plans/privacy-data-inventory.md` will have
+ * to point at when somebody asks how to exercise erasure. Cheap now, and it
+ * stops being cheap once there is a paying tier hanging off the same row.
+ *
+ * WHERE IT IS
+ * Last on the page, under the practice log, in both layouts. That is where it
+ * belongs rather than where it is hidden: the log is the thing the account is
+ * actually holding, so the control that removes it reads as the end of that
+ * section rather than as an unrelated danger zone. It is deliberately not near
+ * `Sign out` in the masthead — those two words sit close enough in meaning that
+ * putting them close together in space is asking for the wrong one.
+ *
+ * NO RED, ON PURPOSE
+ * There is no danger colour in this palette and this is not the change that
+ * introduces one. The hierarchy does the work instead: `Keep it` takes the
+ * ember treatment the rest of the product uses for "yes, this one", and the
+ * destructive control is the plain bounded one beside it. The safe choice being
+ * the emphasised one is the right way round for a confirmation, and it means
+ * the panel needs no colour it does not already own.
+ *
+ * WHAT THE COPY PROMISES, AND WHY IT IS EXACT
+ * Every noun in the confirmation is something the cascade actually removes —
+ * see `app/api/account/route.ts`. The line about the log staying on this device
+ * is there because it is true and would otherwise be a surprise: the account
+ * holds a copy, this browser holds the original, and destroying data on
+ * somebody's own machine is not what they asked for when they asked to close an
+ * account. Saying so is also the only honest way to describe what happens next,
+ * since they will land back on the landing page with their streak intact.
+ */
+function AccountCard({
+  email,
+  sittings,
+  deleteAccount,
+}: {
+  email: string | undefined;
+  sittings: number;
+  deleteAccount: () => Promise<string | null>;
+}) {
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  return (
+    <div className="flex flex-col items-start gap-4">
+      <p className="text-ink-3 text-sm break-words">
+        {email ?? 'Signed in.'}
+      </p>
+
+      {!confirming && (
+        <button
+          type="button"
+          onClick={() => {
+            setError(null);
+            setConfirming(true);
+          }}
+          className={QUIET}
+        >
+          Delete account
+        </button>
+      )}
+
+      {confirming && (
+        <div className="border-rule w-full rounded-control border p-4">
+          <p className="text-ink text-sm leading-relaxed">
+            This removes your account and everything it holds: your email
+            address, your name, your settings, and
+            {sittings === 1
+              ? ' the one sitting '
+              : ` the ${sittings} sittings `}
+            synced to it. It cannot be undone.
+          </p>
+
+          <p className="text-ink-3 mt-3 text-xs leading-relaxed">
+            Your practice log stays on this device — closing the account only
+            removes the copy we hold.
+          </p>
+
+          <div className="mt-5 flex flex-wrap gap-2">
+            {/* Ember, because keeping the account is the safe answer and the
+                emphasis belongs on the safe answer. */}
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                setError(null);
+                setConfirming(false);
+              }}
+              className="border-ember bg-ember-soft text-ember rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper min-h-11 flex-1 border px-4 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:opacity-50"
+            >
+              Keep it
+            </button>
+
+            <button
+              type="button"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                setError(null);
+                const message = await deleteAccount();
+                // No success branch, and no `setBusy(false)` on the way out:
+                // `onAuthStateChange` fires and this whole page unmounts. The
+                // only reason to come back here is to report a failure.
+                if (message) {
+                  setError(message);
+                  setBusy(false);
+                }
+              }}
+              className="border-rule text-ink-2 hover:border-ink-3 hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper min-h-11 flex-1 border px-4 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:opacity-50"
+            >
+              {busy ? 'Deleting' : 'Delete my account'}
+            </button>
+          </div>
+
+          {error && (
+            <p role="alert" className="text-ink-2 mt-3 text-xs leading-relaxed">
+              {error}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 

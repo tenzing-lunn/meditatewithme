@@ -22,8 +22,15 @@ Known open at the moment of launch, and still open:
   and minimum-age decisions. The site sets a localStorage id, writes
   heartbeats, and now asks for a name and an email address, so this is not a
   cosmetic gap — and the name is a new category the inventory has to cover.
-- Production SMTP is not configured: the account email will not arrive for an
-  ordinary visitor. Everything works signed out.
+- Production SMTP is not configured: mail still leaves Supabase's shared
+  sender, `noreply@mail.app.supabase.io`, confirmed in the auth logs on 7
+  September 2026. Everything works signed out. **This has already cost a real
+  sign-up:** of the four accounts on the project, one — created 4 September at
+  13:50, thirty-nine minutes after the one before it — never confirmed and
+  never signed in, and its confirmation token is still pending. The shared
+  sender is rate-limited per hour and is documented as unsuitable for anyone
+  outside the project team, which fits what happened; the auth logs for that
+  day have since aged out, so the cause cannot now be proven from here.
 - The account flow asks for a six-digit code, and the stock Supabase email
   template does not contain one — `{{ .Token }}` has to be added to it in the
   dashboard. Until then the panel's own note ("the link in that email works
@@ -109,6 +116,18 @@ the picture. It asks one thing at a time — your name, then your email, then th
 six-digit code from that email, with `Confirm and enter` under it. `I already
 have one` skips the name. Nothing is asked for that is not used: the name is
 what Home's masthead greets you by.
+
+**Closing an account.** *Your account* is the last thing on Home, under the
+practice log, showing the email the account is held under and a `Delete
+account` control. Pressing it opens a confirmation naming what goes — the email
+address, the name, the settings and the sittings, counted — and saying that the
+practice log on this device stays, because it does. `Keep it` carries the ember
+treatment and the destructive control does not: the emphasis belongs on the
+safe answer. Deletion is immediate and total; `profiles`, `preferences` and
+`sittings` all cascade from the auth row, and nothing is soft-deleted.
+
+Deliberately nowhere near `Sign out` in the masthead. The two are close enough
+in meaning that putting them close together in space invites the wrong one.
 
 **A link that does not work says so.** Magic links are single-use and a new one
 kills the last; clicking a spent one bounces you back to the landing signed out,
