@@ -61,9 +61,14 @@ before deciding.
 
 **Begin → three questions, one per screen.** *How long* (1 minute, then 5 to
 55 in fives, or *until the bell*, which now rings at :55), *which bell* (singing bowl, gong, struck
-bell — each can be auditioned), *any ambiance* (five ambient beds, each with
-its own fader and play button, over one master fader named *Volume* — it was
-*All*, which read as a sixth bed rather than as the master). Answers are
+bell — each can be auditioned), *any background noise* — a switch, `No` by
+default, and only when it is flipped to `Yes` do the five ambient beds appear,
+each with its own fader and play button over one master fader named *Volume*
+(it was *All*, which read as a sixth bed rather than as the master). The five
+beds *were* the question until 7 September 2026, which asked somebody who
+wanted to sit in silence to understand a mixer before they could decline one.
+Saying `No` silences the beds for real rather than hiding them, and saying
+`Yes` again within the flow puts back what was there. Answers are
 remembered. A back arrow leaves
 from the first screen and steps back from the others. *Start* is at the foot of
 the last screen. The audio context is unlocked on *Begin*, not on *Start*.
