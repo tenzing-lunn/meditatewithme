@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * The room, as a photograph with a live flame in it.
@@ -152,7 +152,7 @@ export default function CandleScene({
   burn = 0,
   reveal = true,
   onReady,
-  basePath = '/room-base.png',
+  basePath = '/room-base',
   flamePath = '/flame.png',
 }: {
   phase: ScenePhase;
@@ -190,6 +190,14 @@ export default function CandleScene({
    * ground and the room arrives underneath it a second later.
    */
   onReady?: () => void;
+  /**
+   * The photograph, without an extension.
+   *
+   * `.avif` and `.jpg` are both appended and offered to the browser, which
+   * picks. It is a stem rather than a path because the two have to stay a
+   * matched pair — a caller able to point at one of them independently could
+   * serve a different room to Safari than to Chrome.
+   */
   basePath?: string;
   flamePath?: string;
 }) {
@@ -237,30 +245,21 @@ export default function CandleScene({
   notify.current = onReady;
 
   /* WHEN THE PHOTOGRAPH IS ACTUALLY THERE
-     The room is a CSS background, and a background gives no load event — which
-     is why it used to appear whenever it appeared, with the copy fading in on
-     its own schedule beside it. Asking for the same URL through an Image gets
-     the event back; the browser answers the second request out of the same
-     cache entry, so this is a cache hit and not a second download. */
-  useEffect(() => {
-    const img = new Image();
-    let told = false;
-    const done = () => {
-      if (told) return;
-      told = true;
-      notify.current?.();
-    };
-    // An error counts. A photograph that 404s is a dark room, and a dark room
-    // is still something to show — waiting forever for it is not.
-    img.onload = done;
-    img.onerror = done;
-    img.src = basePath;
-    if (img.complete) done();
-    return () => {
-      img.onload = null;
-      img.onerror = null;
-    };
-  }, [basePath]);
+     The room used to appear whenever it appeared, with the copy fading in on
+     its own schedule beside it, because a CSS background gives no load event.
+     That was answered by requesting the same URL again through an `Image` and
+     relying on the second request being a cache hit.
+
+     The photograph is now a real `<img>`, so this is its own load event and
+     the duplicate request is gone. Told once: `onLoad` and `onError` both
+     arrive here, and a browser that fires neither is a room that never shows,
+     so an error counts as ready. */
+  const told = useRef(false);
+  const ready = useCallback(() => {
+    if (told.current) return;
+    told.current = true;
+    notify.current?.();
+  }, []);
 
   useEffect(() => {
     const el = stage.current;
@@ -586,15 +585,45 @@ export default function CandleScene({
             animation: breath ? 'room-drift 23s ease-in-out infinite' : undefined,
           }}
         >
-          <div
-            className="absolute inset-0 bg-cover"
-            style={{
-              backgroundImage: `url(${basePath})`,
-              backgroundPosition: '50% 46%',
-              filter: `blur(${(c.blur * I).toFixed(2)}px) brightness(${c.br}) saturate(1.04)`,
-              transition: `filter ${c.ms}ms ease-out`,
-            }}
-          />
+          {/* THE PHOTOGRAPH, AS AN ELEMENT RATHER THAN A BACKGROUND
+              It was a CSS background, which cost two things. A background has
+              no load event, so the readiness this scene reports upward had to
+              be faked by asking for the same URL again through an `Image` and
+              trusting the cache. And a background cannot negotiate a format,
+              so the only thing that could be served was the one URL in the
+              stylesheet — which was the 2.3 MB PNG master, the LCP element of
+              every visit, ten times the weight of every other asset combined.
+
+              A `<picture>` fixes both at once and deletes code: the browser
+              picks AVIF where it can and JPEG where it cannot, and `onLoad`
+              is the real event, so the `Image` preload effect is gone.
+
+              `fetchPriority="high"` because this *is* the LCP element and the
+              markup should say so rather than leave it to be discovered.
+
+              `alt=""` and not a description: the stage is `aria-hidden`, and
+              this is the room, not information. What the room is gets said in
+              words on the landing. */}
+          <picture>
+            <source srcSet={`${basePath}.avif`} type="image/avif" />
+            <img
+              src={`${basePath}.jpg`}
+              alt=""
+              fetchPriority="high"
+              decoding="async"
+              draggable={false}
+              onLoad={ready}
+              // A photograph that 404s is a dark room, and a dark room is
+              // still something to show — waiting forever for it is not.
+              onError={ready}
+              className="absolute inset-0 h-full w-full object-cover"
+              style={{
+                objectPosition: '50% 46%',
+                filter: `blur(${(c.blur * I).toFixed(2)}px) brightness(${c.br}) saturate(1.04)`,
+                transition: `filter ${c.ms}ms ease-out`,
+              }}
+            />
+          </picture>
           <div
             ref={glow}
             className="pointer-events-none absolute mix-blend-screen will-change-[opacity,transform]"

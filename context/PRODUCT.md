@@ -255,7 +255,7 @@ Retaining anything is an architecture change and cannot be designed
 privacy-safely before Jonny names the data controller. `room-polish.md` §4D.
 
 **The candle itself.** `public/room-base.png` is a photograph the project
-made. The proposal promised a candle plus two other visuals *chosen by Jonny*,
+made, and is now the master the served `.avif` and `.jpg` are built from. The proposal promised a candle plus two other visuals *chosen by Jonny*,
 licensed in his name. Whether this photograph ships as the candle, or is the
 stand-in until his loop arrives, has not been asked. The burn — flame scale and
 glow across the hour — is linear and `ARCHITECTURE.md` notes it may want a

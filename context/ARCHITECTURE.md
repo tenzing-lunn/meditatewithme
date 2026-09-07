@@ -955,8 +955,23 @@ than stored.
 
 It was CSS — gradients shaped into a flame, with `candleBurn` spent on the
 height of the wax. It is now `components/CandleScene.tsx`: a photograph of a
-room in `public/room-base.png`, with a sprite flame warped on a canvas above
-it, and a camera that racks between six `phase`s as the page changes.
+room in `public/room-base.{avif,jpg}`, with a sprite flame warped on a canvas
+above it, and a camera that racks between six `phase`s as the page changes.
+
+The photograph is a `<picture>`, not a CSS background, and that is load-bearing
+twice over. A background cannot negotiate a format, so the only thing that
+could be served was the 2.3 MB PNG master — the LCP element of every visit, ten
+times the weight of every other asset in the project combined. And a background
+has no load event, so the readiness the scene reports through `onReady` had to
+be faked by requesting the same URL a second time through an `Image` and
+trusting the cache. Both went at once on 7 September 2026. AVIF is 39 KB at
+47.5 dB PSNR against the master, measured; the JPEG fallback is 128 KB at
+48.0 dB. `basePath` is a stem without an extension so the two cannot be pointed
+at different rooms.
+
+The PNG master stays in `public/` — it is what the two derived files are built
+from, and `docs/photographic-room.md` describes the handoff that produced it.
+Nothing links it, so nobody downloads it.
 
 A photograph cannot shorten, so the burn is spent on the flame instead — it
 loses scale and glow across the hour rather than height. Somebody arriving at
