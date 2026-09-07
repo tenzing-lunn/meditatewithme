@@ -693,7 +693,10 @@ function Settings({
           aria-pressed={prefs.showCount}
           className="border-rule text-ink-2 hover:border-ink-3 hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper flex min-h-12 w-full items-center justify-between gap-4 border px-4 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
         >
-          <span>Show who else is here</span>
+          {/* "The room", the same words the ending uses for the same switch.
+              This said "Show who else is here", which was the one place the
+              preference had a different name. */}
+          <span>Show the room</span>
           <span
             className={prefs.showCount ? 'text-ember' : 'text-ink-3'}
             aria-hidden
