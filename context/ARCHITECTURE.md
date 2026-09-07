@@ -361,6 +361,40 @@ No passwords. No password means no reset flow, which is where most auth bugs liv
 
 **The code needs one hosted change this repository cannot make.** Supabase's stock Magic Link template contains only `{{ .ConfirmationURL }}`; the same email carries the code once `{{ .Token }}` is added to it in Authentication → Email Templates. Until that is done the code box has nothing to receive, which is why the panel keeps saying the link in that email works too, and why `emailRedirectTo` is still sent. `plans/launch-readiness.md` carries it beside the SMTP item it depends on.
 
+### Signing in once is meant to be enough
+
+`persistSession` and `autoRefreshToken` are both on, the session lives in
+localStorage under `sb-<ref>-auth-token`, and no session on this project carries
+a `not_after` — there is no timebox and no inactivity cutoff. So a session
+survives closing the tab, quitting the browser and restarting the machine, and
+renews itself indefinitely.
+
+That is observed, not inferred. On 7 September 2026 the live `auth.sessions`
+held a session created 3 September and last refreshed four days later, through
+four rotations of its refresh token, with no re-authentication in between —
+and another from the same day with ten rotations. Somebody who signs in stays
+signed in.
+
+**`signOut()` must always pass `scope: 'local'`, and the library default is
+wrong for this product.** Bare `signOut()` is `scope: 'global'`: it revokes
+every session the account holds, everywhere. Pressing `Sign out` on a laptop
+therefore signed the same person out on their phone, where the next visit would
+find them a stranger — no name in the masthead, no synced log, another email to
+wait for. Proved rather than read off the documentation: two devices signed in,
+the laptop signs out, and the phone's `refreshSession()` comes back *Invalid
+Refresh Token: Refresh Token Not Found* under the default and succeeds under
+`local`.
+
+Signing out everywhere is a real thing to want — it is the answer to a lost
+phone — but it is a deliberate security action and belongs behind a control
+that says so, not silently attached to the ordinary one. There is no such
+control yet, and there does not need to be one until somebody asks.
+
+Note that `deleteAccount` passes `scope: 'local'` too, for an unrelated reason:
+after the account is gone a global sign-out would POST `/logout` on behalf of a
+user who no longer exists, fail, and leave the dead session sitting in
+localStorage.
+
 ### A dead link is silent, and that had to be fixed
 
 **The link flow works on localhost, and the auth log proves it**: a `/verify` at 2026-09-01 22:41:41 returned 303 with `login_method: implicit`, and `auth.users.last_sign_in_at` carries the same timestamp. Nothing about magic links is waiting on deployment.

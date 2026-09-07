@@ -287,9 +287,24 @@ export function useAuth() {
     [],
   );
 
+  /**
+   * Sign out of this device, and only this device.
+   *
+   * `scope: 'local'` is not a detail and not the library's default — bare
+   * `signOut()` is `scope: 'global'`, which revokes **every** session the
+   * account has anywhere. So pressing `Sign out` on a laptop would silently
+   * sign the same person out on their phone, and the next time they opened the
+   * room there they would be a stranger to it: no practice log carried across,
+   * no name in the masthead, and another email to wait for. Nobody pressing a
+   * button on one machine is asking for that to happen on another.
+   *
+   * Signing out everywhere is a real thing to want, but it is a deliberate
+   * security action — the answer to a lost phone — and it belongs behind its
+   * own control saying so, not silently attached to the ordinary one.
+   */
   const signOut = useCallback(async () => {
     try {
-      await browserClient().auth.signOut();
+      await browserClient().auth.signOut({ scope: 'local' });
     } catch {
       // onAuthStateChange still fires locally; and a failed sign-out on a
       // preferences-only account is not worth an error message.

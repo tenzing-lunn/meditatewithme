@@ -117,6 +117,14 @@ six-digit code from that email, with `Confirm and enter` under it. `I already
 have one` skips the name. Nothing is asked for that is not used: the name is
 what Home's masthead greets you by.
 
+**Signing in once is enough.** The session is stored in the browser and renews
+itself, with no expiry and no inactivity cutoff, so somebody who signs in is
+remembered across tabs, restarts and days — confirmed against the live project,
+where a session created on 3 September was still refreshing itself on the 7th.
+`Sign out` now ends the session **on that device only**; until 7 September 2026
+it quietly ended every session the account had, so signing out on a laptop
+signed you out on your phone as well.
+
 **Closing an account.** *Your account* is the last thing on Home, under the
 practice log, showing the email the account is held under and a `Delete
 account` control. Pressing it opens a confirmation naming what goes — the email
