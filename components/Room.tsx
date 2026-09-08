@@ -672,18 +672,27 @@ export default function Room({
    * only starts an AudioContext inside one. Home's `Sit` handler does it in the
    * click that brought us here — see `startSitting` in `Entry`. If a silent
    * sitting ever appears, that is the line that has been moved.
+   *
+   * IT WAITS FOR THE ROOM, NOT JUST THE CLOCK. This used to fire the moment
+   * `now` was known, while the reveal above waits for the photograph as well —
+   * so on a cold cache the ring was already draining on a black screen, and a
+   * ten-minute sitting was a nine-and-a-half-minute one by the time there was
+   * anything to look at. `booted` is the same gate the arrival uses, so the
+   * sitting now starts in the frame where it can be seen. On a warm cache the
+   * two gates open together and nothing about the entry changes.
    */
   const autoStarted = useRef(false);
   useEffect(() => {
     if (!home || autoStarted.current) return;
-    // `begin` needs the corrected clock to resolve a shared bell.
-    if (now === null) return;
+    // `begin` needs the corrected clock to resolve a shared bell, and the
+    // sitting needs a room to be visible in.
+    if (now === null || !booted) return;
     autoStarted.current = true;
     begin();
     // `begin` and `now` both change on every tick; the ref is what makes this
     // run once. Depending on them without it would restart the sitting four
     // times a second.
-  }, [home, now, begin]);
+  }, [home, now, booted, begin]);
 
   /**
    * `End this sitting`.

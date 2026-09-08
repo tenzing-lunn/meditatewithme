@@ -1564,9 +1564,10 @@ is free — `/api/count` is one edge-cached response for the whole world, which 
 
 ### The room takes one prop that carries the whole difference
 
-`home?: () => void`. Present means signed in: the sitting starts on arrival, the
-ending says `Done` and comes back here, and the account offer at the foot is not
-rendered at all. Absent means a guest: the landing, the questions, `Finish`, and
+`home?: () => void`. Present means signed in: the sitting starts on arrival —
+once the room is visible, off the same `booted` gate as the reveal, so a cold
+cache never has a ring draining on a black screen — the ending says `Done` and
+comes back here, and the account offer at the foot is not rendered at all. Absent means a guest: the landing, the questions, `Finish`, and
 the offer.
 
 One prop rather than two booleans, because the difference genuinely is "is there
