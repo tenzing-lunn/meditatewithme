@@ -204,9 +204,13 @@ invoice you weren't expecting" promise forbids.
   outstanding, so this is now a fill-in rather than a write-up. **The page
   exists** as of 8 September 2026: `app/privacy/page.tsx` renders the draft
   with the two gaps shown as gaps, nothing links to it and it is `noindex`.
-  When the names arrive: fill them, remove the `robots` line and the
-  `Unfilled` marker, link it from Home's foot and the ending. Terms and the
-  age policy are still unwritten.
+  **The terms exist too**, later the same day: `app/terms/page.tsx`, with
+  the age policy as its `Age` section and four gaps — controller, contact,
+  `[MINIMUM AGE]` (the proposal recommended eighteen) and `[JURISDICTION]`
+  (everything points at England and Wales; nobody has said so). Same
+  treatment: unlinked, `noindex`. When the answers arrive: fill them, remove
+  the `robots` lines and the `Unfilled` chips from both pages, link both
+  from Home's foot and the ending.
 - [x] Add favicon and Open Graph metadata. Done 7 September 2026: `app/icon.tsx`,
   `app/apple-icon.tsx` and `app/opengraph-image.tsx`, all generated from one
   flame in `components/FlameMark.tsx`. All three prerender static, so the

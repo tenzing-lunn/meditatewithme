@@ -24,9 +24,11 @@ timing questions** in `plans/timing-message-to-jonny.md`; Tenzing's call.
 Known open at the moment of launch, and still open:
 
 - No privacy notice, terms, or age policy — waiting on Jonny's legal-entity
-  and minimum-age decisions. The notice is built at `/privacy` on `dev` (8
-  September 2026) with the controller and contact shown as unfilled gaps;
-  nothing links to it until they are named. The site sets a localStorage id, writes
+  and minimum-age decisions. Both pages are built on `dev` (8 September
+  2026): `/privacy` with the controller and contact as unfilled gaps, and
+  `/terms`, which carries the age policy as a section, with those two plus
+  the minimum age and the governing law as gaps. Nothing links to either
+  until they are filled. The site sets a localStorage id, writes
   heartbeats, and now asks for a name and an email address, so this is not a
   cosmetic gap — and the name is a new category the inventory has to cover.
 - Mail leaves through Resend, not Supabase's shared sender, since the evening
