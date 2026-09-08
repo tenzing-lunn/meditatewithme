@@ -76,7 +76,7 @@ const FIELD =
   'min-h-11 w-full rounded-control border border-white/40 bg-transparent px-4 text-center text-sm text-white placeholder:text-white/50 focus-visible:border-ember focus-visible:ring-1 focus-visible:ring-ember focus-visible:outline-none';
 
 const SUBMIT =
-  'min-h-11 w-full rounded-control border border-ember px-6 text-sm text-ember transition-colors duration-300 hover:bg-ember hover:text-white focus-visible:ring-2 focus-visible:ring-ember focus-visible:ring-offset-2 focus-visible:ring-offset-[#1c1410] focus-visible:outline-none disabled:opacity-50';
+  'min-h-11 w-full rounded-control border border-ember px-6 text-sm text-ember transition-colors duration-300 hover:bg-ember hover:text-white focus-visible:ring-2 focus-visible:ring-ember focus-visible:ring-offset-2 focus-visible:ring-offset-panel focus-visible:outline-none disabled:opacity-50';
 
 /** One choice on the menu. Full width of it, lit on hover, nothing else. */
 const ITEM =
@@ -404,7 +404,7 @@ export default function Account({
               else if (e.key === 'Home') go(0);
               else if (e.key === 'End') go(items.length - 1);
             }}
-            className={`rounded-control flex min-w-44 flex-col overflow-hidden border border-white/20 bg-[#1c1410]/95 py-1 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none ${
+            className={`rounded-control flex min-w-44 flex-col overflow-hidden border border-white/20 bg-panel/95 py-1 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none ${
               entered ? 'translate-y-0 opacity-100' : '-translate-y-1.5 opacity-0'
             }`}
           >
@@ -456,7 +456,7 @@ export default function Account({
             // because the panel has not far to come and nothing to explain;
             // anything slower and the press and the arrival stop feeling like
             // one event.
-            className={`rounded-control w-[min(20rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-6rem)] overflow-y-auto border border-white/20 bg-[#1c1410]/95 p-5 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none ${
+            className={`rounded-control w-[min(20rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-6rem)] overflow-y-auto border border-white/20 bg-panel/95 p-5 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none ${
               entered
                 ? 'translate-y-0 opacity-100'
                 : `opacity-0 ${drop === 'down' ? '-translate-y-1.5' : 'translate-y-1.5'}`

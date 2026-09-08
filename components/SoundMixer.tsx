@@ -1,6 +1,7 @@
 'use client';
 
 import { useId, useRef, type CSSProperties } from 'react';
+import { FOCUS } from './controls';
 
 import {
   DEFAULT_MASTER,
@@ -86,7 +87,7 @@ export function BedToggles({
               }
             }}
             aria-pressed={playing}
-            className={`rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper min-h-11 border px-4 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none ${
+            className={`rounded-control min-h-11 border px-4 text-sm transition-colors ${FOCUS} ${
               playing
                 ? 'border-ember text-ember'
                 : 'border-rule text-ink-2 hover:border-ink-3 hover:text-ink'
@@ -145,7 +146,7 @@ export default function SoundMixer({
               }}
               aria-pressed={playing}
               aria-label={`${playing ? 'Pause' : 'Play'} ${track.label}`}
-              className={`rounded-action focus-visible:ring-ember focus-visible:ring-offset-paper flex size-11 shrink-0 items-center justify-center border transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none ${
+              className={`rounded-action flex size-11 shrink-0 items-center justify-center border transition-colors ${FOCUS} ${
                 playing
                   ? 'border-ember text-ember'
                   : 'border-rule text-ink-2 hover:border-ink-3 hover:text-ink'

@@ -434,6 +434,10 @@ Phase 1 is done when, on 390×844 and 1440×900:
 Phase 2 is done when:
 
 - [x] `grep -rn "tracking-\[0\.1[35]em\] uppercase" components/` returns ≤2.
+      Superseded 8 September 2026 by `tests/caps.test.ts`, which counts the
+      word `uppercase` anywhere in `components/` against a budget of one —
+      the design audit found this grep passing at 0 while Home carried eight
+      tracked capitals at `0.14em`.
 - [x] The countdown sits below the candle.
 - [x] Range inputs are styled in `globals.css` and still carry their
       `aria-valuetext`.

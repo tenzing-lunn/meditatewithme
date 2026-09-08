@@ -17,7 +17,8 @@ import {
   timerStopIndex,
 } from '@/lib/timer';
 import { BELLS, type BellKind, previewBell } from './audio';
-import { QUIET } from './controls';
+import { FOCUS, QUIET } from './controls';
+import { sentenceList } from '@/lib/format';
 import { TRACKS, type MASTER_KEY, type TrackSlug } from './mix';
 import SoundMixer, { BedToggles } from './SoundMixer';
 
@@ -54,12 +55,6 @@ const QUESTION: Record<Step, string> = {
   bell: 'How should it end?',
   sound: 'Any sound?',
 };
-
-/** "rain", "rain and wind", "rain, wind and night" */
-function sentenceList(items: string[]): string {
-  if (items.length <= 1) return items[0] ?? '';
-  return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
-}
 
 export default function SessionSetup({
   prefs,
@@ -190,7 +185,7 @@ export default function SessionSetup({
           index === 0 ? onCancel() : setStep(STEPS[index - 1] ?? 'duration')
         }
         aria-label={index === 0 ? 'Back to the room' : 'Back a question'}
-        className="text-ink-3 hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper -ml-2 flex size-11 shrink-0 items-center justify-center self-start transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+        className={`text-ink-3 hover:text-ink rounded-control -ml-2 flex size-11 shrink-0 items-center justify-center self-start transition-colors ${FOCUS}`}
       >
         <svg viewBox="0 0 24 24" className="size-6" fill="none" aria-hidden>
           <path
@@ -215,7 +210,7 @@ export default function SessionSetup({
           onClick={() => setStep(done)}
           // `py-3`, not `py-2`: with a line of text inside, `py-2` made a
           // 40px control, under the 44px every other control here clears.
-          className="group border-rule/60 rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper flex w-full items-baseline justify-between gap-4 border-b py-3 text-left transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+          className={`group border-rule/60 rounded-control flex w-full items-baseline justify-between gap-4 border-b py-3 text-left transition-colors ${FOCUS}`}
         >
           <span className="text-ink-2 group-hover:text-ink text-[0.95rem] transition-colors">
             {SUMMARY[done]}
@@ -322,7 +317,7 @@ export default function SessionSetup({
                 type="button"
                 onClick={() => update({ untilBell: !prefs.untilBell })}
                 aria-pressed={prefs.untilBell}
-                className={`rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper flex min-h-14 w-full items-center justify-center border px-4 text-base font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none ${
+                className={`rounded-control flex min-h-14 w-full items-center justify-center border px-4 text-base font-medium transition-colors ${FOCUS} ${
                   prefs.untilBell
                     ? 'border-ember bg-ember-soft text-ember'
                     : 'border-ember/70 bg-ember-soft/50 text-ink hover:border-ember hover:bg-ember-soft'
@@ -351,7 +346,7 @@ export default function SessionSetup({
                     previewBell(kind);
                   }}
                   aria-pressed={prefs.endBell === kind}
-                  className={`rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper min-h-14 flex-1 border px-2 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none ${
+                  className={`rounded-control min-h-14 flex-1 border px-2 text-sm transition-colors ${FOCUS} ${
                     prefs.endBell === kind
                       ? 'border-ember text-ember'
                       : 'border-rule text-ink-2 hover:border-ink-3'
@@ -376,7 +371,7 @@ export default function SessionSetup({
                 aria-checked={noise}
                 aria-label="Sound"
                 onClick={toggleNoise}
-                className="rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper group flex min-h-11 items-center gap-3 self-start focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                className={`rounded-control group flex min-h-11 items-center gap-3 self-start ${FOCUS}`}
               >
                 <span
                   aria-hidden
@@ -446,7 +441,7 @@ export default function SessionSetup({
           <button
             type="button"
             onClick={() => setStep(STEPS[index + 1] ?? 'sound')}
-            className="border-ember text-ember hover:bg-ember rounded-action focus-visible:ring-ember focus-visible:ring-offset-paper min-h-12 border px-10 text-base transition-colors duration-300 hover:text-white focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+            className={`border-ember text-ember hover:bg-ember rounded-action min-h-12 border px-10 text-base transition-colors duration-300 hover:text-white ${FOCUS}`}
           >
             Next
           </button>

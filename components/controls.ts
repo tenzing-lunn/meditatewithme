@@ -33,5 +33,18 @@
  * sibling of the primary one rather than a rival to it. Ember returns on hover,
  * where it means "this one, now" rather than "this one, always".
  */
+/**
+ * The focus ring, once. Every keyboard stop in the product draws the same
+ * two-pixel ember ring, offset from the control by the page colour so it reads
+ * on a photograph and on the flat ground alike. It was typed out by hand in
+ * twenty-two places before this line existed; anything that changes it now
+ * changes it everywhere, which is the only way a ring stays one ring.
+ *
+ * The account panel is the exception and stays in `Account.tsx`: its ring is
+ * offset by the panel's own dark, not the page's.
+ */
+export const FOCUS =
+  'focus-visible:ring-ember focus-visible:ring-offset-paper focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none';
+
 export const QUIET =
-  'text-ink-2 border-rule hover:border-ember hover:text-ember rounded-action focus-visible:ring-ember focus-visible:ring-offset-paper inline-flex min-h-11 items-center gap-2 border px-4 text-xs tracking-wide transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none';
+  `text-ink-2 border-rule hover:border-ember hover:text-ember rounded-action inline-flex min-h-11 items-center gap-2 border px-4 text-xs tracking-wide transition-colors ${FOCUS}`;

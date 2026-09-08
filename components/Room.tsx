@@ -24,7 +24,8 @@ import CandleScene, { REVEAL_EASE, REVEAL_MS, type ScenePhase } from './CandleSc
 import Practice from './Practice';
 import SessionSetup, { type Step } from './SessionSetup';
 import Account from './Account';
-import { QUIET } from './controls';
+import { FOCUS, QUIET } from './controls';
+import { localTime } from '@/lib/format';
 import SoundMixer from './SoundMixer';
 import type { MASTER_KEY, TrackSlug } from './mix';
 import type { Mix } from './useMix';
@@ -287,7 +288,7 @@ const COOLDOWN_MS = 10_000;
  * start failing on the dish.
  */
 const LIFTED_SURFACE =
-  'flex min-h-11 items-center justify-center rounded-control border border-white/20 bg-[#1c1410]/65 text-sm tracking-wide text-white transition-colors hover:border-white/40 hover:bg-[#1c1410]/85 focus-visible:ring-ember focus-visible:ring-offset-paper focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none';
+  `flex min-h-11 items-center justify-center rounded-control border border-white/20 bg-panel/65 text-sm tracking-wide text-white transition-colors hover:border-white/40 hover:bg-panel/85 ${FOCUS}`;
 
 const LIFTED = `${LIFTED_SURFACE} px-6`;
 
@@ -1182,7 +1183,7 @@ export default function Room({
                 // boundary and owes 3:1; ink-3 at half strength measured 2.49
                 // on the palette ground and less over the ending's bright
                 // photograph. ink-2 at 65% clears it on both.
-                className="border-ink-2/65 text-ink-2 hover:border-ink-2 hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper flex min-h-11 items-center border px-4 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                className={`border-ink-2/65 text-ink-2 hover:border-ink-2 hover:text-ink rounded-control flex min-h-11 items-center border px-4 text-xs transition-colors ${FOCUS}`}
               >
                 {prefs.showCount ? 'Hide the room' : 'Show the room'}
               </button>
@@ -1196,7 +1197,7 @@ export default function Room({
                     setPracticeOpen(true);
                   }}
                   aria-expanded={false}
-                  className="border-ink-2/65 text-ink-2 hover:border-ink-2 hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper flex min-h-11 items-center border px-4 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                  className={`border-ink-2/65 text-ink-2 hover:border-ink-2 hover:text-ink rounded-control flex min-h-11 items-center border px-4 text-xs transition-colors ${FOCUS}`}
                 >
                   Your practice
                 </button>
@@ -1497,7 +1498,7 @@ function BeginWord({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="font-display text-ember hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper px-4 text-5xl leading-none transition-colors duration-500 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none sm:text-6xl"
+      className={`font-display text-ember hover:text-ink rounded-control px-4 text-5xl leading-none transition-colors duration-500 sm:text-6xl ${FOCUS}`}
     >
       Let’s begin.
     </button>
@@ -1581,15 +1582,11 @@ function StartButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="border-ember bg-ember-soft text-ember hover:bg-ember rounded-action focus-visible:ring-ember focus-visible:ring-offset-paper min-h-12 border px-10 text-base tracking-wide transition-colors duration-300 hover:text-white focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+      className={`border-ember bg-ember-soft text-ember hover:bg-ember rounded-action min-h-12 border px-10 text-base tracking-wide transition-colors duration-300 hover:text-white ${FOCUS}`}
     >
       Start
     </button>
   );
-}
-
-function localTime(d: Date): string {
-  return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
 /**
@@ -1993,7 +1990,7 @@ function Afterwards({
           <button
             type="button"
             onClick={onAgain}
-            className="border-ember text-ember hover:bg-ember rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper min-h-11 border px-7 text-sm transition-colors duration-500 hover:text-white focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+            className={`border-ember text-ember hover:bg-ember rounded-control min-h-11 border px-7 text-sm transition-colors duration-500 hover:text-white ${FOCUS}`}
           >
             Sit again
           </button>
@@ -2006,7 +2003,7 @@ function Afterwards({
             // the vignette almost off. Measured there, ink-3 came to 4.37.
             // The border follows the same reasoning: ink-3/50 is 2.49 against
             // a 3:1 floor for a boundary, and lower still on this phase.
-            className="border-ink-2/65 text-ink-2 hover:border-ink-2 hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper min-h-11 border px-7 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+            className={`border-ink-2/65 text-ink-2 hover:border-ink-2 hover:text-ink rounded-control min-h-11 border px-7 text-sm transition-colors ${FOCUS}`}
           >
             {/* The word changes because the act does. A guest is finishing;
                 somebody signed in is going back to somewhere. */}

@@ -1367,7 +1367,8 @@ all. Two links measured 3.98 and 2.19 there.
   one its contrast is measured against that surface rather than against whatever
   the photograph is doing behind it.
 
-  The fill is `#1c1410` at **65%**, and both halves of that are load-bearing.
+  The fill is `#1c1410` — the `panel` token in `globals.css`, since 8
+  September 2026 — at **65%**, and both halves of that are load-bearing.
   Warm, because at a neutral near-black it read as a chip of something else laid
   on a warm brown photograph — the button announced that it did not belong to
   the picture. Not opaque, so the room's own colour comes through it and it
@@ -1494,7 +1495,7 @@ re-measured in place.
 `Send me a link` at 4.57 was the thinnest margin in the product, and it was thin
 for a specific reason: it was an ember control sitting in the band over the
 brightest thing the `open` camera leaves lit. The account flow no longer takes
-the band — it is a panel with a `#1c1410`/95 fill of its own (see §16), so its
+the band — it is a panel with a `panel`/95 fill of its own (see §16), so its
 `Send me a code` is measured against that fill rather than against the flame,
 and the worst case that produced 4.57 cannot occur there. **The panel has not
 been run through `contrast-room.js` in place**; the arithmetic on the fill puts

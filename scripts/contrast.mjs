@@ -78,17 +78,17 @@ const PAIRS = [
  * green, because it only knew about the six solid pairs above. A green gate
  * over a partial set is worse than no gate.
  *
- * Grounds and foregrounds may be palette names or literal hex: the account
- * panel is `#1c1410`, which is deliberately not a token (it is the one dark
- * that has to sit over the photograph and never appears on a flat page).
+ * Grounds and foregrounds may be palette names or literal hex. `panel` is the
+ * account panel's dark, the one colour that sits over the photograph; it
+ * lives in `@theme` and nothing overrides it at runtime.
  *
  * `[foreground, opacity, ground, threshold, where it is used]`
  */
 const COMPOSITES = [
   ['ink-2', 0.65, 'paper', 3.0, 'Room secondary button border'],
-  ['#ffffff', 0.4, '#1c1410', 3.0, 'Account FIELD border'],
-  ['#ffffff', 0.5, '#1c1410', 4.5, 'Account FIELD placeholder'],
-  ['#ffffff', 0.5, '#1c1410', 4.5, 'Account FOOT text'],
+  ['#ffffff', 0.4, 'panel', 3.0, 'Account FIELD border'],
+  ['#ffffff', 0.5, 'panel', 4.5, 'Account FIELD placeholder'],
+  ['#ffffff', 0.5, 'panel', 4.5, 'Account FOOT text'],
 ];
 
 const channel = (c) => {
@@ -136,7 +136,9 @@ function report(label, ratio, min) {
 }
 
 for (const [mode, colors] of Object.entries(THEME)) {
-  const resolve = (c) => (c.startsWith('#') ? c : colors[c]);
+  // A token the runtime block does not override keeps its `@theme` value,
+  // which is what the browser does too.
+  const resolve = (c) => (c.startsWith('#') ? c : (colors[c] ?? THEME.theme[c]));
   console.log(`\n${mode}`);
   for (const [fg, bg, min] of PAIRS) {
     report(`${fg} on ${bg}`, contrast(colors[fg], colors[bg]), min);

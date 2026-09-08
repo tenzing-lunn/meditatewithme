@@ -22,7 +22,8 @@ import type { UserPreferences } from '@/lib/types';
 import { BELLS, previewBell, type BellKind } from './audio';
 import { TRACKS, type MASTER_KEY, type TrackSlug } from './mix';
 import Practice from './Practice';
-import { QUIET } from './controls';
+import { FOCUS, QUIET } from './controls';
+import { localTime, sentenceList } from '@/lib/format';
 import SoundMixer from './SoundMixer';
 import { useCount } from './useCount';
 
@@ -74,19 +75,6 @@ import { useCount } from './useCount';
  * away while you are reading something else. It is not the room's rule, though
  * — this page still scrolls, it just does so in two places.
  */
-
-/** "rain", "rain and wind", "rain, wind and night" */
-function sentenceList(items: string[]): string {
-  if (items.length <= 1) return items[0] ?? '';
-  return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
-}
-
-function localTime(d: Date | number): string {
-  return new Date(d).toLocaleTimeString([], {
-    hour: 'numeric',
-    minute: '2-digit',
-  });
-}
 
 export default function Home({
   prefs,
@@ -241,7 +229,7 @@ export default function Home({
               <button
                 type="button"
                 onClick={onSit}
-                className="border-ember text-ember hover:bg-ember focus-visible:ring-ember focus-visible:ring-offset-paper font-display mt-6 flex size-40 items-center justify-center rounded-full border text-4xl leading-none transition-colors duration-500 hover:text-white focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none sm:size-44 sm:text-5xl lg:size-56 lg:text-6xl"
+                className={`border-ember text-ember hover:bg-ember font-display mt-6 flex size-40 items-center justify-center rounded-full border text-4xl leading-none transition-colors duration-500 hover:text-white sm:size-44 sm:text-5xl lg:size-56 lg:text-6xl ${FOCUS}`}
               >
                 Sit
               </button>
@@ -669,7 +657,7 @@ function Settings({
           type="button"
           onClick={() => update({ untilBell: !prefs.untilBell })}
           aria-pressed={prefs.untilBell}
-          className={`rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper mt-4 flex min-h-12 w-full items-center justify-center border px-4 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none ${
+          className={`rounded-control mt-4 flex min-h-12 w-full items-center justify-center border px-4 text-sm transition-colors ${FOCUS} ${
             prefs.untilBell
               ? 'border-ember bg-ember-soft text-ember'
               : 'border-ember/70 bg-ember-soft/50 text-ink hover:border-ember hover:bg-ember-soft'
@@ -705,7 +693,7 @@ function Settings({
                 previewBell(kind);
               }}
               aria-pressed={prefs.endBell === kind}
-              className={`rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper min-h-12 flex-1 border px-2 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none ${
+              className={`rounded-control min-h-12 flex-1 border px-2 text-sm transition-colors ${FOCUS} ${
                 prefs.endBell === kind
                   ? 'border-ember text-ember'
                   : 'border-rule text-ink-2 hover:border-ink-3'
@@ -736,7 +724,7 @@ function Settings({
           type="button"
           onClick={() => update({ showCount: !prefs.showCount })}
           aria-pressed={prefs.showCount}
-          className="border-rule text-ink-2 hover:border-ink-3 hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper flex min-h-12 w-full items-center justify-between gap-4 border px-4 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+          className={`border-rule text-ink-2 hover:border-ink-3 hover:text-ink rounded-control flex min-h-12 w-full items-center justify-between gap-4 border px-4 text-sm transition-colors ${FOCUS}`}
         >
           {/* "The room", the same words the ending uses for the same switch.
               This said "Show who else is here", which was the one place the
@@ -779,7 +767,7 @@ function Row({
         type="button"
         onClick={onToggle}
         aria-expanded={open}
-        className="rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper flex min-h-14 w-full items-center justify-between gap-4 text-left text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+        className={`rounded-control flex min-h-14 w-full items-center justify-between gap-4 text-left text-sm ${FOCUS}`}
       >
         <span className="text-ink-3">{label}</span>
         <span className="flex items-center gap-3">
@@ -825,7 +813,7 @@ function WorldLink({
   return (
     <Link
       href="/world"
-      className="group border-rule hover:border-ember/60 rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper flex items-center justify-between gap-4 border p-4 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+      className={`group border-rule hover:border-ember/60 rounded-control flex items-center justify-between gap-4 border p-4 transition-colors ${FOCUS}`}
     >
       <span className="flex flex-col gap-1 text-left">
         <span className="text-ink group-hover:text-ember text-sm transition-colors">
@@ -949,7 +937,7 @@ function AccountCard({
                 setError(null);
                 setConfirming(false);
               }}
-              className="border-ember bg-ember-soft text-ember rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper min-h-11 flex-1 border px-4 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:opacity-50"
+              className={`border-ember bg-ember-soft text-ember rounded-control min-h-11 flex-1 border px-4 text-sm transition-colors disabled:opacity-50 ${FOCUS}`}
             >
               Keep it
             </button>
@@ -969,7 +957,7 @@ function AccountCard({
                   setBusy(false);
                 }
               }}
-              className="border-rule text-ink-2 hover:border-ink-3 hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper min-h-11 flex-1 border px-4 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:opacity-50"
+              className={`border-rule text-ink-2 hover:border-ink-3 hover:text-ink rounded-control min-h-11 flex-1 border px-4 text-sm transition-colors disabled:opacity-50 ${FOCUS}`}
             >
               {busy ? 'Deleting' : 'Delete my account'}
             </button>
