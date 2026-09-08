@@ -254,9 +254,12 @@ invoice you weren't expecting" promise forbids.
   Supabase Site URL and the redirect allow-list, and repeat the production
   auth test from a second device. Until then sign-in mail delivers only to
   Tenzing's own inbox, and to its spam folder.
-- [ ] Review the existing Supabase security-advisor notices before launch:
-  heartbeats has deliberately no browser RLS policy; `touch_updated_at` has a
-  mutable search-path warning that needs a separate, tested migration.
+- [x] ~~Review the existing Supabase security-advisor notices before launch.~~
+  Done 8 September 2026: `touch_updated_at`'s search path is pinned
+  (`20260908090000_touch_updated_at_search_path.sql`, applied with `db query
+  --linked`, read back, and proved with a trigger on a temp table). What the
+  advisor still lists is heartbeats' deliberate no-policy note and a
+  leaked-password warning for a feature the site does not use.
 - [ ] Re-run typecheck, unit tests, and production build on `dev`; review the
   Vercel preview; ask before merging `dev` into `main`.
 
