@@ -242,8 +242,12 @@ invoice you weren't expecting" promise forbids.
   `<body>` — the two buttons now hand focus to each other; and the ending's
   two foot buttons were 40px, now 44. Tab order in the sitting, the drawer
   (play buttons, faders with percentages, volume) and the ending all match
-  the visual order, every stop has the ring. Still not reviewed: anything
-  that needs a phone in hand.
+  the visual order, every stop has the ring. The audit's §10 `open`-phase
+  contrast failure was re-checked the same day and is closed: the rows it
+  measured moved to `ink-2` in `a52b454`, and the only `ink-3` left on that
+  screen is the back arrow at the top, in the strips that passed; with the
+  levels open at 390×844 the copy scales to 0.957 and fits. Still not
+  reviewed: anything that needs a phone in hand.
 - [x] ~~Configure Auth URL allow-list and production SMTP.~~ URL allow-list
   done earlier on 7 September 2026; SMTP through Resend that evening (item 4).
   What remains of it is the domain, below.
