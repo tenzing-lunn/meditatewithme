@@ -201,7 +201,12 @@ invoice you weren't expecting" promise forbids.
   already written** — `plans/privacy-data-inventory.md` has the complete
   inventory and drafted copy for every category, including the approximate
   location the globe added. Only `[CONTROLLER]` and `[CONTACT EMAIL]` are
-  outstanding, so this is now a fill-in rather than a write-up.
+  outstanding, so this is now a fill-in rather than a write-up. **The page
+  exists** as of 8 September 2026: `app/privacy/page.tsx` renders the draft
+  with the two gaps shown as gaps, nothing links to it and it is `noindex`.
+  When the names arrive: fill them, remove the `robots` line and the
+  `Unfilled` marker, link it from Home's foot and the ending. Terms and the
+  age policy are still unwritten.
 - [x] Add favicon and Open Graph metadata. Done 7 September 2026: `app/icon.tsx`,
   `app/apple-icon.tsx` and `app/opengraph-image.tsx`, all generated from one
   flame in `components/FlameMark.tsx`. All three prerender static, so the

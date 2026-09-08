@@ -50,6 +50,12 @@ leaving somebody to infer it.
 
 ## Draft copy
 
+**Rendered as `app/privacy/page.tsx` on 8 September 2026** — unlinked and
+`noindex` until the two placeholders are filled. The page and this draft must
+say the same thing; change both. Two lines were corrected the day the page
+was built: an account now also holds the optional name, and sign-in is a code
+or a link, not only a link.
+
 Written to be dropped into the notice with the placeholders filled. Plain
 language on purpose — a meditation site that explains itself in the register of
 a data-processing agreement has said something about itself.
@@ -88,14 +94,16 @@ a data-processing agreement has said something about itself.
 >
 > If you do create an account, they are also saved to our database so that they
 > follow you between your phone and your computer. An account stores your email
-> address and nothing else about you.
+> address and, if you typed one, the name you gave. Nothing checks the name and
+> nothing reads it except the greeting on your own home page; you can leave it
+> blank.
 
 ### Signing in
 
-> We sign you in with a link sent to your email address. There is no password,
-> so there is nothing for us to store and nothing for you to reuse from
-> somewhere else. Your address is used to send you that link and for nothing
-> else — no newsletter, and we do not pass it to anybody.
+> We sign you in with a code, or a link, sent to your email address. There is
+> no password, so there is nothing for us to store and nothing for you to reuse
+> from somewhere else. Your address is used to send you that email and for
+> nothing else — no newsletter, and we do not pass it to anybody.
 
 ### Who we are, and asking us to delete it
 
