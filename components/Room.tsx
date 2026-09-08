@@ -398,6 +398,48 @@ export default function Room({
   // `phase` below.
   const [soundOpen, setSoundOpen] = useState(false);
   const [practiceOpen, setPracticeOpen] = useState(false);
+
+  /**
+   * THE KEYBOARD FOLLOWS THE DISCLOSURE
+   *
+   * The sound drawer opens in the band, above the toggle that opened it at the
+   * foot of the frame, so Tab from the toggle carried on to `End this sitting`
+   * and never reached a fader. Focus now goes to the drawer's first control on
+   * open, and Escape brings it back to the toggle, so a keyboard reaches the
+   * mixer the way a thumb does. The practice log had the other problem: `Your
+   * practice` unmounts when pressed and `Hide your practice` takes its place,
+   * so the focused button vanished and the keyboard landed on `<body>`.
+   * Whichever of the two has just appeared takes the focus.
+   *
+   * Only after a press. On a mouse the moved focus draws no ring — the browser
+   * shows `:focus-visible` on programmatic focus only when the last input was
+   * a key — and `practiceToggled` keeps the ending's first render, where `Your
+   * practice` mounts on its own, from pulling focus to it.
+   */
+  const soundToggle = useRef<HTMLButtonElement>(null);
+  const soundDrawer = useRef<HTMLDivElement>(null);
+  const practiceShow = useRef<HTMLButtonElement>(null);
+  const practiceHide = useRef<HTMLButtonElement>(null);
+  const practiceToggled = useRef(false);
+
+  useEffect(() => {
+    if (!soundOpen) return;
+    soundDrawer.current?.querySelector('button')?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setSoundOpen(false);
+      soundToggle.current?.focus();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [soundOpen]);
+
+  useEffect(() => {
+    if (!practiceToggled.current) return;
+    practiceToggled.current = false;
+    (practiceOpen ? practiceHide : practiceShow).current?.focus();
+  }, [practiceOpen]);
+
   /**
    * Whether the half minute after the bell has passed.
    *
@@ -1029,7 +1071,7 @@ export default function Room({
               foot of the frame — see THE FOOT below — because the ring wants
               every pixel of the band and those two do not need to be in it. */}
           {sitting && soundOpen && (
-            <div className="mt-8 w-full max-w-sm">
+            <div ref={soundDrawer} className="mt-8 w-full max-w-sm">
               <SoundMixer
                 soundMix={prefs.soundMix}
                 onChange={setSound}
@@ -1079,8 +1121,12 @@ export default function Room({
             <div className="flex flex-col items-center gap-6">
               <Practice entries={entries} now={now} />
               <button
+                ref={practiceHide}
                 type="button"
-                onClick={() => setPracticeOpen(false)}
+                onClick={() => {
+                  practiceToggled.current = true;
+                  setPracticeOpen(false);
+                }}
                 aria-expanded
                 className={QUIET}
               >
@@ -1136,17 +1182,21 @@ export default function Room({
                 // boundary and owes 3:1; ink-3 at half strength measured 2.49
                 // on the palette ground and less over the ending's bright
                 // photograph. ink-2 at 65% clears it on both.
-                className="border-ink-2/65 text-ink-2 hover:border-ink-2 hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper flex min-h-10 items-center border px-4 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                className="border-ink-2/65 text-ink-2 hover:border-ink-2 hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper flex min-h-11 items-center border px-4 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
               >
                 {prefs.showCount ? 'Hide the room' : 'Show the room'}
               </button>
 
               {entries.length > 0 && (
                 <button
+                  ref={practiceShow}
                   type="button"
-                  onClick={() => setPracticeOpen(true)}
+                  onClick={() => {
+                    practiceToggled.current = true;
+                    setPracticeOpen(true);
+                  }}
                   aria-expanded={false}
-                  className="border-ink-2/65 text-ink-2 hover:border-ink-2 hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper flex min-h-10 items-center border px-4 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                  className="border-ink-2/65 text-ink-2 hover:border-ink-2 hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper flex min-h-11 items-center border px-4 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                 >
                   Your practice
                 </button>
@@ -1298,6 +1348,7 @@ export default function Room({
         // 28px stands on every other device.
         <div className="absolute inset-x-0 bottom-0 flex justify-center gap-10 px-5 pb-[calc(1.75rem+env(safe-area-inset-bottom))]">
           <button
+            ref={soundToggle}
             type="button"
             onClick={() => setSoundOpen(!soundOpen)}
             aria-expanded={soundOpen}

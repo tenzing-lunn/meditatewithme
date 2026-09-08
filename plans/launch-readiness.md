@@ -229,9 +229,17 @@ invoice you weren't expecting" promise forbids.
   through `TIMER_STOPS` with `aria-valuetext` and persists. Two fixes came
   out of it: Escape now returns focus to the menu trigger instead of dropping
   it on `<body>`, and the flow's folded summary rows were 40px, now 48. Under
-  reduced motion the camera pins at 1.03 with no transform transition. Not
-  reviewed: the sitting and the ending (each needs a finished sitting, which
-  writes a practice entry), and anything that needs a phone in hand.
+  reduced motion the camera pins at 1.03 with no transform transition.
+  **The sitting and the ending followed later the same day**, two one-minute
+  guest sittings on the second origin (the entries landed in that origin's
+  own log, not Tenzing's). Three more fixes: the sound drawer opens above its
+  toggle in the DOM, so Tab skipped it — focus now moves into it and Escape
+  brings it back; `Your practice` unmounts when pressed, so focus fell to
+  `<body>` — the two buttons now hand focus to each other; and the ending's
+  two foot buttons were 40px, now 44. Tab order in the sitting, the drawer
+  (play buttons, faders with percentages, volume) and the ending all match
+  the visual order, every stop has the ring. Still not reviewed: anything
+  that needs a phone in hand.
 - [x] ~~Configure Auth URL allow-list and production SMTP.~~ URL allow-list
   done earlier on 7 September 2026; SMTP through Resend that evening (item 4).
   What remains of it is the domain, below.
