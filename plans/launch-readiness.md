@@ -222,7 +222,16 @@ invoice you weren't expecting" promise forbids.
   bare-service-key requests are all 401. Satisfies App Store guideline
   5.1.1(v) and is what the privacy notice's erasure paragraph will point at.
 - [ ] Perform real-phone QA and review keyboard navigation, contrast, and
-  `prefers-reduced-motion` behaviour.
+  `prefers-reduced-motion` behaviour. **Keyboard and reduced motion reviewed
+  in the preview on 8 September 2026**, guest origin at 1440×900: Tab order
+  and a visible focus ring on the landing, all three questions, the account
+  menu (arrows wrap, Home/End), Home and its four rows; the slider steps
+  through `TIMER_STOPS` with `aria-valuetext` and persists. Two fixes came
+  out of it: Escape now returns focus to the menu trigger instead of dropping
+  it on `<body>`, and the flow's folded summary rows were 40px, now 48. Under
+  reduced motion the camera pins at 1.03 with no transform transition. Not
+  reviewed: the sitting and the ending (each needs a finished sitting, which
+  writes a practice entry), and anything that needs a phone in hand.
 - [x] ~~Configure Auth URL allow-list and production SMTP.~~ URL allow-list
   done earlier on 7 September 2026; SMTP through Resend that evening (item 4).
   What remains of it is the domain, below.

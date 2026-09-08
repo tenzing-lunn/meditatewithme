@@ -161,6 +161,7 @@ export default function Account({
   const [resent, setResent] = useState(false);
 
   const wrap = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
   const firstField = useRef<HTMLInputElement>(null);
   const firstItem = useRef<HTMLButtonElement>(null);
   const nameId = useId();
@@ -221,7 +222,14 @@ export default function Account({
       setMenuOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') close();
+      if (e.key !== 'Escape') return;
+      close();
+      // Focus was on a menu item or in a field, and closing unmounts it —
+      // without this, Escape dropped the keyboard on `<body>` and the next
+      // Tab started the page over from the top. Found on 8 September 2026 by
+      // pressing it. The pointer close below does not do this: somebody who
+      // clicked elsewhere has already put their attention there.
+      trigger.current?.focus();
     };
     const onDown = (e: PointerEvent) => {
       if (!wrap.current?.contains(e.target as Node)) close();
@@ -324,6 +332,7 @@ export default function Account({
     <div ref={wrap} className="relative inline-block">
       {menu ? (
         <button
+          ref={trigger}
           type="button"
           onClick={() => {
             // Pressing the icon while the panel is up closes it, the way it
@@ -350,6 +359,7 @@ export default function Account({
         </button>
       ) : (
         <button
+          ref={trigger}
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}

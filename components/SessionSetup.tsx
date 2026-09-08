@@ -213,7 +213,9 @@ export default function SessionSetup({
           key={done}
           type="button"
           onClick={() => setStep(done)}
-          className="group border-rule/60 rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper flex w-full items-baseline justify-between gap-4 border-b py-2 text-left transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+          // `py-3`, not `py-2`: with a line of text inside, `py-2` made a
+          // 40px control, under the 44px every other control here clears.
+          className="group border-rule/60 rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper flex w-full items-baseline justify-between gap-4 border-b py-3 text-left transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
         >
           <span className="text-ink-2 group-hover:text-ink text-[0.95rem] transition-colors">
             {SUMMARY[done]}
