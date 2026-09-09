@@ -1,8 +1,9 @@
 # Meditate With Me
 
 A candle is lit at the top of every UTC hour and everyone in the world is
-looking at the same one. Arrive, press Begin, answer three questions — how long,
-which bell, what to hear — and sit. The timer is a ring; the dots around it are
+looking at the same one. Arrive, read what the sitting will be — how long,
+which bell, what to hear — change it if you like, press *Let’s begin.* and
+sit. The timer is a ring; the dots around it are
 the people who lit a candle this hour. Choose *until the bell* and you finish
 on the same sound, at the same second, as everyone else who chose it.
 

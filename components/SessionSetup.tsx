@@ -35,16 +35,25 @@ import SoundMixer, { BedToggles } from './SoundMixer';
  *
  * The fix after that was a folded stack sitting permanently on the landing,
  * which was smaller but still meant the first thing anybody saw was a form.
- * Now the landing is the photograph and the word `Begin.`, and this is what
- * `Begin.` opens: the room settles back out of focus and asks one thing, with
- * what you have already answered folded into a line above it and a `Next`
- * underneath. The last screen's button is the one that actually starts.
+ * Now the landing is the photograph and the word `Let’s begin.`, and this is
+ * what `Change` under that word opens: the room settles back out of focus and
+ * asks one thing, with what you have already answered folded into a line
+ * above it and a `Next` underneath. The last screen carries a `Start` of its
+ * own, for whoever came in this way.
  *
- * There is no "you have done this before, skip it" path any more, and that is
- * deliberate. Walking three screens with your own previous answers already
- * filled in is a few seconds; it is also the only moment the product has to
- * ask a returning visitor whether today is a ten-minute day or a thirty. Your
- * answers still persist — they are what these screens open on.
+ * THE WORD USED TO OPEN THIS, AND THERE WAS NO WAY ROUND IT
+ * Until 9 September 2026 there was deliberately no "you have done this before,
+ * skip it" path: walking three screens with your own answers already filled in
+ * is a few seconds, and it was argued to be the only moment the product has to
+ * ask a returning visitor whether today is a ten-minute day or a thirty. Home
+ * answered that first, for the signed-in person (`Room.tsx`, `autoStarted`):
+ * the settings a sitting will use are printed under the control that starts
+ * it, with `Change` beside them, so the question is still put every time — read
+ * instead of walked. The landing now does the same for a guest, who was the one
+ * person still walking it, and the one deciding whether to come back at all:
+ * six taps to a first sitting, against one. The concern was right and is kept;
+ * only the mechanism changed. Your answers still persist — they are what these
+ * screens open on, and what the line under the word reads out.
  */
 
 const STEPS = ['duration', 'bell', 'sound'] as const;

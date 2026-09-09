@@ -152,7 +152,13 @@ checked, it is a label change" is a fine answer.
 
 **When you do open it, it plays out of Tenzing's speakers. Leave it silent.**
 
-Pressing the landing's begin word calls `unlockAudio()` and
+**Pressing the landing's begin word starts a sitting**, as of 9 September 2026
+(`plans/flow-audit.md`, item C): `begin` unlocks the audio, builds the graph
+and **restores the stored mix inside that click**, so on an origin that holds
+a mix the beds play from the first tap. The line under the word says what will
+play — *in silence* means only the bell. Do not press it to get anywhere.
+
+The silent path is `Change`, under that line. It calls `unlockAudio()` and
 `mix.ensure({ silent: true })` in `openSetup` (`components/Room.tsx`), which
 builds the graph with the master at zero. **The first two questions are silent.
 Sound starts when the sound question reaches the screen**, where `mix.unmute()`
@@ -161,7 +167,8 @@ third one, and everything before it is safe.
 
 That is true as of 7 September 2026 and it used to be the opposite: the beds
 started at the begin word, two screens early, and this note warned you there was
-no silent path through the flow. There is one now, and it is most of the flow.
+no silent path through the flow. There is one now, and it is all of `Change`
+short of its last screen.
 
 The five beds are loudness-matched to −16 LUFS as of the same day, so no single
 one ambushes you either — `rain` used to be 12.5 dB above `waterfall` and this

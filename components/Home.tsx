@@ -20,10 +20,11 @@ import {
 } from '@/lib/timer';
 import type { UserPreferences } from '@/lib/types';
 import { BELLS, previewBell, type BellKind } from './audio';
-import { TRACKS, type MASTER_KEY, type TrackSlug } from './mix';
+import type { MASTER_KEY, TrackSlug } from './mix';
 import Practice from './Practice';
 import { FOCUS, QUIET } from './controls';
-import { localTime, sentenceList } from '@/lib/format';
+import { localTime } from '@/lib/format';
+import { durationAnswer, settingsLine, soundAnswer } from './settingsLine';
 import SoundMixer from './SoundMixer';
 import { useCount } from './useCount';
 
@@ -242,6 +243,9 @@ export default function Home({
                 same words the flow used, and `Change` is right beside it.
                 Somebody who wants a different length today can see that they
                 are about to get ten minutes before they get them.
+
+                The landing says the same line under `Let’s begin.` since
+                9 September 2026, from the same helper — see `settingsLine.ts`.
               */}
               <div className="mt-7 flex flex-col items-center gap-3 lg:mt-8">
                 <p className="text-ink-2 max-w-[30ch] text-center text-sm lg:text-base">
@@ -403,34 +407,6 @@ function useCorrectedClock(): number | null {
   }, []);
 
   return now;
-}
-
-/** "10 minutes · singing bowl · rain and wind" */
-/** "Until 12:55" or "10 minutes" — the answer to How long, as words. */
-function durationAnswer(prefs: UserPreferences, now: number | null): string {
-  if (prefs.untilBell) {
-    return now === null
-      ? 'Until the next bell'
-      : `Until ${localTime(nextSharedBellAt(now))}`;
-  }
-  const d = durationLabel(prefs.timerMinutes);
-  return `${d.value} ${d.unit}`;
-}
-
-/** "in silence" or "rain and wind" — the answer to Sound, as words. */
-function soundAnswer(prefs: UserPreferences): string {
-  const on = TRACKS.filter((t) => (prefs.soundMix[t.slug] ?? 0) > 0);
-  return on.length === 0
-    ? 'in silence'
-    : sentenceList(on.map((t) => t.label.toLowerCase()));
-}
-
-function settingsLine(
-  prefs: UserPreferences,
-  now: number | null,
-): string {
-  const bell = BELLS[prefs.endBell].label.toLowerCase();
-  return `${durationAnswer(prefs, now)} · ${bell} · ${soundAnswer(prefs)}`;
 }
 
 /**

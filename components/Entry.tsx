@@ -65,11 +65,11 @@ export default function Entry() {
    * `Sit`, from Home.
    *
    * THE TWO LINES ABOVE `setSeated` ARE THE WHOLE REASON THIS IS A CALLBACK.
-   * Autoplay policy only lets an AudioContext start inside a user gesture. In
-   * the guest flow the gesture is `Begin.`, which is why `openSetup` unlocks
-   * there. Home has no flow — the room starts itself on arrival, from an effect
-   * — and an effect is not a gesture. So the unlock has to happen in this
-   * click, before the room exists.
+   * Autoplay policy only lets an AudioContext start inside a user gesture. On
+   * the landing the gesture is `Let’s begin.`, and `begin` itself unlocks
+   * inside that click. Home has no such click in the room — the room starts
+   * itself on arrival, from an effect — and an effect is not a gesture. So
+   * the unlock has to happen in this click, before the room exists.
    *
    * If a sitting is ever silent, or the closing bell never rings, this is the
    * first place to look.

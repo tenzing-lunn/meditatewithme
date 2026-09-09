@@ -995,8 +995,11 @@ to what is on screen may want a curve rather than a straight line.
 
 ### The landing is a photograph with a line of type on it
 
-`Let’s begin.` is the only thing on the room. Not the only interactive thing —
-the only thing.
+`Let’s begin.` is the thing on the room. Under it, since 9 September 2026, one
+line saying what pressing it will do and a `Change` for altering that; under
+those, since 7 September, one sentence saying what the place is and the door to
+`/world`. Each addition is argued for below; the word is still the only display
+type, and it is still what the picture is of.
 
 **It read `Begin.` until it didn't.** An instruction, from the room to you.
 `Let’s` makes it an invitation from somebody sitting down with you, which is the
@@ -1126,42 +1129,61 @@ Every step reserves the height of the tallest, so the panel does not move as the
 flow advances. Fixing the entrance and leaving it jumping between steps would
 have missed the point.
 
-Pressing `Begin.` does not start a sitting. It opens the questions: the camera
+**Pressing `Let’s begin.` starts a sitting.** Its click is `begin` — the same
+callback Home's circle reaches through `Sit` — so the audio is unlocked, the
+graph built, the stored mix restored and the bell scheduled inside the one
+gesture. Directly under the word is the line Home prints under its circle, from
+the same helper (`components/settingsLine.ts`): *10 minutes · singing bowl · in
+silence*. Under that, `Change`, which is what opens the questions: the camera
 settles back (`open`), and `SessionSetup` asks one thing per screen with a
-`Next` under it and the answers so far folded into a line above. The last screen
-carries the start.
+`Next` under it and the answers so far folded into a line above, with a `Start`
+of its own on the last screen for whoever came in that way.
 
-**A guest gets all three screens. Somebody signed in gets none of them**, and
-that reverses what this section used to say. The argument against a skip was
-that the three screens are the only moment the product has to ask a returning
-visitor whether today is a ten-minute day. That is right, and it is answered
-rather than dropped: **Home prints the settings the sitting will use directly
-under the button that starts it, with `Change` beside them.** The question is
-still put every time — it is read instead of walked. A guest has no home to have
-read it on, so a guest still walks it.
+**That is the model Home had, extended to the guest on 9 September 2026**
+(`plans/flow-audit.md`, item C). Until then the word opened the questions and
+`Start` at the foot of the third was the only thing that began a sitting. This
+section used to argue that a guest should walk all three screens because they
+are the only moment the product has to ask a returning visitor whether today is
+a ten-minute day; Home answered that for the signed-in person by printing the
+settings under the button that starts the sitting, with `Change` beside them —
+the question is still put every time, read instead of walked — and the answer
+was withheld from the guest on the grounds that a guest has no home to have read
+it on. That left six taps to a first sitting for the person deciding whether to
+come back, against one for the person who already had. The landing now reads
+the line to them too. A first-time visitor gets the defaults, and is told what
+they are before they get them.
 
-The consequence to remember is in the audio, not the UI. `Begin.` unlocks the
-`AudioContext`, and autoplay policy only allows that inside a gesture. Home's
-sitting starts from an effect on mount, which is not one — so the unlock happens
-in Home's `Sit` click, in `Entry.startSitting`. **If a sitting is ever silent or
-the closing bell never rings, that is the line that has moved.**
+The consequence to remember is in the audio. `begin` calls `mix.restore()`, so a
+stored mix plays from the word's first tap — which is exactly what `useMix`'s
+silent unlock was built to stop when the word merely opened the questions. The
+difference is that the word now starts the sitting the mix was saved for: it is
+a mix the person built and asked for, which `VISION.md` §4 permits, and the
+line under the word says what it is. A first-time visitor has `soundMix: {}`
+and hears nothing but the bell. `Change` is the silent path: `openSetup`
+builds the graph with the master at zero and nothing is audible until the sound
+question is on screen. Home's sitting still starts from an effect on mount,
+which is not a gesture — so its unlock happens in Home's `Sit` click, in
+`Entry.startSitting`. **If a sitting is ever silent or the closing bell never
+rings, one of those two clicks is the line that has moved.**
 
 **The word and the button are different objects, and that is the point.**
 `Let’s begin.` is display type set into a photograph — the room inviting you in,
-and a border round it would make it a sticker on a picture. What starts a sitting is
-`Start`, a bordered control at the foot of the last question, sitting exactly
-where `Next` sat on the two screens before it. It used to be `Begin.` in both
-places, which read as the flow having failed to go anywhere, and set as display
-type at the end of a form it read as a heading that happened to be clickable —
-people went looking for the real button underneath it.
+and a border round it would make it a sticker on a picture. `Start`, at the foot
+of the last question, is a bordered control sitting exactly where `Next` sat on
+the two screens before it: at that moment somebody is looking for a control,
+not for typography. It used to be `Begin.` in both places, which read as the
+flow having failed to go anywhere. `Change` is `QUIET` — bounded, with a
+chevron — for the reason `controls.ts` gives: a control whose only affordance is
+being a word is an invisible one.
 
 Two things there are easy to get wrong:
 
-- **The audio unlock happens on the landing's `Begin.`, not at the end.**
+- **The audio unlock happens on the landing, not at the end of `Change`.**
   Autoplay policy only starts an AudioContext inside a gesture, and the sound
   screen offers to play five beds so somebody can hear what they are choosing.
   Unlocking at the end would make every one of those play buttons the first
-  gesture on a context that was never unlocked.
+  gesture on a context that was never unlocked. The word unlocks audibly,
+  `Change` silently.
 - **Every screen has a way out, in the same place.** A back arrow at the top
   left: from the first question it leaves the flow, from any other it steps back
   one. It used to be a `Not now` link on the first screen only, which meant the
@@ -1537,12 +1559,14 @@ retiring the tier for the room is the honest move rather than raising it again.
 `opacity-*` on quiet text is now avoided outright — over a photograph it
 composites toward whatever is behind it rather than away from it.
 
-**The open trade-off.** The landing needs about 389px of copy and the band is
-309px at 1280×800, 235px at 1280×640. The fit scale is therefore 0.79 and 0.60
-respectively: legible, and small. Two knobs, both design decisions rather than
-bugs — `PHOTO_FOCUS_Y` (0 would anchor the crop to the top of the photograph
-and buy about 100px of band on short windows, at the cost of the dish), or
-carrying less on the landing.
+**The open trade-off.** The landing needed about 389px of copy before the
+settings line and `Change` joined it on 9 September 2026 — they have not been
+measured in place, and add roughly a line and a 44px control to that — and the
+band is 309px at 1280×800, 235px at 1280×640. The fit scale was 0.79 and 0.60
+respectively and is lower now: legible, and small. Two knobs, both design
+decisions rather than bugs — `PHOTO_FOCUS_Y` (0 would anchor the crop to the
+top of the photograph and buy about 100px of band on short windows, at the cost
+of the dish), or carrying less on the landing.
 
 ---
 

@@ -71,9 +71,20 @@ release, `7026657`.
 ## 2. What a visitor gets
 
 **Landing.** A photograph of a candle in a dark room, the words *Let’s begin.*,
-one sentence saying what the place is, and one link to the world map. No title
-and no settings. The candle is the one lit at the top of this UTC hour; its
-flame is smaller and dimmer the further through the hour you arrive.
+one line under them saying what pressing them will do — *10 minutes · singing
+bowl · in silence* — with *Change* beneath it, then one sentence saying what
+the place is, and one link to the world map. No title. The candle is the one
+lit at the top of this UTC hour; its flame is smaller and dimmer the further
+through the hour you arrive.
+
+*Let’s begin.* starts the sitting. Since 9 September 2026 (`plans/flow-audit.md`,
+item C) the landing does what Home does for a signed-in person: prints the
+settings the sitting will use under the control that starts it, and offers
+*Change* beside them. Until then the word opened three questions and *Start* at
+the foot of the third began the sitting — six taps to a first sitting for a
+guest, against one for somebody signed in. A first-time visitor gets the
+defaults and is told what they are before they get them. The line is the same
+words on both surfaces, from one helper.
 
 The sentence is live when it can be and standing when it cannot: *A candle was
 lit at 12:00. 11 people are looking at the same one.* whenever two or more have
@@ -101,7 +112,7 @@ invitation from someone sitting down with you — the premise of the whole site,
 and it was being spent nowhere else on the one screen a first-time visitor reads
 before deciding.
 
-**Begin → three questions, one per screen.** *How long* (1 minute, then 5 to
+**Change → three questions, one per screen.** *How long* (1 minute, then 5 to
 55 in fives, or *until the bell*, which now rings at :55), *which bell* (singing bowl, gong, struck
 bell — each can be auditioned), *any sound* — a switch, `No` by
 default, and only when it is flipped to `Yes` do the five ambient beds appear,
@@ -118,16 +129,19 @@ Saying `No` silences the beds for real rather than hiding them, and saying
 `Yes` again within the flow puts back what was there. Answers are
 remembered. A back arrow leaves
 from the first screen and steps back from the others. *Start* is at the foot of
-the last screen. The audio context is unlocked on *Begin*, not on *Start* —
-but it is unlocked **silent**, and nothing is audible until the background-noise
-question is on screen. Until 7 September 2026 those were the same act, so a
-returning visitor with a stored mix heard it start under the words *How long?*,
-two screens before being asked whether they wanted any. That is the one thing
-`VISION.md` says v1 must not become, and the fix is a master held at zero rather
-than a change to anybody's stored levels: saying *No* still writes real zeros to
-the beds, so raising the master on a declined mix plays nothing.
+the last screen, for whoever came in this way. The audio context is unlocked on
+*Change*, not on *Start* — but it is unlocked **silent**, and nothing is audible
+until the background-noise question is on screen. Until 7 September 2026 those
+were the same act, so a returning visitor with a stored mix heard it start under
+the words *How long?*, two screens before being asked whether they wanted any.
+That is the one thing `VISION.md` says v1 must not become, and the fix is a
+master held at zero rather than a change to anybody's stored levels: saying *No*
+still writes real zeros to the beds, so raising the master on a declined mix
+plays nothing. *Let’s begin.* is different: it starts the sitting, so a stored
+mix plays from that tap — the mix the visitor built, which `VISION.md` §4
+allows, and the line under the word says what it is.
 
-**The bell rings twice.** The one you chose sounds at *Start* as well as at the
+**The bell rings twice.** The one you chose sounds at the start as well as at the
 end, so a sitting is bounded at both ends by the same sound rather than
 beginning in silence. The opening strike has a shorter tail — around 60% of the
 closing one — because it marks the threshold and then gets out of the way, and

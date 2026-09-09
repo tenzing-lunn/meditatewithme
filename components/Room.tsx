@@ -26,6 +26,7 @@ import SessionSetup, { type Step } from './SessionSetup';
 import Account from './Account';
 import { FOCUS, QUIET } from './controls';
 import { localTime } from '@/lib/format';
+import { settingsLine } from './settingsLine';
 import SoundMixer from './SoundMixer';
 import type { MASTER_KEY, TrackSlug } from './mix';
 import type { Mix } from './useMix';
@@ -342,8 +343,9 @@ interface RoomProps {
    * This one prop is the whole difference between the two ways the room is
    * used, because that difference really is "is there a home to come back to":
    *
-   *   absent   a guest. The landing, the word `Begin.`, the three questions,
-   *            and the account offer at the end.
+   *   absent   a guest. The landing — the word `Let’s begin.` with the
+   *            settings it will use read out under it, and `Change` for the
+   *            questions — and the account offer at the end.
    *   present  somebody signed in. The sitting starts on arrival — they
    *            answered the questions on Home by reading them — and the ending
    *            comes back here instead of offering an account they have.
@@ -388,10 +390,13 @@ export default function Room({
   /**
    * Is the setup flow open, and which question is showing.
    *
-   * `setup` null means the landing: the photograph, and the word `Begin.` on
-   * it. Nothing else — no folded settings, no questions. `Begin.` opens the
-   * flow, the room settles out of focus behind it, and the last screen of the
-   * flow is what actually starts a sitting.
+   * `setup` null means the landing: the photograph, the word `Let’s begin.`
+   * on it, and one line under the word saying what pressing it will do.
+   * `Change` under that line opens the flow, the room settles out of focus
+   * behind it, and the last screen carries a `Start` of its own — but the
+   * ordinary way to sit is the word, which starts the sitting directly. Until
+   * 9 September 2026 the word opened the flow and the only start was at the
+   * end of it: three screens for a guest where Home read one line.
    */
   const [setup, setSetup] = useState<Step | null>(null);
   // The mixer, reached mid-sitting, and the practice log. Owned here rather
@@ -616,7 +621,7 @@ export default function Room({
   );
 
   /**
-   * `Begin.` on the landing. Opens the questions; does not start a sitting.
+   * `Change` on the landing. Opens the questions; does not start a sitting.
    *
    * The audio unlock happens HERE rather than at the end of the flow, and that
    * is the whole reason it is a callback and not a `setSetup` inline. Autoplay
@@ -624,12 +629,15 @@ export default function Room({
    * thing this flow does is offer to play five sounds so somebody can hear what
    * they are choosing. Waiting until the end would mean every one of those play
    * buttons was the first gesture, on a context that had not been unlocked yet.
+   *
+   * It was the begin word's click until 9 September 2026; the word now calls
+   * `begin` itself, and this is what the quieter control under it does.
    */
   const openSetup = useCallback(() => {
     unlockAudio();
     // Silent. The context has to start inside this gesture or the audition
     // buttons three screens later have nothing to play through — but starting
-    // it is not the same as playing through it, and this word is not where
+    // it is not the same as playing through it, and `Change` is not where
     // anybody agreed to hear rain. See `useMix`.
     mix.ensure({ silent: true });
     setSetup('duration');
@@ -707,8 +715,12 @@ export default function Room({
    * the button that starts it, with `Change` beside them. The question is still
    * put every time. It is now read instead of walked.
    *
-   * A guest still gets all three screens, because a guest has no home to have
-   * read the answer on.
+   * A guest got all three screens for a further two days, on the grounds that
+   * a guest has no home to have read the answer on. Since 9 September 2026 the
+   * landing reads it to them instead — the same line, under `Let’s begin.`,
+   * with the same `Change` — so the only difference left between the two is
+   * that a guest presses the word and somebody signed in pressed `Sit` on the
+   * page before. See THE LANDING below.
    *
    * THE AUDIO WAS ALREADY UNLOCKED BEFORE THIS RAN. `begin()` calls
    * `unlockAudio()`, but an effect is not a user gesture and autoplay policy
@@ -993,12 +1005,28 @@ export default function Room({
 
           <div className="mt-4 flex w-full flex-col items-center">
           {/* THE LANDING
-              The photograph, one word on it, and one line saying what the
-              place is. The settings, the title and the quiet links have all
-              moved behind this word or after the sitting, because a picture
-              with anything else on it stops being a picture.
+              The photograph, one word on it, one line saying what pressing
+              the word will do with `Change` under it, and one line saying
+              what the place is. The title and the quiet links have all moved
+              behind `Change` or after the sitting, because a picture with
+              anything else on it stops being a picture.
 
-              THE LINE IS THE EXCEPTION, AND IT IS PAID FOR
+              THE WORD STARTS THE SITTING, AND THE LINE IS WHAT PAYS FOR THAT
+              Until 9 September 2026 the word opened three questions, and
+              `Start` at the foot of the third was the only thing that began a
+              sitting: six taps to a first sitting for a guest, against one
+              for somebody signed in pressing `Sit` on Home. Home had already
+              answered the "no skip path" argument — see `autoStarted` above —
+              by printing the settings under the button and offering `Change`
+              beside them, and that answer was withheld from the one person
+              deciding whether to come back at all. So the landing takes Home's
+              model whole: the same line from the same helper
+              (`settingsLine.ts`), the same `Change`, and the word does what
+              the circle does. A first-time visitor gets the defaults, and is
+              told what they are before they get them. `plans/flow-audit.md`,
+              item C.
+
+              THE SENTENCE IS THE OTHER EXCEPTION, AND IT IS PAID FOR TOO
               This screen said `Let’s begin.` and nothing else until 7
               September 2026, which is a picture with no product in it. The
               sentence that explains the site was written and shipped — to
@@ -1039,7 +1067,43 @@ export default function Room({
                   transitionTimingFunction: REVEAL_EASE,
                 }}
               >
-                <BeginWord onClick={openSetup} />
+                <BeginWord onClick={begin} />
+
+                {/* What pressing the word will do, and the way to change it.
+                    Home's line and Home's control, in Home's order, so the
+                    two surfaces that start a sitting say the same thing in
+                    the same words. `ink-2` for the same reason `WhatThisIs`
+                    is: this is over the photograph, and it is the line the
+                    word depends on. `QUIET` rather than `LIFTED`: inside the
+                    band, where the composition supplies the contrast. */}
+                <div className="mt-5 flex flex-col items-center gap-3">
+                  <p className="text-ink-2 max-w-[30ch] text-center text-sm">
+                    {settingsLine(prefs, now)}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={openSetup}
+                    aria-expanded={false}
+                    className={QUIET}
+                  >
+                    Change
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="size-3.5"
+                      fill="none"
+                      aria-hidden
+                    >
+                      <path
+                        d="m6 9 6 6 6-6"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                </div>
+
                 {/* `showCount` off means the room is hidden, so the live half
                     is withheld and the standing sentence stands in. Somebody
                     who asked not to be shown the others is not shown them
@@ -1493,10 +1557,28 @@ function Focus({
  * finish with everyone else at…` in `SessionSetup`. Straight quotes in this
  * project are a code-comment habit, not a copy one.
  *
+ * IT STARTS THE SITTING. Since 9 September 2026 its click is `begin`, the
+ * same callback Home's circle reaches through `Sit`: audio unlocked, graph
+ * built, mix restored, bell scheduled, all inside the gesture. Until then it
+ * opened the three questions and `Start` at the foot of the third was what
+ * began — a guest walked three screens where somebody signed in read one line.
+ * The line is now under this word too, and `Change` beside it is what opens
+ * the questions; `StartButton` below survives only inside them.
+ *
+ * ONE THING FOLLOWS FROM THAT, AND IT IS ALLOWED. `begin` calls
+ * `mix.restore()`, so a stored mix plays from this first tap — rain at 0.6
+ * from a previous visit is audible the instant the word is pressed. That is
+ * the case `useMix` was built to prevent at the word, and the difference is
+ * that the word now starts the sitting the mix was saved for: it is a mix the
+ * person built and asked for, which `VISION.md` §4 permits — *the only sound
+ * you did not ask for is the bell you chose.* A first-time visitor has
+ * `soundMix: {}` and hears nothing but the bell. What the line under the word
+ * says — `in silence`, or `rain and wind` — is the warning, and `Change` is
+ * the silent path for anybody who wants to alter it first.
+ *
  * It is the landing and only the landing. It used to appear twice, meaning two
  * different things — opening the questions here, starting the sitting at the
- * end of them — which read as the flow having failed to go anywhere. The one at
- * the end is `StartButton` below.
+ * end of them — which read as the flow having failed to go anywhere.
  */
 function BeginWord({ onClick }: { onClick: () => void }) {
   return (
@@ -1568,15 +1650,23 @@ function WhatThisIs({
 }
 
 /**
- * What actually starts a sitting, at the foot of the last question.
+ * The start at the foot of the last question, for somebody who came in
+ * through `Change`.
+ *
+ * Not the ordinary way to begin any more: the landing's word starts a sitting
+ * itself, and this is reached only by opening the questions first. It stays
+ * because a flow you can enter needs a way to finish that is not the back
+ * arrow three times — somebody who changed the length wants to sit, not to
+ * return to the landing and press the word again.
  *
  * A button here and a word on the landing, and the difference is the point.
- * `Begin.` is display type set into a photograph — it is the room inviting you
- * in, and a border around it would make it a sticker on a picture. This is the
- * last of three answers in a form, sitting where `Next` sat on the two screens
- * before it, and at that moment somebody is looking for a control, not for
- * typography. Set as display type it read as a heading that happened to be
- * clickable, and people went looking for the real button underneath it.
+ * `Let’s begin.` is display type set into a photograph — it is the room
+ * inviting you in, and a border around it would make it a sticker on a
+ * picture. This is the last of three answers in a form, sitting where `Next`
+ * sat on the two screens before it, and at that moment somebody is looking
+ * for a control, not for typography. Set as display type it read as a heading
+ * that happened to be clickable, and people went looking for the real button
+ * underneath it.
  *
  * So: the same ember, the same shape as `Next`, one step louder because it is
  * the one that commits — and much smaller than the landing's word, which stays
