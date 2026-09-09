@@ -169,8 +169,8 @@ away from *Delete account*, so it stays; noted only.
 |---|---|---|
 | 1 | A · guest `Finish` returns to the landing | done, `d035427` |
 | 2 | B · guest `Sit again` sits again | done, `9f688ba` |
-| 3 | C · the landing reads the settings; *Let’s begin.* starts | |
-| 4 | D · one `Settings` for both surfaces; `SessionSetup` retired | |
+| 3 | C · the landing reads the settings; *Let’s begin.* starts | done, `f085b68` |
+| 4 | D · one `Settings` for both surfaces; `SessionSetup` retired | done, `2f094c5` |
 | 5 | E · *Hide the room* leaves the ending | |
 | 6 | F · one time for the shared moment | |
 | 7 | G · the menu clears the word | |
