@@ -27,9 +27,11 @@
   --color-ember-soft: #f0dcbd;
 
   /* The one dark that sits over the photograph: the lifted controls in the
-     room and the account panel, always at partial opacity, so the picture's
-     own warmth comes through. Not a mode colour, so it is not overridden
-     below. It was a hex typed out in four places before it had a name. */
+     room at partial opacity, so the picture's own warmth comes through, and
+     the account menu and panel opaque, since 9 September 2026, so the
+     landing word cannot show through them. Not a mode colour, so it is not
+     overridden below. It was a hex typed out in four places before it had a
+     name. */
   --color-panel: #1c1410;
 
   /* Type has three jobs, not three interchangeable moods: Instrument Serif

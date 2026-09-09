@@ -173,7 +173,7 @@ away from *Delete account*, so it stays; noted only.
 | 4 | D · one `Settings` for both surfaces; `SessionSetup` retired | done, `2f094c5` |
 | 5 | E · *Hide the room* leaves the ending | done, `70fae01` |
 | 6 | F · one time for the shared moment | done, `456fcac` |
-| 7 | G · the menu clears the word | |
+| 7 | G · the menu clears the word | done, `646f363` |
 
 Each lands as its own commit on `dev` with typecheck, tests, contrast and
 build green, and with `PRODUCT.md` §2 corrected wherever the visitor's
