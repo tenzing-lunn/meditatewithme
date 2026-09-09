@@ -321,11 +321,24 @@ Each bell now carries its own `modes` table, plus three things none of them had:
 
 - **A mallet.** The tone was never what gave the synthesis away; the attack was. A band-passed noise burst of 22–90ms under the strike is the single biggest difference between "a bell" and "a bell sound". It does not scale with `decayScale` — a mallet is a mallet whether the tail after it is a four-second preview or a twenty-two second ending.
 - **Beating twins.** Every prominent mode is two oscillators a fraction of a hertz apart, so it warbles the way real metal does. The `hum` bed in `mix.ts` already used this trick at 110 / 110.35 Hz; the bells did not.
-- **Bloom, for the gong only.** Its upper modes arrive 0.35–1.8s *after* the beater, with an attack that lengthens with the delay. A tam-tam getting brighter before it dies is most of what makes it a gong rather than a large bowl. Clamped to a quarter of the available tail so a mode cannot arrive after a shortened bell has gone.
+- **Bloom, for the gong only.** Its upper modes arrive 0.2–2.2s *after* the beater, with an attack that lengthens with the delay. A tam-tam getting brighter before it dies is most of what makes it a gong rather than a large bowl. Clamped to a quarter of the available tail so a mode cannot arrive after a shortened bell has gone.
 
 The bell's `fundamental` means **the note you hear**, which for a cast bell is its *nominal*, not its lowest mode — so `struck-bell`'s modes are fractions of the note (hum at 0.25, prime at 0.5, tierce at 0.6) rather than multiples of the hum. The tierce is a minor third above the prime and is why a bell sounds like a bell; the old shared ratios had nothing in that region at all. The three published pitches are unchanged, deliberately: this work changed what the bells sound like, not what they play.
 
-Mode gains in the tables are **relative**. `strike()` normalises each set to `PEAK` (0.9, what the old four-partial set happened to sum to) because the three bells now have five, ten and eight modes and every beating one is two oscillators — left raw, the gong would arrive at roughly two and a half times the struck bell's level, and adding a mode later would quietly make that bell louder.
+Mode gains in the tables are **relative**. `strike()` normalises each set to `PEAK` (0.9, what the old four-partial set happened to sum to) because the three bells now have five, fourteen and twelve modes and every beating one is two oscillators — left raw, the gong would arrive at several times the struck bell's level, and adding a mode later would quietly make that bell louder.
+
+What `PEAK` pins is the **peak, which is not the loudness**. Splitting a fixed peak across more partials, or across partials that die sooner, leaves less of it in the tail, and the tail is what a bell is heard as. Both rewrites below cost their bell one to two decibels through the body of the sound with the peak unmoved, and no amount of turning the table's gains up recovers it — the normalising line divides the rise straight back out. Small enough to leave; worth knowing before adding a fourth bell and wondering why it sits under the other three.
+
+### Two of the three tables were rewritten again, on 8 September 2026
+
+The first pass gave each bell its own modes and stopped there. What it did not check was what the ratios *were as intervals*, and two of the three came out as music.
+
+- **The gong was a diminished seventh chord.** Its ten partials ran 1, 1.19, 1.41, 1.68, 2.13, 2.61, 3.24, 3.97, 4.81, 5.92 — every step between three and 3.7 semitones, which is a ladder of minor thirds two and a half octaves tall. The bloom then arpeggiated it upward. It did not sound like a gong because it was a chord being played. The set is now fourteen deliberately irregular partials: steps from 0.9 to 4.3 semitones, every pair at least sixteen cents off the nearest octave, fifth, fourth, third or sixth, and three of them clustered inside two semitones so the low mids beat against themselves. **Nudging one of these ratios is not free — move it and check what it lands on.**
+- **The struck bell was a minor triad pad.** It had the five tuned partials and almost nothing above the nominal, at near-equal weight and with long tails, so a second after the strike you were holding C minor and holding it for seconds. Four of the five were also *exact* harmonics 1, 2, 3 and 4 of the hum, which fuse into a single organ-like tone. It now carries seven **clang** partials above the nominal — loud, inharmonic, gone inside a second, which is what a real casting leaves and what the strike is actually made of — a tierce whose decay is well under the prime's so the chord resolves into an octave, and a few cents of detuning on the tuned partials so nothing fuses.
+
+The singing bowl was not touched. Its ratios were always the widely-spaced inharmonic ones and it was always the convincing one.
+
+`strike()` is arithmetic over a static table, which means the bells can be **rendered and measured offline** rather than argued about — a short Node script that reads `BELLS` straight out of the file, sums the sines and writes a WAV is how both faults above were found and how the fix was checked before anyone listened. That beats opening the preview, and it is the only way to A/B a change against the version in git.
 
 ### The bell rings at both ends
 
@@ -955,8 +968,23 @@ than stored.
 
 It was CSS — gradients shaped into a flame, with `candleBurn` spent on the
 height of the wax. It is now `components/CandleScene.tsx`: a photograph of a
-room in `public/room-base.png`, with a sprite flame warped on a canvas above
-it, and a camera that racks between six `phase`s as the page changes.
+room in `public/room-base.{avif,jpg}`, with a sprite flame warped on a canvas
+above it, and a camera that racks between six `phase`s as the page changes.
+
+The photograph is a `<picture>`, not a CSS background, and that is load-bearing
+twice over. A background cannot negotiate a format, so the only thing that
+could be served was the 2.3 MB PNG master — the LCP element of every visit, ten
+times the weight of every other asset in the project combined. And a background
+has no load event, so the readiness the scene reports through `onReady` had to
+be faked by requesting the same URL a second time through an `Image` and
+trusting the cache. Both went at once on 7 September 2026. AVIF is 39 KB at
+47.5 dB PSNR against the master, measured; the JPEG fallback is 128 KB at
+48.0 dB. `basePath` is a stem without an extension so the two cannot be pointed
+at different rooms.
+
+The PNG master stays in `public/` — it is what the two derived files are built
+from, and `docs/photographic-room.md` describes the handoff that produced it.
+Nothing links it, so nobody downloads it.
 
 A photograph cannot shorten, so the burn is spent on the flame instead — it
 loses scale and glow across the hour rather than height. Somebody arriving at
@@ -1352,7 +1380,8 @@ all. Two links measured 3.98 and 2.19 there.
   one its contrast is measured against that surface rather than against whatever
   the photograph is doing behind it.
 
-  The fill is `#1c1410` at **65%**, and both halves of that are load-bearing.
+  The fill is `#1c1410` — the `panel` token in `globals.css`, since 8
+  September 2026 — at **65%**, and both halves of that are load-bearing.
   Warm, because at a neutral near-black it read as a chip of something else laid
   on a warm brown photograph — the button announced that it did not belong to
   the picture. Not opaque, so the room's own colour comes through it and it
@@ -1479,7 +1508,7 @@ re-measured in place.
 `Send me a link` at 4.57 was the thinnest margin in the product, and it was thin
 for a specific reason: it was an ember control sitting in the band over the
 brightest thing the `open` camera leaves lit. The account flow no longer takes
-the band — it is a panel with a `#1c1410`/95 fill of its own (see §16), so its
+the band — it is a panel with a `panel`/95 fill of its own (see §16), so its
 `Send me a code` is measured against that fill rather than against the flame,
 and the worst case that produced 4.57 cannot occur there. **The panel has not
 been run through `contrast-room.js` in place**; the arithmetic on the fill puts
@@ -1549,9 +1578,10 @@ is free — `/api/count` is one edge-cached response for the whole world, which 
 
 ### The room takes one prop that carries the whole difference
 
-`home?: () => void`. Present means signed in: the sitting starts on arrival, the
-ending says `Done` and comes back here, and the account offer at the foot is not
-rendered at all. Absent means a guest: the landing, the questions, `Finish`, and
+`home?: () => void`. Present means signed in: the sitting starts on arrival —
+once the room is visible, off the same `booted` gate as the reveal, so a cold
+cache never has a ring draining on a black screen — the ending says `Done` and
+comes back here, and the account offer at the foot is not rendered at all. Absent means a guest: the landing, the questions, `Finish`, and
 the offer.
 
 One prop rather than two booleans, because the difference genuinely is "is there

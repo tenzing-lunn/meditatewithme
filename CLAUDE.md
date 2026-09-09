@@ -152,12 +152,20 @@ checked, it is a label change" is a fine answer.
 
 **When you do open it, it plays out of Tenzing's speakers. Leave it silent.**
 
-Pressing the landing's begin word calls `unlockAudio()` and `mix.ensure()` in
-`openSetup` (`components/Room.tsx`), so **the stored ambient beds start playing
-the moment the flow opens** — before any mixer is on screen. There is no silent
-path through the setup flow. The five beds are loudness-matched to −16 LUFS as
-of 7 September 2026, so no single one ambushes you any more — `rain` used to be
-12.5 dB above `waterfall` and this note used to warn you about it. A hidden preview
+Pressing the landing's begin word calls `unlockAudio()` and
+`mix.ensure({ silent: true })` in `openSetup` (`components/Room.tsx`), which
+builds the graph with the master at zero. **The first two questions are silent.
+Sound starts when the sound question reaches the screen**, where `mix.unmute()`
+raises the master so the audition buttons work — so the step to stay off is the
+third one, and everything before it is safe.
+
+That is true as of 7 September 2026 and it used to be the opposite: the beds
+started at the begin word, two screens early, and this note warned you there was
+no silent path through the flow. There is one now, and it is most of the flow.
+
+The five beds are loudness-matched to −16 LUFS as of the same day, so no single
+one ambushes you either — `rain` used to be 12.5 dB above `waterfall` and this
+note used to warn you about that too. A hidden preview
 pane keeps playing: the `visibilitychange` handler in `components/useMix.ts`
 only ever *resumes*, deliberately, because a sitting must not stop when someone
 glances at another tab.
@@ -176,6 +184,16 @@ So, for any run that opened the room:
 The same applies to anything else a test leaves behind: a completed sitting
 writes a real entry to the practice log. Say so rather than leaving it to be
 discovered.
+
+**The preview pane is signed in, so `localhost:3000` is Home, not the landing.**
+To see what a guest sees, open **`http://127.0.0.1:3000`** instead: a different
+origin with its own localStorage, so it is signed out without signing anybody
+out. `allowedDevOrigins` in `next.config.ts` exists for exactly this — without
+it Next serves that origin a black page and 403s. Never sign the pane out to
+get there; the session is Tenzing's. That origin is not necessarily *empty*:
+on 7 September 2026 it already held a stored mix from an earlier run (rain
+0.5, hum 0.3, master 0), so read `mwm.preferences` there before walking to the
+sound question rather than assuming silence.
 
 ## Time
 

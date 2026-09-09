@@ -17,8 +17,10 @@ import {
   timerStopIndex,
 } from '@/lib/timer';
 import { BELLS, type BellKind, previewBell } from './audio';
+import { FOCUS, QUIET } from './controls';
+import { sentenceList } from '@/lib/format';
 import { TRACKS, type MASTER_KEY, type TrackSlug } from './mix';
-import SoundMixer from './SoundMixer';
+import SoundMixer, { BedToggles } from './SoundMixer';
 
 /**
  * What you settle before you sit — asked one thing at a time, on its own
@@ -51,14 +53,8 @@ export type Step = (typeof STEPS)[number];
 const QUESTION: Record<Step, string> = {
   duration: 'How long?',
   bell: 'How should it end?',
-  sound: 'Any background noise?',
+  sound: 'Any sound?',
 };
-
-/** "rain", "rain and wind", "rain, wind and night" */
-function sentenceList(items: string[]): string {
-  if (items.length <= 1) return items[0] ?? '';
-  return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
-}
 
 export default function SessionSetup({
   prefs,
@@ -115,6 +111,9 @@ export default function SessionSetup({
    * five silent faders exactly as a first visit does.
    */
   const beforeSilence = useRef<Record<string, number>>({});
+
+  /** The faders, shown only when asked for. Closed again on every visit. */
+  const [levelsOpen, setLevelsOpen] = useState(false);
 
   const toggleNoise = () => {
     if (noise) {
@@ -186,7 +185,7 @@ export default function SessionSetup({
           index === 0 ? onCancel() : setStep(STEPS[index - 1] ?? 'duration')
         }
         aria-label={index === 0 ? 'Back to the room' : 'Back a question'}
-        className="text-ink-3 hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper -ml-2 flex size-11 shrink-0 items-center justify-center self-start transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+        className={`text-ink-3 hover:text-ink rounded-control -ml-2 flex size-11 shrink-0 items-center justify-center self-start transition-colors ${FOCUS}`}
       >
         <svg viewBox="0 0 24 24" className="size-6" fill="none" aria-hidden>
           <path
@@ -209,12 +208,18 @@ export default function SessionSetup({
           key={done}
           type="button"
           onClick={() => setStep(done)}
-          className="group border-rule/60 rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper flex w-full items-baseline justify-between gap-4 border-b py-2 text-left transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+          // `py-3`, not `py-2`: with a line of text inside, `py-2` made a
+          // 40px control, under the 44px every other control here clears.
+          className={`group border-rule/60 rounded-control flex w-full items-baseline justify-between gap-4 border-b py-3 text-left transition-colors ${FOCUS}`}
         >
           <span className="text-ink-2 group-hover:text-ink text-[0.95rem] transition-colors">
             {SUMMARY[done]}
           </span>
-          <span className="text-ink-3 group-hover:text-ember shrink-0 text-xs transition-colors">
+          {/* ink-2, not ink-3. These rows sit in the lower half of the frame
+              when the questions take all of it, and on `open` the photograph
+              there is bright enough that ink-3 measured 4.00 — under AA for
+              text this small. */}
+          <span className="text-ink-2 group-hover:text-ember shrink-0 text-xs transition-colors">
             change
           </span>
         </button>
@@ -300,12 +305,19 @@ export default function SessionSetup({
               {/* Its own line and its own weight. This is the only control in
                   the product that makes two strangers finish at the same
                   moment, and as a fourth preset chip it read as a fourth
-                  preset. */}
+                  preset.
+
+                  A toggle, as it is on Home. It used to only ever set — pressing
+                  it again did nothing, and the way back to your own duration
+                  was to move the slider, which nothing said — while carrying
+                  `aria-pressed`, which promises a toggle. Pressing it again
+                  returns to the slider's stop; `timerMinutes` was never
+                  changed, so that is still where you were. */}
               <button
                 type="button"
-                onClick={() => update({ untilBell: true })}
+                onClick={() => update({ untilBell: !prefs.untilBell })}
                 aria-pressed={prefs.untilBell}
-                className={`rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper flex min-h-14 w-full items-center justify-center border px-4 text-base font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none ${
+                className={`rounded-control flex min-h-14 w-full items-center justify-center border px-4 text-base font-medium transition-colors ${FOCUS} ${
                   prefs.untilBell
                     ? 'border-ember bg-ember-soft text-ember'
                     : 'border-ember/70 bg-ember-soft/50 text-ink hover:border-ember hover:bg-ember-soft'
@@ -334,7 +346,7 @@ export default function SessionSetup({
                     previewBell(kind);
                   }}
                   aria-pressed={prefs.endBell === kind}
-                  className={`rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper min-h-14 flex-1 border px-2 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none ${
+                  className={`rounded-control min-h-14 flex-1 border px-2 text-sm transition-colors ${FOCUS} ${
                     prefs.endBell === kind
                       ? 'border-ember text-ember'
                       : 'border-rule text-ink-2 hover:border-ink-3'
@@ -357,9 +369,9 @@ export default function SessionSetup({
                 type="button"
                 role="switch"
                 aria-checked={noise}
-                aria-label="Background noise"
+                aria-label="Sound"
                 onClick={toggleNoise}
-                className="rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper group flex min-h-11 items-center gap-3 self-start focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                className={`rounded-control group flex min-h-11 items-center gap-3 self-start ${FOCUS}`}
               >
                 <span
                   aria-hidden
@@ -391,9 +403,28 @@ export default function SessionSetup({
                   sliders in the tab order and still five rows the band has to
                   fit — and the band measures what is actually there, so leaving
                   them in would shrink the question to make room for controls
-                  nobody asked for. */}
+                  nobody asked for.
+
+                  Five chips, then the faders only on request. The mixer used
+                  to open here whole — eleven controls on the last screen of a
+                  flow built on asking one thing — and it was the design
+                  audit's clearest cognitive-load failure. Which sounds is the
+                  question; how loud is a refinement, and it is one tap away. */}
               {noise && (
-                <SoundMixer soundMix={prefs.soundMix} onChange={onSound} />
+                <div className="space-y-4">
+                  <BedToggles soundMix={prefs.soundMix} onChange={onSound} />
+                  <button
+                    type="button"
+                    onClick={() => setLevelsOpen((v) => !v)}
+                    aria-expanded={levelsOpen}
+                    className={QUIET}
+                  >
+                    {levelsOpen ? 'Done adjusting' : 'Adjust levels'}
+                  </button>
+                  {levelsOpen && (
+                    <SoundMixer soundMix={prefs.soundMix} onChange={onSound} />
+                  )}
+                </div>
               )}
             </div>
           )}
@@ -410,7 +441,7 @@ export default function SessionSetup({
           <button
             type="button"
             onClick={() => setStep(STEPS[index + 1] ?? 'sound')}
-            className="border-ember text-ember hover:bg-ember rounded-action focus-visible:ring-ember focus-visible:ring-offset-paper min-h-12 border px-10 text-base transition-colors duration-300 hover:text-white focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+            className={`border-ember text-ember hover:bg-ember rounded-action min-h-12 border px-10 text-base transition-colors duration-300 hover:text-white ${FOCUS}`}
           >
             Next
           </button>

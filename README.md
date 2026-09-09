@@ -72,7 +72,8 @@ low-frequency, and identical for every viewer, so it caches. One 10-second edge
 cache entry serves the whole world. Full reasoning in ARCHITECTURE.md §5.
 
 **The room is a photograph.** `components/CandleScene.tsx` composites a sprite
-flame over `public/room-base.png` and racks a camera between phases. All
+flame over `public/room-base.avif` (JPEG where AVIF is unsupported; both are
+built from the `room-base.png` master) and racks a camera between phases. All
 readable text lives in the band of picture above the flame, and the page never
 scrolls. ARCHITECTURE.md §16 has the rules and the measurements.
 

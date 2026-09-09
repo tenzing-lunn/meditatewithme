@@ -8,7 +8,7 @@ sets an anonymous id, records heartbeats and offers email sign-in, with no
 privacy notice. The original build brief is retained as a historical baseline
 in `plans/v1-build-spec.html`.
 
-## Current state — verified 1 September 2026, `dev` at `8d59fba`
+## Current state — verified 7 September 2026, `dev` at `353aee0`
 
 - [x] Steps 01–07 are implemented on `dev`: room, timing, audio, presence,
   optional accounts, preference sync, and practice-log sync.
@@ -31,6 +31,11 @@ in `plans/v1-build-spec.html`.
 - [x] 133 tests, typecheck and a clean production build at `5b6b239`; no
   scrolling and no AA contrast failure at 1280×800 or 375×812.
 - [x] Launched: `main` serves the room. Rollback candidate `defa583`.
+- [x] Released 7 September 2026 (`cc712c6`, `dev` at `353aee0` merged into
+  `main`, on Tenzing's word): account menu, account deletion, the 55-minute
+  hour, matched beds, icon and share image, per-device sign-out. Typecheck,
+  168 tests and the build passed first; the timer migration was read back
+  from production before the merge. Rollback candidate `7026657`.
 - [ ] Step 08: legal, real-device QA, and launch configuration — all still
   open on the live site.
 
@@ -62,22 +67,29 @@ as a migration.
 3. In **Authentication → Providers → Email**, confirm Email/Magic Link remains
    enabled. `signInWithOtp` intentionally creates a new user on first use;
    that is the account-creation path, not a separate registration form.
-4. In **Authentication → SMTP**, configure a branded, production sender and
-   verify its domain. The default hosted SMTP is only suitable for team-address
-   testing and does not deliver ordinary visitors' login emails.
-4b. In **Authentication → Email Templates → Magic Link**, add `{{ .Token }}` to
-   the template. **The account flow asks for a six-digit code and the stock
-   template does not contain one.** Everything else works without this: the
-   panel says "the link in that email works too", `emailRedirectTo` is still
-   sent, and the link still signs people in. But until this is done the code box
-   on the last step has nothing to receive.
-
-   **Blocked until item 4 is done, and not by choice.** Tried on 7 September
-   2026 through the Management API and refused: *"Email template modification
-   is not available for free tier projects using the default email provider.
-   Please upgrade your plan or configure a custom SMTP provider."* So the order
-   is fixed: SMTP first, then this, in the dashboard or with the same API call.
-   The template to paste once it is allowed:
+4. ~~In **Authentication → SMTP**, configure a branded, production sender and
+   verify its domain.~~ **Half done, 7 September 2026 (evening).** Tenzing
+   set custom SMTP in the dashboard (Authentication → Emails → SMTP Settings):
+   host `smtp.resend.com`, port 465, user `resend`, sender name *Meditate
+   With Me*. Read back through the Management API; enabling it moved
+   `rate_limit_email_sent` from 2 to 30 on its own. **The sender address is
+   Resend's test one, `onboarding@resend.dev`, because there is no domain
+   yet.** That delivers only to the Resend account's own inbox and Gmail put
+   the first message in spam on the domain's reputation. The other half:
+   `meditatewithme.com` (GoDaddy registration, DNS at Cloudflare — see the
+   domain row below). Add it in Resend → Domains, put its DKIM/SPF/DMARC
+   records in the Cloudflare zone, wait for *Verified*, then change **only
+   the sender email** on the same Supabase page to `signin@meditatewithme.com`.
+   Nothing else changes.
+4b. ~~In **Authentication → Email Templates → Magic Link**, add `{{ .Token }}`
+   to the template.~~ **Done 7 September 2026 (evening)**, minutes after item
+   4 unblocked it, through the Management API (the earlier refusal, *"Email
+   template modification is not available for free tier projects using the
+   default email provider"*, went away with the default provider). Subject
+   *Your code for Meditate With Me*; body as below. Proved end to end: a real
+   `/otp` request against the live project at 19:59 UTC produced an email in
+   Tenzing's Gmail with a six-digit code rendered in large type and the link
+   underneath. The code box on the last step now has something to receive.
 
    ```html
    <h2>Your code</h2>
@@ -85,8 +97,6 @@ as a migration.
    <p style="font-size:28px;letter-spacing:0.3em;font-weight:bold">{{ .Token }}</p>
    <p>Or <a href="{{ .ConfirmationURL }}">follow this link</a> instead. Either works once, within the hour.</p>
    ```
-
-   with the subject *Your code for Meditate With Me*.
 4c. ~~In **Authentication → Providers → Email**, set **Email OTP Length** to
    `6`.~~ **Done 7 September 2026**, through the Management API
    (`mailer_otp_length: 6`), re-read afterwards, and proved end to end with a
@@ -121,15 +131,15 @@ What this establishes:
   `magic_link`, `/verify` 303, `Login` with `login_method: implicit` — from
   `https://meditatewithme.vercel.app`. Three of four accounts confirmed within
   a minute of asking.
-- **Everyone is signing in with the link, not the code.** Every login recorded
-  is `implicit`, which is the link path. That is expected: the email carries no
-  code, and cannot until the sender is replaced (4, then 4b). 4c was done later
-  the same day.
-- **The sender is still Supabase's shared one.** `mail_from` is
-  `noreply@mail.app.supabase.io`. Item 4 has never been done. The live config
-  also shows `rate_limit_email_sent = 2` — two emails an hour, project-wide,
-  which is the default sender's ceiling and the likeliest explanation for the
-  lost sign-up below.
+- **Everyone had been signing in with the link, not the code.** Every login
+  recorded up to that afternoon is `implicit`, which is the link path. That
+  was expected: the email carried no code until the sender was replaced (4,
+  then 4b), both done that evening. 4c was done earlier the same day.
+- **The sender was Supabase's shared one until that evening.** `mail_from`
+  was `noreply@mail.app.supabase.io` with `rate_limit_email_sent = 2` — two
+  emails an hour, project-wide, the default sender's ceiling and the likeliest
+  explanation for the lost sign-up below. Now Resend, limit 30, sender
+  address still the test one (item 4).
 - **One sign-up was lost.** The fourth account was created 39 minutes after
   the third, in the same hour, and never confirmed — its `confirmation_token`
   is still pending and `email_confirmed_at` is null, so Supabase accepted the
@@ -180,7 +190,8 @@ invoice you weren't expecting" promise forbids.
   the shared hour becomes the primary path — and the measurement question in
   §4D, which needs the legal-entity decision below before it can be answered
   privacy-safely. One conversation, after the status update above.
-- [ ] Whether the photograph in `public/room-base.png` is the candle that ships,
+- [ ] Whether the photograph in `public/room-base.png` (the master behind the
+  served `.avif` and `.jpg`) is the candle that ships,
   or the stand-in for a licensed loop Jonny sources. `context/PRODUCT.md`.
 
 ## Remaining launch work
@@ -190,7 +201,16 @@ invoice you weren't expecting" promise forbids.
   already written** — `plans/privacy-data-inventory.md` has the complete
   inventory and drafted copy for every category, including the approximate
   location the globe added. Only `[CONTROLLER]` and `[CONTACT EMAIL]` are
-  outstanding, so this is now a fill-in rather than a write-up.
+  outstanding, so this is now a fill-in rather than a write-up. **The page
+  exists** as of 8 September 2026: `app/privacy/page.tsx` renders the draft
+  with the two gaps shown as gaps, nothing links to it and it is `noindex`.
+  **The terms exist too**, later the same day: `app/terms/page.tsx`, with
+  the age policy as its `Age` section and four gaps — controller, contact,
+  `[MINIMUM AGE]` (the proposal recommended eighteen) and `[JURISDICTION]`
+  (everything points at England and Wales; nobody has said so). Same
+  treatment: unlinked, `noindex`. When the answers arrive: fill them, remove
+  the `robots` lines and the `Unfilled` chips from both pages, link both
+  from Home's foot and the ending.
 - [x] Add favicon and Open Graph metadata. Done 7 September 2026: `app/icon.tsx`,
   `app/apple-icon.tsx` and `app/opengraph-image.tsx`, all generated from one
   flame in `components/FlameMark.tsx`. All three prerender static, so the
@@ -206,21 +226,56 @@ invoice you weren't expecting" promise forbids.
   bare-service-key requests are all 401. Satisfies App Store guideline
   5.1.1(v) and is what the privacy notice's erasure paragraph will point at.
 - [ ] Perform real-phone QA and review keyboard navigation, contrast, and
-  `prefers-reduced-motion` behaviour.
-- [ ] Configure Auth URL allow-list and production SMTP; complete the
-  cross-device magic-link acceptance test above. **This is now the most urgent
-  item on the list, and it is no longer hypothetical** — see *Evidence from
-  the live project*, below. One of the four accounts created since launch
-  never confirmed, and mail is still leaving Supabase's shared sender.
-- [ ] After the SMTP sender is in, add `{{ .Token }}` to the Magic Link
-  template (4b) — refused on the free tier while the default sender is in use,
-  so it cannot go first. 4c (OTP length 6) is done. Until 4b is done the code
-  box on the last step is decorative.
-- [ ] Attach and verify the custom domain/DNS, update Supabase Site URL, and
-  repeat the production auth test.
-- [ ] Review the existing Supabase security-advisor notices before launch:
-  heartbeats has deliberately no browser RLS policy; `touch_updated_at` has a
-  mutable search-path warning that needs a separate, tested migration.
+  `prefers-reduced-motion` behaviour. **Keyboard and reduced motion reviewed
+  in the preview on 8 September 2026**, guest origin at 1440×900: Tab order
+  and a visible focus ring on the landing, all three questions, the account
+  menu (arrows wrap, Home/End), Home and its four rows; the slider steps
+  through `TIMER_STOPS` with `aria-valuetext` and persists. Two fixes came
+  out of it: Escape now returns focus to the menu trigger instead of dropping
+  it on `<body>`, and the flow's folded summary rows were 40px, now 48. Under
+  reduced motion the camera pins at 1.03 with no transform transition.
+  **The sitting and the ending followed later the same day**, two one-minute
+  guest sittings on the second origin (the entries landed in that origin's
+  own log, not Tenzing's). Three more fixes: the sound drawer opens above its
+  toggle in the DOM, so Tab skipped it — focus now moves into it and Escape
+  brings it back; `Your practice` unmounts when pressed, so focus fell to
+  `<body>` — the two buttons now hand focus to each other; and the ending's
+  two foot buttons were 40px, now 44. Tab order in the sitting, the drawer
+  (play buttons, faders with percentages, volume) and the ending all match
+  the visual order, every stop has the ring. The audit's §10 `open`-phase
+  contrast failure was re-checked the same day and is closed: the rows it
+  measured moved to `ink-2` in `a52b454`, and the only `ink-3` left on that
+  screen is the back arrow at the top, in the strips that passed; with the
+  levels open at 390×844 the copy scales to 0.957 and fits. Still not
+  reviewed: anything that needs a phone in hand.
+- [x] ~~Configure Auth URL allow-list and production SMTP.~~ URL allow-list
+  done earlier on 7 September 2026; SMTP through Resend that evening (item 4).
+  What remains of it is the domain, below.
+- [x] ~~After the SMTP sender is in, add `{{ .Token }}` to the Magic Link
+  template (4b).~~ Done 7 September 2026, proved with a real code in a real
+  inbox. The code box on the last step is no longer decorative.
+- [ ] **Attach `meditatewithme.com`.** Looked up 7 September 2026: created
+  25 February 2013 at GoDaddy (expires February 2027, auto-renew unknown),
+  nameservers `bruce`/`kim.ns.cloudflare.com`, so **the records go in a
+  Cloudflare account, not GoDaddy**, and somebody has its login. The apex
+  currently 302-redirects to `susantaylor.org/meditate-with-me/`; pointing
+  it here ends that, which is Jonny's to approve. No MX records, so Resend's
+  records disturb no mailbox. Added to the Vercel project the same evening
+  (apex → `www`, both *Invalid Configuration* pending DNS). Records needed
+  in Cloudflare, all **DNS only / grey cloud**, not proxied: the A and CNAME
+  Vercel shows under *View DNS configuration*, and the DKIM/SPF/DMARC set
+  Resend shows under *Domains*. This is now the single item
+  between visitors and a sign-in email that arrives: verify it in Resend,
+  change the SMTP sender address to it (item 4), attach it to Vercel, update
+  Supabase Site URL and the redirect allow-list, and repeat the production
+  auth test from a second device. Until then sign-in mail delivers only to
+  Tenzing's own inbox, and to its spam folder.
+- [x] ~~Review the existing Supabase security-advisor notices before launch.~~
+  Done 8 September 2026: `touch_updated_at`'s search path is pinned
+  (`20260908090000_touch_updated_at_search_path.sql`, applied with `db query
+  --linked`, read back, and proved with a trigger on a temp table). What the
+  advisor still lists is heartbeats' deliberate no-policy note and a
+  leaked-password warning for a feature the site does not use.
 - [ ] Re-run typecheck, unit tests, and production build on `dev`; review the
   Vercel preview; ask before merging `dev` into `main`.
 

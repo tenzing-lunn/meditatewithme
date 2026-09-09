@@ -17,3 +17,7 @@ coverage/
 
 # Session capture for TIMELOG.md. Local working state, per machine.
 .timelog/
+
+# Impeccable's per-project working files (detector cache, local consent).
+# The skill itself is installed globally, not vendored here.
+.impeccable/

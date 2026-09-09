@@ -5,8 +5,8 @@ to get it here, and what is still undecided. `VISION.md` is the idea;
 `ARCHITECTURE.md` is how it runs; this is the thing in between. **When a commit
 changes what a visitor sees, fix this file in the same commit.**
 
-Last verified 1 September 2026 at `8d59fba` (`dev`), which is also what
-`main` serves.
+Last verified 7 September 2026 at `353aee0` (`dev`), which is what `main`
+serves as of the release merge `cc712c6` the same day.
 
 ---
 
@@ -15,43 +15,81 @@ Last verified 1 September 2026 at `8d59fba` (`dev`), which is also what
 **The room is live at meditatewithme.vercel.app.** `main` was merged from
 `dev` at `626ef93` on 1 September 2026 (11:55 local), replacing the holding
 page. Every push to `main` is now a release of the room, not of a placeholder.
+The latest release is `cc712c6` on 7 September 2026, which put live the
+three-line account menu, in-app account deletion, the 55-minute hour with the
+shared bell at :55, the loudness-matched beds, the icon and share image, and
+per-device sign-out. **The 55-minute hour went live before Jonny answered the
+timing questions** in `plans/timing-message-to-jonny.md`; Tenzing's call.
 
 Known open at the moment of launch, and still open:
 
 - No privacy notice, terms, or age policy — waiting on Jonny's legal-entity
-  and minimum-age decisions. The site sets a localStorage id, writes
+  and minimum-age decisions. Both pages are built on `dev` (8 September
+  2026): `/privacy` with the controller and contact as unfilled gaps, and
+  `/terms`, which carries the age policy as a section, with those two plus
+  the minimum age and the governing law as gaps. Nothing links to either
+  until they are filled. The site sets a localStorage id, writes
   heartbeats, and now asks for a name and an email address, so this is not a
   cosmetic gap — and the name is a new category the inventory has to cover.
-- Production SMTP is not configured: mail still leaves Supabase's shared
-  sender, `noreply@mail.app.supabase.io`, confirmed in the auth logs on 7
-  September 2026. Everything works signed out. **This has already cost a real
-  sign-up:** of the four accounts on the project, one — created 4 September at
-  13:50, thirty-nine minutes after the one before it — never confirmed and
-  never signed in, and its confirmation token is still pending. The shared
-  sender is rate-limited per hour and is documented as unsuitable for anyone
-  outside the project team, which fits what happened; the auth logs for that
-  day have since aged out, so the cause cannot now be proven from here.
-- The account flow asks for a six-digit code, and the stock Supabase email
-  template does not contain one — `{{ .Token }}` has to be added to it. That
-  edit is **refused on the free tier while the default sender is in use**
-  (tried through the Management API, 7 September 2026), so it waits on the
-  SMTP item above. The auth server's own code length was moved from eight
-  digits to six the same day and proved with a throwaway user. Until the
-  template can change, the panel's own note ("the link in that email works
-  too") is the working path, and the link is still sent.
+- Mail leaves through Resend, not Supabase's shared sender, since the evening
+  of 7 September 2026: Tenzing set custom SMTP in the dashboard (host
+  `smtp.resend.com`, sender name *Meditate With Me*), which also lifted the
+  hourly send limit from 2 to 30. **The sender address is still Resend's test
+  one, `onboarding@resend.dev`**, because there is no domain yet. That address
+  delivers only to the Resend account's own inbox, and Gmail filed the first
+  message from it as spam ("similar to messages identified as spam in the
+  past" — the domain's reputation, not the message). So sign-in mail is still
+  not reaching ordinary visitors. Before Resend, the shared Supabase sender
+  had already cost a real sign-up: of the four accounts on the project, one,
+  created 4 September at 13:50, never confirmed and never signed in.
+- The email now carries the six-digit code. With the default sender gone the
+  template could be edited, and it was, the same evening, through the
+  Management API: subject *Your code for Meditate With Me*, the code in large
+  type, the link underneath as the alternative. Proved end to end: a real
+  request from the live site produced an email with `754334` rendered where
+  `{{ .Token }}` was, in Tenzing's inbox. The auth server's code length had
+  been moved from eight digits to six earlier that day.
 - The custom domain is unattached; Supabase Site URL points at the Vercel
-  address.
+  address. **This is now the one thing between visitors and a working
+  sign-in email.** The domain is **`meditatewithme.com`** — looked up 7
+  September 2026: registered February 2013 at GoDaddy, DNS served by
+  Cloudflare, and at present it **302-redirects to
+  `susantaylor.org/meditate-with-me/`**, so pointing it at this site takes
+  that redirect away and Jonny has to say yes to that. No MX records exist,
+  so no mailbox at the domain is disturbed by adding Resend's. Tenzing added
+  `meditatewithme.com` and `www` to the Vercel project the same evening
+  (apex redirecting to `www`); both read *Invalid Configuration* until the
+  records go in at Cloudflare. Then: verify it in Resend (DKIM, SPF, DMARC),
+  change only the sender email in Supabase's SMTP page to an address at it,
+  and the spam placement and the own-inbox restriction both go.
 - No real-device QA pass recorded. *(The favicon and Open Graph card landed 7
   September 2026 — see §2.)*
 
-Rollback candidate named in the launch commit: `defa583`.
+Rollback candidate named in the launch commit: `defa583`; in the latest
+release, `7026657`.
 
 ## 2. What a visitor gets
 
-**Landing.** A photograph of a candle in a dark room, and the words *Let’s
-begin.* Nothing else — no title, no count, no hour, no links. The candle is the
-one lit at the top of this UTC hour; its flame is smaller and dimmer the further
-through the hour you arrive.
+**Landing.** A photograph of a candle in a dark room, the words *Let’s begin.*,
+one sentence saying what the place is, and one link to the world map. No title
+and no settings. The candle is the one lit at the top of this UTC hour; its
+flame is smaller and dimmer the further through the hour you arrive.
+
+The sentence is live when it can be and standing when it cannot: *A candle was
+lit at 12:00. 11 people are looking at the same one.* whenever two or more have
+lit this hour, and otherwise the Open Graph card's own words, *A candle is lit
+at the top of every hour. Everyone is looking at the same one.* One candle lit
+is you, so it is never reported as company — the same rule the ring, the
+ending, Home and `/world` all keep. With *Hide the room* set, the standing
+sentence is the only one shown.
+
+Added 7 September 2026, from the design audit in `docs/design-audit.md`. Until
+then the screen carried the word alone, and the sentence explaining the site
+existed only in `app/opengraph-image.tsx` and the meta description — served to
+crawlers and withheld from visitors, so a link preview said more about the
+product than the product did. The world map had exactly one link in the whole
+codebase, on Home, which is signed in; a guest could reach the site's strongest
+piece of evidence for its own claim only by typing the address.
 
 The room and the words come up out of the dark together, over 2.6 seconds, while
 the camera settles out of its opening push. Nothing is shown and nothing is said
@@ -65,17 +103,29 @@ before deciding.
 
 **Begin → three questions, one per screen.** *How long* (1 minute, then 5 to
 55 in fives, or *until the bell*, which now rings at :55), *which bell* (singing bowl, gong, struck
-bell — each can be auditioned), *any background noise* — a switch, `No` by
+bell — each can be auditioned), *any sound* — a switch, `No` by
 default, and only when it is flipped to `Yes` do the five ambient beds appear,
-each with its own fader and play button over one master fader named *Volume*
-(it was *All*, which read as a sixth bed rather than as the master). The five
-beds *were* the question until 7 September 2026, which asked somebody who
-wanted to sit in silence to understand a mixer before they could decline one.
+as five named chips in a row: tap one and it plays at its stored level (or an
+audition level if it has never been heard), tap again and it stops. The
+faders — one per bed and a master named *Volume* (it was *All*, which read as
+a sixth bed rather than as the master) — sit behind *Adjust levels* under the
+chips, one tap away. Until the evening of 7 September 2026 the whole mixer
+opened here, eleven controls on the last screen of a flow built on one thing
+at a time. The five beds *were* the question until earlier that day, which
+asked somebody who wanted to sit in silence to understand a mixer before they
+could decline one.
 Saying `No` silences the beds for real rather than hiding them, and saying
 `Yes` again within the flow puts back what was there. Answers are
 remembered. A back arrow leaves
 from the first screen and steps back from the others. *Start* is at the foot of
-the last screen. The audio context is unlocked on *Begin*, not on *Start*.
+the last screen. The audio context is unlocked on *Begin*, not on *Start* —
+but it is unlocked **silent**, and nothing is audible until the background-noise
+question is on screen. Until 7 September 2026 those were the same act, so a
+returning visitor with a stored mix heard it start under the words *How long?*,
+two screens before being asked whether they wanted any. That is the one thing
+`VISION.md` says v1 must not become, and the fix is a master held at zero rather
+than a change to anybody's stored levels: saying *No* still writes real zeros to
+the beds, so raising the master on a declined mix plays nothing.
 
 **The bell rings twice.** The one you chose sounds at *Start* as well as at the
 end, so a sitting is bounded at both ends by the same sound rather than
@@ -94,14 +144,21 @@ turns the dots off for anyone who finds them distracting.
 
 **Until the bell.** Everyone who chooses it hears the same bell at the same
 second, at the top of the next hour. Arriving with under five minutes to go
-rolls forward to the hour after. Nobody is refused.
+rolls forward to the hour after. Nobody is refused. Over the last minute
+before that bell — and only for sittings that end on it — the ring's dots
+brighten to full and draw in toward twelve from both sides, so that at the
+bell the room is a small bright cluster around your own light. It is the one
+moment strangers do something at the same second, and until 7 September 2026
+nothing on screen marked it. A sitting on its own timer gets none of this.
 
 **The ending, thirty seconds long.** Ten seconds of *Come back.* with the
 bowl still ringing and the mix receding; then the minutes sat at display size
 and a table of facts (streak and total, shown only when they say something;
-how many you sat with, read once at the bell); then the controls — sit again,
-your practice, hide/show the room — and, alone at the foot of the frame, the
-account offer.
+how many you sat with, read once at the bell); then the controls, and, alone
+at the foot of the frame, the account offer. Signed in, the controls are *Sit
+again* and *Done* and nothing else — the practice log and the room switch are
+on Home. A guest has no Home, so their ending keeps *Your practice* and
+*Hide the room* as well: it is the only place they can reach either.
 
 **The practice log.** Every sitting is recorded locally; a streak is computed
 in local time and not sitting today does not break it. With an account it
@@ -233,7 +290,7 @@ Retaining anything is an architecture change and cannot be designed
 privacy-safely before Jonny names the data controller. `room-polish.md` §4D.
 
 **The candle itself.** `public/room-base.png` is a photograph the project
-made. The proposal promised a candle plus two other visuals *chosen by Jonny*,
+made, and is now the master the served `.avif` and `.jpg` are built from. The proposal promised a candle plus two other visuals *chosen by Jonny*,
 licensed in his name. Whether this photograph ships as the candle, or is the
 stand-in until his loop arrives, has not been asked. The burn — flame scale and
 glow across the hour — is linear and `ARCHITECTURE.md` notes it may want a
@@ -248,7 +305,25 @@ The bells have since been rebuilt as three separate instruments — their own
 modes, a mallet, beating twins, and bloom on the gong (`ARCHITECTURE.md` §7).
 That was worth doing because `strike()` is thrown away wholesale when
 recordings arrive, so none of it is debt; it does **not** reduce the case for
-buying the real thing. **The beds are still four filtered-noise variants plus a
+buying the real thing.
+
+Two of those three were wrong and were rewritten again on 8 September 2026,
+after Tenzing said the gong and the struck bell sounded weird. They did. The
+gong's ten partials were a ladder of minor thirds — a diminished seventh chord,
+arpeggiated upward by the bloom — and the struck bell had the five tuned
+partials at near-equal weight with nothing above them, so it settled into a
+sustained minor triad. Both are defects rather than matters of taste and both
+were found by rendering the tables offline and measuring the intervals, the way
+the beds were (`ARCHITECTURE.md` §7). The gong now runs fourteen deliberately
+irregular partials and the bell seven short inharmonic ones above the nominal.
+The three published pitches did not move.
+
+**The chord versions are what is live.** `397171a` is an ancestor of `main` and
+went out with the launch, so anyone who has chosen the gong or the struck bell
+since 1 September has been ending their sittings on one. The fix is on `dev`
+and needs a release. Jonny has not been told about either version — no client
+document mentions the bells beyond the line in the proposal offering three of
+them — and these are still the placeholders his recordings replace. **The beds are still four filtered-noise variants plus a
 drone** — rain, wind, waterfall and night are one generator with different
 filters, and everything is mono and dry. That is the next thing to fix if the
 recordings stay blocked.

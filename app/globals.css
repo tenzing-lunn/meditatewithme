@@ -26,6 +26,12 @@
   --color-ember: #985b1b;
   --color-ember-soft: #f0dcbd;
 
+  /* The one dark that sits over the photograph: the lifted controls in the
+     room and the account panel, always at partial opacity, so the picture's
+     own warmth comes through. Not a mode colour, so it is not overridden
+     below. It was a hex typed out in four places before it had a name. */
+  --color-panel: #1c1410;
+
   /* Type has three jobs, not three interchangeable moods: Instrument Serif
      is display type, Plex Sans is the room's voice and every control, and
      Plex Mono is reserved for changing numerals such as the sitting clock. */
@@ -183,31 +189,6 @@ body {
   .room-range::-webkit-slider-thumb,
   .room-range::-moz-range-thumb {
     transition: none;
-  }
-}
-
-/* The candle glow. Breathing is the whole visual idea, so it is the one
-   animation that exists before the room is built. */
-@keyframes breathe {
-  0%,
-  100% {
-    opacity: 0.55;
-    transform: translateX(-50%) scale(1);
-  }
-  50% {
-    opacity: 0.95;
-    transform: translateX(-50%) scale(1.06);
-  }
-}
-
-.glow {
-  animation: breathe 11s ease-in-out infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .glow {
-    animation: none;
-    opacity: 0.7;
   }
 }
 

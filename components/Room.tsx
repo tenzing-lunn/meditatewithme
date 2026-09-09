@@ -7,8 +7,9 @@ import {
   useRef,
   useState,
 } from 'react';
+import Link from 'next/link';
 import { serverNow, syncClock } from '@/lib/clock';
-import { candleBurn, hourKey, nextHourStart } from '@/lib/session';
+import { candleBurn, hourKey, hourStart, nextHourStart } from '@/lib/session';
 import {
   endsAt as computeEndsAt,
   hasEnded,
@@ -23,7 +24,8 @@ import CandleScene, { REVEAL_EASE, REVEAL_MS, type ScenePhase } from './CandleSc
 import Practice from './Practice';
 import SessionSetup, { type Step } from './SessionSetup';
 import Account from './Account';
-import { QUIET } from './controls';
+import { FOCUS, QUIET } from './controls';
+import { localTime } from '@/lib/format';
 import SoundMixer from './SoundMixer';
 import type { MASTER_KEY, TrackSlug } from './mix';
 import type { Mix } from './useMix';
@@ -75,6 +77,12 @@ type Sitting = {
    *  nothing about what day it is. */
   startedAtWall: number;
   endsAt: number;
+  /**
+   * Ends on the shared bell, with everyone else who chose it. Read by the ring
+   * for its last minute — the one sitting whose end is a meeting rather than
+   * a timer running out, and the only one where it should look like it.
+   */
+  together: boolean;
   bell: ScheduledBell | null;
   /**
    * The bell struck at Begin, held only so it can be silenced.
@@ -280,7 +288,7 @@ const COOLDOWN_MS = 10_000;
  * start failing on the dish.
  */
 const LIFTED_SURFACE =
-  'flex min-h-11 items-center justify-center rounded-control border border-white/20 bg-[#1c1410]/65 text-sm tracking-wide text-white transition-colors hover:border-white/40 hover:bg-[#1c1410]/85 focus-visible:ring-ember focus-visible:ring-offset-paper focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none';
+  `flex min-h-11 items-center justify-center rounded-control border border-white/20 bg-panel/65 text-sm tracking-wide text-white transition-colors hover:border-white/40 hover:bg-panel/85 ${FOCUS}`;
 
 const LIFTED = `${LIFTED_SURFACE} px-6`;
 
@@ -391,6 +399,48 @@ export default function Room({
   // `phase` below.
   const [soundOpen, setSoundOpen] = useState(false);
   const [practiceOpen, setPracticeOpen] = useState(false);
+
+  /**
+   * THE KEYBOARD FOLLOWS THE DISCLOSURE
+   *
+   * The sound drawer opens in the band, above the toggle that opened it at the
+   * foot of the frame, so Tab from the toggle carried on to `End this sitting`
+   * and never reached a fader. Focus now goes to the drawer's first control on
+   * open, and Escape brings it back to the toggle, so a keyboard reaches the
+   * mixer the way a thumb does. The practice log had the other problem: `Your
+   * practice` unmounts when pressed and `Hide your practice` takes its place,
+   * so the focused button vanished and the keyboard landed on `<body>`.
+   * Whichever of the two has just appeared takes the focus.
+   *
+   * Only after a press. On a mouse the moved focus draws no ring — the browser
+   * shows `:focus-visible` on programmatic focus only when the last input was
+   * a key — and `practiceToggled` keeps the ending's first render, where `Your
+   * practice` mounts on its own, from pulling focus to it.
+   */
+  const soundToggle = useRef<HTMLButtonElement>(null);
+  const soundDrawer = useRef<HTMLDivElement>(null);
+  const practiceShow = useRef<HTMLButtonElement>(null);
+  const practiceHide = useRef<HTMLButtonElement>(null);
+  const practiceToggled = useRef(false);
+
+  useEffect(() => {
+    if (!soundOpen) return;
+    soundDrawer.current?.querySelector('button')?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setSoundOpen(false);
+      soundToggle.current?.focus();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [soundOpen]);
+
+  useEffect(() => {
+    if (!practiceToggled.current) return;
+    practiceToggled.current = false;
+    (practiceOpen ? practiceHide : practiceShow).current?.focus();
+  }, [practiceOpen]);
+
   /**
    * Whether the half minute after the bell has passed.
    *
@@ -577,9 +627,21 @@ export default function Room({
    */
   const openSetup = useCallback(() => {
     unlockAudio();
-    mix.ensure();
+    // Silent. The context has to start inside this gesture or the audition
+    // buttons three screens later have nothing to play through — but starting
+    // it is not the same as playing through it, and this word is not where
+    // anybody agreed to hear rain. See `useMix`.
+    mix.ensure({ silent: true });
     setSetup('duration');
   }, [mix]);
+
+  // The sound question is on screen, so sound may now be heard: the auditions
+  // need it, and anyone who is going to say No is looking at the switch that
+  // says so. Not a gesture, and it does not need to be — the context is
+  // already running and this only moves a gain.
+  useEffect(() => {
+    if (setup === 'sound') mix.unmute();
+  }, [setup, mix]);
 
   const begin = useCallback(() => {
     // Must happen inside the click. Autoplay policy will not let an
@@ -623,6 +685,7 @@ export default function Room({
         startedAt,
         startedAtWall: Date.now(),
         endsAt: end,
+        together: prefs.untilBell,
         bell,
         opening,
       },
@@ -652,18 +715,27 @@ export default function Room({
    * only starts an AudioContext inside one. Home's `Sit` handler does it in the
    * click that brought us here — see `startSitting` in `Entry`. If a silent
    * sitting ever appears, that is the line that has been moved.
+   *
+   * IT WAITS FOR THE ROOM, NOT JUST THE CLOCK. This used to fire the moment
+   * `now` was known, while the reveal above waits for the photograph as well —
+   * so on a cold cache the ring was already draining on a black screen, and a
+   * ten-minute sitting was a nine-and-a-half-minute one by the time there was
+   * anything to look at. `booted` is the same gate the arrival uses, so the
+   * sitting now starts in the frame where it can be seen. On a warm cache the
+   * two gates open together and nothing about the entry changes.
    */
   const autoStarted = useRef(false);
   useEffect(() => {
     if (!home || autoStarted.current) return;
-    // `begin` needs the corrected clock to resolve a shared bell.
-    if (now === null) return;
+    // `begin` needs the corrected clock to resolve a shared bell, and the
+    // sitting needs a room to be visible in.
+    if (now === null || !booted) return;
     autoStarted.current = true;
     begin();
     // `begin` and `now` both change on every tick; the ref is what makes this
     // run once. Depending on them without it would restart the sitting four
     // times a second.
-  }, [home, now, begin]);
+  }, [home, now, booted, begin]);
 
   /**
    * `End this sitting`.
@@ -818,7 +890,12 @@ export default function Room({
       <Scene
         session={session}
         phase={phase}
-        burn={candleBurn(now)}
+        // Quantised to half-minute steps, so the prop only changes 120 times an
+        // hour rather than on every 250ms tick. `CandleScene` is memoised and
+        // this is the one prop that would otherwise defeat it. The flame spends
+        // `burn` on a 22% scale falloff across the hour, so a step is under a
+        // fifth of a percent — nothing anybody can see move.
+        burn={Math.floor(candleBurn(now) * 120) / 120}
         reveal={booted}
         onReady={onSceneReady}
       />
@@ -910,15 +987,32 @@ export default function Room({
               total={activity.sit.endsAt - activity.sit.startedAt}
               live={prefs.showCount ? count : null}
               lit={prefs.showCount ? litCount : null}
+              together={activity.sit.together}
             />
           )}
 
           <div className="mt-4 flex w-full flex-col items-center">
           {/* THE LANDING
-              The photograph, and one word on it. Nothing else at all — the
-              settings, the title, the hour and the quiet links have all moved
-              behind this word or after the sitting, because a picture with
-              anything else on it stops being a picture.
+              The photograph, one word on it, and one line saying what the
+              place is. The settings, the title and the quiet links have all
+              moved behind this word or after the sitting, because a picture
+              with anything else on it stops being a picture.
+
+              THE LINE IS THE EXCEPTION, AND IT IS PAID FOR
+              This screen said `Let’s begin.` and nothing else until 7
+              September 2026, which is a picture with no product in it. The
+              sentence that explains the site was written and shipped — to
+              `opengraph-image.tsx` and to the meta description — so a stranger
+              who saw a *link* to this place was told more than one who typed
+              the address. That is not restraint, it is an omission with a
+              tidy edge on it, and it made the comprehension test in
+              `plans/room-polish.md` §4 unrunnable: four of its five questions
+              had no answer anywhere on screen.
+
+              The cost is one line and one link against a photograph. The trade
+              is written down here rather than assumed, because the argument
+              for emptiness is a real one and the next person to shorten this
+              screen should have to argue with something.
 
               It fades in behind the opening move rather than being there when
               the lights come up: `load` spends 5.6s pushing the camera in from
@@ -938,7 +1032,7 @@ export default function Room({
             !practiceOpen &&
             !home && (
               <div
-                className="transition-opacity"
+                className="flex flex-col items-center transition-opacity"
                 style={{
                   opacity: booted ? 1 : 0,
                   transitionDuration: `${REVEAL_MS}ms`,
@@ -946,6 +1040,14 @@ export default function Room({
                 }}
               >
                 <BeginWord onClick={openSetup} />
+                {/* `showCount` off means the room is hidden, so the live half
+                    is withheld and the standing sentence stands in. Somebody
+                    who asked not to be shown the others is not shown them
+                    here either. */}
+                <WhatThisIs
+                  now={now}
+                  litCount={prefs.showCount ? litCount : null}
+                />
               </div>
             )}
 
@@ -970,7 +1072,7 @@ export default function Room({
               foot of the frame — see THE FOOT below — because the ring wants
               every pixel of the band and those two do not need to be in it. */}
           {sitting && soundOpen && (
-            <div className="mt-8 w-full max-w-sm">
+            <div ref={soundDrawer} className="mt-8 w-full max-w-sm">
               <SoundMixer
                 soundMix={prefs.soundMix}
                 onChange={setSound}
@@ -1020,8 +1122,12 @@ export default function Room({
             <div className="flex flex-col items-center gap-6">
               <Practice entries={entries} now={now} />
               <button
+                ref={practiceHide}
                 type="button"
-                onClick={() => setPracticeOpen(false)}
+                onClick={() => {
+                  practiceToggled.current = true;
+                  setPracticeOpen(false);
+                }}
                 aria-expanded
                 className={QUIET}
               >
@@ -1055,7 +1161,17 @@ export default function Room({
             picture, which is the whole complaint. Smaller and quieter than
             `Sit again` and `Finish`, because they are the second rank.
           */}
-          {activity.kind === 'finished' && phase !== 'open' && (
+          {/* GUESTS ONLY. Thirteen seconds after a bell is not the moment for
+              a settings row, and for somebody signed in these two are on Home
+              — the practice log is most of that page, and the room switch is
+              in its settings. So the signed-in ending is Sit again and Done,
+              and nothing else to read.
+
+              A guest has no Home. This is the only place they can see their
+              own log or turn the dots off, so they keep both. The design audit
+              called these "the two nobody came back for", and that is true of
+              the person with somewhere else to find them. */}
+          {activity.kind === 'finished' && phase !== 'open' && !home && (
             <div
               className={`mt-3 flex flex-wrap items-center justify-center gap-2 ${ending(2)}`}
             >
@@ -1063,17 +1179,25 @@ export default function Room({
                 type="button"
                 onClick={() => update({ showCount: !prefs.showCount })}
                 aria-pressed={prefs.showCount}
-                className="border-ink-3/50 text-ink-2 hover:border-ink-3 hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper flex min-h-10 items-center border px-4 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                // border-ink-2/65, not border-ink-3/50. A border is a UI
+                // boundary and owes 3:1; ink-3 at half strength measured 2.49
+                // on the palette ground and less over the ending's bright
+                // photograph. ink-2 at 65% clears it on both.
+                className={`border-ink-2/65 text-ink-2 hover:border-ink-2 hover:text-ink rounded-control flex min-h-11 items-center border px-4 text-xs transition-colors ${FOCUS}`}
               >
                 {prefs.showCount ? 'Hide the room' : 'Show the room'}
               </button>
 
               {entries.length > 0 && (
                 <button
+                  ref={practiceShow}
                   type="button"
-                  onClick={() => setPracticeOpen(true)}
+                  onClick={() => {
+                    practiceToggled.current = true;
+                    setPracticeOpen(true);
+                  }}
                   aria-expanded={false}
-                  className="border-ink-3/50 text-ink-2 hover:border-ink-3 hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper flex min-h-10 items-center border px-4 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                  className={`border-ink-2/65 text-ink-2 hover:border-ink-2 hover:text-ink rounded-control flex min-h-11 items-center border px-4 text-xs transition-colors ${FOCUS}`}
                 >
                   Your practice
                 </button>
@@ -1090,7 +1214,10 @@ export default function Room({
               added to remove. */}
           {activity.kind === 'finished' && phase !== 'open' && (
             <p
-              className={`text-ink-2 mt-4 text-xs tabular-nums ${ending(2)}`}
+              // text-sm, not text-xs: the same rank as the stat rows above it.
+              // This is the shared fact and it was the smallest type on the
+              // screen, under a text-6xl personal one.
+              className={`text-ink-2 mt-4 text-sm tabular-nums ${ending(2)}`}
             >
               Next candle at {localTime(nextHourStart(now))}
             </p>
@@ -1214,8 +1341,15 @@ export default function Room({
         // one ends the sitting — and side by side with a hairline between them
         // they read as a segmented control, which invites a mis-tap on the one
         // that cannot be undone.
-        <div className="absolute inset-x-0 bottom-0 flex justify-center gap-10 px-5 pb-7">
+        //
+        // The bottom padding grows by the safe-area inset. `pb-7` alone put
+        // `End this sitting` inside the iOS home-indicator zone — the one
+        // control that cannot be undone, where the system swipe-up gesture
+        // lives. The inset is zero everywhere that has no such zone, so the
+        // 28px stands on every other device.
+        <div className="absolute inset-x-0 bottom-0 flex justify-center gap-10 px-5 pb-[calc(1.75rem+env(safe-area-inset-bottom))]">
           <button
+            ref={soundToggle}
             type="button"
             onClick={() => setSoundOpen(!soundOpen)}
             aria-expanded={soundOpen}
@@ -1251,7 +1385,7 @@ export default function Room({
       */}
       {activity.kind === 'finished' && !practiceOpen && !home && (
         <div
-          className={`absolute inset-x-0 bottom-0 z-20 flex justify-center px-5 pb-7 ${ending(2)}`}
+          className={`absolute inset-x-0 bottom-0 z-20 flex justify-center px-5 pb-[calc(1.75rem+env(safe-area-inset-bottom))] ${ending(2)}`}
         >
           <Account
             state={auth}
@@ -1364,10 +1498,67 @@ function BeginWord({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="font-display text-ember hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper px-4 text-5xl leading-none transition-colors duration-500 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none sm:text-6xl"
+      className={`font-display text-ember hover:text-ink rounded-control px-4 text-5xl leading-none transition-colors duration-500 sm:text-6xl ${FOCUS}`}
     >
       Let’s begin.
     </button>
+  );
+}
+
+/**
+ * What this place is, under the word that opens it.
+ *
+ * ONE SENTENCE, AND IT IS THE ONE WE ALREADY WROTE
+ * The standing form is the Open Graph card's, verbatim — `opengraph-image.tsx`
+ * and the meta description have both been saying it to crawlers since the
+ * launch. Repeating it here rather than writing a third version is the point:
+ * one product, one sentence, and the person in the room hears the same thing
+ * the link preview promised them.
+ *
+ * LIVE WHEN THERE IS SOMETHING TRUE TO SAY, STANDING WHEN THERE IS NOT
+ * `A candle was lit at 12:00. 11 people are looking at the same one.` says the
+ * premise *and* proves it in one breath, which no static sentence can. But it
+ * is only said when it is true: `litCount` of one is you, on your own, and
+ * `A candle was lit at 12:00. 1 person is looking at it` is a lonely sentence
+ * dressed as company. Below two, and whenever the count is unknown, the
+ * standing sentence stands — the same rule `PresenceMessage`, `Afterwards`,
+ * `Home` and `World` all keep. A missing number costs far less than a wrong
+ * one, and an invented one costs the most of all.
+ *
+ * `ink-2`, not `ink-3`. This sits over a photograph, and it is the sentence
+ * the whole screen exists to deliver — the quiet tone is for the things that
+ * can afford to be missed.
+ */
+function WhatThisIs({
+  now,
+  litCount,
+}: {
+  now: number | null;
+  litCount: number | null;
+}) {
+  const company = now !== null && litCount !== null && litCount > 1;
+
+  return (
+    <div className="mt-6 flex flex-col items-center gap-4">
+      <p className="text-ink-2 max-w-[34ch] text-center text-sm text-balance">
+        {company
+          ? `A candle was lit at ${localTime(hourStart(now))}. ${litCount} people are looking at the same one.`
+          : 'A candle is lit at the top of every hour. Everyone is looking at the same one.'}
+      </p>
+
+      {/* The door to `/world`, which had none. It is the strongest evidence
+          the product owns for its own claim — strangers' candles on the real
+          earth — and until now the only link to it was on Home, which is
+          signed in. The persuasion asset was behind the conversion.
+
+          `QUIET`, not `LIFTED`: this is the band, where the composition
+          supplies its own contrast. See `controls.ts`.
+
+          The same words as Home's link, deliberately. One thing, one name. */}
+      <Link href="/world" className={QUIET}>
+        See where the candles are
+      </Link>
+    </div>
   );
 }
 
@@ -1391,15 +1582,11 @@ function StartButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="border-ember bg-ember-soft text-ember hover:bg-ember rounded-action focus-visible:ring-ember focus-visible:ring-offset-paper min-h-12 border px-10 text-base tracking-wide transition-colors duration-300 hover:text-white focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+      className={`border-ember bg-ember-soft text-ember hover:bg-ember rounded-action min-h-12 border px-10 text-base tracking-wide transition-colors duration-300 hover:text-white ${FOCUS}`}
     >
       Start
     </button>
   );
-}
-
-function localTime(d: Date): string {
-  return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
 /**
@@ -1463,6 +1650,7 @@ function SittingRing({
   total,
   live,
   lit,
+  together,
 }: {
   remaining: number;
   /** The whole sitting, so the arc knows what fraction is left. */
@@ -1470,6 +1658,8 @@ function SittingRing({
   /** Null when the count is unavailable or the room is hidden: no dots. */
   live: number | null;
   lit: number | null;
+  /** Ends on the shared bell. Only then does the last minute gather. */
+  together: boolean;
 }) {
   const circumference = 2 * Math.PI * RING.r;
   // Clamped both ways: `remaining` can overshoot by a tick either side of the
@@ -1479,6 +1669,39 @@ function SittingRing({
   const here = Math.max(0, live ?? 0);
   const dots =
     lit === null ? 0 : Math.min(MAX_DOTS, Math.max(here, Math.max(0, lit)));
+
+  /* THE LAST MINUTE, WHEN IT IS SHARED
+
+     For most of a sitting the dots are the room: spread evenly round the
+     clock, dimmer for the people who lit a candle and left. For a sitting
+     that ends on the shared bell, the bell is the one moment in the product
+     when strangers actually do something at the same second — and until now
+     nothing on screen said so. The arc drained, the bell rang, `Come back.`
+     appeared, and the meeting the whole site is built around passed without
+     a mark.
+
+     So over the final sixty seconds, and only for those sittings, the dots
+     come in. Every candle brightens to full, and each one travels from its
+     place on the circle toward twelve — yours — so that by the bell the room
+     is a small bright cluster around your own light rather than a scatter
+     around the clock. The angle is scaled about twelve rather than toward
+     zero so they arrive from both sides, and never fully to zero: eight
+     percent of the circle keeps them a cluster rather than a pile.
+
+     `gather` is 0 for the whole sitting until a minute out, then eases to 1.
+     It is derived from `remaining`, so it costs nothing on the ticks that
+     are not the last minute, and the 2000ms transition each dot already has
+     on its transform is what makes the quarter-second ticks read as a drift
+     rather than a march. Somebody on their own timer sees none of this: for
+     them the end is their own, and it should look like it. */
+  const gather =
+    together && remaining < 60_000
+      ? (() => {
+          const g = 1 - Math.max(0, remaining) / 60_000;
+          return g < 0.5 ? 2 * g * g : 1 - Math.pow(-2 * g + 2, 2) / 2;
+        })()
+      : 0;
+  const spread = 1 - gather * 0.92;
 
   return (
     /*
@@ -1566,11 +1789,14 @@ function SittingRing({
           // a circle that can be found without counting.
           const mine = i === 0;
           const present = i < Math.max(1, here);
+          // Signed about twelve, so the gather closes from both sides.
+          const around = (360 / dots) * i;
+          const signed = around > 180 ? around - 360 : around;
           return (
             <g
               key={i}
               style={{
-                transform: `rotate(${(360 / dots) * i}deg)`,
+                transform: `rotate(${(signed * spread).toFixed(2)}deg)`,
                 transformOrigin: `${RING.mid}px ${RING.mid}px`,
                 transition: 'transform 2000ms cubic-bezier(0.22, 1, 0.36, 1)',
               }}
@@ -1592,7 +1818,9 @@ function SittingRing({
                 r={mine ? 3.25 : 2.5}
                 fill="var(--color-ember)"
                 // Lit but gone: still a candle, no longer a person in the room.
-                opacity={present ? 1 : 0.38}
+                // In the shared last minute every candle comes up to full.
+                opacity={present ? 1 : 0.38 + 0.62 * gather}
+                style={{ transition: 'opacity 2000ms ease-out' }}
               />
             </g>
           );
@@ -1762,7 +1990,7 @@ function Afterwards({
           <button
             type="button"
             onClick={onAgain}
-            className="border-ember text-ember hover:bg-ember rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper min-h-11 border px-7 text-sm transition-colors duration-500 hover:text-white focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+            className={`border-ember text-ember hover:bg-ember rounded-control min-h-11 border px-7 text-sm transition-colors duration-500 hover:text-white ${FOCUS}`}
           >
             Sit again
           </button>
@@ -1773,7 +2001,9 @@ function Afterwards({
             // is the one control that only ever appears in `finished`, and
             // `finished` is the brightest the room gets - brightness 1.14 with
             // the vignette almost off. Measured there, ink-3 came to 4.37.
-            className="border-ink-3/50 text-ink-2 hover:border-ink-3 hover:text-ink rounded-control focus-visible:ring-ember focus-visible:ring-offset-paper min-h-11 border px-7 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+            // The border follows the same reasoning: ink-3/50 is 2.49 against
+            // a 3:1 floor for a boundary, and lower still on this phase.
+            className={`border-ink-2/65 text-ink-2 hover:border-ink-2 hover:text-ink rounded-control min-h-11 border px-7 text-sm transition-colors ${FOCUS}`}
           >
             {/* The word changes because the act does. A guest is finishing;
                 somebody signed in is going back to somewhere. */}

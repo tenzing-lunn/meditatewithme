@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * The room, as a photograph with a live flame in it.
@@ -29,8 +29,15 @@ import { useEffect, useRef } from 'react';
  * recovers to upright and nothing needs to re-render to make that happen.
  *
  * REDUCED MOTION
- * Honoured: the camera stops moving and the flame is drawn once, still. A
- * meditation site is the last place to ignore that setting.
+ * Honoured: the camera holds one scale for every phase and the flame is drawn
+ * once, still. A meditation site is the last place to ignore that setting.
+ *
+ * This comment said exactly that from the day the scene was written, and half
+ * of it was untrue for as long: the flame honoured the query, the camera never
+ * asked. It was found by the design audit in `docs/design-audit.md`, not by a
+ * reader — a wrong comment about an accessibility guarantee is worse than none,
+ * because it stops the next person checking. What the query reaches is now a
+ * branch you can see, at `still` below.
  */
 
 export type ScenePhase =
@@ -136,7 +143,18 @@ const PHOTO_FOCUS_Y = 0.46; // matches background-position: 50% 46%
 const F = { x: 720, y: 400, w: 98, h: 138 };
 const PAD = { l: 52, r: 52, t: 36, b: 6 };
 
-export default function CandleScene({
+/**
+ * Memoised, because the animation deliberately lives outside React and every
+ * render of this component is therefore waste. `Room` re-renders four times a
+ * second on its clock tick, and without this the scene re-rendered with it —
+ * the simulation reading its props off a ref made that harmless, but "does
+ * nothing four times a second" is not a property worth relying on. The memo
+ * only holds if the props hold: `onReady` is a stable callback in `Room`, and
+ * `burn` is quantised there before it is passed.
+ */
+export default memo(CandleScene);
+
+function CandleScene({
   phase,
   wind = 1,
   flicker = 1,
@@ -145,7 +163,7 @@ export default function CandleScene({
   burn = 0,
   reveal = true,
   onReady,
-  basePath = '/room-base.png',
+  basePath = '/room-base',
   flamePath = '/flame.png',
 }: {
   phase: ScenePhase;
@@ -183,12 +201,48 @@ export default function CandleScene({
    * ground and the room arrives underneath it a second later.
    */
   onReady?: () => void;
+  /**
+   * The photograph, without an extension.
+   *
+   * `.avif` and `.jpg` are both appended and offered to the browser, which
+   * picks. It is a stem rather than a path because the two have to stay a
+   * matched pair — a caller able to point at one of them independently could
+   * serve a different room to Safari than to Chrome.
+   */
   basePath?: string;
   flamePath?: string;
 }) {
   const stage = useRef<HTMLDivElement | null>(null);
   const canvas = useRef<HTMLCanvasElement | null>(null);
   const glow = useRef<HTMLDivElement | null>(null);
+
+  /**
+   * The same query the simulation reads, but in render, because the camera is
+   * not in the simulation.
+   *
+   * The effect below has had `reduced` since the scene was written and the
+   * flame has always honoured it. The camera never did: its transform is an
+   * inline style on the stage, written from `CAM` every render, and no branch
+   * in it ever asked. So the largest motion in the product — a full-viewport
+   * scale of 1.32 → 1.06 on arrival, 1.14 → 1.82 into a sitting, and 1.82 →
+   * 1.02 over thirty seconds at the end — ran at full strength for exactly the
+   * people who had asked for it not to. On a meditation site that is the wrong
+   * population to get wrong: a slow full-screen zoom of a photograph is the
+   * textbook vestibular trigger, and migraine and vertigo are over-represented
+   * among people looking for somewhere calm to sit.
+   *
+   * A listener, not a one-shot read: the setting can be changed while the page
+   * is open, and on iOS it is, by Reduce Motion in Control Centre.
+   */
+  const [still, setStill] = useState(false);
+
+  useEffect(() => {
+    const q = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setStill(q.matches);
+    const onChange = (e: MediaQueryListEvent) => setStill(e.matches);
+    q.addEventListener('change', onChange);
+    return () => q.removeEventListener('change', onChange);
+  }, []);
 
   const sim = useRef({ lean: 0, vel: 0, gust: 0, t: 0, last: 0 });
   const pointer = useRef({ x: -9999, y: -9999, vx: 0, seen: 0 });
@@ -202,30 +256,21 @@ export default function CandleScene({
   notify.current = onReady;
 
   /* WHEN THE PHOTOGRAPH IS ACTUALLY THERE
-     The room is a CSS background, and a background gives no load event — which
-     is why it used to appear whenever it appeared, with the copy fading in on
-     its own schedule beside it. Asking for the same URL through an Image gets
-     the event back; the browser answers the second request out of the same
-     cache entry, so this is a cache hit and not a second download. */
-  useEffect(() => {
-    const img = new Image();
-    let told = false;
-    const done = () => {
-      if (told) return;
-      told = true;
-      notify.current?.();
-    };
-    // An error counts. A photograph that 404s is a dark room, and a dark room
-    // is still something to show — waiting forever for it is not.
-    img.onload = done;
-    img.onerror = done;
-    img.src = basePath;
-    if (img.complete) done();
-    return () => {
-      img.onload = null;
-      img.onerror = null;
-    };
-  }, [basePath]);
+     The room used to appear whenever it appeared, with the copy fading in on
+     its own schedule beside it, because a CSS background gives no load event.
+     That was answered by requesting the same URL again through an `Image` and
+     relying on the second request being a cache hit.
+
+     The photograph is now a real `<img>`, so this is its own load event and
+     the duplicate request is gone. Told once: `onLoad` and `onError` both
+     arrive here, and a browser that fires neither is a room that never shows,
+     so an error counts as ready. */
+  const told = useRef(false);
+  const ready = useCallback(() => {
+    if (told.current) return;
+    told.current = true;
+    notify.current?.();
+  }, []);
 
   useEffect(() => {
     const el = stage.current;
@@ -518,13 +563,37 @@ export default function CandleScene({
           arriving at a wall. Underneath is the stage's own dark ground, which
           is the colour the page is already painted — so this is the room
           appearing in the dark, not a layer crossfading over a hole. */}
+      {/* STILL MEANS THE CAMERA, NOT THE ROOM
+          Under reduced motion the transform is pinned — one scale for every
+          phase, no travel, no duration — while `blur`, `br`, `dim`, `stop` and
+          `opacity` below are left exactly as they are. Those carry all the
+          meaning of a phase change (a question being asked, a sitting
+          beginning, the room coming back) and none of the vestibular risk:
+          nothing about a focus pull or a brightening moves across the retina.
+          Killing them too would be the `0.01ms` mistake — a setting honoured
+          by destroying the feedback rather than by calming it.
+
+          It is pinned at 1.03 rather than 1 because the photograph must stay
+          overscanned: `.room-drift` is a no-op under the same query, but a
+          scale of exactly 1 would put the picture's edge on the viewport's,
+          and any rounding at all would show a seam. */}
+      {/* No `will-change` here. This layer moves only when the phase changes,
+          on a transition, and the browser promotes it for the length of a
+          transform or opacity transition by itself. Declaring it permanently
+          kept a full-viewport layer composited for the life of the page for
+          moves that happen a handful of times an hour. The glow below keeps
+          its own: that one is written every frame. */}
       <div
-        className="absolute inset-0 will-change-[transform,opacity]"
+        className="absolute inset-0"
         style={{
           transformOrigin: '50% 42%',
-          transform: `translate(0%, ${(c.y * I).toFixed(2)}%) scale(${(1 + (c.s - 1) * I).toFixed(4)})`,
+          transform: still
+            ? 'translate(0%, 0%) scale(1.03)'
+            : `translate(0%, ${(c.y * I).toFixed(2)}%) scale(${(1 + (c.s - 1) * I).toFixed(4)})`,
           opacity: reveal ? 1 : 0,
-          transition: `transform ${c.ms}ms cubic-bezier(0.22, 0.61, 0.24, 1), opacity ${REVEAL_MS}ms ${REVEAL_EASE}`,
+          transition: still
+            ? `opacity ${REVEAL_MS}ms ${REVEAL_EASE}`
+            : `transform ${c.ms}ms cubic-bezier(0.22, 0.61, 0.24, 1), opacity ${REVEAL_MS}ms ${REVEAL_EASE}`,
         }}
       >
         <div
@@ -533,15 +602,45 @@ export default function CandleScene({
             animation: breath ? 'room-drift 23s ease-in-out infinite' : undefined,
           }}
         >
-          <div
-            className="absolute inset-0 bg-cover"
-            style={{
-              backgroundImage: `url(${basePath})`,
-              backgroundPosition: '50% 46%',
-              filter: `blur(${(c.blur * I).toFixed(2)}px) brightness(${c.br}) saturate(1.04)`,
-              transition: `filter ${c.ms}ms ease-out`,
-            }}
-          />
+          {/* THE PHOTOGRAPH, AS AN ELEMENT RATHER THAN A BACKGROUND
+              It was a CSS background, which cost two things. A background has
+              no load event, so the readiness this scene reports upward had to
+              be faked by asking for the same URL again through an `Image` and
+              trusting the cache. And a background cannot negotiate a format,
+              so the only thing that could be served was the one URL in the
+              stylesheet — which was the 2.3 MB PNG master, the LCP element of
+              every visit, ten times the weight of every other asset combined.
+
+              A `<picture>` fixes both at once and deletes code: the browser
+              picks AVIF where it can and JPEG where it cannot, and `onLoad`
+              is the real event, so the `Image` preload effect is gone.
+
+              `fetchPriority="high"` because this *is* the LCP element and the
+              markup should say so rather than leave it to be discovered.
+
+              `alt=""` and not a description: the stage is `aria-hidden`, and
+              this is the room, not information. What the room is gets said in
+              words on the landing. */}
+          <picture>
+            <source srcSet={`${basePath}.avif`} type="image/avif" />
+            <img
+              src={`${basePath}.jpg`}
+              alt=""
+              fetchPriority="high"
+              decoding="async"
+              draggable={false}
+              onLoad={ready}
+              // A photograph that 404s is a dark room, and a dark room is
+              // still something to show — waiting forever for it is not.
+              onError={ready}
+              className="absolute inset-0 h-full w-full object-cover"
+              style={{
+                objectPosition: '50% 46%',
+                filter: `blur(${(c.blur * I).toFixed(2)}px) brightness(${c.br}) saturate(1.04)`,
+                transition: `filter ${c.ms}ms ease-out`,
+              }}
+            />
+          </picture>
           <div
             ref={glow}
             className="pointer-events-none absolute mix-blend-screen will-change-[opacity,transform]"

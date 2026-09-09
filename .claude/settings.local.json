@@ -60,7 +60,121 @@
       "Bash(grep -n \"GRID_DEGREES\\\\`\\\\.\" context/ARCHITECTURE.md)",
       "Bash(sed -n '/keep both in agreement with/,/^## 15/p' context/ARCHITECTURE.md)",
       "Bash(git stash *)",
-      "Bash(supabase migration *)"
+      "Bash(supabase migration *)",
+      "Bash(awk 'NR>=330 && NR<=470 && /`/ {printf \"%d: %s\\\\n\", NR, $0}' components/Globe.tsx)",
+      "Bash(cp components/Globe.tsx /tmp/Globe.tsx.bak)",
+      "Bash(python3 -c ' *)",
+      "Bash(cp /tmp/Globe.tsx.bak components/Globe.tsx)",
+      "Bash(rm /tmp/Globe.tsx.bak)",
+      "Bash(awk 'NR>1{print \"   \",$5,$9}')",
+      "Bash(awk '{print $NF}')",
+      "Bash(git rm *)",
+      "Bash(npm remove *)",
+      "Bash(gh auth *)",
+      "Bash(git merge *)",
+      "Bash(curl -s -o /dev/null -w \"status=%{http_code} time=%{time_total}s\\\\n\" https://meditatewithme.vercel.app/)",
+      "Bash(curl -s -o /dev/null -w \"world=%{http_code}\\\\n\" https://meditatewithme.vercel.app/world)",
+      "Bash(awk 'NR<=580 && /^## /{s=$0} END{}' context/ARCHITECTURE.md)",
+      "Bash(awk -F: '$1<580')",
+      "Bash(curl -s -o /tmp/og2.png http://localhost:3000/opengraph-image -w \"og http=%{http_code}\\\\n\")",
+      "Bash(grep -n \"rain\\\\` is white noise\" -B 3 -A 2 CLAUDE.md)",
+      "mcp__7cbf35a6-2b03-4bf6-8708-d6fd24919d8f__list_tables",
+      "Bash(supabase --version)",
+      "Read(//Users/tenzinglunn/.supabase/**)",
+      "Bash(env)",
+      "Bash(timeout 20 supabase projects list)",
+      "Bash(supabase projects *)",
+      "Bash(node -e \"const p=require\\('./package.json'\\);console.log\\(JSON.stringify\\(p.scripts,null,2\\)\\)\")",
+      "Bash(node --test --experimental-strip-types \"tests/_probe.test.ts\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/api/time)",
+      "Bash(node /private/tmp/claude-501/-Users-tenzinglunn-Desktop-Code-meditatewithme/156de9a4-e70e-4190-b3a6-08795ed3d0bd/scratchpad/verify-deletion.mjs)",
+      "Bash(ln -sfn /Users/tenzinglunn/Desktop/Code/meditatewithme/node_modules /private/tmp/claude-501/-Users-tenzinglunn-Desktop-Code-meditatewithme/156de9a4-e70e-4190-b3a6-08795ed3d0bd/scratchpad/node_modules)",
+      "Bash(git merge-tree *)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(curl -s -o /tmp/c.txt -w \"status=%{http_code}\\\\n\" https://meditatewithme.vercel.app/api/count)",
+      "Bash(curl -s -X DELETE -o /dev/null -w \"status=%{http_code}\\\\n\" https://meditatewithme.vercel.app/api/account)",
+      "Bash(curl -s -X DELETE -o /tmp/p.txt -w \"status=%{http_code}\\\\n\" https://meditatewithme-git-dev-10zinglunn-afks-projects.vercel.app/api/account)",
+      "Bash(node -e \"console.log\\('supabase-js', require\\('./node_modules/@supabase/supabase-js/package.json'\\).version\\)\")",
+      "Bash(node /private/tmp/claude-501/-Users-tenzinglunn-Desktop-Code-meditatewithme/156de9a4-e70e-4190-b3a6-08795ed3d0bd/scratchpad/verify-persistence.mjs)",
+      "Bash(supabase link *)",
+      "Bash(awk '/^## 4/,0' plans/room-polish.md)",
+      "Bash(awk '/^---$/{n++} n==1' plans/timing-message-to-jonny.md)",
+      "WebFetch(domain:github.com)",
+      "Bash(security find-generic-password *)",
+      "Bash(curl -s -H 'Authorization: Bearer __TRACKED_VAR__' https://api.supabase.com/v1/projects/qcwgquwjazhsettuemgt/config/auth)",
+      "Read(//Users/tenzinglunn/.impeccable/**)",
+      "Read(//Users/tenzinglunn/.claude/skills/impeccable/scripts/**)",
+      "Bash(command -v impeccable)",
+      "Bash(awk '/^## 5/,/^## 6/' context/PRODUCT.md)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(git -C /Users/tenzinglunn/Desktop/Code/meditatewithme log --oneline -20)",
+      "Bash(node -e 'console.log\\(require\\(\"./package.json\"\\).scripts.contrast\\)')",
+      "Bash(node -e 'console.log\\(\"dev script:\", require\\(\"./package.json\"\\).scripts.dev\\)')",
+      "Bash(node -e ' *)",
+      "Bash('/Users/tenzinglunn/.claude/skills/impeccable/scripts/impeccable' hooks *)",
+      "Bash(echo \"typecheck exit: $?\")",
+      "Bash(vercel env *)",
+      "Bash(grep -n -iE \"not \\(yet \\)?\\(live|on main\\)|on \\\\`?dev\\\\`? \\(only|but\\)|unreleased|awaits? \\(a \\)?release|next release|has not \\(been \\)?\\(shipped|merged\\)|still on dev|only on dev\" context/PRODUCT.md context/ARCHITECTURE.md plans/launch-readiness.md README.md)",
+      "Bash(ffmpeg -hide_banner -i public/room-base.png -i /tmp/d75.png -lavfi psnr -f null -)",
+      "Read(//private/tmp/**)",
+      "Bash(ffmpeg -hide_banner -i /Users/tenzinglunn/Desktop/Code/meditatewithme/public/room-base.png -i /tmp/d75.png -lavfi psnr -f null -)",
+      "Bash(sips -s format avif -s formatOptions 85 room-base.png --out room-base.avif)",
+      "Bash(sips -s format jpeg -s formatOptions 82 room-base.png --out room-base.jpg)",
+      "Bash(awk '{printf \"%-22s %8.1f KB\\\\n\", $9, $5/1024}')",
+      "Bash(awk '{printf \"%-30s %8.1f KB\\\\n\", $9, $5/1024}')",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(awk 'NR>=1780 && NR<=1900 && /ink-3|text-xs/ {print NR\": \"$0}' components/Room.tsx)",
+      "Bash(awk -F: '$1>=1000 && $1<=1140')",
+      "Bash(awk -F: '$1>=1140 && $1<=1560')",
+      "Bash(vercel domains *)",
+      "Bash(vercel project *)",
+      "Bash(git log *)",
+      "Bash(dig +short meditatewithme.com A)",
+      "Bash(dig +short www.meditatewithme.com CNAME)",
+      "Bash(dig +short www.meditatewithme.com A)",
+      "Bash(dig +short meditatewithme.com NS)",
+      "Bash(dig +short meditatewithme.com MX)",
+      "Bash(curl -s -o /dev/null -m 15 -w \"https://meditatewithme.com -> HTTP %{http_code}, server=%{redirect_url}\\\\n\" -D - https://meditatewithme.com)",
+      "Bash(curl -s -m 15 -L https://meditatewithme.com)",
+      "Bash(grep -oiE \"<title>[^<]*</title>|generator[^>]{0,80}\")",
+      "Bash(lsof -iTCP:3000 -sTCP:LISTEN -P)",
+      "Bash(echo \"tsc=$?\")",
+      "Bash(grep -n \"^$\" components/Home.tsx)",
+      "Bash(awk -F: 'NR>1 && $1==prev+1 {print \"double blank at \" $1} {prev=$1}')",
+      "Bash(awk -v want=\" 1 \" 'BEGIN{h=0} /^diff --git/||/^index /||/^--- /||/^\\\\+\\\\+\\\\+ /{print;next} /^@@/{h++; keep=index\\(want,\" \" h \" \"\\)>0} keep{print}')",
+      "Bash(node scripts/contrast.mjs)",
+      "Bash(git -C /Users/tenzinglunn/Desktop/Code/meditatewithme status --short)",
+      "Bash(node /private/tmp/claude-501/-Users-tenzinglunn-Desktop-Code-meditatewithme/daff6082-f6f9-4c8e-a24e-08a3c8102e1f/scratchpad/focus.mjs components/controls.ts components/SessionSetup.tsx components/Home.tsx components/Room.tsx components/SoundMixer.tsx)",
+      "Bash(rm -f *.wav)",
+      "Bash(node final.mjs)"
     ]
-  }
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ ! -f '/Users/tenzinglunn/.claude/skills/impeccable/scripts/impeccable' ] || '/Users/tenzinglunn/.claude/skills/impeccable/scripts/impeccable' hook",
+            "timeout": 5,
+            "statusMessage": "Checking UI changes"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ ! -f '/Users/tenzinglunn/.claude/skills/impeccable/scripts/impeccable' ] || '/Users/tenzinglunn/.claude/skills/impeccable/scripts/impeccable' hook",
+            "timeout": 30,
+            "statusMessage": "Design deep pass"
+          }
+        ]
+      }
+    ]
+  },
+  "description": "Impeccable design detector: immediate-tier checks after Edit/Write on UI files, full-rule deep pass on Stop."
 }

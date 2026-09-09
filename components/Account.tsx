@@ -68,19 +68,33 @@ type Drop = 'down' | 'up';
 /** name → email → code. Two questions and a confirmation, one at a time. */
 type Step = 'name' | 'email' | 'code';
 
+// white/40 for the border and white/50 for the placeholder, measured against
+// the panel's own `#1c1410`: white/25 was 2.25 for a boundary that owes 3.0,
+// and white/35 was 3.22 for placeholder text that owes 4.5. Both are the
+// lowest opacity that clears with something in hand — see scripts/contrast.mjs.
 const FIELD =
-  'min-h-11 w-full rounded-control border border-white/25 bg-transparent px-4 text-center text-sm text-white placeholder:text-white/35 focus-visible:border-ember focus-visible:ring-1 focus-visible:ring-ember focus-visible:outline-none';
+  'min-h-11 w-full rounded-control border border-white/40 bg-transparent px-4 text-center text-sm text-white placeholder:text-white/50 focus-visible:border-ember focus-visible:ring-1 focus-visible:ring-ember focus-visible:outline-none';
 
 const SUBMIT =
-  'min-h-11 w-full rounded-control border border-ember px-6 text-sm text-ember transition-colors duration-300 hover:bg-ember hover:text-white focus-visible:ring-2 focus-visible:ring-ember focus-visible:ring-offset-2 focus-visible:ring-offset-[#1c1410] focus-visible:outline-none disabled:opacity-50';
+  'min-h-11 w-full rounded-control border border-ember px-6 text-sm text-ember transition-colors duration-300 hover:bg-ember hover:text-white focus-visible:ring-2 focus-visible:ring-ember focus-visible:ring-offset-2 focus-visible:ring-offset-panel focus-visible:outline-none disabled:opacity-50';
 
 /** One choice on the menu. Full width of it, lit on hover, nothing else. */
 const ITEM =
   'min-h-11 px-5 text-left text-sm text-white/85 transition-colors hover:bg-white/10 hover:text-white focus-visible:bg-white/10 focus-visible:text-white focus-visible:outline-none';
 
-/** The quiet word under the button. Bounded by an underline, never bare. */
+/**
+ * The quiet word under the button. Bounded by an underline, never bare.
+ *
+ * `min-h-11` and the padding are not decoration. Set as bare text this was
+ * about 16px tall — the underline is the whole of its height — so *I already
+ * have one*, *Back* and *Send it again* were 16px targets on a phone, under
+ * WCAG 2.5.8's 24px floor and well under the 44px everything else in this
+ * project already clears. The type stays `text-xs`: what grew is the thing you
+ * hit, not the thing you read. `inline-flex` so the underline still wraps the
+ * words rather than the box.
+ */
 const FOOT =
-  'text-xs text-white/50 underline decoration-white/25 underline-offset-4 transition-colors hover:text-white/80 hover:decoration-white/60 focus-visible:ring-1 focus-visible:ring-ember focus-visible:outline-none';
+  'inline-flex min-h-11 items-center px-2 text-xs text-white/50 underline decoration-white/25 underline-offset-4 transition-colors hover:text-white/80 hover:decoration-white/60 focus-visible:ring-1 focus-visible:ring-ember focus-visible:outline-none';
 
 export default function Account({
   state,
@@ -147,6 +161,7 @@ export default function Account({
   const [resent, setResent] = useState(false);
 
   const wrap = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
   const firstField = useRef<HTMLInputElement>(null);
   const firstItem = useRef<HTMLButtonElement>(null);
   const nameId = useId();
@@ -207,7 +222,14 @@ export default function Account({
       setMenuOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') close();
+      if (e.key !== 'Escape') return;
+      close();
+      // Focus was on a menu item or in a field, and closing unmounts it —
+      // without this, Escape dropped the keyboard on `<body>` and the next
+      // Tab started the page over from the top. Found on 8 September 2026 by
+      // pressing it. The pointer close below does not do this: somebody who
+      // clicked elsewhere has already put their attention there.
+      trigger.current?.focus();
     };
     const onDown = (e: PointerEvent) => {
       if (!wrap.current?.contains(e.target as Node)) close();
@@ -310,6 +332,7 @@ export default function Account({
     <div ref={wrap} className="relative inline-block">
       {menu ? (
         <button
+          ref={trigger}
           type="button"
           onClick={() => {
             // Pressing the icon while the panel is up closes it, the way it
@@ -336,6 +359,7 @@ export default function Account({
         </button>
       ) : (
         <button
+          ref={trigger}
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
@@ -350,10 +374,37 @@ export default function Account({
           because the panel is what replaces it in place when one is chosen. */}
       {menuOpen && (
         <div className="absolute top-full right-0 z-20 mt-2">
+          {/* `role="menu"` is a promise about the keyboard, and it was made
+              without being kept: the two items were reachable by Tab and by
+              nothing else, so anyone who took the ARIA at its word and pressed
+              Down got silence. Two items is small enough that the honest fix
+              is to keep the role and wire the keys, rather than drop to a
+              group and lose the pattern people already know.
+
+              Up and Down wrap, Home and End go to the ends, and Escape is
+              handled by the panel's own close. `preventDefault` because Up and
+              Down would otherwise scroll the page behind the menu. */}
           <div
             role="menu"
             aria-label="Account"
-            className={`rounded-control flex min-w-44 flex-col overflow-hidden border border-white/20 bg-[#1c1410]/95 py-1 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none ${
+            onKeyDown={(e) => {
+              const items = Array.from(
+                e.currentTarget.querySelectorAll<HTMLButtonElement>(
+                  '[role="menuitem"]',
+                ),
+              );
+              if (items.length === 0) return;
+              const at = items.indexOf(document.activeElement as HTMLButtonElement);
+              const go = (i: number) => {
+                e.preventDefault();
+                items[(i + items.length) % items.length]?.focus();
+              };
+              if (e.key === 'ArrowDown') go(at + 1);
+              else if (e.key === 'ArrowUp') go(at - 1);
+              else if (e.key === 'Home') go(0);
+              else if (e.key === 'End') go(items.length - 1);
+            }}
+            className={`rounded-control flex min-w-44 flex-col overflow-hidden border border-white/20 bg-panel/95 py-1 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none ${
               entered ? 'translate-y-0 opacity-100' : '-translate-y-1.5 opacity-0'
             }`}
           >
@@ -405,7 +456,7 @@ export default function Account({
             // because the panel has not far to come and nothing to explain;
             // anything slower and the press and the arrival stop feeling like
             // one event.
-            className={`rounded-control w-[min(20rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-6rem)] overflow-y-auto border border-white/20 bg-[#1c1410]/95 p-5 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none ${
+            className={`rounded-control w-[min(20rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-6rem)] overflow-y-auto border border-white/20 bg-panel/95 p-5 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none ${
               entered
                 ? 'translate-y-0 opacity-100'
                 : `opacity-0 ${drop === 'down' ? '-translate-y-1.5' : 'translate-y-1.5'}`

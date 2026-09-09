@@ -1,6 +1,7 @@
 'use client';
 
 import { useId, useRef, type CSSProperties } from 'react';
+import { FOCUS } from './controls';
 
 import {
   DEFAULT_MASTER,
@@ -41,6 +42,65 @@ import {
 /** Where play puts a track that has never been heard. Audible, not loud. */
 const AUDITION_LEVEL = 0.55;
 
+/**
+ * The five beds as five choices, and nothing else.
+ *
+ * This is what the flow's sound question shows. The full mixer below is eleven
+ * controls — five play buttons, five faders, a master — and the flow's whole
+ * argument is one thing at a time; putting eleven things on its last screen
+ * asked somebody standing in the doorway of a meditation to assemble an
+ * atmosphere before they could sit. Here the question is only which sounds:
+ * tap one and it plays at its stored level, or at the audition level if it
+ * has never been heard; tap again and it stops. The faders are one tap away
+ * behind `Adjust levels`, not gone — the proposal's "exact atmosphere" is
+ * still buildable, it is just not the first thing asked.
+ *
+ * Same contract as the play buttons: on and off ARE the level, so a chip that
+ * reads lit is a bed you can hear, and pausing remembers the fader.
+ */
+export function BedToggles({
+  soundMix,
+  onChange,
+}: {
+  soundMix: Record<string, number>;
+  onChange: (slug: TrackSlug, gain: number) => void;
+}) {
+  const remembered = useRef<Record<string, number>>({});
+  return (
+    <div className="flex flex-wrap gap-2" role="group" aria-label="Sounds">
+      {TRACKS.map((track) => {
+        const value = soundMix[track.slug] ?? 0;
+        const playing = value > 0;
+        return (
+          <button
+            key={track.slug}
+            type="button"
+            onClick={() => {
+              if (playing) {
+                remembered.current[track.slug] = value;
+                onChange(track.slug, 0);
+              } else {
+                onChange(
+                  track.slug,
+                  remembered.current[track.slug] || AUDITION_LEVEL,
+                );
+              }
+            }}
+            aria-pressed={playing}
+            className={`rounded-control min-h-11 border px-4 text-sm transition-colors ${FOCUS} ${
+              playing
+                ? 'border-ember text-ember'
+                : 'border-rule text-ink-2 hover:border-ink-3 hover:text-ink'
+            }`}
+          >
+            {track.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function SoundMixer({
   soundMix,
   onChange,
@@ -62,7 +122,7 @@ export default function SoundMixer({
   return (
     <div className={compact ? 'w-full space-y-2' : 'w-full space-y-1'}>
       {compact && (
-        <span className="text-ink-3 block text-sm">Ambiance</span>
+        <span className="text-ink-3 block text-sm">Sound</span>
       )}
 
       {TRACKS.map((track) => {
@@ -86,7 +146,7 @@ export default function SoundMixer({
               }}
               aria-pressed={playing}
               aria-label={`${playing ? 'Pause' : 'Play'} ${track.label}`}
-              className={`rounded-action focus-visible:ring-ember focus-visible:ring-offset-paper flex size-11 shrink-0 items-center justify-center border transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none ${
+              className={`rounded-action flex size-11 shrink-0 items-center justify-center border transition-colors ${FOCUS} ${
                 playing
                   ? 'border-ember text-ember'
                   : 'border-rule text-ink-2 hover:border-ink-3 hover:text-ink'

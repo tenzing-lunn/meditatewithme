@@ -23,6 +23,15 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname),
   },
+  /**
+   * Dev only. `127.0.0.1:3000` is a different origin from `localhost:3000`,
+   * with its own localStorage and therefore no session — which makes it the
+   * one way to look at the guest landing in a browser that is signed in,
+   * without signing anybody out. Next blocks dev assets from any origin but
+   * the one it started on, so without this the second origin is a black page
+   * and a column of 403s.
+   */
+  allowedDevOrigins: ['127.0.0.1'],
 };
 
 export default nextConfig;

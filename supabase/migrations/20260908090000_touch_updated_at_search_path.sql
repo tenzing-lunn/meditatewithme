@@ -1,0 +1,23 @@
+-- Pin the search_path of the one trigger function the site owns.
+--
+-- Supabase's security advisor flags `public.touch_updated_at()` for a mutable
+-- search_path (0011_function_search_path_mutable). A function without one
+-- resolves unqualified names against whatever the calling role's search_path
+-- is, which is the textbook way a trigger gets pointed at somebody else's
+-- `now()`. This body only calls `now()`, which lives in `pg_catalog` and is
+-- always found first — so the risk today is nil — but the advisor stays red
+-- until the path is pinned, and a red notice nobody reads is how the next
+-- real one gets missed.
+--
+-- `set search_path = ''` is the strictest form: every reference has to be
+-- schema-qualified. `now()` still resolves, because `pg_catalog` is implicitly
+-- searched even when the path is empty. Nothing else about the function
+-- changes: same body, same owner, same trigger, same revokes from 0003.
+--
+-- Apply with `supabase db query --linked -f <this file>`, never `db push`
+-- (CLAUDE.md), and read it back afterwards:
+--
+--   select proconfig from pg_proc where proname = 'touch_updated_at';
+--   -- expected: {search_path=""}
+
+alter function public.touch_updated_at() set search_path = '';

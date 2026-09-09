@@ -6,7 +6,12 @@
  * Exists because "AA contrast" in the spec is a number, and a number that
  * nobody can re-measure is a number that quietly stops being true. Every
  * foreground/background pair the site actually renders is listed below; adding
- * a colour to the palette means adding its pairs here.
+ * a colour to the palette means adding its pairs here, and using a palette
+ * colour at partial opacity means adding it to COMPOSITES.
+ *
+ * What this cannot see: text set over the photograph. Those ratios depend on
+ * the camera phase and were sampled in the browser instead — see
+ * `docs/design-audit.md` §10 for the method and the numbers.
  *
  * Thresholds (WCAG 2.1):
  *   4.5  normal text
@@ -65,18 +70,40 @@ const PAIRS = [
   ['ember', 'surface', 4.5],
 ];
 
+/**
+ * Pairs where the foreground is a palette colour at partial opacity — a
+ * Tailwind `border-ink-2/60` or `placeholder:text-white/50` — composited over
+ * its ground before the ratio is taken. The design audit of 7 September 2026
+ * found four of these under threshold while this script reported everything
+ * green, because it only knew about the six solid pairs above. A green gate
+ * over a partial set is worse than no gate.
+ *
+ * Grounds and foregrounds may be palette names or literal hex. `panel` is the
+ * account panel's dark, the one colour that sits over the photograph; it
+ * lives in `@theme` and nothing overrides it at runtime.
+ *
+ * `[foreground, opacity, ground, threshold, where it is used]`
+ */
+const COMPOSITES = [
+  ['ink-2', 0.65, 'paper', 3.0, 'Room secondary button border'],
+  ['#ffffff', 0.4, 'panel', 3.0, 'Account FIELD border'],
+  ['#ffffff', 0.5, 'panel', 4.5, 'Account FIELD placeholder'],
+  ['#ffffff', 0.5, 'panel', 4.5, 'Account FOOT text'],
+];
+
 const channel = (c) => {
   const v = c / 255;
   return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
 };
 
-const luminance = (hex) => {
+const rgb = (hex) => {
   const n = parseInt(hex.slice(1), 16);
-  return (
-    0.2126 * channel((n >> 16) & 255) +
-    0.7152 * channel((n >> 8) & 255) +
-    0.0722 * channel(n & 255)
-  );
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+};
+
+const luminance = (hex) => {
+  const [r, g, b] = rgb(hex);
+  return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
 };
 
 const contrast = (a, b) => {
@@ -84,17 +111,44 @@ const contrast = (a, b) => {
   return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
 };
 
+/** `fg` at `alpha` over an opaque `bg`, as the hex the eye actually meets. */
+const over = (fg, alpha, bg) => {
+  const f = rgb(fg);
+  const g = rgb(bg);
+  return (
+    '#' +
+    f
+      .map((c, i) => Math.round(c * alpha + g[i] * (1 - alpha)))
+      .map((c) => c.toString(16).padStart(2, '0'))
+      .join('')
+  );
+};
+
 let failed = 0;
 
+function report(label, ratio, min) {
+  const ok = ratio >= min;
+  if (!ok) failed++;
+  console.log(
+    `  ${ok ? 'pass' : 'FAIL'}  ${label.padEnd(34)} ` +
+      `${ratio.toFixed(2).padStart(6)}  needs ${min.toFixed(1)}`,
+  );
+}
+
 for (const [mode, colors] of Object.entries(THEME)) {
+  // A token the runtime block does not override keeps its `@theme` value,
+  // which is what the browser does too.
+  const resolve = (c) => (c.startsWith('#') ? c : (colors[c] ?? THEME.theme[c]));
   console.log(`\n${mode}`);
   for (const [fg, bg, min] of PAIRS) {
-    const ratio = contrast(colors[fg], colors[bg]);
-    const ok = ratio >= min;
-    if (!ok) failed++;
-    console.log(
-      `  ${ok ? 'pass' : 'FAIL'}  ${`${fg} on ${bg}`.padEnd(18)} ` +
-        `${ratio.toFixed(2).padStart(6)}  needs ${min.toFixed(1)}`,
+    report(`${fg} on ${bg}`, contrast(colors[fg], colors[bg]), min);
+  }
+  for (const [fg, alpha, bg, min, where] of COMPOSITES) {
+    const ground = resolve(bg);
+    report(
+      `${fg}/${alpha * 100} on ${bg} (${where})`,
+      contrast(over(resolve(fg), alpha, ground), ground),
+      min,
     );
   }
 }

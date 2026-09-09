@@ -175,12 +175,29 @@ export const BELLS: Record<
   },
 
   /**
-   * Dense, clustered and blooming — the one the old code got most wrong.
+   * Dense, clustered and blooming — and the ratios must not form a chord.
    *
    * A tam-tam is not a large bowl. Its modes are packed close together rather
    * than spread wide, there are many more of them, and the upper ones arrive
    * *after* the beater rather than with it. That last part is the bloom, and
    * it is why a gong seems to grow before it fades.
+   *
+   * THE RATIOS BELOW ARE IRREGULAR ON PURPOSE, AND THE PREVIOUS SET WAS NOT.
+   * It ran 1, 1.19, 1.41, 1.68, 2.13, 2.61, 3.24, 3.97, 4.81, 5.92 — every step
+   * between three and 3.7 semitones, which is a ladder of minor thirds. Ten
+   * partials on that ladder is a diminished seventh chord two and a half
+   * octaves tall, and the bloom then arpeggiated it upward. It did not sound
+   * like a gong; it sounded like a chord being played, because it was one.
+   *
+   * A tam-tam has no pitch to speak of, so no interval here may be a
+   * recognisable one. Every pair of these is at least sixteen cents off the
+   * nearest octave, fifth, fourth, third or sixth, and the steps run anywhere
+   * from 0.9 to 4.3 semitones, so nothing in the set lines up with anything
+   * else. Three of the partials over the fundamental sit inside two semitones
+   * of each other — that cluster beats against itself, and roughness down in
+   * the low mids is what a big sheet of bronze actually does.
+   *
+   * Nudging a ratio is therefore not free. Move one and check what it lands on.
    */
   gong: {
     label: 'Gong',
@@ -189,16 +206,20 @@ export const BELLS: Record<
     // A heavy beater on a big sheet: long, dark contact.
     strike: { duration: 0.09, hz: 500, gain: 0.16 },
     modes: [
-      { ratio: 1, gain: 0.9, decay: 1, beat: 0.5 },
-      { ratio: 1.19, gain: 0.55, decay: 0.86, beat: 0.7 },
-      { ratio: 1.41, gain: 0.48, decay: 0.72, beat: 0.9 },
-      { ratio: 1.68, gain: 0.4, decay: 0.6, beat: 1.2 },
-      { ratio: 2.13, gain: 0.34, decay: 0.48, beat: 1.5, delay: 0.35 },
-      { ratio: 2.61, gain: 0.3, decay: 0.4, beat: 1.9, delay: 0.55 },
-      { ratio: 3.24, gain: 0.26, decay: 0.32, beat: 2.3, delay: 0.8 },
-      { ratio: 3.97, gain: 0.2, decay: 0.26, delay: 1.1 },
-      { ratio: 4.81, gain: 0.15, decay: 0.2, delay: 1.4 },
-      { ratio: 5.92, gain: 0.1, decay: 0.15, delay: 1.8 },
+      { ratio: 1, gain: 0.9, decay: 1, beat: 0.4 },
+      { ratio: 1.23, gain: 0.62, decay: 0.9, beat: 0.7 },
+      { ratio: 1.35, gain: 0.7, decay: 0.88, beat: 0.9 },
+      { ratio: 1.42, gain: 0.58, decay: 0.82, beat: 1.2 },
+      { ratio: 1.515, gain: 0.5, decay: 0.76, beat: 1.5 },
+      { ratio: 1.73, gain: 0.44, decay: 0.66, beat: 1.9, delay: 0.2 },
+      { ratio: 2.22, gain: 0.36, decay: 0.55, beat: 2.4, delay: 0.4 },
+      { ratio: 2.62, gain: 0.32, decay: 0.46, beat: 2.9, delay: 0.6 },
+      { ratio: 3.23, gain: 0.28, decay: 0.38, beat: 3.5, delay: 0.85 },
+      { ratio: 4.09, gain: 0.24, decay: 0.3, beat: 4.2, delay: 1.1 },
+      { ratio: 4.72, gain: 0.2, decay: 0.24, delay: 1.35 },
+      { ratio: 5.3, gain: 0.16, decay: 0.19, delay: 1.6 },
+      { ratio: 6.23, gain: 0.12, decay: 0.15, delay: 1.9 },
+      { ratio: 7.6, gain: 0.08, decay: 0.11, delay: 2.2 },
     ],
   },
 
@@ -214,6 +235,29 @@ export const BELLS: Record<
    * Ratios are against the nominal, which is the note named above. The hum two
    * octaves under it is the long one — it is still going when everything
    * brighter has gone.
+   *
+   * THE FIVE TUNED PARTIALS ALONE ARE A CHORD, NOT A BELL.
+   * The previous set stopped just above the nominal and gave the five named
+   * partials near-equal weight and long tails. A second after the strike you
+   * were left holding a C minor triad at even level, and holding it for
+   * seconds, which is a pad and not a bell. Two things fix it and both are
+   * true of any cast bell:
+   *
+   * The clang. Above the nominal a real bell has a crowd of partials that are
+   * loud, inharmonic and gone inside a second — deciem, undecime, duodecime and
+   * whatever else the casting left behind. That crowd is the strike. Without
+   * it the attack has no metal in it and every named partial has to be turned
+   * up to compensate, which is what put the chord in the foreground.
+   *
+   * The tail. Once the clang has gone what is left is hum, prime and nominal;
+   * the tierce is what makes the first second sorrowful and it is not supposed
+   * to still be there at five. Its decay is now well under the prime's, so the
+   * chord resolves into an octave instead of sitting there.
+   *
+   * The tuned partials are also a few cents off exact. At 0.25 / 0.5 / 0.75 / 1
+   * the hum, prime, quint and nominal are harmonics 1, 2, 3 and 4 of the hum
+   * exactly, and four exact harmonics fuse into one tone — an organ stop with
+   * a minor third bolted on. A real bell is never that well cast.
    */
   'struck-bell': {
     label: 'Struck bell',
@@ -222,14 +266,18 @@ export const BELLS: Record<
     // A hard clapper: the shortest and brightest contact of the three.
     strike: { duration: 0.022, hz: 3200, gain: 0.13 },
     modes: [
-      { ratio: 0.25, gain: 0.55, decay: 1, beat: 0.4 }, // hum
-      { ratio: 0.5, gain: 0.75, decay: 0.78, beat: 0.7 }, // prime
-      { ratio: 0.6, gain: 0.62, decay: 0.55 }, // tierce — the minor third
-      { ratio: 0.75, gain: 0.38, decay: 0.42 }, // quint
-      { ratio: 1, gain: 0.9, decay: 0.34 }, // nominal — the note
-      { ratio: 1.5, gain: 0.26, decay: 0.2 },
-      { ratio: 2, gain: 0.16, decay: 0.13 },
-      { ratio: 2.67, gain: 0.09, decay: 0.08 },
+      { ratio: 0.2503, gain: 0.5, decay: 1, beat: 0.25 }, // hum
+      { ratio: 0.501, gain: 0.68, decay: 0.72, beat: 0.5 }, // prime
+      { ratio: 0.598, gain: 0.46, decay: 0.4, beat: 0.8 }, // tierce — the minor third
+      { ratio: 0.752, gain: 0.28, decay: 0.3 }, // quint
+      { ratio: 1, gain: 0.95, decay: 0.44, beat: 1.1 }, // nominal — the note
+      { ratio: 1.253, gain: 0.34, decay: 0.15 }, // deciem ─┐
+      { ratio: 1.338, gain: 0.3, decay: 0.12 }, // undecime │ the clang, and it
+      { ratio: 1.51, gain: 0.26, decay: 0.09 }, // duodecime│ is gone in a second
+      { ratio: 2.01, gain: 0.2, decay: 0.065 }, // double octave
+      { ratio: 2.66, gain: 0.14, decay: 0.045 }, //         │
+      { ratio: 3.37, gain: 0.09, decay: 0.03 }, //          │
+      { ratio: 4.22, gain: 0.06, decay: 0.02 }, // ─────────┘
     ],
   },
 };
@@ -242,6 +290,16 @@ export const BELLS: Record<
  * something different after this change. The mallet rides on top of it and is
  * small enough not to matter; sines started together do not peak together
  * anyway, so the real maximum is well under this.
+ *
+ * WHAT IT PINS IS THE PEAK, WHICH IS NOT THE LOUDNESS.
+ * Splitting a fixed peak across more partials, or across partials that die
+ * sooner, leaves less of it in the tail — and the tail is what a bell is heard
+ * as. The gong and the struck bell each gained modes when their tables were
+ * rewritten and each came out roughly one to two decibels quieter through the
+ * body of the sound, with the peak unmoved. That is small enough to leave, and
+ * it is not something the gains can be turned up to fix, because this line
+ * divides any such rise straight back out again. Worth knowing before adding a
+ * fourth bell and wondering why it sits under the other three.
  */
 const PEAK = 0.9;
 
