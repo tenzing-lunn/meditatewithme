@@ -1267,36 +1267,28 @@ export default function Room({
             `Sit again` and `Finish`, because they are the second rank.
           */}
           {/* GUESTS ONLY. Thirteen seconds after a bell is not the moment for
-              a settings row, and for somebody signed in these two are on Home
-              — the practice log is most of that page, and the room switch is
-              in its settings. So the signed-in ending is Sit again and Done,
-              and nothing else to read.
+              a settings row, and for somebody signed in the practice log is
+              most of Home. So the signed-in ending is Sit again and Done, and
+              nothing else to read.
 
               A guest has no Home. This is the only place they can see their
-              own log, and until 9 September 2026 the only place they could
-              turn the dots off — `The room` row under `Change` reaches that
-              switch now, and `plans/flow-audit.md` item E is what follows
-              from it. The design audit called these "the two nobody came back
-              for", and that is true of the person with somewhere else to find
-              them. */}
-          {activity.kind === 'finished' && phase !== 'open' && !home && (
-            <div
-              className={`mt-3 flex flex-wrap items-center justify-center gap-2 ${ending(2)}`}
-            >
-              <button
-                type="button"
-                onClick={() => update({ showCount: !prefs.showCount })}
-                aria-pressed={prefs.showCount}
-                // border-ink-2/65, not border-ink-3/50. A border is a UI
-                // boundary and owes 3:1; ink-3 at half strength measured 2.49
-                // on the palette ground and less over the ending's bright
-                // photograph. ink-2 at 65% clears it on both.
-                className={`border-ink-2/65 text-ink-2 hover:border-ink-2 hover:text-ink rounded-control flex min-h-11 items-center border px-4 text-xs transition-colors ${FOCUS}`}
+              own log, so `Your practice` stays. `Hide the room` stood beside
+              it until 9 September 2026, kept for the same reason — the guest
+              had nowhere else to reach the switch — and it left the moment
+              that stopped being true (`The room` row under `Change`,
+              `plans/flow-audit.md` items D and E). It was not only redundant
+              here: it is the one control in the product that turns the room
+              into the private timer `VISION.md` §4 names as the failure mode,
+              and the ending is the moment the room has just shown itself —
+              how many you sat with is in the table directly above. That is
+              the wrong moment to offer the way out of it. */}
+          {activity.kind === 'finished' &&
+            phase !== 'open' &&
+            !home &&
+            entries.length > 0 && (
+              <div
+                className={`mt-3 flex flex-wrap items-center justify-center gap-2 ${ending(2)}`}
               >
-                {prefs.showCount ? 'Hide the room' : 'Show the room'}
-              </button>
-
-              {entries.length > 0 && (
                 <button
                   ref={practiceShow}
                   type="button"
@@ -1305,13 +1297,16 @@ export default function Room({
                     setPracticeOpen(true);
                   }}
                   aria-expanded={false}
+                  // border-ink-2/65, not border-ink-3/50. A border is a UI
+                  // boundary and owes 3:1; ink-3 at half strength measured
+                  // 2.49 on the palette ground and less over the ending's
+                  // bright photograph. ink-2 at 65% clears it on both.
                   className={`border-ink-2/65 text-ink-2 hover:border-ink-2 hover:text-ink rounded-control flex min-h-11 items-center border px-4 text-xs transition-colors ${FOCUS}`}
                 >
                   Your practice
                 </button>
-              )}
-            </div>
-          )}
+              </div>
+            )}
 
           {/* All that survives of the masthead, and the only part of it anybody
               needed at this moment: when the next one is lit.

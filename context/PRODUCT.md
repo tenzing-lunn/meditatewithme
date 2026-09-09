@@ -91,8 +91,8 @@ lit at 12:00. 11 people are looking at the same one.* whenever two or more have
 lit this hour, and otherwise the Open Graph card's own words, *A candle is lit
 at the top of every hour. Everyone is looking at the same one.* One candle lit
 is you, so it is never reported as company — the same rule the ring, the
-ending, Home and `/world` all keep. With *Hide the room* set, the standing
-sentence is the only one shown.
+ending, Home and `/world` all keep. With *Show the room* switched off, the
+standing sentence is the only one shown.
 
 Added 7 September 2026, from the design audit in `docs/design-audit.md`. Until
 then the screen carried the word alone, and the sentence explaining the site
@@ -162,8 +162,8 @@ are the candles lit this hour, one each, spread evenly, yours at twelve with a
 halo. Dots for people still here are full strength; people who lit a candle
 and left are dimmed. Underneath, one sentence at the start: *You began with N
 others* or *You are the first here this hour*. At the foot of the frame:
-*Sound* (opens the mixer mid-sitting) and *End this sitting*. *Hide the room*
-turns the dots off for anyone who finds them distracting.
+*Sound* (opens the mixer mid-sitting) and *End this sitting*. *The room* row
+under *Change* turns the dots off for anyone who finds them distracting.
 
 **Until the bell.** Everyone who chooses it hears the same bell at the same
 second, at the top of the next hour. Arriving with under five minutes to go
@@ -180,10 +180,12 @@ and a table of facts (streak and total, shown only when they say something;
 how many you sat with, read once at the bell); then the controls, and, alone
 at the foot of the frame, the account offer. Signed in, the controls are *Sit
 again* and *Done* and nothing else — the practice log and the room switch are
-on Home. A guest has no Home, so their ending keeps *Your practice* and
-*Hide the room* as well: it is the only place they can reach the log, and was
-the only place they could reach the switch until *The room* row arrived under
-*Change* on 9 September 2026. *Sit
+on Home. A guest has no Home, so their ending keeps *Your practice* as well:
+it is the only place they can reach the log. *Hide the room* stood beside it
+until 9 September 2026, when *The room* row arrived under *Change* and the
+button left — it is the one control that turns the room into a private timer,
+and the ending, with the room just counted in the table above, is the wrong
+moment to offer it (`plans/flow-audit.md`, item E). *Sit
 again* starts another sitting on the same settings in one tap, guest or not;
 a guest's *Finish* returns them to the landing, where *End this sitting*
 already went. Until 9 September 2026 a guest's *Sit again* sent them back
