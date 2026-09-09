@@ -1087,18 +1087,15 @@ export default function Room({
 
           {activity.kind === 'finished' && reveal > 0 && (
             <Afterwards
-              onAgain={() => {
-                // Signed in, "again" means again — not back to a landing to
-                // press `Begin.` and answer three questions that were already
-                // answered on Home. This click is a real gesture, so the
-                // AudioContext `begin` needs is allowed to start in it.
-                if (home) {
-                  begin();
-                  return;
-                }
-                mix.restore();
-                setActivity({ kind: 'idle' });
-              }}
+              // "Again" means again: one tap, same settings, sitting. Until
+              // 9 September 2026 only the signed-in person got that; a guest
+              // was sent back to `idle` - the landing, the begin word, three
+              // questions they had answered ten minutes earlier, then `Start`.
+              // Five taps for a button whose label promises one. The
+              // questions are still there from the landing for anyone who
+              // wants to change something. This click is a real gesture, so
+              // the AudioContext `begin` needs is allowed to start in it.
+              onAgain={begin}
               onDone={home}
               onFinish={() => {
                 // A guest's `Finish` is the landing - where `End this sitting`

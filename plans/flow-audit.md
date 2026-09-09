@@ -167,7 +167,7 @@ away from *Delete account*, so it stays; noted only.
 
 | | Item | Status |
 |---|---|---|
-| 1 | A · guest `Finish` returns to the landing | |
+| 1 | A · guest `Finish` returns to the landing | done, `d035427` |
 | 2 | B · guest `Sit again` sits again | |
 | 3 | C · the landing reads the settings; *Let’s begin.* starts | |
 | 4 | D · one `Settings` for both surfaces; `SessionSetup` retired | |
