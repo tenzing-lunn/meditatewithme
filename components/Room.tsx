@@ -1100,6 +1100,14 @@ export default function Room({
                 setActivity({ kind: 'idle' });
               }}
               onDone={home}
+              onFinish={() => {
+                // A guest's `Finish` is the landing - where `End this sitting`
+                // already goes, and the only place a guest can begin from. It
+                // used to leave them on the ending with the buttons removed,
+                // which was nowhere; see `Afterwards`.
+                mix.restore();
+                setActivity({ kind: 'idle' });
+              }}
               minutes={activity.minutes}
               withOthers={activity.withOthers}
               entries={entries}
@@ -1909,6 +1917,7 @@ function ComingBack({ endedAt, mono }: { endedAt: number; mono: number }) {
 function Afterwards({
   onAgain,
   onDone,
+  onFinish,
   minutes,
   withOthers,
   entries,
@@ -1919,12 +1928,23 @@ function Afterwards({
   /**
    * Where finishing goes, when there is a home to go to.
    *
-   * Absent for a guest, and then `Finish` does what it has always done: clears
-   * the two buttons and leaves the room. There is nowhere else for a guest to
-   * be, and sending them back to `Begin.` would read as the site asking them to
-   * go again the instant they said they were done.
+   * Absent for a guest, and then the button is `Finish` and goes to `onFinish`.
    */
   onDone?: () => void;
+  /**
+   * Where a guest's `Finish` goes: the landing.
+   *
+   * Until 9 September 2026 it went nowhere. It cleared the two buttons and left
+   * the visitor on the ending, on the reasoning that a guest has no home and
+   * sending them back to the begin word would read as the site asking them to
+   * go again the instant they said they were done. What that actually left
+   * them with was a photograph, a room switch and an account offer, and no way
+   * to sit again short of reloading the page - the last thing a first-time
+   * visitor experienced. Leaving somebody nowhere is worse than offering
+   * another sitting, so this is the landing, the same place `End this sitting`
+   * already takes them.
+   */
+  onFinish: () => void;
   minutes: number;
   withOthers: number | null;
   entries: PracticeEntry[];
@@ -1932,8 +1952,6 @@ function Afterwards({
   /** The shared fade, keyed to how far into the ending we are. */
   stage: (n: number) => string;
 }) {
-  const [finished, setFinished] = useState(false);
-
   const streak = currentStreak(entries, now);
   const total = summarise(entries, now);
 
@@ -1985,32 +2003,30 @@ function Afterwards({
         </dl>
       )}
 
-      {!finished && (
-        <div className={`mt-7 flex gap-3 ${stage(2)}`}>
-          <button
-            type="button"
-            onClick={onAgain}
-            className={`border-ember text-ember hover:bg-ember rounded-control min-h-11 border px-7 text-sm transition-colors duration-500 hover:text-white ${FOCUS}`}
-          >
-            Sit again
-          </button>
-          <button
-            type="button"
-            onClick={() => (onDone ? onDone() : setFinished(true))}
-            // ink-2, not the ink-3 the rest of the secondary copy uses. This
-            // is the one control that only ever appears in `finished`, and
-            // `finished` is the brightest the room gets - brightness 1.14 with
-            // the vignette almost off. Measured there, ink-3 came to 4.37.
-            // The border follows the same reasoning: ink-3/50 is 2.49 against
-            // a 3:1 floor for a boundary, and lower still on this phase.
-            className={`border-ink-2/65 text-ink-2 hover:border-ink-2 hover:text-ink rounded-control min-h-11 border px-7 text-sm transition-colors ${FOCUS}`}
-          >
-            {/* The word changes because the act does. A guest is finishing;
-                somebody signed in is going back to somewhere. */}
-            {onDone ? 'Done' : 'Finish'}
-          </button>
-        </div>
-      )}
+      <div className={`mt-7 flex gap-3 ${stage(2)}`}>
+        <button
+          type="button"
+          onClick={onAgain}
+          className={`border-ember text-ember hover:bg-ember rounded-control min-h-11 border px-7 text-sm transition-colors duration-500 hover:text-white ${FOCUS}`}
+        >
+          Sit again
+        </button>
+        <button
+          type="button"
+          onClick={onDone ?? onFinish}
+          // ink-2, not the ink-3 the rest of the secondary copy uses. This
+          // is the one control that only ever appears in `finished`, and
+          // `finished` is the brightest the room gets - brightness 1.14 with
+          // the vignette almost off. Measured there, ink-3 came to 4.37.
+          // The border follows the same reasoning: ink-3/50 is 2.49 against
+          // a 3:1 floor for a boundary, and lower still on this phase.
+          className={`border-ink-2/65 text-ink-2 hover:border-ink-2 hover:text-ink rounded-control min-h-11 border px-7 text-sm transition-colors ${FOCUS}`}
+        >
+          {/* The word changes because the act does. A guest is finishing;
+              somebody signed in is going back to somewhere. */}
+          {onDone ? 'Done' : 'Finish'}
+        </button>
+      </div>
     </div>
   );
 }

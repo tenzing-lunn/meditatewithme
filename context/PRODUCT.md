@@ -158,7 +158,10 @@ how many you sat with, read once at the bell); then the controls, and, alone
 at the foot of the frame, the account offer. Signed in, the controls are *Sit
 again* and *Done* and nothing else — the practice log and the room switch are
 on Home. A guest has no Home, so their ending keeps *Your practice* and
-*Hide the room* as well: it is the only place they can reach either.
+*Hide the room* as well: it is the only place they can reach either. A guest's
+*Finish* returns them to the landing, where *End this sitting* already went;
+until 9 September 2026 it only removed the two buttons and left them on the
+ending with no way off it.
 
 **The practice log.** Every sitting is recorded locally; a streak is computed
 in local time and not sitting today does not break it. With an account it
