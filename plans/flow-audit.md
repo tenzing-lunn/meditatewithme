@@ -172,7 +172,7 @@ away from *Delete account*, so it stays; noted only.
 | 3 | C · the landing reads the settings; *Let’s begin.* starts | done, `f085b68` |
 | 4 | D · one `Settings` for both surfaces; `SessionSetup` retired | done, `2f094c5` |
 | 5 | E · *Hide the room* leaves the ending | done, `70fae01` |
-| 6 | F · one time for the shared moment | |
+| 6 | F · one time for the shared moment | done, `456fcac` |
 | 7 | G · the menu clears the word | |
 
 Each lands as its own commit on `dev` with typecheck, tests, contrast and
