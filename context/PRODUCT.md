@@ -305,7 +305,25 @@ The bells have since been rebuilt as three separate instruments — their own
 modes, a mallet, beating twins, and bloom on the gong (`ARCHITECTURE.md` §7).
 That was worth doing because `strike()` is thrown away wholesale when
 recordings arrive, so none of it is debt; it does **not** reduce the case for
-buying the real thing. **The beds are still four filtered-noise variants plus a
+buying the real thing.
+
+Two of those three were wrong and were rewritten again on 8 September 2026,
+after Tenzing said the gong and the struck bell sounded weird. They did. The
+gong's ten partials were a ladder of minor thirds — a diminished seventh chord,
+arpeggiated upward by the bloom — and the struck bell had the five tuned
+partials at near-equal weight with nothing above them, so it settled into a
+sustained minor triad. Both are defects rather than matters of taste and both
+were found by rendering the tables offline and measuring the intervals, the way
+the beds were (`ARCHITECTURE.md` §7). The gong now runs fourteen deliberately
+irregular partials and the bell seven short inharmonic ones above the nominal.
+The three published pitches did not move.
+
+**The chord versions are what is live.** `397171a` is an ancestor of `main` and
+went out with the launch, so anyone who has chosen the gong or the struck bell
+since 1 September has been ending their sittings on one. The fix is on `dev`
+and needs a release. Jonny has not been told about either version — no client
+document mentions the bells beyond the line in the proposal offering three of
+them — and these are still the placeholders his recordings replace. **The beds are still four filtered-noise variants plus a
 drone** — rain, wind, waterfall and night are one generator with different
 filters, and everything is mono and dry. That is the next thing to fix if the
 recordings stay blocked.
