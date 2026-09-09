@@ -9,7 +9,7 @@ import {
 } from 'react';
 import Link from 'next/link';
 import { serverNow, syncClock } from '@/lib/clock';
-import { candleBurn, hourKey, hourStart, nextHourStart } from '@/lib/session';
+import { candleBurn, hourKey, hourStart } from '@/lib/session';
 import {
   endsAt as computeEndsAt,
   hasEnded,
@@ -1015,10 +1015,10 @@ export default function Room({
             at — spent introducing the site to somebody who has just finished
             using it.
 
-            The one part of it that was load-bearing is when the next candle is
-            lit, because that is what you need to decide whether to sit again.
-            That has moved into the quiet row at the bottom, where it costs
-            nothing: the row was already there and already wraps.
+            The one part of it that was load-bearing is when the next bell is,
+            because that is what you need to decide whether to sit again. That
+            has moved into the quiet row at the bottom, where it costs nothing:
+            the row was already there and already wraps.
           */}
 
           {sitting && (
@@ -1309,7 +1309,18 @@ export default function Room({
             )}
 
           {/* All that survives of the masthead, and the only part of it anybody
-              needed at this moment: when the next one is lit.
+              needed at this moment: when the next bell is, which is what you
+              need to decide whether to sit again.
+
+              The bell, not the candle. Until 9 September 2026 this read `Next
+              candle at 2:00 PM` while the settings said `Sit together until
+              1:55 PM` — two clock times for the one shared moment, on
+              adjacent screens, with nothing relating them. The bell is the
+              thing people do together (the candle is what they look at), so
+              it is the bell that is named everywhere the moment is stated to
+              a person: here, on Home, and in the settings, all from
+              `nextSharedBellAt`. The landing's `A candle was lit at` and the
+              `/world` caption describe the candle, correctly, and stay.
 
               Its own line, below the buttons. Set inline with them it was one
               piece of plain text in a row of bordered controls, which is
@@ -1322,7 +1333,7 @@ export default function Room({
               // screen, under a text-6xl personal one.
               className={`text-ink-2 mt-4 text-sm tabular-nums ${ending(2)}`}
             >
-              Next candle at {localTime(nextHourStart(now))}
+              The next bell is at {localTime(nextSharedBellAt(now))}
             </p>
           )}
         </div>

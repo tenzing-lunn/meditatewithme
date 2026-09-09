@@ -1374,8 +1374,10 @@ address, rather than in front of somebody who has not decided to look yet.
 The masthead is gone from the ending. The name of the place and the line
 explaining the candle cost 74px of that 272px band — about a sixth of the scale
 everything else is read at — to introduce the site to somebody who has just
-finished using it. The one part that was load-bearing, when the next candle is
-lit, is a quiet line under the buttons.
+finished using it. The one part that was load-bearing, when the next bell is,
+is a quiet line under the buttons — the bell, from `nextSharedBellAt`, not the
+candle, so that it names the same minute the settings' *Sit together until*
+does (`plans/flow-audit.md`, item F).
 
 Everything is mounted from the first frame of its stage and only opacity moves,
 so nothing reflows mid-fade. `reveal` is in the `useFitToBand` key because stage
@@ -1533,7 +1535,7 @@ Measured with it at 1280×720, worst pixel in each element's box:
 | Landing | `Begin.` | 6.87 | 3.0 |
 | ~~Sign-in question~~ | ~~**`Send me a link`**~~ | ~~**4.57**~~ | — |
 | ~~Sign-in question~~ | ~~the explanation under it~~ | ~~7.38~~ | — |
-| Home | `Next candle at…` | 5.57 | 4.5 |
+| Home | `The next bell is at…` (measured as `Next candle at…`, same element and style) | 5.57 | 4.5 |
 | Home | `Change` / `Done changing` | 8.41 | 4.5 |
 | Home | `Sign out` | 8.07 | 4.5 |
 | `/world` | the note under the map | 6.28 | 4.5 |

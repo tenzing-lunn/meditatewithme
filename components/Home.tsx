@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { useEffect, useState, type ReactNode } from 'react';
 
 import { serverNow, syncClock } from '@/lib/clock';
-import { nextHourStart } from '@/lib/session';
 import { humanMinutes, summarise, type PracticeEntry } from '@/lib/practice';
+import { nextSharedBellAt } from '@/lib/timer';
 import type { UserPreferences } from '@/lib/types';
 import type { MASTER_KEY, TrackSlug } from './mix';
 import Practice from './Practice';
@@ -194,10 +194,18 @@ export default function Home({
                   legal footnote under a text-6xl Sit. One rank up: still
                   secondary, no longer a footnote. `h-5` is the line-height of
                   text-sm, reserved so the circle does not jump when the clock
-                  arrives. */}
+                  arrives.
+
+                  The fact is the bell, not the candle. This read `Next candle
+                  at 2:00 PM` until 9 September 2026, while the settings row
+                  beneath it said `Sit together until 1:55 PM` — since the
+                  55-minute hour those are different minutes, and a person was
+                  told both with nothing relating them. The bell is what people
+                  do together, so it is the moment named here, on the ending
+                  and in the settings, all from `nextSharedBellAt`. */}
               <p className="text-ink-2 h-5 text-sm tabular-nums">
                 {now !== null &&
-                  `Next candle at ${localTime(nextHourStart(now))}`}
+                  `The next bell is at ${localTime(nextSharedBellAt(now))}`}
               </p>
 
               {/*
@@ -365,7 +373,7 @@ export default function Home({
  * The room ticks four times a second because it is running a timer against it.
  * Nothing here changes faster than the hour, so this ticks every thirty
  * seconds — and it is still `serverNow()` rather than `Date.now()`, because
- * "next candle at" has to name the same moment on a laptop whose clock is three
+ * "the next bell is at" has to name the same moment on a laptop whose clock is three
  * minutes fast. That is the same reason §6.2 gives, and it does not stop
  * applying because the screen is quieter.
  *

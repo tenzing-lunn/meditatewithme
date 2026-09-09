@@ -174,6 +174,15 @@ bell the room is a small bright cluster around your own light. It is the one
 moment strangers do something at the same second, and until 7 September 2026
 nothing on screen marked it. A sitting on its own timer gets none of this.
 
+Wherever that moment is stated to a person it is the bell that is named: *The
+next bell is at 1:55 PM* on Home and on the ending, *Sit together until 1:55
+PM* in the settings, one minute from one helper. Until 9 September 2026 Home
+and the ending said *Next candle at 2:00 PM* instead — since the 55-minute hour
+a different minute from the one the settings gave, and a visitor was told both
+on adjacent screens with nothing relating them (`plans/flow-audit.md`, item
+F). The landing's *A candle was lit at* and the `/world` caption describe the
+candle, correctly, and still do.
+
 **The ending, thirty seconds long.** Ten seconds of *Come back.* with the
 bowl still ringing and the mix receding; then the minutes sat at display size
 and a table of facts (streak and total, shown only when they say something;
