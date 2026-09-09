@@ -112,34 +112,43 @@ invitation from someone sitting down with you — the premise of the whole site,
 and it was being spent nowhere else on the one screen a first-time visitor reads
 before deciding.
 
-**Change → three questions, one per screen.** *How long* (1 minute, then 5 to
-55 in fives, or *until the bell*, which now rings at :55), *which bell* (singing bowl, gong, struck
-bell — each can be auditioned), *any sound* — a switch, `No` by
-default, and only when it is flipped to `Yes` do the five ambient beds appear,
-as five named chips in a row: tap one and it plays at its stored level (or an
-audition level if it has never been heard), tap again and it stops. The
-faders — one per bed and a master named *Volume* (it was *All*, which read as
-a sixth bed rather than as the master) — sit behind *Adjust levels* under the
-chips, one tap away. Until the evening of 7 September 2026 the whole mixer
-opened here, eleven controls on the last screen of a flow built on one thing
-at a time. The five beds *were* the question until earlier that day, which
-asked somebody who wanted to sit in silence to understand a mixer before they
-could decline one.
+**Change → four rows, one open at a time.** The same panel Home opens under
+*Sit*, unfolded under *Let’s begin.* with the room pulled back behind it; the
+word stays above the rows and still starts the sitting from there. Each row
+carries its answer in words and opens only its own controls. *How long* (1
+minute, then 5 to 55 in fives on a slider, and *Sit together until* the bell,
+which rings at :55). *How it ends* (singing bowl, gong, struck bell — each
+sounds when selected). *Sound* — a switch, `No` by default, and only when it is
+flipped to `Yes` do the five ambient beds appear, as five named chips in a row:
+tap one and it plays at its stored level (or an audition level if it has never
+been heard), tap again and it stops; the faders — one per bed and a master
+named *Volume* — sit behind *Adjust levels* under the chips, one tap away.
 Saying `No` silences the beds for real rather than hiding them, and saying
-`Yes` again within the flow puts back what was there. Answers are
-remembered. A back arrow leaves
-from the first screen and steps back from the others. *Start* is at the foot of
-the last screen, for whoever came in this way. The audio context is unlocked on
-*Change*, not on *Start* — but it is unlocked **silent**, and nothing is audible
-until the background-noise question is on screen. Until 7 September 2026 those
-were the same act, so a returning visitor with a stored mix heard it start under
-the words *How long?*, two screens before being asked whether they wanted any.
-That is the one thing `VISION.md` says v1 must not become, and the fix is a
-master held at zero rather than a change to anybody's stored levels: saying *No*
-still writes real zeros to the beds, so raising the master on a declined mix
-plays nothing. *Let’s begin.* is different: it starts the sitting, so a stored
-mix plays from that tap — the mix the visitor built, which `VISION.md` §4
-allows, and the line under the word says what it is.
+`Yes` again while the panel is open puts back what was there. *The room* — the
+*Show the room* switch, which a guest could previously reach only on the
+ending. Answers are remembered. *Done changing*, in the place *Change* was,
+closes it; so does Escape.
+
+Until 9 September 2026 this was a flow of three screens — *How long?*, *How
+should it end?*, *Any sound?* — with *Next* between them and *Start* at the
+foot of the last, and until that morning it was what *Let’s begin.* itself
+opened. Two interfaces edited the same four preferences, one here and one on
+Home, and every fix was made twice; they are one component now
+(`components/Settings.tsx`), with the flow's sound pattern in both places
+rather than Home's full mixer (`plans/flow-audit.md`, item D). *Start* went
+with the flow: the words for starting a sitting are *Let’s begin.* on the
+landing and *Sit* on Home, and nothing else.
+
+The audio context is unlocked on *Change* — but **silent**, and nothing from
+the beds is audible until the *Sound* row is opened. Until 7 September 2026
+unlocking and playing were the same act, so a returning visitor with a stored
+mix heard it start under the words *How long?*, two screens before being asked
+whether they wanted any. That is the one thing `VISION.md` says v1 must not
+become, and the fix is a master held at zero rather than a change to anybody's
+stored levels: saying *No* still writes real zeros to the beds, so raising the
+master on a declined mix plays nothing. *Let’s begin.* is different: it starts
+the sitting, so a stored mix plays from that tap — the mix the visitor built,
+which `VISION.md` §4 allows, and the line under the word says what it is.
 
 **The bell rings twice.** The one you chose sounds at the start as well as at the
 end, so a sitting is bounded at both ends by the same sound rather than
@@ -172,7 +181,9 @@ how many you sat with, read once at the bell); then the controls, and, alone
 at the foot of the frame, the account offer. Signed in, the controls are *Sit
 again* and *Done* and nothing else — the practice log and the room switch are
 on Home. A guest has no Home, so their ending keeps *Your practice* and
-*Hide the room* as well: it is the only place they can reach either. *Sit
+*Hide the room* as well: it is the only place they can reach the log, and was
+the only place they could reach the switch until *The room* row arrived under
+*Change* on 9 September 2026. *Sit
 again* starts another sitting on the same settings in one tap, guest or not;
 a guest's *Finish* returns them to the landing, where *End this sitting*
 already went. Until 9 September 2026 a guest's *Sit again* sent them back

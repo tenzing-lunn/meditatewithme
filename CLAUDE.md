@@ -160,15 +160,19 @@ play — *in silence* means only the bell. Do not press it to get anywhere.
 
 The silent path is `Change`, under that line. It calls `unlockAudio()` and
 `mix.ensure({ silent: true })` in `openSetup` (`components/Room.tsx`), which
-builds the graph with the master at zero. **The first two questions are silent.
-Sound starts when the sound question reaches the screen**, where `mix.unmute()`
-raises the master so the audition buttons work — so the step to stay off is the
-third one, and everything before it is safe.
+builds the graph with the master at zero, and opens the four settings rows —
+the same `components/Settings.tsx` Home uses. **The rows are silent. The beds
+start when the *Sound* row is opened**, which is when `Settings` calls
+`onSoundOpen` and the room answers with `mix.unmute()` — so the row to leave
+shut is *Sound*, and *How long*, *How it ends* and *The room* are safe.
+*How it ends* strikes the bell you select, at a third of its tail; that never
+went through the master and is a deliberate act, not a bed.
 
-That is true as of 7 September 2026 and it used to be the opposite: the beds
-started at the begin word, two screens early, and this note warned you there was
-no silent path through the flow. There is one now, and it is all of `Change`
-short of its last screen.
+That is true as of 9 September 2026. Until the 7th the beds started at the
+begin word, two screens before the sound question, and this note warned you
+there was no silent path through the flow; from the 7th to the 9th the flow was
+silent up to its third screen. Now there is no flow: one panel, and one row in
+it that makes sound.
 
 The five beds are loudness-matched to −16 LUFS as of the same day, so no single
 one ambushes you either — `rain` used to be 12.5 dB above `waterfall` and this
@@ -182,7 +186,7 @@ So, for any run that opened the room:
 - **Tear the audio graph down as the last action.** Unmounting `Entry` calls
   `handle.stop()`, so navigate to `/world` or `about:blank`, or close the tab.
   Closing the tab is the surest. Do not just take a final screenshot and stop.
-- Never leave the pane parked on the sound question or on a live sitting.
+- Never leave the pane parked on an open *Sound* row or on a live sitting.
 - **Do not silence it by writing faders to 0.** `mwm.preferences` in
   localStorage is Tenzing's own stored mix, not scratch state — the same rule
   as everywhere else here: don't edit his data to tidy up after yourself.
@@ -199,8 +203,8 @@ out. `allowedDevOrigins` in `next.config.ts` exists for exactly this — without
 it Next serves that origin a black page and 403s. Never sign the pane out to
 get there; the session is Tenzing's. That origin is not necessarily *empty*:
 on 7 September 2026 it already held a stored mix from an earlier run (rain
-0.5, hum 0.3, master 0), so read `mwm.preferences` there before walking to the
-sound question rather than assuming silence.
+0.5, hum 0.3, master 0), so read `mwm.preferences` there before opening the
+*Sound* row — or pressing the word — rather than assuming silence.
 
 ## Time
 

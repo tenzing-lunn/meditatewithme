@@ -1012,7 +1012,7 @@ copy; straight quotes in this project are a code-comment habit, not a copy one.
 
 Everything below still calls the control "the begin word", and the timing beats
 are still named `Begin` — the moment did not change, only what it says. The title, the tagline, the hour and the three quiet links have all
-gone, either behind that word or after the sitting, because a picture with
+gone, either behind `Change` or after the sitting, because a picture with
 anything else on it stops being a picture. It fades in over 2.6s as the opening
 camera move settles, rather than being there when the lights come up.
 
@@ -1134,24 +1134,41 @@ callback Home's circle reaches through `Sit` — so the audio is unlocked, the
 graph built, the stored mix restored and the bell scheduled inside the one
 gesture. Directly under the word is the line Home prints under its circle, from
 the same helper (`components/settingsLine.ts`): *10 minutes · singing bowl · in
-silence*. Under that, `Change`, which is what opens the questions: the camera
-settles back (`open`), and `SessionSetup` asks one thing per screen with a
-`Next` under it and the answers so far folded into a line above, with a `Start`
-of its own on the last screen for whoever came in that way.
+silence*. Under that, `Change`, which opens the settings: the camera settles
+back (`open`), the band becomes the whole frame, and `components/Settings.tsx`
+— the same component Home opens under its circle — unfolds four rows beneath
+the word, each carrying its answer in words and opening only its own controls:
+*How long* (the slider and *Sit together until*), *How it ends* (the three
+bells, struck on select), *Sound* (a switch, then the five beds as chips, then
+*Adjust levels*), *The room* (the `showCount` switch, which reaches a guest
+before a sitting for the first time this way). The word and the line stay
+above the rows, so `Let’s begin.` starts the sitting from inside them; the
+control reads `Done changing` while they are open and closes them, as does
+Escape, which returns focus to it.
 
 **That is the model Home had, extended to the guest on 9 September 2026**
-(`plans/flow-audit.md`, item C). Until then the word opened the questions and
-`Start` at the foot of the third was the only thing that began a sitting. This
-section used to argue that a guest should walk all three screens because they
-are the only moment the product has to ask a returning visitor whether today is
-a ten-minute day; Home answered that for the signed-in person by printing the
-settings under the button that starts the sitting, with `Change` beside them —
-the question is still put every time, read instead of walked — and the answer
-was withheld from the guest on the grounds that a guest has no home to have read
-it on. That left six taps to a first sitting for the person deciding whether to
-come back, against one for the person who already had. The landing now reads
-the line to them too. A first-time visitor gets the defaults, and is told what
-they are before they get them.
+(`plans/flow-audit.md`, items C and D). Until then the word opened three
+questions on three screens — `SessionSetup.tsx`, 452 lines, with `Next`
+between them — and `Start` at the foot of the third was the only thing that
+began a sitting. This section used to argue that a guest should walk all three
+because they are the only moment the product has to ask a returning visitor
+whether today is a ten-minute day; Home answered that for the signed-in person
+by printing the settings under the button that starts the sitting, with
+`Change` beside them — the question is still put every time, read instead of
+walked — and the answer was withheld from the guest on the grounds that a guest
+has no home to have read it on. That left six taps to a first sitting for the
+person deciding whether to come back, against one for the person who already
+had. The landing now reads the line to them too. A first-time visitor gets the
+defaults, and is told what they are before they get them.
+
+Item D followed the same day: two settings interfaces for four preferences —
+the flow and Home's panel shared the `lib/` helpers and nothing else, so every
+fix was made twice and the sound answer was a different object on each surface.
+`Settings` is one component for both, and it takes the flow's better sound
+pattern (switch, chips, faders on request) rather than Home's full mixer. The
+bell stopped being a screen of its own without anybody having to argue it: it
+is a row, the way it already was on Home. `Start` went with the flow; the words
+for beginning are `Let’s begin.` on the landing and `Sit` on Home.
 
 The consequence to remember is in the audio. `begin` calls `mix.restore()`, so a
 stored mix plays from the word's first tap — which is exactly what `useMix`'s
@@ -1160,35 +1177,39 @@ difference is that the word now starts the sitting the mix was saved for: it is
 a mix the person built and asked for, which `VISION.md` §4 permits, and the
 line under the word says what it is. A first-time visitor has `soundMix: {}`
 and hears nothing but the bell. `Change` is the silent path: `openSetup`
-builds the graph with the master at zero and nothing is audible until the sound
-question is on screen. Home's sitting still starts from an effect on mount,
-which is not a gesture — so its unlock happens in Home's `Sit` click, in
-`Entry.startSitting`. **If a sitting is ever silent or the closing bell never
-rings, one of those two clicks is the line that has moved.**
+builds the graph with the master at zero, and it stays there until the *Sound*
+row is opened — `Settings` reports that through `onSoundOpen`, and
+`mix.unmute()` is the answer. Not when `Change` opens: that would put the beds
+in the room the moment somebody came to alter the length. The bells are outside
+this — `previewBell` strikes the context directly, never through the master —
+so *How it ends* is audible on select exactly as the bell question was. Home's
+sitting still starts from an effect on mount, which is not a gesture — so its
+unlock happens in Home's `Sit` click, in `Entry.startSitting`. **If a sitting
+is ever silent or the closing bell never rings, one of those two clicks is the
+line that has moved.**
 
-**The word and the button are different objects, and that is the point.**
+**The word and the control are different objects, and that is the point.**
 `Let’s begin.` is display type set into a photograph — the room inviting you in,
-and a border round it would make it a sticker on a picture. `Start`, at the foot
-of the last question, is a bordered control sitting exactly where `Next` sat on
-the two screens before it: at that moment somebody is looking for a control,
-not for typography. It used to be `Begin.` in both places, which read as the
-flow having failed to go anywhere. `Change` is `QUIET` — bounded, with a
-chevron — for the reason `controls.ts` gives: a control whose only affordance is
-being a word is an invisible one.
+and a border round it would make it a sticker on a picture. It used to appear
+twice, opening the questions here and starting the sitting at their end, which
+read as the flow having failed to go anywhere; then the end was a bordered
+`Start`; now there is one word and it does one thing. `Change` is `QUIET` —
+bounded, with a chevron — for the reason `controls.ts` gives: a control whose
+only affordance is being a word is an invisible one.
 
 Two things there are easy to get wrong:
 
-- **The audio unlock happens on the landing, not at the end of `Change`.**
-  Autoplay policy only starts an AudioContext inside a gesture, and the sound
-  screen offers to play five beds so somebody can hear what they are choosing.
-  Unlocking at the end would make every one of those play buttons the first
-  gesture on a context that was never unlocked. The word unlocks audibly,
-  `Change` silently.
-- **Every screen has a way out, in the same place.** A back arrow at the top
-  left: from the first question it leaves the flow, from any other it steps back
-  one. It used to be a `Not now` link on the first screen only, which meant the
-  way out moved depending on how far in you were — and a flow you can enter but
-  not leave is a trap.
+- **The audio unlock happens on the landing, not in the Sound row.** Autoplay
+  policy only starts an AudioContext inside a gesture, and the Sound row offers
+  to play five beds so somebody can hear what they are choosing. Unlocking
+  there would make every one of those chips the first gesture on a context that
+  was never unlocked. The word unlocks audibly, `Change` silently.
+- **The way out is the way in.** `Change` becomes `Done changing`, in the same
+  place, and Escape does the same and hands focus back. The flow had a back
+  arrow at the top left for this — from the first question it left, from any
+  other it stepped back one — and before that a `Not now` link on the first
+  screen only, which meant the way out moved depending on how far in you were.
+  A panel that opens and closes under one control has neither problem.
 
 ### The sitting is a ring, and the ring is the room
 
@@ -1473,9 +1494,10 @@ traps in doing that: Tailwind's opacity modifiers compile to `color-mix`, which
 `rgba()`; and in a hidden tab CSS transitions do not advance and `rAF` never
 fires, so anything measured mid-move is a measurement artefact and not a bug.
 
-The current build clears 4.5:1 on every element in all six phases and on all
-three setup screens, measured at 375×812, 1280×640, 1280×800, 1440×900 and
-1280×860.
+The build of 7 September 2026 cleared 4.5:1 on every element in all six phases
+and on all three setup screens, measured at 375×812, 1280×640, 1280×800,
+1440×900 and 1280×860. The settings rows that replaced those screens on
+9 September have not been measured in the band; see below.
 
 **That check is now a script rather than a description of one.**
 `scripts/contrast-room.js` is pasted into the console on a running page and
@@ -1537,11 +1559,17 @@ been run through `contrast-room.js` in place**; the arithmetic on the fill puts
 its 60% hint type near 6.9:1 over the brightest wax, but that is a calculation,
 not a measurement, and it belongs on the real-device QA pass.
 
-`Next` and `Start` in `SessionSetup` are the same `border-ember text-ember`
-control in the same place in the frame, so **they now carry the thinnest margin
-instead** — and they are still the reason `open` carries `flame: 0.3` at all.
-They are the first thing to re-measure if the flame, the stop or the ember value
-is ever touched.
+`Next` and `Start` in the flow were the same `border-ember text-ember` control
+in the same place in the frame, and carried the thinnest margin after the
+account panel left the band; they were the reason `open` carries `flame: 0.3`
+at all. Both went with the flow on 9 September 2026. What sits in the band on
+`open` now is `Settings`: the same `border-ember text-ember` treatment on the
+selected bell and on *Sit together until*, lower in the frame than `Next` ever
+was, plus `ink-2` row labels — raised from Home's `ink-3` for this component
+because the flow's folded rows had measured `ink-3` at 4.00 down there. **None
+of it has been run through `contrast-room.js` in place.** The bell buttons and
+*Sit together until* are the first thing to measure, and the first thing to
+re-measure if the flame, the stop or the ember value is ever touched.
 
 **Dim the flame before you dim the room.** The flame is drawn separately and
 screen-blended over the photograph, so nothing done to the picture touches it —
@@ -1577,7 +1605,7 @@ fact: whether you are signed in.
 
 | | Signed out | Signed in |
 |---|---|---|
-| `/` | The room. Landing, three questions, sitting, ending, account offer. | Home. |
+| `/` | The room. Landing, `Change`, sitting, ending, account offer. | Home. |
 | `/` after `Sit` | — | The room, starting on arrival, returning to Home. |
 | `/world` | The map. | The map. |
 
@@ -1605,7 +1633,7 @@ is free — `/api/count` is one edge-cached response for the whole world, which 
 `home?: () => void`. Present means signed in: the sitting starts on arrival —
 once the room is visible, off the same `booted` gate as the reveal, so a cold
 cache never has a ring draining on a black screen — the ending says `Done` and
-comes back here, and the account offer at the foot is not rendered at all. Absent means a guest: the landing, the questions, `Finish`, and
+comes back here, and the account offer at the foot is not rendered at all. Absent means a guest: the landing with `Change` under the word, `Finish`, and
 the offer.
 
 One prop rather than two booleans, because the difference genuinely is "is there
@@ -1688,11 +1716,14 @@ of the primary action** — `Begin.`, `Sit`, `Send me a code` — and it is wort
 more while it stays scarce. Ember comes back on hover, where it means "this one,
 now" rather than "this one, always".
 
-**One bare chevron is left, and it is left on purpose**: the back arrow in
-`SessionSetup`. What failed above was words that read as labels, and an icon has
-no adjacent prose to be mistaken for. Bounding a back arrow on a one-question
-screen would add a box to the quietest thing in the product to solve a problem
-it does not have.
+**One bare chevron was left, on purpose, and it is gone with its screen**: the
+back arrow in `SessionSetup`. What failed above was words that read as labels,
+and an icon has no adjacent prose to be mistaken for, so bounding a back arrow
+on a one-question screen would have added a box to the quietest thing in the
+product to solve a problem it did not have. The flow was retired on 9 September
+2026 and the arrow with it; the chevron on `Change` sits inside a `QUIET`
+control, and the ones on the settings rows sit inside their row buttons. No
+bare control remains.
 
 The account flow's own back arrow went with the band takeover. Inside a 320px
 panel the quiet words at the foot — `I already have one`, `Back`, `Send it

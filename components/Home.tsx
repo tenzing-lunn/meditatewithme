@@ -1,31 +1,18 @@
 'use client';
 
 import Link from 'next/link';
-import {
-  useEffect,
-  useState,
-  type CSSProperties,
-  type ReactNode,
-} from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 import { serverNow, syncClock } from '@/lib/clock';
 import { nextHourStart } from '@/lib/session';
 import { humanMinutes, summarise, type PracticeEntry } from '@/lib/practice';
-import {
-  TIMER_STOPS,
-  clampMinutes,
-  durationLabel,
-  nextSharedBellAt,
-  timerStopIndex,
-} from '@/lib/timer';
 import type { UserPreferences } from '@/lib/types';
-import { BELLS, previewBell, type BellKind } from './audio';
 import type { MASTER_KEY, TrackSlug } from './mix';
 import Practice from './Practice';
+import Settings from './Settings';
 import { FOCUS, QUIET } from './controls';
 import { localTime } from '@/lib/format';
-import { durationAnswer, settingsLine, soundAnswer } from './settingsLine';
-import SoundMixer from './SoundMixer';
+import { settingsLine } from './settingsLine';
 import { useCount } from './useCount';
 
 /**
@@ -245,7 +232,8 @@ export default function Home({
                 are about to get ten minutes before they get them.
 
                 The landing says the same line under `Let’s begin.` since
-                9 September 2026, from the same helper — see `settingsLine.ts`.
+                9 September 2026, from the same helper — see `settingsLine.ts`
+                — and `Change` there opens the same `Settings`.
               */}
               <div className="mt-7 flex flex-col items-center gap-3 lg:mt-8">
                 <p className="text-ink-2 max-w-[30ch] text-center text-sm lg:text-base">
@@ -520,255 +508,6 @@ function dayLabel(atMs: number): string {
     month: 'short',
     ...(d.getFullYear() === today.getFullYear() ? {} : { year: 'numeric' }),
   });
-}
-
-type Section = 'duration' | 'bell' | 'sound' | 'room';
-
-/**
- * The four questions, one open at a time.
- *
- * This was every control at once — slider, the shared-bell button, three
- * bells, five play buttons, six faders and the room switch, seventeen in one
- * disclosure — on the argument that there is no door here, so the flow's
- * one-thing-at-a-time reason did not apply. That was fair about why it was one
- * panel and silent about why it was seventeen controls: somebody who came to
- * change the length still had to read past the mixer to find out they had.
- *
- * Now `Change` opens four rows, each carrying its current answer in words, and
- * a row opens only its own controls. The person who wants ten minutes instead
- * of twenty taps one row and moves one slider; the mixer exists only for the
- * person who asked for it. The answers on the closed rows are the same words
- * the line above the circle uses, so the panel reads as that line, unfolded.
- *
- * Everything still writes straight through `update`, which persists to
- * localStorage and syncs to the account. There is no save button because there
- * is nothing to save: the line above the circle changes as you change it, and
- * that line is the confirmation.
- */
-function Settings({
-  prefs,
-  update,
-  onSound,
-  now,
-}: {
-  prefs: UserPreferences;
-  update: (patch: Partial<UserPreferences>) => void;
-  onSound: (slug: TrackSlug | typeof MASTER_KEY, gain: number) => void;
-  now: number | null;
-}) {
-  const duration = durationLabel(prefs.timerMinutes);
-  const bellAt = now === null ? null : nextSharedBellAt(now);
-  const bellLabel = bellAt === null ? '' : localTime(bellAt);
-
-  const durationStop = prefs.untilBell
-    ? TIMER_STOPS.length
-    : timerStopIndex(prefs.timerMinutes);
-
-  // Nothing open until a row is chosen: the panel's first job is to say what
-  // the answers are, and four closed rows do that in four lines.
-  const [open, setOpen] = useState<Section | null>(null);
-  const toggle = (s: Section) => setOpen((v) => (v === s ? null : s));
-
-  const sound = soundAnswer(prefs);
-
-  return (
-    <div className="border-rule mt-8 w-full max-w-md border-t">
-      <Row
-        label="How long"
-        answer={durationAnswer(prefs, now)}
-        open={open === 'duration'}
-        onToggle={() => toggle('duration')}
-      >
-        <p aria-hidden className="font-display text-ember text-3xl leading-none">
-          {prefs.untilBell ? (
-            <>
-              until <span className="tabular-nums">{bellLabel || '—'}</span>
-            </>
-          ) : (
-            <>
-              {duration.value}{' '}
-              <span className="text-ink-2 text-xl">{duration.unit}</span>
-            </>
-          )}
-        </p>
-
-        {/* Twelve stops, not sixty, and the value is an INDEX into
-            TIMER_STOPS — the jump from one minute to five is not a step any
-            `step` attribute can describe, which is why it carries an
-            aria-valuetext. Identical behaviour to the flow's slider on purpose:
-            two controls for one preference must not disagree about what the
-            far right of the track means. */}
-        <input
-          type="range"
-          min={0}
-          max={TIMER_STOPS.length}
-          step={1}
-          value={durationStop}
-          aria-label="How long to sit"
-          aria-valuetext={
-            prefs.untilBell
-              ? `Until the bell${bellLabel ? ` at ${bellLabel}` : ''}`
-              : `${duration.value} ${duration.unit}`
-          }
-          onChange={(e) => {
-            const i = Number(e.target.value);
-            if (i === TIMER_STOPS.length) {
-              update({ untilBell: true });
-              return;
-            }
-            update({
-              timerMinutes: clampMinutes(TIMER_STOPS[i] ?? prefs.timerMinutes),
-              untilBell: false,
-            });
-          }}
-          className="room-range mt-4 w-full"
-          style={
-            {
-              '--range-fill': `${(durationStop / TIMER_STOPS.length) * 100}%`,
-            } as CSSProperties
-          }
-        />
-
-        <button
-          type="button"
-          onClick={() => update({ untilBell: !prefs.untilBell })}
-          aria-pressed={prefs.untilBell}
-          className={`rounded-control mt-4 flex min-h-12 w-full items-center justify-center border px-4 text-sm transition-colors ${FOCUS} ${
-            prefs.untilBell
-              ? 'border-ember bg-ember-soft text-ember'
-              : 'border-ember/70 bg-ember-soft/50 text-ink hover:border-ember hover:bg-ember-soft'
-          }`}
-        >
-          {/* The only control in the product that makes two strangers finish
-              at the same moment. It gets its own line here for the same reason
-              it gets one in the flow. */}
-          Sit together until{' '}
-          <span className="ml-1 whitespace-nowrap tabular-nums">
-            {bellLabel || 'the next bell'}
-          </span>
-        </button>
-      </Row>
-
-      <Row
-        label="How it ends"
-        answer={BELLS[prefs.endBell].label}
-        open={open === 'bell'}
-        onToggle={() => toggle('bell')}
-      >
-        <div className="flex gap-2">
-          {(Object.keys(BELLS) as BellKind[]).map((kind) => (
-            <button
-              key={kind}
-              type="button"
-              onClick={() => {
-                update({ endBell: kind });
-                // Choosing a bell you cannot hear is guesswork, so selecting
-                // one plays it — at a third of the real tail, because
-                // auditioning three should not leave three bowls ringing over
-                // each other for a minute.
-                previewBell(kind);
-              }}
-              aria-pressed={prefs.endBell === kind}
-              className={`rounded-control min-h-12 flex-1 border px-2 text-sm transition-colors ${FOCUS} ${
-                prefs.endBell === kind
-                  ? 'border-ember text-ember'
-                  : 'border-rule text-ink-2 hover:border-ink-3'
-              }`}
-            >
-              {BELLS[kind].label}
-            </button>
-          ))}
-        </div>
-      </Row>
-
-      <Row
-        label="Sound"
-        answer={sound.charAt(0).toUpperCase() + sound.slice(1)}
-        open={open === 'sound'}
-        onToggle={() => toggle('sound')}
-      >
-        <SoundMixer soundMix={prefs.soundMix} onChange={onSound} />
-      </Row>
-
-      <Row
-        label="The room"
-        answer={prefs.showCount ? 'Shown' : 'Hidden'}
-        open={open === 'room'}
-        onToggle={() => toggle('room')}
-      >
-        <button
-          type="button"
-          onClick={() => update({ showCount: !prefs.showCount })}
-          aria-pressed={prefs.showCount}
-          className={`border-rule text-ink-2 hover:border-ink-3 hover:text-ink rounded-control flex min-h-12 w-full items-center justify-between gap-4 border px-4 text-sm transition-colors ${FOCUS}`}
-        >
-          {/* "The room", the same words the ending uses for the same switch.
-              This said "Show who else is here", which was the one place the
-              preference had a different name. */}
-          <span>Show the room</span>
-          <span
-            className={prefs.showCount ? 'text-ember' : 'text-ink-3'}
-            aria-hidden
-          >
-            {prefs.showCount ? 'On' : 'Off'}
-          </span>
-        </button>
-      </Row>
-    </div>
-  );
-}
-
-/**
- * One question on the settings panel: its name, its current answer, and the
- * controls for it when opened. The answer is the same words the line above
- * the circle uses, so reading the four closed rows is reading that line
- * unfolded.
- */
-function Row({
-  label,
-  answer,
-  open,
-  onToggle,
-  children,
-}: {
-  label: string;
-  answer: string;
-  open: boolean;
-  onToggle: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <div className="border-rule border-b">
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={open}
-        className={`rounded-control flex min-h-14 w-full items-center justify-between gap-4 text-left text-sm ${FOCUS}`}
-      >
-        <span className="text-ink-3">{label}</span>
-        <span className="flex items-center gap-3">
-          <span className={open ? 'text-ember' : 'text-ink'}>{answer}</span>
-          <svg
-            viewBox="0 0 24 24"
-            className={`text-ink-3 size-3.5 transition-transform duration-300 ${
-              open ? 'rotate-180' : ''
-            }`}
-            fill="none"
-            aria-hidden
-          >
-            <path
-              d="m6 9 6 6 6-6"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </span>
-      </button>
-      {open && <div className="pt-1 pb-7">{children}</div>}
-    </div>
-  );
 }
 
 /**

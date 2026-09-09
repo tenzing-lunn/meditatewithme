@@ -22,7 +22,7 @@ import type { Session, UserPreferences } from '@/lib/types';
 import { currentStreak, summarise, type PracticeEntry } from '@/lib/practice';
 import CandleScene, { REVEAL_EASE, REVEAL_MS, type ScenePhase } from './CandleScene';
 import Practice from './Practice';
-import SessionSetup, { type Step } from './SessionSetup';
+import Settings from './Settings';
 import Account from './Account';
 import { FOCUS, QUIET } from './controls';
 import { localTime } from '@/lib/format';
@@ -344,8 +344,8 @@ interface RoomProps {
    * used, because that difference really is "is there a home to come back to":
    *
    *   absent   a guest. The landing — the word `Let’s begin.` with the
-   *            settings it will use read out under it, and `Change` for the
-   *            questions — and the account offer at the end.
+   *            settings it will use read out under it, and `Change` to open
+   *            them — and the account offer at the end.
    *   present  somebody signed in. The sitting starts on arrival — they
    *            answered the questions on Home by reading them — and the ending
    *            comes back here instead of offering an account they have.
@@ -388,17 +388,24 @@ export default function Room({
   const [sceneReady, setSceneReady] = useState(false);
   const onSceneReady = useCallback(() => setSceneReady(true), []);
   /**
-   * Is the setup flow open, and which question is showing.
+   * Are the settings open under the word.
    *
-   * `setup` null means the landing: the photograph, the word `Let’s begin.`
-   * on it, and one line under the word saying what pressing it will do.
-   * `Change` under that line opens the flow, the room settles out of focus
-   * behind it, and the last screen carries a `Start` of its own — but the
-   * ordinary way to sit is the word, which starts the sitting directly. Until
-   * 9 September 2026 the word opened the flow and the only start was at the
-   * end of it: three screens for a guest where Home read one line.
+   * False is the landing: the photograph, the word `Let’s begin.` on it, one
+   * line under the word saying what pressing it will do, and `Change`. True
+   * is the same three things with `Settings` unfolded beneath them — the four
+   * rows Home opens under its circle — and the room settled out of focus
+   * behind it, the camera at `open`. The word still starts the sitting from
+   * inside; `Done changing` is the way back without one.
+   *
+   * It was `Step | null` until 9 September 2026 — which of three questions
+   * `SessionSetup` was showing, because the camera held `open` for the whole
+   * flow and the fit re-measured per screen. There is one panel now and the
+   * rows open and close inside it, re-measured by the band's own observer the
+   * way `Adjust levels` always was; the room only needs to know whether it is
+   * there. Before that the word itself opened the flow, and `Start` at the
+   * foot of the third screen was the only thing that began.
    */
-  const [setup, setSetup] = useState<Step | null>(null);
+  const [changing, setChanging] = useState(false);
   // The mixer, reached mid-sitting, and the practice log. Owned here rather
   // than by the components that show them because the camera has to know: see
   // `phase` below.
@@ -421,9 +428,15 @@ export default function Room({
    * shows `:focus-visible` on programmatic focus only when the last input was
    * a key — and `practiceToggled` keeps the ending's first render, where `Your
    * practice` mounts on its own, from pulling focus to it.
+   *
+   * `Change` has the drawer's Escape and not its focus move. The rows it opens
+   * sit directly under it in the band, so Tab already reaches them; only the
+   * way back needed adding, and it returns focus to `Change` the way the
+   * drawer's returns it to `Sound`.
    */
   const soundToggle = useRef<HTMLButtonElement>(null);
   const soundDrawer = useRef<HTMLDivElement>(null);
+  const changeToggle = useRef<HTMLButtonElement>(null);
   const practiceShow = useRef<HTMLButtonElement>(null);
   const practiceHide = useRef<HTMLButtonElement>(null);
   const practiceToggled = useRef(false);
@@ -439,6 +452,17 @@ export default function Room({
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [soundOpen]);
+
+  useEffect(() => {
+    if (!changing) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setChanging(false);
+      changeToggle.current?.focus();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [changing]);
 
   useEffect(() => {
     if (!practiceToggled.current) return;
@@ -496,13 +520,13 @@ export default function Room({
    * agree on anyway, since one sets the band's height and the other decides
    * what height to measure against.
    */
-  const bandOpen = booted && (setup !== null || soundOpen || practiceOpen);
+  const bandOpen = booted && (changing || soundOpen || practiceOpen);
 
   // Everything that changes what is in the band, in one string. See the hook.
   const band = useFitToBand(
     // `reveal` is in here because the ending swaps `ComingBack` for the stat
     // block at stage 1, and those are different heights.
-    `${activity.kind}:${setup ?? '-'}:${soundOpen}:${practiceOpen}:${prefs.showCount}:${reveal}`,
+    `${activity.kind}:${changing}:${soundOpen}:${practiceOpen}:${prefs.showCount}:${reveal}`,
     bandOpen,
   );
   /**
@@ -621,35 +645,39 @@ export default function Room({
   );
 
   /**
-   * `Change` on the landing. Opens the questions; does not start a sitting.
+   * `Change` on the landing. Opens the settings; does not start a sitting.
    *
-   * The audio unlock happens HERE rather than at the end of the flow, and that
-   * is the whole reason it is a callback and not a `setSetup` inline. Autoplay
-   * policy only lets an AudioContext start inside a user gesture, and the next
-   * thing this flow does is offer to play five sounds so somebody can hear what
-   * they are choosing. Waiting until the end would mean every one of those play
-   * buttons was the first gesture, on a context that had not been unlocked yet.
+   * The audio unlock happens HERE rather than when a sound is first asked
+   * for, and that is the whole reason it is a callback and not a
+   * `setChanging` inline. Autoplay policy only lets an AudioContext start
+   * inside a user gesture, and the Sound row offers to play five beds so
+   * somebody can hear what they are choosing. Waiting would mean every one of
+   * those chips was the first gesture, on a context that had not been
+   * unlocked yet.
    *
    * It was the begin word's click until 9 September 2026; the word now calls
    * `begin` itself, and this is what the quieter control under it does.
+   *
+   * THE SILENT PATH, AND WHERE IT ENDS
+   * The graph is built with the master at zero, and it stays there until the
+   * Sound row is opened — `Settings` reports that through `onSoundOpen`, and
+   * `mix.unmute()` is the answer. Not when `Change` opens: that would put the
+   * beds in the room the moment somebody came to alter the length, which is
+   * the situation `useMix`'s silent unlock exists to prevent. The bells are
+   * not part of this — `previewBell` strikes the context directly and never
+   * passes through the master — so `How it ends` is audible on select, as it
+   * was as a question, and nothing else is audible before the sound controls
+   * are on screen. `CLAUDE.md` says the same to whoever opens the preview.
    */
   const openSetup = useCallback(() => {
     unlockAudio();
-    // Silent. The context has to start inside this gesture or the audition
-    // buttons three screens later have nothing to play through — but starting
-    // it is not the same as playing through it, and `Change` is not where
-    // anybody agreed to hear rain. See `useMix`.
+    // Silent. The context has to start inside this gesture or the chips in
+    // the Sound row have nothing to play through — but starting it is not the
+    // same as playing through it, and `Change` is not where anybody agreed to
+    // hear rain. See `useMix`.
     mix.ensure({ silent: true });
-    setSetup('duration');
+    setChanging(true);
   }, [mix]);
-
-  // The sound question is on screen, so sound may now be heard: the auditions
-  // need it, and anyone who is going to say No is looking at the switch that
-  // says so. Not a gesture, and it does not need to be — the context is
-  // already running and this only moves a gain.
-  useEffect(() => {
-    if (setup === 'sound') mix.unmute();
-  }, [setup, mix]);
 
   const begin = useCallback(() => {
     // Must happen inside the click. Autoplay policy will not let an
@@ -685,7 +713,7 @@ export default function Room({
     // threshold, and it only ever marked the far one.
     const opening = openingBell(prefs.endBell, seconds);
 
-    setSetup(null);
+    setChanging(false);
     setActivity({
       kind: 'sitting',
       sit: {
@@ -1021,10 +1049,18 @@ export default function Room({
               beside them, and that answer was withheld from the one person
               deciding whether to come back at all. So the landing takes Home's
               model whole: the same line from the same helper
-              (`settingsLine.ts`), the same `Change`, and the word does what
-              the circle does. A first-time visitor gets the defaults, and is
-              told what they are before they get them. `plans/flow-audit.md`,
-              item C.
+              (`settingsLine.ts`), the same `Change` opening the same
+              `Settings`, and the word does what the circle does. A first-time
+              visitor gets the defaults, and is told what they are before they
+              get them. `plans/flow-audit.md`, items C and D.
+
+              WHILE `Change` IS OPEN, THE WORD STAYS
+              The rows unfold under the control that opened them, and the word
+              and its line stay above — so pressing `Let’s begin.` works from
+              inside the settings, which is what removed the need for a
+              separate `Start`. What leaves is the sentence and the `/world`
+              link below, and the account control in the corner: one thing is
+              being asked, and neither is it.
 
               THE SENTENCE IS THE OTHER EXCEPTION, AND IT IS PAID FOR TOO
               This screen said `Let’s begin.` and nothing else until 7
@@ -1056,7 +1092,6 @@ export default function Room({
               with either, and together they read as a page assembling itself.
               One gate, one duration, one easing. */}
           {activity.kind === 'idle' &&
-            setup === null &&
             !practiceOpen &&
             !home && (
               <div
@@ -1081,15 +1116,20 @@ export default function Room({
                     {settingsLine(prefs, now)}
                   </p>
                   <button
+                    ref={changeToggle}
                     type="button"
-                    onClick={openSetup}
-                    aria-expanded={false}
+                    onClick={() =>
+                      changing ? setChanging(false) : openSetup()
+                    }
+                    aria-expanded={changing}
                     className={QUIET}
                   >
-                    Change
+                    {changing ? 'Done changing' : 'Change'}
                     <svg
                       viewBox="0 0 24 24"
-                      className="size-3.5"
+                      className={`size-3.5 transition-transform duration-300 ${
+                        changing ? 'rotate-180' : ''
+                      }`}
                       fill="none"
                       aria-hidden
                     >
@@ -1104,33 +1144,29 @@ export default function Room({
                   </button>
                 </div>
 
+                {changing && (
+                  <Settings
+                    prefs={prefs}
+                    update={update}
+                    onSound={setSound}
+                    now={now}
+                    // The end of the silent path — see `openSetup`.
+                    onSoundOpen={mix.unmute}
+                  />
+                )}
+
                 {/* `showCount` off means the room is hidden, so the live half
                     is withheld and the standing sentence stands in. Somebody
                     who asked not to be shown the others is not shown them
                     here either. */}
-                <WhatThisIs
-                  now={now}
-                  litCount={prefs.showCount ? litCount : null}
-                />
+                {!changing && (
+                  <WhatThisIs
+                    now={now}
+                    litCount={prefs.showCount ? litCount : null}
+                  />
+                )}
               </div>
             )}
-
-          {activity.kind === 'idle' && setup !== null && (
-            <SessionSetup
-              prefs={prefs}
-              update={update}
-              onSound={setSound}
-              now={now}
-              // The camera holds `open` for the whole flow; this is what tells
-              // the room which question it is holding it for.
-              onStepChange={setSetup}
-              onCancel={() => setSetup(null)}
-              // Placed by the flow rather than after it, on the last screen:
-              // "when does the start appear" is the same question as "how far
-              // through the questions are we".
-              begin={<StartButton onClick={begin} />}
-            />
-          )}
 
           {/* The mixer only. `Sound` and `End this sitting` are now at the
               foot of the frame — see THE FOOT below — because the ring wants
@@ -1155,10 +1191,10 @@ export default function Room({
               // 9 September 2026 only the signed-in person got that; a guest
               // was sent back to `idle` - the landing, the begin word, three
               // questions they had answered ten minutes earlier, then `Start`.
-              // Five taps for a button whose label promises one. The
-              // questions are still there from the landing for anyone who
-              // wants to change something. This click is a real gesture, so
-              // the AudioContext `begin` needs is allowed to start in it.
+              // Five taps for a button whose label promises one. `Change` is
+              // still there on the landing for anyone who wants to alter
+              // something. This click is a real gesture, so the AudioContext
+              // `begin` needs is allowed to start in it.
               onAgain={begin}
               onDone={home}
               onFinish={() => {
@@ -1237,9 +1273,12 @@ export default function Room({
               and nothing else to read.
 
               A guest has no Home. This is the only place they can see their
-              own log or turn the dots off, so they keep both. The design audit
-              called these "the two nobody came back for", and that is true of
-              the person with somewhere else to find them. */}
+              own log, and until 9 September 2026 the only place they could
+              turn the dots off — `The room` row under `Change` reaches that
+              switch now, and `plans/flow-audit.md` item E is what follows
+              from it. The design audit called these "the two nobody came back
+              for", and that is true of the person with somewhere else to find
+              them. */}
           {activity.kind === 'finished' && phase !== 'open' && !home && (
             <div
               className={`mt-3 flex flex-wrap items-center justify-center gap-2 ${ending(2)}`}
@@ -1315,7 +1354,8 @@ export default function Room({
         row of three off this screen.
 
         Absent for anybody signed in: they have a home, and this is the door to
-        it. Absent while a question is open, because one thing is being asked.
+        it. Absent while the settings are open, because one thing is being
+        asked.
 
         IT IS THREE LINES, AND IT OFFERS BOTH DOORS BY NAME
         It said `Create account`, with "I already have one" as a footnote inside
@@ -1329,7 +1369,7 @@ export default function Room({
       {!home &&
         auth.status === 'signed-out' &&
         activity.kind === 'idle' &&
-        setup === null &&
+        !changing &&
         !practiceOpen && (
           <div
             className="absolute top-0 right-0 z-20 p-3 transition-opacity sm:p-5"
@@ -1553,17 +1593,18 @@ function Focus({
  * a first-time visitor reads before deciding, so it is worth the two extra
  * words.
  *
- * A typographic apostrophe, matching the rest of the visible copy — `You’ll
- * finish with everyone else at…` in `SessionSetup`. Straight quotes in this
- * project are a code-comment habit, not a copy one.
+ * A typographic apostrophe, matching the rest of the visible copy. Straight
+ * quotes in this project are a code-comment habit, not a copy one.
  *
  * IT STARTS THE SITTING. Since 9 September 2026 its click is `begin`, the
  * same callback Home's circle reaches through `Sit`: audio unlocked, graph
  * built, mix restored, bell scheduled, all inside the gesture. Until then it
  * opened the three questions and `Start` at the foot of the third was what
  * began — a guest walked three screens where somebody signed in read one line.
- * The line is now under this word too, and `Change` beside it is what opens
- * the questions; `StartButton` below survives only inside them.
+ * The line is now under this word too, and `Change` beside it opens the
+ * settings under both, so this word is the start from inside them as well.
+ * `Start` went with the flow: the words for beginning are this one, and
+ * `Sit` on Home.
  *
  * ONE THING FOLLOWS FROM THAT, AND IT IS ALLOWED. `begin` calls
  * `mix.restore()`, so a stored mix plays from this first tap — rain at 0.6
@@ -1576,9 +1617,11 @@ function Focus({
  * says — `in silence`, or `rain and wind` — is the warning, and `Change` is
  * the silent path for anybody who wants to alter it first.
  *
- * It is the landing and only the landing. It used to appear twice, meaning two
- * different things — opening the questions here, starting the sitting at the
- * end of them — which read as the flow having failed to go anywhere.
+ * It is the landing and only the landing, open settings included. It used to
+ * appear twice, meaning two different things — opening the questions here,
+ * starting the sitting at the end of them — which read as the flow having
+ * failed to go anywhere. Display type, not a button: a bordered pill on a
+ * photograph reads as a sticker laid on top of it.
  */
 function BeginWord({ onClick }: { onClick: () => void }) {
   return (
@@ -1646,41 +1689,6 @@ function WhatThisIs({
         See where the candles are
       </Link>
     </div>
-  );
-}
-
-/**
- * The start at the foot of the last question, for somebody who came in
- * through `Change`.
- *
- * Not the ordinary way to begin any more: the landing's word starts a sitting
- * itself, and this is reached only by opening the questions first. It stays
- * because a flow you can enter needs a way to finish that is not the back
- * arrow three times — somebody who changed the length wants to sit, not to
- * return to the landing and press the word again.
- *
- * A button here and a word on the landing, and the difference is the point.
- * `Let’s begin.` is display type set into a photograph — it is the room
- * inviting you in, and a border around it would make it a sticker on a
- * picture. This is the last of three answers in a form, sitting where `Next`
- * sat on the two screens before it, and at that moment somebody is looking
- * for a control, not for typography. Set as display type it read as a heading
- * that happened to be clickable, and people went looking for the real button
- * underneath it.
- *
- * So: the same ember, the same shape as `Next`, one step louder because it is
- * the one that commits — and much smaller than the landing's word, which stays
- * the largest thing the product ever says.
- */
-function StartButton({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`border-ember bg-ember-soft text-ember hover:bg-ember rounded-action min-h-12 border px-10 text-base tracking-wide transition-colors duration-300 hover:text-white ${FOCUS}`}
-    >
-      Start
-    </button>
   );
 }
 

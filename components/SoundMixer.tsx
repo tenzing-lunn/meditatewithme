@@ -35,8 +35,8 @@ import {
  * site can least afford, and a mix somebody assembled themselves is the one
  * they will come back for.
  *
- * Rendered twice — in the setup before a sitting, and in the drawer during one
- * — so the ids are generated rather than written.
+ * Rendered twice — behind `Adjust levels` in the settings before a sitting,
+ * and in the drawer during one — so the ids are generated rather than written.
  */
 
 /** Where play puts a track that has never been heard. Audible, not loud. */
@@ -45,9 +45,10 @@ const AUDITION_LEVEL = 0.55;
 /**
  * The five beds as five choices, and nothing else.
  *
- * This is what the flow's sound question shows. The full mixer below is eleven
- * controls — five play buttons, five faders, a master — and the flow's whole
- * argument is one thing at a time; putting eleven things on its last screen
+ * This is what the Sound row of `Settings` shows, on Home and in the room
+ * alike. The full mixer below is eleven controls — five play buttons, five
+ * faders, a master — and the room's whole argument is one thing at a time;
+ * putting eleven things on the last screen of the flow this row replaced
  * asked somebody standing in the doorway of a meditation to assemble an
  * atmosphere before they could sit. Here the question is only which sounds:
  * tap one and it plays at its stored level, or at the audition level if it
