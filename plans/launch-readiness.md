@@ -191,9 +191,11 @@ invoice you weren't expecting" promise forbids.
   the shared hour becomes the primary path — and the measurement question in
   §4D, which needs the legal-entity decision below before it can be answered
   privacy-safely. One conversation, after the status update above.
-- [ ] Whether the photograph in `public/room-base.png` (the master behind the
-  served `.avif` and `.jpg`) is the candle that ships,
-  or the stand-in for a licensed loop Jonny sources. `context/PRODUCT.md`.
+- [x] ~~Whether the photograph in `public/room-base.png` is the candle that
+  ships~~ — moot since 14 September 2026: the photographic room was replaced
+  by the warm rail (`plans/ui-rebuild.md`) and the photograph is deleted.
+  Jonny's licensed imagery, if it comes, is a different question now: what,
+  if anything, sits behind the sitting besides the earth. `context/PRODUCT.md` §5.
 
 ## Remaining launch work
 

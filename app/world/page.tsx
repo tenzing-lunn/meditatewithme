@@ -4,14 +4,14 @@ import World from '@/components/World';
 /**
  * The map.
  *
- * Its own route, unlike the room and Home, which share `/` and switch on state.
- * The difference is real rather than arbitrary: sitting is something you do
- * inside the same frame you were already looking at — and §16's opening move
- * depends on `CandleScene` staying mounted while the camera travels — whereas
- * this is somewhere else, with its own subject, that somebody should be able to
+ * Its own route, unlike the questions, the sitting and Home, which share `/`
+ * and switch on state. The difference is real rather than arbitrary: sitting
+ * is something you do inside the frame you were already looking at — the
+ * camera lifts from the bowl to the earth without a navigation — whereas this
+ * is somewhere else, with its own subject, that somebody should be able to
  * link to and come back from.
  *
- * Nothing in the room imports anything from here, and this route's weight —
+ * Nothing on the way to a sitting imports anything from here, and this route's weight —
  * 273KB of earth, since the sphere and its 600KB of `three` went on 6 September
  * 2026 — is loaded by `World` behind `next/dynamic`, so it is not on any path
  * that leads to meditating.

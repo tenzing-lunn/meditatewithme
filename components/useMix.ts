@@ -53,13 +53,13 @@ import {
  * but silent: `ensure({ silent: true })` starts the master at zero and
  * `unmute()` raises it when the Sound row is actually opened.
  *
- * Which press changed on 9 September 2026. `Let’s begin.` now starts the
- * sitting, so it builds the graph audibly through `begin` — `ensure()` then
- * `restore()` — and that is the case this note describes as allowed: the mix
- * is the one the person built for the sitting they are starting, and the line
- * under the word says what it is. The silent unlock belongs to `Change`
- * (`openSetup` in `Room.tsx`), and the settings it opens stay silent until
- * their Sound row does; `Settings` reports that through `onSoundOpen`.
+ * Since 14 September 2026 the gestures are the rail's. The first Next on the
+ * welcome screen, and a door on the signed-in home, call `ensure({ silent:
+ * true })`; the Sound screen's switch calls `unmute()` when it is turned on;
+ * and the bowl strike builds the graph audibly through `begin` — `ensure()`
+ * then `restore()` — which is the case this note describes as allowed: the
+ * mix is the one the person built for the sitting they are starting, and the
+ * line under the bowl says what it is.
  *
  * The beds' own levels are left alone throughout, which is what makes this
  * safe rather than clever: saying *No* to the question writes real zeros to

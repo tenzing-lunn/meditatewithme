@@ -1,10 +1,9 @@
 /**
- * The flame, as a mark rather than a photograph.
+ * The flame, as a mark.
  *
- * `public/flame.png` is the real one and it cannot be used here: it is a
- * composited photograph that reads as a smudge below about 200px, and the
- * favicon is 32. So the mark is a drawing — the same shape, the same two
- * warmths, legible at tab size.
+ * A drawing, legible at tab size: the favicon is 32px, and the candle
+ * sprites on the earth are the same two warmths at twenty. Nothing
+ * photographic has been on the site since 14 September 2026.
  *
  * Used by app/icon.tsx, app/apple-icon.tsx and app/opengraph-image.tsx so the
  * tab, the home screen and the shared link cannot drift apart. Rendered by
@@ -13,10 +12,15 @@
  * `currentColor`.
  */
 
-/** Ember and its hot core, lifted from the dark palette in app/globals.css. */
+/**
+ * The flame's warmth and its hot core, and the ground the tab and the home
+ * screen put it on: `dusk`, the sitting's brown, so the icon is a candle in
+ * the room rather than a candle on a black tile. Lifted from `@theme` in
+ * app/globals.css; satori cannot read a custom property, so they are copied.
+ */
 export const EMBER = '#e0a057';
 export const EMBER_CORE = '#fbead2';
-export const PAPER = '#131518';
+export const PAPER = '#2b1a10';
 
 export function FlameMark({ size }: { size: number }) {
   return (

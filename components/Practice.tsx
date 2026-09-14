@@ -62,8 +62,7 @@ export default function Practice({
           )}
         </p>
 
-        {/* ink-2, not ink-3. The log is read over the photograph with the
-            camera stopped down, and ink-3 measured 3.81:1 there. It stays
+        {/* ink-2, not ink-3: this line is a fact, not a caption. It stays
             secondary to the streak above it by being a third of its size. */}
         <p className="text-ink-2 text-sm tabular-nums">
           {s.sittings} sitting{s.sittings === 1 ? '' : 's'} ·{' '}

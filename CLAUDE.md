@@ -1,8 +1,9 @@
 # Meditate With Me
 
-Next.js (App Router) + Supabase. A candle is lit at the top of every UTC hour
-and everyone on the site is looking at the same one; each person chooses how
-long to sit, or sits *until the bell* and finishes with everyone else who did.
+Next.js (App Router) + Supabase. A warm screen asks one question at a time
+and leads to a bowl; strike it and you are seated in front of the earth, where
+everyone sitting this hour is a candle. Each person chooses how long to sit,
+or sits *until the bell* and finishes with everyone else who did.
 Built for a client, Jonny Knowles, against a written proposal — see
 `context/VISION.md` for his idea and `context/PRODUCT.md` for what the site is
 today, what he has been told, and what he hasn't.
@@ -17,12 +18,12 @@ Before the first edit of a session, read in this order — it is short:
    been told.
 3. The `context/ARCHITECTURE.md` section for whatever subsystem you are about
    to touch (§4 sessions, §5 count, §6 time, §7 audio, §8 identity, §16 the
-   room).
+   screens, §17 the account side).
 4. `DESIGN.md` at the root, before touching anything a visitor sees. It is
-   the visual system as built, extracted from the code on 13 September 2026
-   by Impeccable's `document` command: tokens in the frontmatter, the rules
-   in prose. If a change makes it wrong, fix it in the same commit, the same
-   as `context/`.
+   the visual system as built, rewritten from the code on 14 September 2026
+   when the warm rail replaced the photographic room: tokens in the
+   frontmatter, the rules in prose. If a change makes it wrong, fix it in the
+   same commit, the same as `context/`.
 
 The SessionStart hook already puts the last fifteen commits and the working
 tree in front of you. Everything else is in the folders below.
@@ -149,67 +150,69 @@ prefix. See `.env.example`.
 
 **Open it only for big things.** Typecheck, the tests and `npm run build` cover
 most changes; a browser on top of that is ceremony. Open the preview when
-rendering is the only way to know — animation and timing, layout that can
-overflow or clip (this frame does not scroll), contrast over the photograph, or
-a new screen seen for the first time. Not for copy changes, renames, refactors,
-doc edits, or anything a passing test already proves. Saying "not visually
-checked, it is a label change" is a fine answer.
+rendering is the only way to know — the rail's motion, the strike and the
+lift, layout that can overflow or clip (the questions and the sitting do not
+scroll), or a new screen seen for the first time. Not for copy changes,
+renames, refactors, doc edits, or anything a passing test already proves.
+Saying "not visually checked, it is a label change" is a fine answer.
 
 **When you do open it, it plays out of Tenzing's speakers. Leave it silent.**
 
-**Pressing the landing's begin word starts a sitting**, as of 9 September 2026
-(`plans/flow-audit.md`, item C): `begin` unlocks the audio, builds the graph
-and **restores the stored mix inside that click**, so on an origin that holds
-a mix the beds play from the first tap. The line under the word says what will
-play — *in silence* means only the bell. Do not press it to get anywhere.
+The site is a rail of questions ending at a bowl (`components/Journey.tsx`,
+since 14 September 2026). What each step does to the audio:
 
-The silent path is `Change`, under that line. It calls `unlockAudio()` and
-`mix.ensure({ silent: true })` in `openSetup` (`components/Room.tsx`), which
-builds the graph with the master at zero, and opens the four settings rows —
-the same `components/Settings.tsx` Home uses. **The rows are silent. The beds
-start when the *Sound* row is opened**, which is when `Settings` calls
-`onSoundOpen` and the room answers with `mix.unmute()` — so the row to leave
-shut is *Sound*, and *How long*, *How it ends* and *The room* are safe.
-*How it ends* strikes the bell you select, at a third of its tail; that never
-went through the master and is a deliberate act, not a bed.
+- **Welcome → Next**, and **a door on the signed-in home**, call
+  `unlockAudio()` and `mix.ensure({ silent: true })`: the graph is built with
+  the master at zero. Silent.
+- **Name, Origin, Mode, Time**: silent.
+- **Bell**: tapping a chip calls `previewBell`, which strikes that bell at a
+  third of its tail. Audible, and never through the master. Read the chips;
+  do not tap one.
+- **Sound**: the switch. Turning it on calls `mix.unmute()`, which raises the
+  master to the stored mix. The origin at `127.0.0.1:3000` holds a stored mix
+  (rain 0.5, hum 0.3), so the switch there starts rain. Leave it as found.
+- **The bowl**: pressing it is `begin()` — `mix.ensure(); mix.restore()`, the
+  opening bell, presence, and a real entry in the practice log at the end.
+  **Never press the bowl.** The sitting and the ending are seen through the
+  dev-only demo instead: `/?demo=sitting`, `/?demo=sitting&alone`,
+  `/?demo=finished` mount them with fixture points, a frozen clock, no
+  presence and no audio (`components/Demo.tsx`, stripped from production).
+- **Sound during the demo sitting** opens the mixer sheet; the sheet's switch
+  would call `mix.unmute()` if there were a graph, and in the demo there is
+  none. Still, leave it.
 
-That is true as of 9 September 2026. Until the 7th the beds started at the
-begin word, two screens before the sound question, and this note warned you
-there was no silent path through the flow; from the 7th to the 9th the flow was
-silent up to its third screen. Now there is no flow: one panel, and one row in
-it that makes sound.
+The five beds are loudness-matched to −16 LUFS, so no single one ambushes
+you. A hidden preview pane keeps playing: the `visibilitychange` handler in
+`components/useMix.ts` only ever *resumes*, deliberately, because a sitting
+must not stop when someone glances at another tab.
 
-The five beds are loudness-matched to −16 LUFS as of the same day, so no single
-one ambushes you either — `rain` used to be 12.5 dB above `waterfall` and this
-note used to warn you about that too. A hidden preview
-pane keeps playing: the `visibilitychange` handler in `components/useMix.ts`
-only ever *resumes*, deliberately, because a sitting must not stop when someone
-glances at another tab.
-
-So, for any run that opened the room:
+So, for any run that opened the site:
 
 - **Tear the audio graph down as the last action.** Unmounting `Entry` calls
   `handle.stop()`, so navigate to `/world` or `about:blank`, or close the tab.
   Closing the tab is the surest. Do not just take a final screenshot and stop.
-- Never leave the pane parked on an open *Sound* row or on a live sitting.
+- Never leave the pane parked on the Sound screen with the switch on, or on
+  a live sitting.
 - **Do not silence it by writing faders to 0.** `mwm.preferences` in
   localStorage is Tenzing's own stored mix, not scratch state — the same rule
   as everywhere else here: don't edit his data to tidy up after yourself.
-- Prefer `read_page` / `javascript_tool` state over actually walking the flow.
+- Prefer `read_page` / `javascript_tool` state over actually walking the rail.
+  The hidden pane freezes CSS transitions, so to walk it set `--rail-ms` and
+  `--settle-ms` to `0ms` on the root and click through the DOM.
 
 The same applies to anything else a test leaves behind: a completed sitting
-writes a real entry to the practice log. Say so rather than leaving it to be
-discovered.
+writes a real entry to the practice log, and a heartbeat with a label shows a
+name on everybody's earth. Say so rather than leaving it to be discovered.
 
-**The preview pane is signed in, so `localhost:3000` is Home, not the landing.**
-To see what a guest sees, open **`http://127.0.0.1:3000`** instead: a different
-origin with its own localStorage, so it is signed out without signing anybody
-out. `allowedDevOrigins` in `next.config.ts` exists for exactly this — without
-it Next serves that origin a black page and 403s. Never sign the pane out to
-get there; the session is Tenzing's. That origin is not necessarily *empty*:
-on 7 September 2026 it already held a stored mix from an earlier run (rain
-0.5, hum 0.3, master 0), so read `mwm.preferences` there before opening the
-*Sound* row — or pressing the word — rather than assuming silence.
+**The preview pane is signed in, so `localhost:3000` is Home, not the
+welcome.** To see what a guest sees, open **`http://127.0.0.1:3000`** instead:
+a different origin with its own localStorage, so it is signed out without
+signing anybody out. `allowedDevOrigins` in `next.config.ts` exists for exactly
+this — without it Next serves that origin a black page and 403s. Never sign the
+pane out to get there; the session is Tenzing's. That origin is not
+necessarily *empty*: it holds the stored mix above and, since 14 September
+2026, a guest profile in `mwm.profile` (`{"name":"Ana"}`), so read
+localStorage there before assuming a first visit.
 
 ## Time
 

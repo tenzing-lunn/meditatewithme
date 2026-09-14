@@ -16,16 +16,15 @@ Every decision below falls out of these five. When something in this doc looks o
 | Must extend to live video | The seams that matter are named in §9. Nothing else needs to be future-proofed. |
 | "Same moment" is the product | Clock correctness is a feature, not an implementation detail. See §6.2. |
 
-### The room is always dark
+### Light until the strike, then dusk
 
-The room uses its dark palette regardless of the visitor's system preference.
-The candle is the shared focus and its glow, wax shading and surrounding field
-were designed as light inside a dark room; switching the page to a light canvas
-changes that relationship rather than merely changing a theme. Keeping one
-runtime palette also avoids a mid-sitting appearance change when a device's
-scheduled light/dark setting rolls over. The light values remain in `@theme` as
-build-time colour definitions, but `:root` deliberately overrides them at
-runtime and the document advertises only a dark browser colour scheme.
+One palette regardless of the visitor's system preference, and it is a light
+one: the questions are asked on warm paper, and the sitting is dusk. The
+document advertises only a light colour scheme, so a device's scheduled
+light/dark rollover cannot change a screen mid-sitting. Until 14 September
+2026 the site was always dark, because the candle was a photograph and its
+glow was designed as light inside a dark room; the earth still needs that
+dark, and gets it, but only once you are sitting in front of it (§16).
 
 ---
 
@@ -364,7 +363,9 @@ logged out    → falls back to localStorage, nothing breaks
 
 This ordering is deliberate and it is what makes step 7 of the build genuinely cuttable. The account layer is a **sync mechanism bolted onto a working app**, not a foundation the app sits on. If week three disappears into coursework, we ship without it and nothing is missing except cross-device sync.
 
-Cuttable is enforced, not just intended: `components/useAuth.ts`, `components/useSyncPreferences.ts` and `components/Account.tsx` plus two blocks in `Room.tsx` are the entire feature. Delete them and the room is unchanged. `usePreferences` has no idea accounts exist.
+Cuttable is enforced, not just intended: `components/useAuth.ts`, `components/useSyncPreferences.ts`, `components/useProfile.ts`'s pull and push, `components/Account.tsx`, `components/Home.tsx` and the `home` branch in `Entry.tsx` are the entire feature. Delete them and the rail is unchanged. `usePreferences` has no idea accounts exist.
+
+**`show_count` means the mode**, since 14 September 2026: `true` is *with others* (the earth, presence, the shared bell offered), `false` is *by yourself* (a private timer, nobody shown, no heartbeat). It was the switch that hid the room's count and it kept its name and column; no migration, and the sync is unchanged. `until_bell` is only ever true under with-others.
 
 ### The rule when local and server disagree
 
@@ -632,36 +633,48 @@ The heartbeat table is the first thing to break, and it is a contained problem w
 ```
 meditatewithme/
 ├── app/
-│   ├── page.tsx                 # renders <Entry> — the room OR Home
+│   ├── page.tsx                 # renders <Entry> — the rail, or Home
 │   ├── world/page.tsx           # the map, its own route
-│   ├── layout.tsx
+│   ├── privacy/, terms/         # the documents (unlinked until filled)
+│   ├── layout.tsx               # Comfortaa + Nunito, light colour scheme
 │   └── api/
 │       ├── time/route.ts        # server clock, no-store
 │       ├── count/route.ts       # cached 10s
-│       ├── world/route.ts       # cells + counts, cached 10s
-│       └── heartbeat/route.ts   # upsert, service role, stamps the cell
+│       ├── world/route.ts       # cells, counts and shared labels, cached 10s
+│       ├── origin/route.ts      # the edge's city/country, to suggest; no-store
+│       ├── heartbeat/route.ts   # upsert, service role, stamps the cell, takes a label
+│       └── account/route.ts     # delete
 ├── components/
 │   ├── Entry.tsx                # auth branch; owns every shared hook
-│   ├── Room.tsx                 # state machine host — takes props now
-│   ├── Home.tsx                 # the signed-in page (scrolls; see §17)
-│   ├── WorldMap.tsx             # canvas earth, loaded only by /world
+│   ├── Journey.tsx              # the stage machine: rail | sitting | finished
+│   ├── Rail.tsx, Screen.tsx     # the track, and one screen's shape
+│   ├── *Screen.tsx              # Welcome, Name, Origin, Mode, Time, Bell, Sound, Bowl
+│   ├── Bowl.tsx                 # the drawn bowl and its strike
+│   ├── Sitting.tsx              # the dusk frame with the earth
+│   ├── Afterwards.tsx           # the ending
+│   ├── Home.tsx, Menu.tsx       # the signed-in page and its three lines
+│   ├── WorldMap.tsx             # canvas earth; the sitting and /world
 │   ├── World.tsx                # the map's page chrome
-│   ├── FocusLoop.tsx            # <- v2 branches here
-│   ├── Timer.tsx
-│   ├── SoundMixer.tsx
-│   └── ParticipantCount.tsx
+│   ├── Account.tsx, Practice.tsx, SoundMixer.tsx, Switch.tsx, Wordmark.tsx
+│   ├── controls.ts              # the six control styles
+│   ├── use*.ts                  # every hook: auth, prefs, practice, mix, presence,
+│   │                            #   world, count, session, clock, profile, origin,
+│   │                            #   usual, fullscreen, reduced motion
+│   └── Demo.tsx                 # dev-only: /?demo=sitting, /?demo=finished
 ├── scripts/
-│   ├── contrast.mjs             # palette pairs, flat colours (npm run contrast)
-│   └── contrast-room.js         # the same question against the photograph
+│   └── contrast.mjs             # every palette pair against its threshold
 ├── lib/
 │   ├── session.ts               # hourStart, resolveSession
 │   ├── clock.ts                 # syncClock, serverNow
+│   ├── timer.ts                 # TIMER_STOPS, clampMinutes, nextSharedBellAt
+│   ├── journey.ts               # screensFor, step, usualFingerprint
+│   ├── label.ts                 # cleanText, composeLabel, Profile
+│   ├── company.ts               # "Ana from Lisbon is meditating with you"
 │   ├── geo.ts                   # snapToCell, subsolarPoint
-│   ├── projection.ts            # Equal Earth, for the map at /world
-│   ├── audio.ts                 # AudioContext graph
-│   ├── prefs.ts                 # localStorage <-> DB
+│   ├── projection.ts            # Equal Earth
+│   ├── practice.ts              # the log and its summary
 │   └── supabase.ts
-├── public/earth/                # land.json + relief.jpg — 273KB (/world only)
+├── public/earth/                # land.json + relief.jpg — 273KB
 ├── supabase/migrations/
 ├── context/                     # standing project knowledge
 ├── plans/                       # active plans
@@ -672,7 +685,7 @@ meditatewithme/
 
 **That boundary is now enforced rather than described.** `tests/portability.test.ts` reads every file in `lib/`, strips comments and string literals, and fails on any browser-only global — `window`, `document`, `localStorage`, `AudioContext` and the rest. It was a sentence in a comment in `usePresence.ts` until 6 September 2026, which is the same condition `scripts/contrast.mjs` was written to fix: a claim nobody can re-measure stops being true without anybody noticing, because importing `localStorage` into `lib/` breaks nothing on the web.
 
-It breaks something later. `lib/` is what an iOS port keeps — all ten files are portable today, `clock.ts` included, because it takes `fetchImpl` as a parameter instead of reaching for `fetch`. `fetch` and `performance` are deliberately *not* banned: both exist in React Native, and a rule we do not have should not be enforced. Platform access belongs in `components/`, behind a hook.
+It breaks something later. `lib/` is what an iOS port keeps — every file there is portable today, `clock.ts` included, because it takes `fetchImpl` as a parameter instead of reaching for `fetch`. `fetch` and `performance` are deliberately *not* banned: both exist in React Native, and a rule we do not have should not be enforced. Platform access belongs in `components/`, behind a hook.
 
 ---
 
@@ -708,7 +721,7 @@ wrong would have.
    everyone on the page counts.** Waiting is participating, and a number that
    only moved after Begin would be smaller than the room genuinely is at the top
    of the hour. It is honest because the wording is "here", not "meditating" —
-   see the note above `PresenceLine` in `Room.tsx`. The forgotten-tab problem is
+   see `companyLine` in `lib/company.ts`. The forgotten-tab problem is
    handled by the visibility API rather than by narrowing who counts.
 3. **Anonymous id lifetime.** A `localStorage` uuid per browser means one person
    on two devices counts twice. Acceptable, and the alternative is worse.
@@ -739,9 +752,13 @@ wrong would have.
      days, by then carrying cells. It is scheduled hourly in
      `20260903193000_schedule_prune_heartbeats.sql`; §5 has the reasoning for
      `pg_cron` over a Vercel cron and for hourly over nightly.
-   - **The city and country headers are deliberately not stored.** Both are
-     available. A city name is a far stronger identifier than a cell for anyone
-     living in a small one, and the map has no use for a label.
+   - **The city and country headers are read to suggest, and never stored.**
+     Since 14 September 2026 `/api/origin` returns them to the browser that
+     asked, uncached, so the origin question can be answered with a nod; only
+     what the person types and confirms is kept, and only shown to others
+     with the switch on (§16). A city name is a far stronger identifier than
+     a cell for anyone living in a small one, which is why it is the person's
+     to confirm and not the server's to record.
 
    The bar this was designed against is an ordinary server access log, which
    holds a full IP address. This is considerably coarser than that.
@@ -907,849 +924,304 @@ writes to production metadata and that is a decision, not a side effect.
 
 ---
 
-## 16. The candle, and why nothing is gated
+## 16. The screens
 
-The original model ran a 45-minute session with a 15-minute interlude, and the
-room withheld Begin during the interlude. Two things were wrong with it.
+**Rewritten 14 September 2026.** Until then this section was the photographic
+room: a picture of a candle with one word on it, a ring for the sitting, a
+camera that racked between phases, and a page of measurements for setting
+type over lit wax. That room is deleted (`plans/ui-rebuild.md`; the last
+commit that carried it is `86454e6` on `dev`). What stands from it is the
+premise — a candle is lit at the top of every hour, nothing is gated, you sit
+whenever you like — and the reasoning below is kept where it still applies.
 
-The first is arithmetic: for a quarter of every hour, a meditation site told
-people who had arrived wanting to meditate to come back later.
+### The candle, and why nothing is gated
 
-The second is that it made the hour mean the wrong thing. A countdown only
-carries meaning if something happens at :00 that cannot happen at :23 — and the
-only thing that happened was a button unlocking. That is friction wearing the
-costume of ritual. Worse, the session and the personal timer quietly undercut
-each other: if you may join at :23 and sit for seven minutes, you are not
-synchronised with anybody, so the countdown was measuring nothing.
-
-### What replaced it
+The original model ran a 45-minute session with a 15-minute interlude, and
+withheld Begin during the interlude. Two things were wrong with it. The first
+is arithmetic: for a quarter of every hour, a meditation site told people who
+had arrived wanting to meditate to come back later. The second is that it made
+the hour mean the wrong thing: a countdown only carries meaning if something
+happens at :00 that cannot happen at :23, and the only thing that happened was
+a button unlocking. That is friction wearing the costume of ritual.
 
 **A candle is lit at the top of every hour and burns down across it.** Nothing
-is gated; you sit whenever you like.
-
-The shared thing is the candle's *state*. `candleBurn(now)` is a pure function
-of the clock, so two people in different timezones opening the site in the same
-second see the same candle at the same point in its hour. That is real
-synchrony, and it costs no coordination — no cron, no socket, no event to miss.
-
-It also communicates lateness honestly. Arrive at :50 and you find a candle
-visibly further through its hour — a smaller, dimmer flame now that the room is
-a photograph (see *The candle is a photograph*, below), a stub of wax when it
-was CSS. You can see you came late, which is a far gentler thing than a locked
-button, and it preserves the reason to show up at the top of the hour without
-punishing anyone who cannot.
-
-A sitting may run through :00. It is not interrupted — a new candle is simply
-lit under it, which needs no code at all, because the burn is derived rather
-than stored.
-
-### Consequences in the code
+is gated; you sit whenever you like. The shared thing is the hour's *state*:
+`hourStart(now)` is a pure function of the clock, so two people in different
+timezones opening the site in the same second are in the same hour, on the
+same earth, counting the same candles. That is real synchrony and it costs no
+coordination. A sitting may run through :00; a new hour simply begins under
+it, which needs no code because nothing is stored.
 
 - `SESSION_MS === HOUR_MS`. There is no interlude.
-- `sessionPhase` and the `SessionPhase` type are gone. They encoded a design
-  that no longer exists, and a phase that always returns `'active'` is worse
-  than no phase at all.
-- The personal timer is 1–55 minutes over twelve explicit stops — 1, then
-  every five minutes to fifty-five. Nobody sitting down to meditate has an
-  opinion about seventeen minutes versus eighteen. The hour itself is not a stop:
-  see §6.3 for the five minutes at the end of every hour and what they are for.
-- The stops are a list (`TIMER_STOPS`), not a min/max/step, because the jump
-  from one minute to five is not a uniform step and no `step` value can describe
-  it. The slider's value is an index into that list, which is why it carries an
-  `aria-valuetext` — the raw number means nothing to a screen reader.
-- `clampMinutes` snaps to the nearest stop, with ties going to the longer sit.
-  Three minutes is equidistant from one and five; rounding down would cut the
-  sit by two thirds to save two minutes.
-- The one-minute stop is deliberate. It is the sit somebody takes when they are
-  not sure they want to sit at all, which describes most first visits — and it
-  is what the proposal the client holds actually promises.
+- The personal timer is 1–55 minutes over twelve explicit stops (`TIMER_STOPS`),
+  and the slider's value is an index into that list with an `aria-valuetext`.
+  `clampMinutes` snaps to the nearest stop with ties going longer. The
+  one-minute stop is the sit somebody takes when they are not sure they want
+  to sit at all. §6.3 has the five clear minutes at the end of the hour.
+- The candle is no longer drawn burning down. The earth's candles are the
+  hour's evidence now: bright for those still here, dim for those who lit one
+  and left.
 
-### The candle is a photograph
+### The rail: one question, one screen
 
-It was CSS — gradients shaped into a flame, with `candleBurn` spent on the
-height of the wax. It is now `components/CandleScene.tsx`: a photograph of a
-room in `public/room-base.{avif,jpg}`, with a sprite flame warped on a canvas
-above it, and a camera that racks between six `phase`s as the page changes.
-
-The photograph is a `<picture>`, not a CSS background, and that is load-bearing
-twice over. A background cannot negotiate a format, so the only thing that
-could be served was the 2.3 MB PNG master — the LCP element of every visit, ten
-times the weight of every other asset in the project combined. And a background
-has no load event, so the readiness the scene reports through `onReady` had to
-be faked by requesting the same URL a second time through an `Image` and
-trusting the cache. Both went at once on 7 September 2026. AVIF is 39 KB at
-47.5 dB PSNR against the master, measured; the JPEG fallback is 128 KB at
-48.0 dB. `basePath` is a stem without an extension so the two cannot be pointed
-at different rooms.
-
-The PNG master stays in `public/` — it is what the two derived files are built
-from, and `docs/photographic-room.md` describes the handoff that produced it.
-Nothing links it, so nobody downloads it.
-
-A photograph cannot shorten, so the burn is spent on the flame instead — it
-loses scale and glow across the hour rather than height. Somebody arriving at
-:50 still gets a visibly older candle; they no longer get a stub. `candleBurn`
-itself is unchanged and still linear, and the note it always carried still
-stands: a real candle does not burn linearly, so the mapping from `candleBurn`
-to what is on screen may want a curve rather than a straight line.
-
-### The landing is a photograph with a line of type on it
-
-`Let’s begin.` is the thing on the room. Under it, since 9 September 2026, one
-line saying what pressing it will do and a `Change` for altering that; under
-those, since 7 September, one sentence saying what the place is and the door to
-`/world`. Each addition is argued for below; the word is still the only display
-type, and it is still what the picture is of.
-
-**It read `Begin.` until it didn't.** An instruction, from the room to you.
-`Let’s` makes it an invitation from somebody sitting down with you, which is the
-premise of the entire site and was being spent nowhere else on this screen — and
-this is the only copy a first-time visitor reads before deciding whether to stay.
-Two extra words is a cheap place to say what the site is. Measured after the
-change: 258px of 1280 on a laptop, 213px of 375 on a phone, no wrap and no
-scroll in either. The typographic apostrophe matches the rest of the visible
-copy; straight quotes in this project are a code-comment habit, not a copy one.
-
-Everything below still calls the control "the begin word", and the timing beats
-are still named `Begin` — the moment did not change, only what it says. The title, the tagline, the hour and the three quiet links have all
-gone, either behind `Change` or after the sitting, because a picture with
-anything else on it stops being a picture. It fades in over 2.6s as the opening
-camera move settles, rather than being there when the lights come up.
-
-**The room fades in with it, on the same gate.** The photograph is a CSS
-background, which has no load event, so it used to appear the instant its file
-finished downloading while the word faded up on a timer beside it — two
-arrivals, and on a cold connection the word came first, over black. `CandleScene`
-now fetches the same URL through an `Image` purely for the event (a cache hit,
-not a second download) and reports it as `onReady`; `Room` holds `booted` until
-**both** the clock has answered and that has fired, then releases the photograph,
-its glow, the flame, `Begin.` and the account control together. There is no
-"Finding the hour…" label any more — the frame it covered lasts a few
-milliseconds and is the room's own dark ground either way.
-
-`REVEAL_MS` and `REVEAL_EASE` are exported from `CandleScene` and imported by
-`Room` rather than written twice, and the reason is specific: Tailwind's
-`ease-out` is `cubic-bezier(0, 0, 0.2, 1)` while CSS's `ease-out` keyword is
-`cubic-bezier(0.25, 0.1, 0.25, 1)`. Writing the keyword in one place and the
-class in the other gave two fades that started together, ended together, and
-disagreed in the middle about how fast the room was arriving. One constant, one
-curve.
-
-The account offer, the practice log and the room toggle now live in the
-**ending**, which is where they mean something: you have just added to your
-practice, so that is when to offer to show it to you and to keep it. The
-trade-off was real and it was named here: **a first-time visitor could not sign
-in before their first sitting.** That was judged the right price for a landing
-with one word on it, with the remedy recorded in case it stopped being — "one
-quiet line, not the row of three that used to be there."
-
-**It stopped being, and the remedy is exactly the one written down.** There is
-now a single control at the top right of the landing, fading in on the same
-`REVEAL_MS` as `Begin.` and the photograph. It is not joined by a second, and it is absent for anybody already
-signed in, who never sees this screen at all.
-
-**It said `Create account`, not `Sign in`; now it is a menu offering both.**
-`signInWithOtp` creates the user on first use — that has always been the signup
-path — so `Sign in` alone described the API call rather than the act, and asked
-a first-time visitor for credentials they did not have. `Create account` was
-the answer, with `I already have one` inside the panel for the other case. On
-7 September 2026 Jonny asked for a three-line settings button there instead,
-offering `Create account` and `Sign in` as two separate choices. So the control
-is the icon (`LIFTED_ICON`, the same surface made square), pressing it opens a
-two-item menu on the panel's own surface, and each item opens the panel at its
-own step — the name for a new account, the address for an existing one. A code
-already sent survives either choice, for the same reason the flow survives the
-panel closing. `Account` owns the menu as it owns the panel (`menu` prop); the
-foot-of-frame instance after a sitting keeps the labelled button, because that
-one is an offer rather than a settings corner.
-
-**It is a dropdown, and it used to be a question. That was the mistake.** The
-form once took the band the way `How long?` does: camera to `open`, band to full
-height, back arrow. The reasoning was that sign-in is the room asking you
-something. Watching it said otherwise. Three things animate on that press — the
-band's height over 700ms, the copy's transform over 600ms, and the camera — and
-the second **chases** the first: `useFitToBand` measures `outer.clientHeight`
-through a `ResizeObserver`, that height is mid-animation, so the transform's
-target moves every frame and its ease-out restarts every frame against it. The
-form did not arrive, it drifted, overshot and settled a second and a half later.
-A repeatedly-restarted ease-out looks exactly like a bounce, and that is what
-Tenzing called it.
-
-The setup questions are worth that expense because they *are* the room. An
-account is the one thing on the landing that is about the product rather than
-the practice, and it now gets the object everybody already knows: a panel under
-the button that opened it, opacity and a 6px slide over 150ms, nothing measured
-and nothing to chase.
-
-**Moving the account out did not fix the band, and `Begin.` still bounced.**
-Predictably, in hindsight: the panel had dodged the bug rather than removed it,
-and the setup questions cannot dodge it — taking the frame is what they are. So
-the measurement itself was fixed.
-
-**`useFitToBand` now fits against the height the band is going to be, not the
-height it currently is.** Both targets are known without waiting for anything:
-open is the frame's own height, because the band is `height: 100%` of it, and
-shut is `--flame-top`, which `CandleScene` already publishes in px
-(`restingBandHeight()` reads it, falling back to the CSS's own 39%). The
-observers are unchanged — they still fire every frame of the 700ms travel — but
-every one of those callbacks now computes the same numbers, so the equality
-check drops them and the transform is written exactly once.
-
-Measured on the first question at 1280×720, counting writes to the inline
-transform through a `MutationObserver` (timing-independent, unlike sampling
-frames):
-
-| | first transform written | rewrites during the open |
-|---|---|---|
-| Before | `scale(0.574) · lift 0` | 1 here, ~40 in a browser that keeps painting |
-| After | `scale(1) · lift −80px` | 1 |
-
-**`0.574` is the whole bug in one number.** It is 279/486 — the question's copy
-fitted to the band's height *at the instant of the click*, before any of the
-700ms of travel had happened. The copy was painted at 57%, then inflated back to
-full size as the band grew under it, with a 600ms ease-out restarting against a
-target that moved every frame. Appearing small and swelling is exactly what
-"goes in and out and back in" describes.
-
-Backing out of a question is the same story in reverse and measures the same:
-one write, straight to the resting value. `signInOpen` is gone from `Room` entirely — from `phase`,
-from the band, and from the `useFitToBand` key — and `components/Account.tsx`
-owns whether it is open. It takes a `drop` of `down` (top right of the landing)
-or `up` (the foot of the frame after a sitting), which is the only difference
-between the two places it appears.
-
-**It asks for a name, and then uses it.** One question per step, the way the
-room asks anything: name, then address, then the six digits. The name goes to
-`user_metadata` on the request that creates the user — Supabase ignores it for
-an address it already knows, so nobody can be renamed by retyping the flow — and
-`displayName()` in `useAuth` is what Home's masthead greets. Asking for
-something and never showing it is what makes a signup feel like collection.
-
-Every step reserves the height of the tallest, so the panel does not move as the
-flow advances. Fixing the entrance and leaving it jumping between steps would
-have missed the point.
-
-**Pressing `Let’s begin.` starts a sitting.** Its click is `begin` — the same
-callback Home's circle reaches through `Sit` — so the audio is unlocked, the
-graph built, the stored mix restored and the bell scheduled inside the one
-gesture. Directly under the word is the line Home prints under its circle, from
-the same helper (`components/settingsLine.ts`): *10 minutes · singing bowl · in
-silence*. Under that, `Change`, which opens the settings: the camera settles
-back (`open`), the band becomes the whole frame, and `components/Settings.tsx`
-— the same component Home opens under its circle — unfolds four rows beneath
-the word, each carrying its answer in words and opening only its own controls:
-*How long* (the slider and *Sit together until*), *How it ends* (the three
-bells, struck on select), *Sound* (a switch, then the five beds as chips, then
-*Adjust levels*), *The room* (the `showCount` switch, which reaches a guest
-before a sitting for the first time this way). The word and the line stay
-above the rows, so `Let’s begin.` starts the sitting from inside them; the
-control reads `Done changing` while they are open and closes them, as does
-Escape, which returns focus to it.
-
-**That is the model Home had, extended to the guest on 9 September 2026**
-(`plans/flow-audit.md`, items C and D). Until then the word opened three
-questions on three screens — `SessionSetup.tsx`, 452 lines, with `Next`
-between them — and `Start` at the foot of the third was the only thing that
-began a sitting. This section used to argue that a guest should walk all three
-because they are the only moment the product has to ask a returning visitor
-whether today is a ten-minute day; Home answered that for the signed-in person
-by printing the settings under the button that starts the sitting, with
-`Change` beside them — the question is still put every time, read instead of
-walked — and the answer was withheld from the guest on the grounds that a guest
-has no home to have read it on. That left six taps to a first sitting for the
-person deciding whether to come back, against one for the person who already
-had. The landing now reads the line to them too. A first-time visitor gets the
-defaults, and is told what they are before they get them.
-
-Item D followed the same day: two settings interfaces for four preferences —
-the flow and Home's panel shared the `lib/` helpers and nothing else, so every
-fix was made twice and the sound answer was a different object on each surface.
-`Settings` is one component for both, and it takes the flow's better sound
-pattern (switch, chips, faders on request) rather than Home's full mixer. The
-bell stopped being a screen of its own without anybody having to argue it: it
-is a row, the way it already was on Home. `Start` went with the flow; the words
-for beginning are `Let’s begin.` on the landing and `Sit` on Home.
-
-The consequence to remember is in the audio. `begin` calls `mix.restore()`, so a
-stored mix plays from the word's first tap — which is exactly what `useMix`'s
-silent unlock was built to stop when the word merely opened the questions. The
-difference is that the word now starts the sitting the mix was saved for: it is
-a mix the person built and asked for, which `VISION.md` §4 permits, and the
-line under the word says what it is. A first-time visitor has `soundMix: {}`
-and hears nothing but the bell. `Change` is the silent path: `openSetup`
-builds the graph with the master at zero, and it stays there until the *Sound*
-row is opened — `Settings` reports that through `onSoundOpen`, and
-`mix.unmute()` is the answer. Not when `Change` opens: that would put the beds
-in the room the moment somebody came to alter the length. The bells are outside
-this — `previewBell` strikes the context directly, never through the master —
-so *How it ends* is audible on select exactly as the bell question was. Home's
-sitting still starts from an effect on mount, which is not a gesture — so its
-unlock happens in Home's `Sit` click, in `Entry.startSitting`. **If a sitting
-is ever silent or the closing bell never rings, one of those two clicks is the
-line that has moved.**
-
-**The word and the control are different objects, and that is the point.**
-`Let’s begin.` is display type set into a photograph — the room inviting you in,
-and a border round it would make it a sticker on a picture. It used to appear
-twice, opening the questions here and starting the sitting at their end, which
-read as the flow having failed to go anywhere; then the end was a bordered
-`Start`; now there is one word and it does one thing. `Change` is `QUIET` —
-bounded, with a chevron — for the reason `controls.ts` gives: a control whose
-only affordance is being a word is an invisible one.
-
-Two things there are easy to get wrong:
-
-- **The audio unlock happens on the landing, not in the Sound row.** Autoplay
-  policy only starts an AudioContext inside a gesture, and the Sound row offers
-  to play five beds so somebody can hear what they are choosing. Unlocking
-  there would make every one of those chips the first gesture on a context that
-  was never unlocked. The word unlocks audibly, `Change` silently.
-- **The way out is the way in.** `Change` becomes `Done changing`, in the same
-  place, and Escape does the same and hands focus back. The flow had a back
-  arrow at the top left for this — from the first question it left, from any
-  other it stepped back one — and before that a `Not now` link on the first
-  screen only, which meant the way out moved depending on how far in you were.
-  A panel that opens and closes under one control has neither problem.
-
-### The sitting is a ring, and the ring is the room
-
-The personal timer is a circle (`SittingRing`). The arc is your time draining
-clockwise from twelve; the dots around it are the candles lit this hour, one
-each, yours at twelve with a faint halo round it. They are on the same object
-because they are the same fact: this is the hour, and this is who is in it.
-
-That is what the circle is for. A number counting down says how long is left and
-nothing else, so everything about sitting *together* had to be said somewhere
-else — a line of text, or a scatter of flames in a corner nobody looks at with
-their eyes shut. Both are a second thing on a screen that should have one thing
-on it.
-
-**`PresenceField` is gone, and it is not coming back.** It was a 6x10 grid of
-identical teardrops in the bottom-left corner, half of them dimmed, and on a
-photograph it read as a sprite sheet that had failed to load rather than as
-people. `room-polish.md` §4A said exactly that from a rendered audit and flagged
-it as needing Tenzing's decision before anyone touched it; Tenzing gave that
-decision looking at it on the live site. The last of it was on the landing, kept
-on the reasoning that the landing has no ring — but the landing's whole argument
-is that it is a photograph with one word on it, and a scatter of flames in the
-corner is precisely what that argument exists to keep off.
-
-Nothing replaces it because the ring already had: the same fact, in the middle
-of the frame, where somebody is looking. The component and its `.presence-*`
-rules in `globals.css` are deleted; `usePresence` is untouched and still feeds
-the dots, the caption during a sitting, and the count carried into the ending.
-
-Four decisions in there are worth not undoing:
-
-- **The dots are spread evenly, not dropped into fixed slots.** Fixed slots are
-  cheaper and completely wrong at the counts this will see: three people in
-  sixty slots is not a quiet room, it is a broken one. Spread evenly, one person
-  is a mark at the top, two are opposite, three are a triangle — every count is
-  composed, because every count is the only arrangement of itself. The cost is
-  that arrivals move everybody, paid for with a 2s ease on each dot's angle, so
-  the ring opens up to make room rather than snapping.
-- **They sit just outside the arc, not on it.** On it they are invisible for
-  most of a sitting — the arc is ember, the dots are ember, and the arc covers
-  the whole ring until the time starts running out. You would see the room
-  appear only as your sitting ended, which is exactly backwards. The clearance
-  is 8 viewBox units and no more: it is dead space on every screen where nobody
-  else is in the room, and it comes straight off the diameter of the circle.
-- **Lit, not live.** `litCount` behind how many dots there are, `count` behind
-  which of them are at full strength; the rest sit at 0.38. Somebody who sat the
-  first ten minutes and closed the tab still lit a candle, and it does not go out
-  because they left. That distinction came from the field this replaced, and it
-  is the one thing of the field's worth keeping.
-- **The arc drains rather than fills.** Everything else in this room does: the
-  candle burns down, the hour runs out. A filling arc would be the only thing on
-  screen measuring what has been spent.
-
-**The ring is sized against the band, not in pixels**, and that is what keeps
-`useFitToBand` out of it:
+`lib/journey.ts` is pure and tested. `screensFor()` decides which screens a
+visitor sees from four facts — signed in, usual on, has answered before,
+origin asked — and `step()` walks the list:
 
 ```
-width: clamp(150px, calc(var(--flame-top, 39vh) - 96px), 230px)
+guest, first time:   welcome name origin mode time bell sound bowl
+guest, usual on:     welcome mode bowl
+signed in, first:    [origin] time bell sound bowl      (after a door on Home)
+signed in, usual:    bowl
+settings from menu:  time bell sound                    (ends at home, no bowl)
 ```
 
-96px is what the presence caption and the margins underneath need. A fixed pixel
-ring is either too small on a tall window or too tall for a short one, and the
-scaler can only fix the second case — by shrinking the whole screen, timer and
-all. Asking for what is left instead means the measured scale is 1.00 on both a
-1280×800 laptop and a phone: the ring is as big as the room allows, and the type
-under it is at its real size.
+`components/Journey.tsx` owns the stage machine — `rail | sitting | finished`
+— and the sitting's timing (`begin`, `endEarly`, the finishing effect, the
+bells), all carried over from the room unchanged. The list of screens is
+decided **once, at mount**, so a switch flipped mid-rail does not reorder the
+panels under somebody's feet; the next journey reads the new facts.
 
-Everything inside the ring, the numerals included, is in viewBox units — the
-`mm:ss` is SVG `<text>`, not an absolutely-positioned `<p>` over the top. A
-fixed `text-3xl` in a box that grows with the band would be the one thing that
-did not grow with it, which reads as a large circle with a small clock in it.
+`Rail.tsx` is a flex track of viewport-wide panels translated by
+`-index * 100%` over `--rail-ms`. Every screen in the list is mounted, so
+Back is instant and typed answers survive; non-current panels are `inert`,
+`aria-hidden`, and `visibility: hidden` once the slide has settled
+(`transitionend`, with an 800ms fallback for the hidden-tab case where the
+event never fires). Focus moves to the arriving panel's `h2`. Only the
+arriving panel animates its content — the departing one just slides, because
+fading it out mid-slide made the screen you were leaving vanish before it had
+left. The frame is `overflow-clip`, not `overflow-hidden`: focusing a field in
+a panel that is still off-screen made a hidden frame scroll sideways to it,
+and `clip` cannot scroll.
 
-**`Sound` and `End this sitting` are at the foot of the frame, not in the band.**
-They were under the ring, and before that stacked under it costing 152px of a
-272px band — which is how the sitting screen once ended up scaled to 0.6, with a
-timer the size of a caption. Out of the band entirely they cost the ring
-nothing, they are where a hand already is on a phone, and the strip above the
-flame is left to the clock and the room. That reserve of 96 rather than 132 is
-what they gave back.
+`Screen.tsx` is title, one line, the control, and a foot row on the safe-area
+inset: Back left, Skip and Next right. A screen's `settle` class is applied
+only while it is current, so it settles on arrival and not on mount.
 
-They can live down there because they are `LIFTED` — see **The page is one
-frame** below for why a button may sit on the photograph when a sentence may
-not.
+### Where the audio unlocks
 
-The mixer still unfolds in the band, and when it does the camera goes to `open`
-and the band becomes the whole frame. The one case where the band is full-frame
-*and* the foot row is on screen, so the measured box takes `pb-24` to clear it.
+Autoplay policy only lets an `AudioContext` start inside a gesture, and the
+Bell and Sound screens need one to exist. So:
 
-Measured band heights, which all of the above is sized against (`--flame-top`,
-from cover-fitting a 3:2 photo — note it is *taller* on a phone than on a 720p
-laptop, because the crop is different):
+- The first Next on the welcome, and a door on Home, call `unlockAudio()` and
+  `mix.ensure({ silent: true })`: the graph exists with the master at zero.
+- The Bell screen's chips call `previewBell`, which never goes through the
+  master. The Sound screen's switch calls `mix.unmute()` when turned on, and
+  writes zeros to the beds when turned off.
+- The bowl strike calls `mix.ensure(); mix.restore()` and the opening bell.
+  A first-timer has an empty mix and hears only the bell.
 
-| Viewport | Band | Ring | Sitting scale | Ending scale |
-|---|---|---|---|---|
-| 1280×720 | 272 | 176 | 1.00 | 0.79 |
-| 1280×800 | 309 | 213 | 1.00 | 0.93 |
-| 375×812 | 317 | 221 | 1.00 | 0.91 |
-| 414×896 | 350 | 230 | 1.00 | 1.00 |
+**The auto-start is deleted.** Until this rebuild a signed-in visitor's
+sitting began on arrival, off the same gate as the room's reveal. Every
+sitting now begins from the strike — a gesture, which is also what
+`requestFullscreen()` needs, so the full-screen switch's promise is kept
+inside the same click.
 
-The long-term intent for presence, recorded here so the dots are understood as a
-first step rather than the destination: floating lanterns, or the bank of small
-candles in a church, one lit as each person arrives.
+### The strike and the lift
 
-### The ending is thirty seconds long
+`Bowl.tsx` is an SVG. `struck` is a counter; incrementing it remounts the
+animated group, so a second strike plays the wobble and the three ripple rings
+from the start rather than from wherever the first left off. The lift is two
+layers in `Journey`: the rail keeps rendering under `.lift-out` (scale to
+0.55, down 28vh, fade) while `Sitting` mounts under `.lift-in`, and the
+frame's background transitions paper to dusk on `--lift-ms`. `lifting` state
+holds both mounted for the duration (1400ms, 400ms under reduced motion) and
+then the rail unmounts. First-party CSS throughout — no `motion` package and
+no `<ViewTransition>`, which only fires inside `startTransition` and differs
+in Safari. Reduced motion is honoured in one `@media` block that zeroes the
+rail and settle and shortens the lift, plus `useReducedMotion()` for the
+earth's breath.
 
-The bell is not the end of a sitting, it is the start of coming back from one.
-For thirty seconds after it: the bowl is still ringing (`decay` is 18–22s, up
-from 6–12), the ambient mix is still receding (`fadeOut(14)`), and the camera is
-still travelling — `returning` is identical to `finished` in every value except
-`ms`, which is 30000. Because the targets match, the changeover at the end moves
-nothing.
+### The sitting
 
-**Ten seconds of coming back, then a thing to read, then a thing to choose.**
-`reveal` in `Room` counts 0–2 and `ending(n)` keys each block to a stage:
+`Sitting.tsx` takes a `Sit` — id, `startedAt` on the monotonic clock,
+`startedAtWall`, `endsAt`, `together`, `withOthers` — and renders the dusk
+frame. **With others:** `WorldMap` with a `you` prop, the viewer's own cell
+from `useOrigin()`, drawn at 1.5× with a ring. The client marks itself; the
+server never does (`app/api/world/route.ts`). Under the earth, one line from
+`companyLine()` in `lib/company.ts`, built from the labels `/api/world` hands
+back and the count from `/api/count`:
 
-| At | Stage | What is on screen |
-|---|---|---|
-| 0–10s | 0 | `Come back.` and a number going down |
-| 10.0s | 1 | `12 minutes.` at display size, and the stat table |
-| 13.5s | 2 | every control, and the account offer at the foot |
+- *Ana from Lisbon is meditating with you* — own label excluded client-side
+- *Ana from Lisbon and 3 others are meditating with you* — `others = max(0,
+  count − 1 − shown)`, and the whole clause omitted when the count is null
+- *4 others are meditating with you*
+- *You are the first here this hour* — `litCount === 1`
+- *3 others sat here earlier this hour* — lit but nobody live
+- nothing when the count is unavailable. Never invented.
 
-**The ten seconds are the point, not a delay.** A meditation has no OK button,
-and landing straight on a stat block and two choices is being handed a receipt
-while the bowl is still sounding. The chosen bell rings across all of it — decay
-is 18–22s — and the ambient mix is still receding underneath (`fadeOut(14)`).
-The countdown is shown so it reads as a held beat rather than as a page that has
-failed to load; it is small and quiet for the opposite reason, because a large
-ticking digit is the one thing here that could feel like being timed. It is
-`role="status"` announced once, not a live region — a screen reader counting out
-loud at somebody with their eyes shut is the wrong end of the same idea.
+The two come from two caches up to thirty seconds apart, so the line omits
+rather than contradicts. Labels rotate every `LABEL_TURN_MS` (20s) when
+several, picked from the wall clock so two devices agree. The clock is small,
+top right, `tabular-nums`, `role="timer"`. **By yourself:** same ground, no
+earth, no line, the bowl faintly centred.
 
-**Then reading, then selections, and the shape of the screen says which.** The
-facts are a table with no lines in it — label left, value right, one per row, in
-a column of fixed width — and every control is underneath it and every control
-is bordered. Before this the ending was four sentences of prose stacked down the
-middle, each a different length, none aligned to anything, with two buttons in
-among them; nothing about it distinguished what you were being told from what
-you were being offered.
+`usePresence({ label })` sends the label on every beat while the person sits
+with others with the switch on, beats immediately when it changes, and sends
+`null` on End so the name leaves the earth with the person.
 
-Rows appear only when they say something: a streak of one is "you sat today",
-which the display line above already said, and one sitting altogether is that
-same sitting counted twice. The minutes stay out of the table and above it,
-because a row labelled "Sat for" is not the same as being told.
+### The ending
 
-Two things about it are load-bearing. The minutes are `text-5xl`: the band is
-272px on a 1280×720 laptop and `useFitToBand` scales the block to about 0.79, so
-at `text-3xl` the one number anybody came back for landed at body size. And the
-company count is read **once, at the bell**, and carried on the `finished`
-activity — `litCount` polls every fifteen seconds and "10 others" is not allowed
-to become "9" while somebody is reading it. Null means the count was
-unavailable, and then the row is absent: a meditation site does not invent
-company.
+`Afterwards.tsx`: a ten-second hold on *Come back.* with the bell's tail
+(`COOLDOWN_MS`), then the minutes at 3.5rem and the rows that say something
+(`summarise` in `lib/practice.ts` decides), *With you this hour* only for a
+with-others sitting and only when `withOthers !== null`. *Sit again* calls
+`begin()` inside the click; *Done* goes home, *Finish* goes to the welcome.
+Fullscreen is exited on the way out.
 
-**The account offer is at the foot of the frame, on its own.** Separated from
-the ending by the whole height of the photograph, which is the point —
-everything in the band is about the sitting you just did, and this is the one
-thing on screen that is about the product. Mixed in among the stats it read as
-another line of the receipt. It is one `LIFTED` button saying `Sign in`; what an
-account is *for* is on the form that opens, next to the field asking for the
-address, rather than in front of somebody who has not decided to look yet.
+### The doors are a preference
 
-The masthead is gone from the ending. The name of the place and the line
-explaining the candle cost 74px of that 272px band — about a sixth of the scale
-everything else is read at — to introduce the site to somebody who has just
-finished using it. The one part that was load-bearing, when the next bell is,
-is a quiet line under the buttons — the bell, from `nextSharedBellAt`, not the
-candle, so that it names the same minute the settings' *Sit together until*
-does (`plans/flow-audit.md`, item F).
+`prefs.showCount` is reused as the mode: `true` is with others, `false` is by
+yourself. No migration and no new column, and §8 says so. The Time screen
+under with-others offers the bell as its default stop and allows a private
+length, and a door proposes the bell again only when the mode is changing —
+otherwise a chosen length survives, which is what keeps *Your usual* honest.
 
-Everything is mounted from the first frame of its stage and only opacity moves,
-so nothing reflows mid-fade. `reveal` is in the `useFitToBand` key because stage
-0 and stage 1 are genuinely different heights.
+### "Your usual"
 
-Bell previews are struck at a third of the real tail. Auditioning three bells
-should not leave three bowls ringing over each other for a minute.
+`useUsual.ts`, `mwm.usual`: `{ enabled, fingerprint }`, the fingerprint being
+`usualFingerprint(prefs)` at the moment the switch was turned on. Honoured
+only while the fingerprint matches, so any change to a preference — a
+settings edit here, a sync from another device — turns the skip off, which
+is what "when nothing changed" means. Guests get the same; `hasAnswers` is
+`mwm.flow.answeredAt`, written on the first strike.
 
-Sound is auditioned, not guessed at. Each bed has its own play/pause, and that
-is the same number as its fader — a track you can hear is a track that is up —
-so there is no second piece of state to disagree with what you are hearing.
-Pausing remembers where the fader was so play puts it back.
+### The origin, and who sees a name
 
-### The page is one frame, and it does not scroll
+`/api/origin` reads `x-vercel-ip-city` (percent-encoded; decoded) and
+`x-vercel-ip-country` (ISO-2, turned into a name client-side with
+`Intl.DisplayNames`), snaps the coordinates with `snapToCell`, and returns
+all three `private, no-store`. Nothing is stored. Null on localhost and behind
+VPNs, in which case the field is simply empty. `useOrigin()` fetches once per
+page, memory only. §14 point 4 used to say the city header was deliberately
+not read; it is read to suggest, and never stored until confirmed.
 
-`app/page.tsx` is `h-dvh overflow-hidden`. That is the whole composition
-decision and everything below follows from it.
+`useProfile` holds the name, the origin and the switch in `mwm.profile` for
+everybody, and for a signed-in person pulls the origin and the switch from
+`profiles` once and pushes on change, shaped like `useSyncPreferences`; the
+account's name overrides the local one. `lib/label.ts` cleans both (NFC,
+controls and bidi stripped, whitespace collapsed, capped by code points) and
+composes *Ana from Lisbon*; the heartbeat route cleans again. `/api/world`
+returns labels for live cells only, at most three per cell and sixty in all,
+busiest cells first — still identical for every caller, so still cacheable.
 
-The room is a photograph, and a photograph you have to scroll is a different
-object. It is also unbuildable: the picture is `fixed` and the copy is not, so
-the moment the page scrolls the two come apart and nothing can be composed
-against anything. So the frame is exactly one viewport and everything has to
-fit inside it.
+### The page is one frame, and Home is not
 
-**Text goes in the band above the flame, and nowhere else.** `CandleScene`
-measures where the flame lands when it cover-fits the photograph and publishes
-it as `--flame-top`; `Room` sizes the band from that. The band is roughly 39% of
-the viewport height, because that is where the flame sits in a 3:2 image — a
-number with no relationship at all to the height type is sized against, which
-is why it is measured rather than guessed at in CSS.
+The rail and the sitting are `h-dvh` and never scroll; each panel scrolls
+itself if it must. Home, the account and practice panels, and the documents
+scroll, because a person deciding is not a person sitting. `app/page.tsx`
+sets no frame of its own for exactly this reason.
 
-Below the band is a lit wax cylinder in a dish. There is no reliable dark
-region down there: at 1280×800 a strip in the bottom-left corner measures
-5.15:1, but widen it 80px and it is 4.46, raise it 44px and it is 2.66, and at
-375 wide the photograph is cropped to the candle so the strip does not exist at
-all. Two links measured 3.98 and 2.19 there.
+### Contrast
 
-**One kind of thing may live down there anyway, and it is not a sentence.**
+Two flat grounds, so the gate is `scripts/contrast.mjs` alone: it reads
+`@theme`, checks every pair in `DESIGN.md` against 4.5 for text and 3.0 for
+the decorative and composite ones, and fails the build otherwise. The bright
+orange (`glow`, and the `#b5491a` that was tried first) fails as text on
+paper, which is why the action colour is the deeper ember and the orange is
+decoration. `contrast-room.js`, which measured type over the photograph, is
+gone with it.
 
-- A **`LIFTED` button** — `Sound` and `End this sitting` during a sitting, the
-  account offer after one. The rule above is about *type*: a sentence you have
-  to scrim in order to read is a panel pasted onto a picture, which is what the
-  veil was and why it went. A button is a different object. It is allowed a
-  surface, because a surface is what tells you it is a button, and once it has
-  one its contrast is measured against that surface rather than against whatever
-  the photograph is doing behind it.
+### A dev-only preview of the sitting
 
-  The fill is `#1c1410` — the `panel` token in `globals.css`, since 8
-  September 2026 — at **65%**, and both halves of that are load-bearing.
-  Warm, because at a neutral near-black it read as a chip of something else laid
-  on a warm brown photograph — the button announced that it did not belong to
-  the picture. Not opaque, so the room's own colour comes through it and it
-  reads as a shadow in the scene with a word in it. Measured, white text on it:
-
-  | Behind the button | On the bare photo | On the button |
-  |---|---|---|
-  | sitting, wall | 15.9 | 17.4 |
-  | sitting, lit wax | 2.2 | 8.6 |
-  | finished, wax | 1.8 | 7.8 |
-  | finished, brightest the photo goes | 1.3 | 6.6 |
-
-  65% is therefore bounded by the last row and not by taste — lightening it
-  further is what starts failing on the dish.
-
-  The discipline that keeps this from becoming the veil again: it applies to
-  controls only, it is a button-sized surface and never a block-sized one, and
-  nothing that is merely *read* is ever allowed one.
-
-**The copy is scaled to fit the band** (`useFitToBand`). Not a preference —
-nothing else survives every viewport and every combination of what happens to
-be on screen. Four things about it are load-bearing and easy to undo by
-accident:
-
-- The measured element is **absolutely centred**, not flex-centred: a scale on a
-  negatively-offset flex child does not land where its transform-origin says it
-  should, and the masthead was measured cut in half.
-- Its **padding is inside the measured box**, because a transform does not
-  participate in layout and would otherwise overflow straight through padding
-  set on the band.
-- It measures in **`useLayoutEffect`**, not `useEffect`. With `useEffect` the
-  browser paints once at the previous screen's scale and corrects a frame later,
-  which is a visible snap on every screen change — the "glitch" on opening a
-  question or the mixer was exactly this.
-- It re-measures on an explicit **`screen` key**, not only on `ResizeObserver`.
-  RO callbacks are delivered during the browser's rendering step, which does not
-  run for a hidden page; leaving the screen change to the observer alone let the
-  sound question render with the bell question's offset — 127px of lift where it
-  needed 70.
-
-While a question is open the copy is **lifted off centre** by a third of the
-measured slack, so the question sits near the top of the frame and is read
-first. A fraction of the slack rather than a fixed percentage: when the copy was
-tall enough to need scaling there is no slack, so there is nothing to lift and
-nothing can be pushed off the top.
-
-**The fit has one exception, for enlarged text (13 September 2026).** Every
-size in the band is in rem, so a visitor who has set a larger text size gets
-taller copy in the same strip, and the scale cancelled their enlargement and
-kept going: measured at 150% root font on a 375×812 phone, `Change` was 35px
-and the type about 80% of default. Now, on the landing only, when the root
-font is above 16px and the copy no longer fits the strip at that size,
-`useFitToBand` reports `zoomed` and the band takes the frame with the `open`
-camera, the same thing a question does. Verified: 150% gives scale 1 and
-`Change` at 66px; 200% gives scale 0.96. Page zoom scales CSS px and leaves
-the root font at 16px, so it never triggers this. The *Not floored* argument
-still holds for viewport size; the 0.91 scale at 1024×768 is untouched.
-
-**A question being asked is the one time the copy may leave the band.** `open`
-racks the camera to blur 4.8, dims it, and — this is the part a vignette cannot
-do — stops the whole frame down flat, middle included. A vignette is
-transparent at its centre by construction, so the one thing it can never darken
-is the flame, which is exactly what a question asked in the middle of the frame
-is read against. The mixer and the practice log use the same phase for the same
-reason.
-
-### Contrast, once the background is a photograph
-
-**AA is still not optional, and `scripts/contrast.mjs` no longer proves it.**
-That script checks palette pairs against flat colours; the room is not a flat
-colour. Every pair it knows about passed while `Begin` was being read against
-lit wax at 1.6:1.
-
-Checking it means compositing the real stack — photograph, camera transform and
-filters, glow, the live flame canvas screen-blended, vignette, top gradient,
-stop — into an offscreen canvas and sampling under each element's box. Two
-traps in doing that: Tailwind's opacity modifiers compile to `color-mix`, which
-`getComputedStyle` returns as `oklab(...)` or `color(srgb ...)` and not
-`rgba()`; and in a hidden tab CSS transitions do not advance and `rAF` never
-fires, so anything measured mid-move is a measurement artefact and not a bug.
-
-The build of 7 September 2026 cleared 4.5:1 on every element in all six phases
-and on all three setup screens, measured at 375×812, 1280×640, 1280×800,
-1440×900 and 1280×860. The settings rows that replaced those screens on
-9 September have not been measured in the band; see below.
-
-**That check is now a script rather than a description of one.**
-`scripts/contrast-room.js` is pasted into the console on a running page and
-rebuilds the real stack — base fill, camera transform, cover-fit photograph with
-its blur and brightness, glow and flame both screen-blended, vignette, top
-gradient, stop — into an offscreen canvas, then samples underneath every
-readable element on screen. It reads the layer values off the live DOM rather
-than copying `CAM`, because a checker holding last month's camera passes against
-a room nobody is looking at.
-
-Three things it has to get right, all of which it got wrong first:
-
-- **Wait for transitions, not for the page to be visible.** Transitions are
-  driven by time and reach their targets in a hidden tab whether or not anything
-  is painted, so "is it visible" is the wrong question in both directions. It
-  waits for the camera's own computed values to stop changing instead.
-- **Do not wait on animations.** `room-drift` is a 23s infinite loop and the
-  glow's opacity is rewritten by `rAF` every frame. A settle check that includes
-  either waits forever. It fingerprints four named nodes — camera transform,
-  photograph filter, vignette and stop opacity — and nothing else.
-- **The drift never stops, so one reading is one phase of it.** It composites
-  six times about four seconds apart and keeps the worst ratio per element.
-
-Validated by drawing its composite over the live page and comparing: it comes
-out very slightly lighter than the real render, which means every figure it
-reports is conservative for light type on a dark room.
-
-Measured with it at 1280×720, worst pixel in each element's box:
-
-| Screen | Tightest element | Ratio | Needs |
-|---|---|---|---|
-| Landing | `Create account`, top right | now `LIFTED` — see below | 4.5 |
-| Landing | `Begin.` | 6.87 | 3.0 |
-| ~~Sign-in question~~ | ~~**`Send me a link`**~~ | ~~**4.57**~~ | — |
-| ~~Sign-in question~~ | ~~the explanation under it~~ | ~~7.38~~ | — |
-| Home | `The next bell is at…` (measured as `Next candle at…`, same element and style) | 5.57 | 4.5 |
-| Home | `Change` / `Done changing` | 8.41 | 4.5 |
-| Home | `Sign out` | 8.07 | 4.5 |
-| `/world` | the note under the map | 6.28 | 4.5 |
-
-The Home figures were re-measured after the controls were bounded. **The room's
-rows have not been**, because the audit cannot run while the Browser pane is
-hidden: `settle()` waits on the camera arriving, that is driven by
-`requestAnimationFrame`, and a hidden pane suspends rAF entirely — spoofing
-`document.visibilityState` fools the page's own JS but not the compositor, so
-the script waits forever rather than reporting. Front the pane before running
-it. The landing's `Sign in` moved from grey type to `LIFTED`, whose own
-measurement is recorded with it, so it did not get worse; it has simply not been
-re-measured in place.
-
-**The two struck-through rows are gone with the screen they were measured on.**
-`Send me a link` at 4.57 was the thinnest margin in the product, and it was thin
-for a specific reason: it was an ember control sitting in the band over the
-brightest thing the `open` camera leaves lit. The account flow no longer takes
-the band — it is a panel with a `panel`/95 fill of its own (see §16), so its
-`Send me a code` is measured against that fill rather than against the flame,
-and the worst case that produced 4.57 cannot occur there. **The panel has not
-been run through `contrast-room.js` in place**; the arithmetic on the fill puts
-its 60% hint type near 6.9:1 over the brightest wax, but that is a calculation,
-not a measurement, and it belongs on the real-device QA pass.
-
-`Next` and `Start` in the flow were the same `border-ember text-ember` control
-in the same place in the frame, and carried the thinnest margin after the
-account panel left the band; they were the reason `open` carries `flame: 0.3`
-at all. Both went with the flow on 9 September 2026. What sits in the band on
-`open` now is `Settings`: the same `border-ember text-ember` treatment on the
-selected bell and on *Sit together until*, lower in the frame than `Next` ever
-was, plus `ink-2` row labels — raised from Home's `ink-3` for this component
-because the flow's folded rows had measured `ink-3` at 4.00 down there. **None
-of it has been run through `contrast-room.js` in place.** The bell buttons and
-*Sit together until* are the first thing to measure, and the first thing to
-re-measure if the flame, the stop or the ember value is ever touched.
-
-**Dim the flame before you dim the room.** The flame is drawn separately and
-screen-blended over the photograph, so nothing done to the picture touches it —
-it stays a hard white core exactly where a question gets asked. With it at full
-brightness the frame had to be stopped down 0.75 to make `Gong` legible, which
-threw the room away; `flame: 0.3` on the `open` camera fixes the same pixel at
-`stop: 0.65` and leaves the photograph visible. Softening the blur costs no
-contrast at all — `stop` and `flame` carry it, not the focus.
-
-`--color-ink-3` was raised for this (`#87847f` → `#9a9792`) because it is used
-in about twenty places and the fix belonged in the palette, not at the call
-sites. It is close to the point where the third text tier stops being
-distinguishable from `ink-2`; if the photograph is ever re-graded brighter,
-retiring the tier for the room is the honest move rather than raising it again.
-`opacity-*` on quiet text is now avoided outright — over a photograph it
-composites toward whatever is behind it rather than away from it.
-
-**The open trade-off.** The landing needed about 389px of copy before the
-settings line and `Change` joined it on 9 September 2026 — they have not been
-measured in place, and add roughly a line and a 44px control to that — and the
-band is 309px at 1280×800, 235px at 1280×640. The fit scale was 0.79 and 0.60
-respectively and is lower now: legible, and small. Two knobs, both design
-decisions rather than bugs — `PHOTO_FOCUS_Y` (0 would anchor the crop to the
-top of the photograph and buy about 100px of band on short windows, at the cost
-of the dish), or carrying less on the landing.
+`/?demo=sitting`, `/?demo=sitting&alone` and `/?demo=finished` mount the
+sitting and the ending with fixture points from `worldDemo.ts`, a frozen
+clock, no presence and no audio graph (`components/Demo.tsx`, dynamically
+imported only under `NODE_ENV === 'development'`, so it is not in the
+production bundle). It is how the dusk screens are checked without striking
+the bowl, which starts a real sitting.
 
 ---
 
 ## 17. The account side
 
-Three surfaces exist now, not one, and which you get is decided by a single
-fact: whether you are signed in.
+Which screen you get at `/` is decided by one fact: whether you are signed in.
 
 | | Signed out | Signed in |
 |---|---|---|
-| `/` | The room. Landing, `Change`, sitting, ending, account offer. | Home. |
-| `/` after `Sit` | — | The room, starting on arrival, returning to Home. |
+| `/` | The rail: welcome, the questions, the bowl, the sitting, the ending, the account offer. | Home: the two doors. |
+| `/` after a door | — | The rail from the first unanswered question, or the bowl; the ending returns to Home. |
+| `/` from *Settings* | — | Time, Bell, Sound; *Done* returns to Home. |
 | `/world` | The map. | The map. |
 
 ### `Entry` owns every shared hook, and that is not tidiness
 
 `usePreferences`, `usePractice`, `useMix`, `useAuth` and `useSyncPreferences`
-are called in `components/Entry.tsx` and passed down. They used to be called
-inside `Room`, which was right while the room was the whole product.
-
-It is not any more, and calling them in both places breaks in ways that are
-quiet rather than loud. Two `usePreferences` would be two pieces of React state
-over one localStorage key: change the duration on Home, press `Sit`, and the
-room — mounted from that same click — is still holding the value it read when it
-mounted. Two `usePractice` would each run the sync loop against the same table.
+are called in `components/Entry.tsx` and passed down. Calling them in both
+Home and Journey breaks in ways that are quiet rather than loud: two
+`usePreferences` would be two pieces of React state over one localStorage
+key, so a door pressed on Home would mount a rail still holding the value it
+read at its own mount. Two `usePractice` would each run the sync loop against
+the same table.
 
 **`usePresence` deliberately did not lift.** It writes heartbeats, and a
-heartbeat is a claim to be in the room. §14 settled that the count means "here",
-and somebody reading their own streak on a dashboard is not here. Home reads the
-number through `useCount`, which polls and never writes. Duplicating the *read*
-is free — `/api/count` is one edge-cached response for the whole world, which is
-§5 — where duplicating the *write* would have been a second row per person.
+heartbeat is a claim to be in the room. §14 settled that the count means
+"here", and somebody reading their own streak is not here. Home and the
+welcome read the number through `useCount`, which polls and never writes.
+`Journey` beats for as long as it is mounted — the welcome, the questions,
+the sitting, the ending — which is §14's rule that everyone on the page
+counts; only the *name* is gated, sent while sitting with others with the
+switch on and cleared otherwise.
 
-### The room takes one prop that carries the whole difference
+### Journey takes three props that carry the whole difference
 
-`home?: () => void`. Present means signed in: the sitting starts on arrival —
-once the room is visible, off the same `booted` gate as the reveal, so a cold
-cache never has a ring draining on a black screen — the ending says `Done` and
-comes back here, and the account offer at the foot is not rendered at all. Absent means a guest: the landing with `Change` under the word, `Finish`, and
-the offer.
+`home?: () => void` present means signed in: the ending says *Done* and
+comes back here, Back on the first screen comes back here, and the account
+offer at the foot is not rendered. `afterMode` means the rail begins just
+past the mode screen, because a door on Home already answered it. `settings`
+means the three settings screens with *Done* on the last, and no bowl.
 
-One prop rather than two booleans, because the difference genuinely is "is there
-a home to come back to", and two booleans would allow a state that must not
-exist — a sitting that starts on arrival and then strands somebody on a
-photograph with no way off it.
+The rail's list is fixed at mount, which is what makes those three safe: a
+prop cannot reorder the panels once somebody is standing on one.
 
-**That bug was real and was found by walking the flow**, not by reading it:
-`End this sitting` set the activity to `idle`, and `idle` for a signed-in
-visitor renders nothing, because the landing is guarded by `!home`. It now calls
-`home()` after recording the sitting. Anything else that returns the room to
-`idle` has to do the same.
+### Home is the one screen that shows several things
 
-### Home is the one screen allowed not to be the room
+It scrolls and it has a header, which the rail forbids. The rail is one
+question at a time for somebody on their way to sit; Home is somebody
+deciding whether to. The order of the page is the order of what they came
+for: the greeting, the two doors, then *Your usual* and the switch that skips
+the questions. Everything else — the account, the settings, the practice log,
+the way out — is behind the three lines, so the page is the doors.
 
-It scrolls, it has a masthead, and it shows several things at once — all three
-of which §16 forbids. §16 is a set of rules about *the room*, which is a
-photograph somebody is about to meditate inside. Home is a person deciding
-whether to, looking at what they have done. Nothing here licenses type on the
-photograph or a scrolling sitting, and the room imports nothing from `Home.tsx`.
-
-The order of the page is the order of what somebody came for: `Sit` first and
-largest, the settings it will use printed under it, then the practice, then the
-recent sittings the room has never had space for, then the world.
-
-**That order has two shapes.** Below `lg` it is one column, which is what a
-phone can hold. From `lg` up the same order is laid out as a masthead over two
-panes that together are exactly one viewport tall: the sitting on the left, the
-practice and the recent sittings on the right, and the world at the foot of the
-left pane. Reading order on a wide screen is left-then-right, so nothing has
-been reordered — but the practice log is now visible without scrolling, which in
-the column it never was.
-
-Each pane scrolls itself and the page does not, so the circle stays put while a
-long log moves beside it. Three things this depends on, all of which have
-already been got wrong once:
-
-- The row holding the panes needs `min-h-0`. A flex child will not shrink below
-  its content by default, so without it the panes' `overflow-y-auto` never
-  engages and the whole page scrolls instead.
-- The sitting is centred with `m-auto`, not `justify-center`. Centring a scroll
-  container's content clips the overflow off the *start* edge, where it cannot
-  be scrolled back to — which is what happens when the settings panel opens on
-  a short laptop.
-- Only one pair of auto margins. The world link at the foot is pinned by the
-  sitting block's own bottom auto margin; giving it `mt-auto` as well splits the
-  slack three ways and lifts the circle off centre.
-
-The world link is one component (`WorldLink`) rendered in one of two places,
-never both.
+The account panel and the practice panel replace the body of the column and
+keep the header; `Menu.tsx` is the trigger and the list, with the keyboard
+behaviour `role="menu"` promises (Up and Down wrap, Home and End, Escape
+returns focus). `useAuth.updateName` writes `user_metadata.name` through
+`auth.updateUser`; `onAuthStateChange` fires `USER_UPDATED` and the greeting
+follows without a reload.
 
 ### Controls have to look like controls — `components/controls.ts`
 
 **Type can be quiet. A control cannot.** A control whose only affordance is
-being a word is not a quiet control, it is an invisible one.
+being a word is not a quiet control, it is an invisible one. That was found
+twice on the old room, on two screens, and both times the control passed its
+contrast check; contrast was never what was wrong.
 
-This was found twice by Tenzing, on two different screens, and both times the
-control passed its contrast check. Contrast was never what was wrong: `Change`
-on Home cleared 5.14 and `Sign in` on the landing cleared 5.95, and neither
-looked pressable. They were dim words set directly beneath or beside dim
-sentences of almost the same weight — `Change` read as a second line of the
-caption above it, and `Sign in` read as a watermark in the darkest corner of a
-photograph.
-
-Five controls had been written that way independently, each reasonable alone:
-`Change`, `Sign out`, `Sign in`, `Hide your practice` and `Back`. That is one
-mistake made five times, because there was nowhere for the answer to live. There
-is now, and **the background picks which of the two applies**:
+The answer lives in one file, and **the ground picks which applies**:
 
 | | Where | What it is |
 |---|---|---|
-| `QUIET` | `controls.ts` | Flat dark ground — Home, `/world`, the room's band. A `rule` outline, `ink-2`, ember on hover. |
-| `LIFTED` | `Room.tsx` | Over the photograph. Its own warm surface and white type, measured against lit wax. |
+| `PRIMARY` | One per screen, on paper | Ember fill, white type. Next, Save, Sit again. |
+| `QUIET` | Paper | A `rule` outline, `ink-2`, ember on hover. Back, Finish, Delete account. |
+| `QUIET_DUSK` | Dusk | `dusk-ink-2` at 55%, `dusk-ink`, flame on hover. Sound, End, Done. |
+| `WORD` | Paper, beside a Next | Underlined in `rule`, ember on hover. Skip, Change, Leave it out. |
+| `CHIP` / `CHIP_ON` | Paper | Surface on `rule`; chosen is `ember-soft` with an ember edge. |
+| `ICON` | Paper | A 44px round surface. The two menus. |
 
-A new control on the photograph takes `LIFTED`; anywhere else it takes `QUIET`.
-A third style needs a reason that is not "this one felt different".
-
-`rule` rather than `ember` for the outline is deliberate: **`ember` is the colour
-of the primary action** — `Begin.`, `Sit`, `Send me a code` — and it is worth
-more while it stays scarce. Ember comes back on hover, where it means "this one,
-now" rather than "this one, always".
-
-**One bare chevron was left, on purpose, and it is gone with its screen**: the
-back arrow in `SessionSetup`. What failed above was words that read as labels,
-and an icon has no adjacent prose to be mistaken for, so bounding a back arrow
-on a one-question screen would have added a box to the quietest thing in the
-product to solve a problem it did not have. The flow was retired on 9 September
-2026 and the arrow with it; the chevron on `Change` sits inside a `QUIET`
-control, and the ones on the settings rows sit inside their row buttons. No
-bare control remains.
-
-The account flow's own back arrow went with the band takeover. Inside a 320px
-panel the quiet words at the foot — `I already have one`, `Back`, `Send it
-again` — are underlined rather than bare, which is the third of the three
-affordances this section allows and the only one that fits at that size.
+`rule` rather than `ember` for a quiet outline is deliberate: **ember is the
+colour of going forward**, and it is worth more while it stays scarce. Ember
+comes back on hover, where it means "this one, now" rather than "this one,
+always". A seventh style needs a reason that is not "this one felt
+different".
 
 ### The map
 
 `/world` is its own route because it is somewhere else, with its own subject,
 that should be linkable. Sitting is not — it stays under `/` as state, because
-the room's opening move depends on `CandleScene` staying mounted while the
-camera travels off `load`, and a route change would remount it.
+the lift from the bowl to the earth is one frame changing, and a route change
+would remount it. Since 14 September 2026 the same `WorldMap` is the sitting's
+own view under with-others, with the viewer's cell marked; `/world` is the
+earth on its own, in a dusk panel on the paper page.
 
 **It was a three.js globe until 6 September 2026**, when Jonny asked for a flat
 map. The trade goes both ways and is worth having written down: a sphere shows
@@ -1757,9 +1229,9 @@ half a planet and has to be turned to see the rest, and turning it was the only
 thing on this page anybody touched. A map shows everybody at once. On a page
 whose whole subject is how many people there are and where, that is the better
 answer — and it cost the drag, the coasting and the slow drift under the sun,
-which are gone rather than reimplemented. `WorldMap.tsx` is canvas 2D, like
-`CandleScene`; `Globe.tsx`, `three` and `@types/three` were deleted with it,
-taking about 600KB off the route.
+which are gone rather than reimplemented. `WorldMap.tsx` is canvas 2D;
+`Globe.tsx`, `three` and `@types/three` were deleted with it, taking about
+600KB off the route.
 
 - **The projection is Equal Earth** (Šavrič, Patterson & Jenny, 2018), not the
   plain longitude/latitude rectangle that `land.json` and the sun maths would
@@ -1833,13 +1305,13 @@ times:
   own honest brightness, and nothing is covering for the ground.
 - **1.5MB → 273KB**, on the heaviest route in a project whose §1 is a page of
   reasons to be suspicious of weight.
-- **It stopped competing with the room.** A photograph of the earth was the
-  only photorealism here apart from the room itself, and the two are doing
-  opposite jobs: the room is a picture you sit *inside*, this is an instrument
-  you *read*.
+- **It stopped competing.** A photograph of the earth was the only
+  photorealism on the site apart from the room that was then behind it, and
+  now that nothing on the site is a photograph, a drawn earth is the only
+  earth that would fit.
 
 **The risk it was drawn against was looking like a dashboard**, which is the
-same failure Home is closest to (§17). Four rules hold it off, and a change
+same failure the ending is closest to (§16). Four rules hold it off, and a change
 that breaks one of them will bring it straight back: land is **filled**, a hair
 above the ocean, so the eye reads masses and not wireframe; there are **no
 political borders, no graticule and no labels** — the only line on the earth is

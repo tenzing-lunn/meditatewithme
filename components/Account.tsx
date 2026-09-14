@@ -29,7 +29,7 @@ import type { SyncStatus } from './useSyncPreferences';
  * is not. It is the one thing on this screen that is about the product rather
  * than the practice, and the right object for it is the one everybody already
  * knows — a panel under the button you pressed, arriving in 160ms, taking no
- * part of the photograph it does not need.
+ * part of the screen it does not need.
  *
  * Nothing here measures anything. Opacity and a six-pixel translate, both on
  * the compositor, on a box whose size no observer is watching. There is no

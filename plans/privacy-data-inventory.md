@@ -74,8 +74,8 @@ a data-processing agreement has said something about itself.
 
 ### Where you are
 
-> When you open the room, our server works out roughly where you are from your
-> internet connection, so the globe can show a light for each part of the world
+> When you open the site, our server works out roughly where you are from your
+> internet connection, so the earth can show a light for each part of the world
 > someone is sitting in.
 >
 > It is deliberately rough. Before anything is saved, your position is rounded
@@ -107,9 +107,9 @@ a data-processing agreement has said something about itself.
 > with it after two days. You can change either answer, or the switch, from the
 > origin question or from your account.
 
-### Being counted in the room
+### Being counted
 
-> While the room is open in front of you, your browser tells us it is there
+> While the site is open in front of you, your browser tells us it is there
 > every thirty seconds, so the site can say how many people are sitting. It
 > sends a random identifier that is created by your browser, belongs only to
 > that browser, and is not connected to your name, your email or any account.

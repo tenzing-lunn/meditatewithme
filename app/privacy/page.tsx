@@ -46,8 +46,8 @@ export default function PrivacyPage() {
 
       <Section title="Where you are">
         <p>
-          When you open the room, our server works out roughly where you are
-          from your internet connection, so the globe can show a light for each
+          When you open the site, our server works out roughly where you are
+          from your internet connection, so the earth can show a light for each
           part of the world someone is sitting in.
         </p>
         <p>
@@ -89,9 +89,9 @@ export default function PrivacyPage() {
         </p>
       </Section>
 
-      <Section title="Being counted in the room">
+      <Section title="Being counted">
         <p>
-          While the room is open in front of you, your browser tells us it is
+          While the site is open in front of you, your browser tells us it is
           there every thirty seconds, so the site can say how many people are
           sitting. It sends a random identifier that is created by your
           browser, belongs only to that browser, and is not connected to your
@@ -138,7 +138,7 @@ export default function PrivacyPage() {
         <p>
           Most of what is here deletes itself: the session and location records
           go after two days without anybody doing anything. Deleting your
-          account — <em>Your account</em>, at the foot of your home page —
+          account — <em>Account</em>, in the menu on your home page —
           removes your settings and your practice from our database; the copy
           on your own device is yours and stays until you clear it.
         </p>
