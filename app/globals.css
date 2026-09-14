@@ -1,83 +1,82 @@
 @import "tailwindcss";
 
 /*
- * Palette carried over from the build spec so the holding page and the room
- * that replaces it share one design language. Ember is the candle; in/out are
- * the breath colours reserved for the timer.
+ * The warm palette, since 14 September 2026.
+ *
+ * The screen is a soft brown, lit from within: paper is the ground, surface
+ * is a field or a door resting on it, and ember is the one colour that means
+ * "press this". Everything before and after the sitting is light. The
+ * sitting itself is dusk, a deep warm brown, because the flames on the earth
+ * are additive light and only read against a dark ground.
  *
  * CONTRAST IS A CONSTRAINT, NOT A PREFERENCE
- * The spec marks WCAG AA as not optional, so every ink and ember value below
- * clears 4.5:1 against the background it is used on.
+ * WCAG AA is not optional here. Every ink and ember value clears 4.5:1
+ * against the ground it is used on; `scripts/contrast.mjs` measures every
+ * pair and fails the build if one slips. `glow` is the exception and is meant
+ * to be: it is the bright orange of the bowl's rim and the flames, decorative
+ * only, and never carries text or a control's edge. `rule` is a hairline and
+ * never carries a control's state on its own.
  *
- * `rule` is the exception and is meant to be: it is a decorative
- * hairline, not a boundary anyone has to perceive. That means it must never be
- * the only thing conveying a control's state; controls pair it with readable
- * text, shape, or an explicit pressed state.
- *
- * Check with `node scripts/contrast.mjs` before changing any of these.
+ * Check with `npm run contrast` before changing any of these.
  */
 @theme {
-  --color-paper: #f4efe4;
-  --color-surface: #ffffff;
-  --color-ink: #16181b;
-  --color-ink-2: #43484d;
-  --color-ink-3: #656a6f;
-  --color-rule: #e1ded8;
-  --color-ember: #985b1b;
-  --color-ember-soft: #f0dcbd;
+  --color-paper: #f6e9d8;
+  --color-surface: #fdf6ec;
+  --color-ink: #3b2a1d;
+  --color-ink-2: #6a5342;
+  --color-ink-3: #76604f;
+  --color-rule: #e6d5c1;
+  --color-ember: #9c3d12;
+  --color-ember-soft: #f8d7b8;
+  --color-glow: #d9661f;
 
-  /* The one dark that sits over the photograph: the lifted controls in the
-     room at partial opacity, so the picture's own warmth comes through, and
-     the account menu and panel opaque, since 9 September 2026, so the
-     landing word cannot show through them. Not a mode colour, so it is not
-     overridden below. It was a hex typed out in four places before it had a
-     name. */
-  --color-panel: #1c1410;
+  /* The sitting's ground and the type that sits on it. */
+  --color-dusk: #2b1a10;
+  --color-dusk-ink: #f6e9d8;
+  --color-dusk-ink-2: #d7bfa6;
+  --color-flame: #e0a057;
 
-  /* Type has three jobs, not three interchangeable moods: Instrument Serif
-     is display type, Plex Sans is the room's voice and every control, and
-     Plex Mono is reserved for changing numerals such as the sitting clock. */
-  --font-display: var(--font-instrument-serif), Georgia, serif;
-  --font-body: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-numeral: var(--font-plex-mono), ui-monospace, monospace;
-  --font-serif: var(--font-display);
+  /* Two rounded faces: Comfortaa is the wordmark and the questions,
+     Nunito is every sentence and every control. Numerals are Nunito with
+     tabular figures so the clock does not jitter. */
+  --font-display: var(--font-comfortaa), ui-rounded, system-ui, sans-serif;
+  --font-body: var(--font-nunito), ui-rounded, system-ui, sans-serif;
+  --font-numeral: var(--font-body);
   --font-sans: var(--font-body);
-  --font-mono: var(--font-numeral);
 
-  /* Geometry follows the same restraint: controls share one soft corner;
-     only the primary Begin action becomes a full pill. */
-  --radius-control: 0.75rem;
+  /* Fields, chips and doors share one soft corner; cards a softer one; the
+     buttons are pills, so the rounded type and the rounded controls agree. */
+  --radius-control: 1rem;
+  --radius-card: 1.5rem;
   --radius-action: 9999px;
 }
 
 /*
- * The room is always dark. These values override the build-time palette
- * variables at runtime, independent of the visitor's system preference.
+ * Motion, in one place. The rail slides sideways; content settles upward as
+ * a screen arrives; the camera lift is the one long move in the product.
+ * Under reduced motion every transform-driven move becomes a short crossfade.
  */
 :root {
-  color-scheme: dark;
-  --color-paper: #131518;
-  --color-surface: #1a1d21;
-  --color-ink: #e9e7e3;
-  --color-ink-2: #b5b2ad;
-  /* Raised from #87847f when the room became a photograph. The old value was
-     tuned against flat #131518 and cleared 4.5:1 there with almost nothing to
-     spare — but the room is now a lit photograph whose darkest band still sits
-     around rgb(46,37,27), and against that the quiet tone fell to 4.03:1. It
-     is used in about twenty places across the room, so the fix belongs here
-     rather than at the call sites. The binding case is `End this sitting`,
-     read against blurred wax with the camera pushed to 1.82. Measured on the
-     composited scene, not on the palette — `scripts/contrast.mjs` only knows
-     about flat colours and will report this pair as comfortable. */
-  --color-ink-3: #9a9792;
-  --color-rule: #2a2e33;
-  --color-ember: #e0a057;
-  --color-ember-soft: #2c2117;
+  color-scheme: light;
+  --rail-ms: 520ms;
+  --ease-rail: cubic-bezier(0.22, 1, 0.36, 1);
+  --settle-ms: 240ms;
+  --lift-ms: 1400ms;
+  --ease-lift: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --rail-ms: 0ms;
+    --settle-ms: 0ms;
+    --lift-ms: 400ms;
+  }
 }
 
 body {
   background: var(--color-paper);
   color: var(--color-ink);
+  font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -87,14 +86,10 @@ body {
  * show the warm portion of the track as reliably as Firefox does.
  *
  * THE THUMB IS A PILL, AND THAT IS THE POINT
- * It was a 14px dot on a 2px hairline, which is a dot you aim at rather than a
- * thing you take hold of. This is the control the whole product is set with —
- * how long you are going to sit — so it is a grip: wide enough to land a thumb
- * on without looking, tall enough to read as a physical object, and it swells
- * slightly while it is being dragged so the grab registers.
- *
- * The width is deliberately much greater than the height. A big circle reads
- * as a ball resting on a wire; a pill reads as a slider you slide.
+ * This is the control the whole product is set with — how long you are going
+ * to sit — so it is a grip: wide enough to land a thumb on without looking,
+ * tall enough to read as a physical object, and it swells slightly while it
+ * is being dragged so the grab registers.
  */
 .room-range {
   --range-fill: 0%;
@@ -135,11 +130,11 @@ body {
   border-radius: var(--radius-action);
   background: linear-gradient(
     to bottom,
-    color-mix(in srgb, var(--color-ember) 92%, white),
+    color-mix(in srgb, var(--color-ember) 88%, white),
     var(--color-ember)
   );
   box-shadow:
-    0 1px 3px rgb(0 0 0 / 0.5),
+    0 1px 3px rgb(59 42 29 / 0.25),
     inset 0 1px 0 rgb(255 255 255 / 0.25);
   transition:
     transform 120ms ease-out,
@@ -149,7 +144,7 @@ body {
 .room-range:active::-webkit-slider-thumb {
   transform: scale(1.06);
   box-shadow:
-    0 2px 8px rgb(0 0 0 / 0.6),
+    0 2px 8px rgb(59 42 29 / 0.3),
     inset 0 1px 0 rgb(255 255 255 / 0.3);
 }
 
@@ -174,11 +169,11 @@ body {
   border-radius: var(--radius-action);
   background: linear-gradient(
     to bottom,
-    color-mix(in srgb, var(--color-ember) 92%, white),
+    color-mix(in srgb, var(--color-ember) 88%, white),
     var(--color-ember)
   );
   box-shadow:
-    0 1px 3px rgb(0 0 0 / 0.5),
+    0 1px 3px rgb(59 42 29 / 0.25),
     inset 0 1px 0 rgb(255 255 255 / 0.25);
   transition: transform 120ms ease-out;
 }
@@ -195,29 +190,137 @@ body {
 }
 
 /*
- * The room's slow drift.
- *
- * The only CSS the photographic scene needs. Everything else about it is
- * derived from the phase and therefore inline, on the element, in JS — a
- * stylesheet cannot know which of six phases the camera is in, and a class per
- * phase would only be the same numbers spelled twice.
- *
- * Scale never drops to 1: the photograph is always overscanned a little so a
- * translate has somewhere to go and never exposes an edge.
+ * A screen arriving. The heading and then the control settle upward as the
+ * rail brings a screen into the frame; `--i` is the row's place in that
+ * order. Zero under reduced motion, where `--settle-ms` is zero.
  */
-@keyframes room-drift {
-  0%,
+@keyframes screen-settle {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.screen-settle {
+  animation: screen-settle var(--settle-ms) var(--ease-rail) both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+
+/*
+ * The bowl, struck. The body gives and recovers; three rings leave the rim
+ * and fade. Under reduced motion the body pulses once and nothing travels.
+ */
+@keyframes bowl-wobble {
+  0% {
+    transform: scale(1);
+  }
+  15% {
+    transform: scale(1.035, 0.965);
+  }
+  35% {
+    transform: scale(0.985, 1.02);
+  }
+  55% {
+    transform: scale(1.012, 0.992);
+  }
   100% {
-    transform: scale(1.025) translate(0.3%, 0.2%);
+    transform: scale(1);
   }
+}
+
+@keyframes bowl-ripple {
+  0% {
+    opacity: 0.75;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.7, 1.9);
+  }
+}
+
+@keyframes bowl-pulse {
   50% {
-    transform: scale(1.05) translate(-0.4%, -0.6%);
+    opacity: 0.55;
   }
+}
+
+.bowl-body,
+.bowl-ripple {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.bowl-ripple {
+  opacity: 0;
+}
+
+.bowl-struck .bowl-body {
+  animation: bowl-wobble 600ms ease-out;
+}
+
+.bowl-struck .bowl-ripple {
+  animation: bowl-ripple 1400ms ease-out forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .room-drift {
-    animation: none !important;
+  .bowl-struck .bowl-body {
+    animation: bowl-pulse 300ms ease-out;
+  }
+  .bowl-struck .bowl-ripple {
+    animation: none;
   }
 }
 
+/*
+ * The camera lifting away from the bowl. The bowl's screen falls away and
+ * shrinks as the sitting settles in over it; the ground goes from paper to
+ * dusk underneath both. Under reduced motion both are a plain crossfade.
+ */
+@keyframes lift-out {
+  to {
+    opacity: 0;
+    transform: translateY(28vh) scale(0.55);
+  }
+}
+
+@keyframes lift-in {
+  from {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.lift-out {
+  animation: lift-out var(--lift-ms) var(--ease-lift) forwards;
+  transform-origin: 50% 60%;
+  pointer-events: none;
+}
+
+.lift-in {
+  animation: lift-in var(--lift-ms) var(--ease-lift) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes lift-out {
+    to {
+      opacity: 0;
+    }
+  }
+  @keyframes lift-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}

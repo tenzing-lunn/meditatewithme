@@ -1,546 +1,484 @@
 ---
 name: Meditate With Me
-description: A photograph of a lit candle in a dark room, one serif word on it, and nothing that competes with either. Type lives in the dark band above the flame; controls are bounded, quiet, and ember only when they start something.
+description: A warm, light room of one question at a time, in a rounded face, that leads to a bowl; strike it and the light goes down to dusk, where the earth shows who is sitting with you. Ember is spent on the one thing that goes forward. Nothing is in the background until the sitting.
 colors:
-  ember: "#e0a057"
-  ember-soft: "#2c2117"
-  ink: "#e9e7e3"
-  ink-2: "#b5b2ad"
-  ink-3: "#9a9792"
-  rule: "#2a2e33"
-  paper: "#131518"
-  surface: "#1a1d21"
-  panel: "#1c1410"
+  paper: "#f6e9d8"
+  surface: "#fdf6ec"
+  ink: "#3b2a1d"
+  ink-2: "#6a5342"
+  ink-3: "#76604f"
+  rule: "#e6d5c1"
+  ember: "#9c3d12"
+  ember-soft: "#f8d7b8"
+  glow: "#d9661f"
+  dusk: "#2b1a10"
+  dusk-ink: "#f6e9d8"
+  dusk-ink-2: "#d7bfa6"
+  flame: "#e0a057"
   white: "#ffffff"
 typography:
-  display:
-    fontFamily: "Instrument Serif, Georgia, serif"
-    fontSize: "3rem"
-    fontWeight: 400
+  wordmark:
+    fontFamily: "Comfortaa, ui-rounded, system-ui, sans-serif"
+    fontSize: "2.25rem / 3rem at sm"
+    fontWeight: 700
+    lineHeight: 1.1
+    letterSpacing: "-0.01em"
+  question:
+    fontFamily: "Comfortaa, ui-rounded, system-ui, sans-serif"
+    fontSize: "1.75rem / 2.25rem at sm"
+    fontWeight: 700
+    lineHeight: 1.15
+    letterSpacing: "normal"
+  minutes:
+    fontFamily: "Comfortaa, ui-rounded, system-ui, sans-serif"
+    fontSize: "3.5rem"
+    fontWeight: 700
     lineHeight: 1
-    letterSpacing: "normal"
-  display-lg:
-    fontFamily: "Instrument Serif, Georgia, serif"
-    fontSize: "3.75rem"
-    fontWeight: 400
-    lineHeight: 1
-    letterSpacing: "normal"
-  headline:
-    fontFamily: "Instrument Serif, Georgia, serif"
-    fontSize: "2.25rem"
-    fontWeight: 400
-    lineHeight: 1.25
-    letterSpacing: "normal"
-  title:
-    fontFamily: "Instrument Serif, Georgia, serif"
-    fontSize: "1.5rem"
-    fontWeight: 400
-    lineHeight: 1.25
     letterSpacing: "normal"
   masthead:
-    fontFamily: "Instrument Serif, Georgia, serif"
+    fontFamily: "Comfortaa, ui-rounded, system-ui, sans-serif"
     fontSize: "1.25rem"
-    fontWeight: 400
+    fontWeight: 700
     lineHeight: 1
-    letterSpacing: "normal"
+    letterSpacing: "-0.01em"
   body:
-    fontFamily: "IBM Plex Sans, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Nunito, ui-rounded, system-ui, sans-serif"
     fontSize: "1rem"
+    fontWeight: 400
+    lineHeight: 1.625
+    letterSpacing: "normal"
+  control:
+    fontFamily: "Nunito, ui-rounded, system-ui, sans-serif"
+    fontSize: "0.9375rem"
+    fontWeight: 600
+    lineHeight: 1.25
+    letterSpacing: "normal"
+  label:
+    fontFamily: "Nunito, ui-rounded, system-ui, sans-serif"
+    fontSize: "0.8125rem"
     fontWeight: 400
     lineHeight: 1.5
     letterSpacing: "normal"
-  control:
-    fontFamily: "IBM Plex Sans, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "0.875rem"
-    fontWeight: 400
-    lineHeight: 1.25
-    letterSpacing: "0.025em"
-  label:
-    fontFamily: "IBM Plex Sans, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "0.75rem"
-    fontWeight: 400
-    lineHeight: 1.33
-    letterSpacing: "0.025em"
-  numeral:
-    fontFamily: "IBM Plex Mono, ui-monospace, monospace"
-    fontSize: "34px"
-    fontWeight: 400
+  clock:
+    fontFamily: "Nunito, ui-rounded, system-ui, sans-serif"
+    fontSize: "1.25rem"
+    fontWeight: 600
     lineHeight: 1
     letterSpacing: "normal"
 rounded:
-  control: "0.75rem"
+  control: "1rem"
+  card: "1.5rem"
   action: "9999px"
-  cell: "2px"
 spacing:
   xs: "0.5rem"
   sm: "1rem"
   md: "1.5rem"
   lg: "2rem"
   xl: "2.5rem"
-  band: "39vh"
+  column: "28rem"
+motion:
+  rail: "520ms cubic-bezier(0.22, 1, 0.36, 1)"
+  settle: "240ms ease-out"
+  colour: "200ms"
+  strike: "600ms wobble, three 1400ms rings 180ms apart"
+  lift: "1400ms cubic-bezier(0.4, 0, 0.2, 1)"
+  hold: "10s"
+  reduced: "rail 0ms, settle 0ms, lift 400ms crossfade, earth still"
 components:
-  begin-word:
-    backgroundColor: transparent
-    textColor: "{colors.ember}"
-    typography: "{typography.display-lg}"
-    rounded: "{rounded.control}"
-    padding: "0 1rem"
-  begin-word-hover:
-    backgroundColor: transparent
-    textColor: "{colors.ink}"
-  sit-circle:
-    backgroundColor: transparent
-    textColor: "{colors.ember}"
-    typography: "{typography.display-lg}"
-    rounded: "{rounded.action}"
-    size: "14rem"
-  sit-circle-hover:
+  button-primary:
     backgroundColor: "{colors.ember}"
     textColor: "{colors.white}"
-  button-primary:
-    backgroundColor: transparent
-    textColor: "{colors.ember}"
     typography: "{typography.control}"
-    rounded: "{rounded.control}"
+    rounded: "{rounded.action}"
     padding: "0 1.5rem"
     height: "2.75rem"
-  button-primary-hover:
-    backgroundColor: "{colors.ember}"
-    textColor: "{colors.white}"
   button-quiet:
     backgroundColor: transparent
     textColor: "{colors.ink-2}"
-    typography: "{typography.label}"
-    rounded: "{rounded.action}"
-    padding: "0 1rem"
-    height: "2.75rem"
-  button-quiet-hover:
-    backgroundColor: transparent
-    textColor: "{colors.ember}"
-  button-lifted:
-    backgroundColor: "{colors.panel}"
-    textColor: "{colors.white}"
+    borderColor: "{colors.rule}"
     typography: "{typography.control}"
-    rounded: "{rounded.control}"
+    rounded: "{rounded.action}"
     padding: "0 1.5rem"
     height: "2.75rem"
-  button-lifted-icon:
-    backgroundColor: "{colors.panel}"
-    textColor: "{colors.white}"
-    rounded: "{rounded.control}"
-    size: "2.75rem"
-  settings-row:
-    backgroundColor: transparent
-    textColor: "{colors.ink-2}"
-    typography: "{typography.control}"
-    rounded: "{rounded.control}"
-    height: "3.5rem"
-  choice-chip:
-    backgroundColor: transparent
-    textColor: "{colors.ink-2}"
-    typography: "{typography.control}"
-    rounded: "{rounded.control}"
-    padding: "0 0.5rem"
-    height: "3rem"
-  choice-chip-selected:
-    backgroundColor: transparent
+  button-quiet-hover:
     textColor: "{colors.ember}"
-    rounded: "{rounded.control}"
-  choice-chip-filled:
-    backgroundColor: "{colors.ember-soft}"
-    textColor: "{colors.ember}"
-    rounded: "{rounded.control}"
-  text-input:
+    borderColor: "{colors.ember}"
+  button-quiet-dusk:
     backgroundColor: transparent
-    textColor: "{colors.white}"
+    textColor: "{colors.dusk-ink}"
+    borderColor: "{colors.dusk-ink-2} at 55%"
+    rounded: "{rounded.action}"
+    height: "2.75rem"
+  chip:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink-2}"
+    borderColor: "{colors.rule}"
     typography: "{typography.control}"
     rounded: "{rounded.control}"
     padding: "0 1rem"
     height: "2.75rem"
-  menu-item:
-    backgroundColor: transparent
-    textColor: "{colors.white}"
-    typography: "{typography.control}"
-    padding: "0 1.25rem"
-    height: "2.75rem"
-  panel:
-    backgroundColor: "{colors.panel}"
-    textColor: "{colors.white}"
+  chip-on:
+    backgroundColor: "{colors.ember-soft}"
+    textColor: "{colors.ember}"
+    borderColor: "{colors.ember}"
+  door:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink}"
+    borderColor: "{colors.rule}"
+    rounded: "{rounded.card}"
+    padding: "1.25rem 1.5rem"
+    minHeight: "6rem"
+  door-on:
+    borderColor: "{colors.ember}"
+  field:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink}"
+    borderColor: "{colors.rule}"
+    typography: "{typography.body}"
     rounded: "{rounded.control}"
+    padding: "0 1rem"
+    height: "3rem"
+  card:
+    backgroundColor: "{colors.surface}"
+    borderColor: "{colors.rule}"
+    rounded: "{rounded.card}"
     padding: "1.25rem"
-    width: "20rem"
-  foot-link:
+  switch:
+    trackOff: "{colors.rule}"
+    trackOn: "{colors.ember}"
+    thumb: "{colors.white}"
+    size: "2.75rem x 1.5rem"
+  icon-trigger:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink-2}"
+    borderColor: "{colors.rule}"
+    rounded: "{rounded.action}"
+    size: "2.75rem"
+  menu:
+    backgroundColor: "{colors.surface}"
+    borderColor: "{colors.rule}"
+    rounded: "{rounded.control}"
+    shadow: "0 12px 32px -12px rgb(59 42 29 / 0.35)"
+    itemHeight: "2.75rem"
+  word:
     backgroundColor: transparent
-    textColor: "{colors.white}"
-    typography: "{typography.label}"
-    padding: "0 0.5rem"
-    height: "2.75rem"
+    textColor: "{colors.ink-2}"
+    typography: "{typography.control}"
+    underline: "{colors.rule}, ember on hover"
+  bowl:
+    body: "{colors.glow} to {colors.ember}"
+    rim: "{colors.flame}"
+    size: "12rem"
+  candle-sprite:
+    family: "{colors.flame}, warm to pale"
+    ring: "rgba(224,160,87,0.45) for your own"
 ---
 
-# Design System: Meditate With Me
+# Meditate With Me — Design System
+
+Extracted from the code on 14 September 2026, the day the warm rail replaced
+the photographic room. Tokens are in `app/globals.css` (`@theme`), control
+classes in `components/controls.ts`, motion in the same stylesheet's `:root`.
+If a change makes this wrong, fix it in the same commit.
 
 ## Overview
 
-**Creative North Star: "The Shared Candle"**
+**Creative North Star: "One question, then the bowl."**
 
-There is one object on this site and everyone in the world is looking at it:
-a candle, lit at the top of the hour, photographed in a dark room. Everything
-else on screen is either the candle, a word about the candle, or a control
-that stays out of its way. The visual system is what remains after that rule
-has been applied to every screen. Type is set only in the dark band above the
-flame, because the lit wax below it is not a surface anything can be read on.
-Controls are allowed a surface where type is not, because a surface is what
-tells you a thing is a button. Ember, the colour of the flame, is spent on the
-one action that starts a sitting and on almost nothing else.
+The site is a sequence. A warm, light screen says its name and invites you to
+join a session; then it asks one thing at a time — your name, where you are
+from, with others or by yourself, how long, which bell, any sound — each on
+its own screen, sliding in from the right as the last slides out. Nothing is
+in the background. At the end is a bowl. Strike it and the light goes down to
+dusk, the camera lifts, and you are seated in front of the earth, where the
+people sitting with you are candles and one line says who they are. A clock
+sits small in the corner because it is not the point.
 
-The room is always dark, whatever the visitor's system says, and the page is
-one frame that does not scroll. Home, the signed-in page, is the single
-exception: a flat dark ground with a masthead that scrolls, because it is a
-person deciding whether to sit rather than a room they are already in. Nothing
-built for Home is allowed back into the room. The photograph is provisional
-(the client may license his own) and the design must survive its replacement;
-what is fixed is the composition, not the picture.
+Two grounds, and the boundary between them is the strike. **Paper** is for
+deciding: every question, the home, the account, the documents, the map's
+page. **Dusk** is for sitting: the earth, the clock, the ending. Paper is
+light so a person arrives somewhere gentle rather than somewhere dim; dusk is
+dark because candles are lights and a light needs a dark to be seen in. No
+screen mixes them, except that the map at `/world` is a dusk panel set on the
+paper, because it is a thing to be read rather than a place to sit.
 
-Motion is slow and cinematic where the room is concerned, and nearly absent
-everywhere else. The camera racks between six phases over seconds; the ending
-takes thirty seconds to come back. Controls change colour in 300 to 500ms and
-do nothing else. Nothing bounces, nothing springs, nothing reveals itself on
-scroll, because there is no scroll.
+One face for what is said to you and one for what you say back. Comfortaa,
+rounded and bold, is the wordmark, the question, and the minutes afterwards —
+never smaller than 1.25rem, because its rounds close up under that. Nunito is
+everything else: body, controls, fields, the clock's numerals in
+`tabular-nums`. No serif, no mono, no uppercase.
 
-**Key Characteristics:**
-- One serif display face at weight 400, one sans for everything a person
-  reads or presses, one mono for the changing numerals of a clock.
-- Ember (#e0a057) is the primary action and the flame; it appears on
-  outlines and type, and fills a surface only on hover.
-- Two secondary-control styles, chosen by what is behind them: quiet on a
-  flat dark ground, lifted on the photograph. A third needs a written reason.
-- Everything sits inside 39% of the viewport height, scaled to fit rather than
-  scrolled.
-- Company is shown as composition (dots on a ring, one sentence), never as a
-  figure to be compared, and a number that cannot be trusted is left out
-  rather than guessed.
+Ember is the colour of going forward. It fills the one primary control on a
+screen, outlines the chosen chip and the chosen door, and is the focus ring.
+It is a deep brick red-brown, not the orange of the flame: the brighter
+orange fails the contrast gate on paper as text, so it is **glow**, kept for
+the bowl's body, the warmth behind the flame mark, and nothing a person has to
+read or press.
+
+**Key characteristics:**
+- One screen, one question, one primary control. Back on the left, Next on
+  the right, an optional quiet word between.
+- The rail moves left-to-right in 520ms on one easing, and the arriving
+  content settles up over 240ms. Nothing else moves on paper.
+- Company is a sentence built from the earth (*Ana from Lisbon is meditating
+  with you*), never a figure to compare; a number that was not read is left
+  out.
+- Every control is 44px tall; the doors are 96px. Sentence case everywhere.
+- Reduced motion is honoured in one place, and the rail, the strike and the
+  lift all have a still version.
 
 ## Colors
 
-A warm near-monochrome: one accent the colour of a flame, three greys for
-type, one hairline, and one warm dark for anything that has to sit on the
-photograph.
+A warm near-monochrome on two grounds: browns for type on paper, creams for
+type on dusk, one ember for the action, one glow for decoration, one flame
+family for the candles.
 
-### Primary
-- **Ember** (`{colors.ember}`): the flame's colour and the primary action. The
-  begin word, the Sit circle, the selected bell, the slider's filled track, the
-  ring's arc and dots, the focus ring, and the border of a primary button. It
-  fills a control only on hover, where it means "this one, now". Never used as
-  a background at rest, never on body text.
-- **Ember Soft** (`{colors.ember-soft}`): a barely-lit warm dark, the fill of a
-  selected chip or an on switch, so a chosen thing glows faintly rather than
-  shouting. Passes 4.5:1 with ember on top of it.
+### On paper
+- **Paper** (`#f6e9d8`): the page. Every deciding screen is this colour edge
+  to edge; no gradient, no picture.
+- **Surface** (`#fdf6ec`): a step lighter than paper. Fields, chips, cards,
+  doors, the menu, the icon trigger. A surface is what says "this is a thing
+  you can act on"; type never gets one.
+- **Ink** (`#3b2a1d`): headings, the wordmark, field text, the chosen door's
+  title. 11.4:1 on paper.
+- **Ink-2** (`#6a5342`): body copy and control labels. 6.0:1.
+- **Ink-3** (`#76604f`): captions, placeholders, the *Your usual* label.
+  4.9:1 — it is the floor, and it is the smallest type on the site, so nothing
+  under 0.8125rem may use anything lighter.
+- **Rule** (`#e6d5c1`): the hairline around a control, the divider in a list,
+  a switch's off track. Decorative; never measured as text.
+- **Ember** (`#9c3d12`): the action. Fills Next, Save, Sit again, Strike; outlines
+  the chosen chip, the chosen door, the switch's on track; the focus ring.
+  5.7:1 on paper, and white on it is 6.8:1.
+- **Ember-soft** (`#f8d7b8`): the chosen chip's fill and the hover of a menu
+  item. Ember on it is 5.0:1.
+- **Glow** (`#d9661f`): decoration only. The bowl's body, the warmth on the
+  share card. 3.0:1 on paper, which is why it is never text or a control
+  edge.
 
-### Neutral
-- **Paper** (`{colors.paper}`): the page ground under everything, and what
-  shows if the photograph is late. Also the offset colour of every focus ring.
-- **Surface** (`{colors.surface}`): a step lighter than paper for Home's
-  cards. Rare.
-- **Ink** (`{colors.ink}`): primary type, the masthead, the answer on a
-  settings row, the strongest stat on the ending.
-- **Ink 2** (`{colors.ink-2}`): the room's speaking voice. Row labels, the
-  sentence under the begin word, the settings line, quiet controls, the ring's
-  clock. The lighter of the two greys and therefore the stronger on a dark
-  ground.
-- **Ink 3** (`{colors.ink-3}`): the third tier, for captions and chevrons.
-  Raised from #87847f when the ground became a photograph; it is now close to
-  the point where it stops being distinguishable from Ink 2, and if the
-  photograph is ever graded brighter the honest move is to retire it for the
-  room rather than raise it again.
-- **Rule** (`{colors.rule}`): the hairline. Dividers between settings rows,
-  the empty half of a slider track, the outline of a quiet control at rest.
-  Deliberately below 3:1 and therefore never the only thing carrying a
-  control's state.
-- **Panel** (`{colors.panel}`): the one dark that sits on the photograph. At
-  65% under a lifted control so the room's own warmth comes through and the
-  button reads as a shadow with a word in it; opaque under the account menu
-  and panel so the begin word cannot show through. Warm on purpose: a neutral
-  near-black over a brown photograph read as a chip of something else laid on
-  top.
-- **White** (`{colors.white}`): type on the photograph and inside the panel,
-  where ink would not clear the lit wax. Measured at 6.6:1 against the
-  brightest dish the ending shows through a lifted control at 65%.
+### On dusk
+- **Dusk** (`#2b1a10`): the sitting's ground, the ending's, and the panel the
+  earth sits in. The ocean on the map is a shade warmer (`#34201a`) so the
+  earth reads as an object on the dusk and not as a hole in it.
+- **Dusk-ink** (`#f6e9d8`): the same value as paper, used as type on dusk.
+  The company line, the clock, the minutes afterwards. 14:1.
+- **Dusk-ink-2** (`#d7bfa6`): secondary on dusk — the ending's rows, the
+  settings line. 9.5:1. At 55% it is the quiet control's border on dusk,
+  3.8:1, which is the non-text floor.
+- **Flame** (`#e0a057`): the candle family. The sprites on the earth are
+  five pre-tinted variants of it, warm to pale; the ring around your own is
+  it at 45%; the bowl's rim is it; the quiet control on dusk turns to it on
+  hover. 7.4:1 on dusk.
 
-### Named Rules
-**The Scarce Ember Rule.** Ember is worth more while it stays rare. On any
-screen it may outline or colour the one control that starts a sitting and the
-one thing currently chosen; it fills a surface only on hover or when the
-switch is on.
-
-**The Never-Invent-Company Rule.** A count that cannot be trusted is omitted,
-not zeroed and not guessed. One candle lit is you and is never reported as
-company.
-
-**The Composited-Contrast Rule.** AA is not optional and the flat palette does
-not prove it. Anything set over the photograph is measured against the real
-stack (camera, vignette, stop, flame) with `scripts/contrast-room.js`, and
-`scripts/contrast.mjs` gates the flat pairs and the panel composites.
+### Named rules
+- **Two grounds, one boundary.** Paper until the bowl is struck; dusk from
+  the lift until Done. `Journey` transitions the frame's background over the
+  lift and nothing else changes the ground.
+- **Ember is for going forward.** One filled control per screen. Chosen
+  states borrow its outline; hover on a quiet control borrows its colour.
+  Delete account is a quiet chip, not a red one: there is no danger colour,
+  and the safe answer (*Keep it*) is the one that gets the chosen treatment.
+- **Glow is never read.** If it is in front of a person as words or as the
+  edge of a control, it is the wrong token.
+- **The gate is `npm run contrast`.** It reads `@theme` and checks every pair
+  above, plus the 55% composite. A new colour is added to `scripts/contrast.mjs`
+  in the same commit, or it is not added.
 
 ## Typography
 
-**Display Font:** Instrument Serif (with Georgia, serif)
-**Body Font:** IBM Plex Sans (with system-ui, sans-serif)
-**Numeral Font:** IBM Plex Mono (with ui-monospace, monospace)
+- **Comfortaa 700** (`--font-display`): the wordmark (2.25rem, 3rem from
+  `sm`), every question title (1.75rem, 2.25rem from `sm`, line-height 1.15),
+  *When you are ready.* over the bowl, *Come back.* and the minutes on the
+  ending (3.5rem), the masthead on Home and the map (1.25rem), a document's
+  title and section headings. Comfortaa 400 is loaded but nothing uses it
+  yet; a question is bold or it is not a question.
+- **Nunito 400** (`--font-body`): body copy at 1rem / 1.625, captions at
+  0.8125rem, the count line on the welcome and home.
+- **Nunito 600**: every control label at 0.9375rem, the settings line, the
+  status line under the number field, the clock at 1.25rem in
+  `tabular-nums`. Nunito's tabular figures were checked on the clock at
+  Phase 3 of the rebuild; the old Plex Mono is gone.
+- **Sentence case.** No tracked uppercase anywhere; `tests/caps.test.ts`
+  budgets one use of `uppercase` in `components/` and it is unspent.
 
-**Character:** a single-weight serif that reads as an invitation rather than
-a headline, over a plain humanist sans that never raises its voice. The
-serif is only ever one word or one short line at a time: *Let’s begin.*,
-*Sit*, *Come back.*, the minutes sat, a page title. The sans does everything
-else at two sizes. The mono exists for one job, numerals that change while
-you watch them, and appears nowhere else.
-
-### Hierarchy
-- **Display** (400, 3rem rising to 3.75rem at `sm`, line-height 1): the begin
-  word on the landing, *Come back.* and the minutes on the ending. Ember on
-  the landing, ink elsewhere.
-- **Sit circle** (400, 2.25rem rising to 3.75rem at `lg`, line-height 1): the
-  one word inside Home's circle, ember.
-- **Headline** (400, 2.25rem, line-height 1.25): the title of a reading page
-  (privacy, terms) and the map's title.
-- **Title** (400, 1.5rem, line-height 1.25): section titles on a reading
-  page, the streak line on Home.
-- **Masthead** (400, 1.25rem, line-height 1): the greeting on Home, the only
-  place the site name is set in its own type.
-- **Body** (400, 1rem, line-height 1.5, max 62ch): reading-page paragraphs,
-  the settings line under the begin word, the answer on an open row.
-- **Control** (400, 0.875rem, tracking 0.025em): every button, row, chip,
-  input and the sentence under the word. The size the room speaks in.
-- **Label** (400, 0.75rem, tracking 0.025em): quiet controls, the foot links
-  in the account panel, captions and stat rows. One tracked uppercase label
-  exists, on Home's *Your practice*, and it is the only one.
-- **Numeral** (400, 34 SVG units, tabular): the ring's clock in Plex Mono.
-  Everywhere else a changing number stays in the sans with `tabular-nums`.
-
-### Named Rules
-**The One Word Rule.** The display face is never given a sentence. If a line
-needs more than about four words it is set in the sans.
-
-**The No-Weight Rule.** Nothing is bold. Emphasis is size, colour (ember or
-ink over ink-2) or the serif, never weight; the fonts load 400 only in use.
+### Named rules
+- **The display face never goes below 1.25rem.** Its rounds are the point and
+  they close up small.
+- **One question per screen, and the question is the `h2`.** The rail moves
+  focus to it on arrival, so it is also the announcement.
+- **Copy is a sentence.** *Strike the bowl to begin.* *Your own timer, and
+  nobody shown.* Not a label with a colon, not a fragment.
 
 ## Layout
 
-The room is one viewport, `h-dvh overflow-hidden`, and the photograph is
-cover-fitted behind it. `CandleScene` measures where the flame lands and
-publishes it as `--flame-top`, about 39% of the height; the band above that
-line is where all type goes and the column inside it is scaled down to fit
-(`useFitToBand`) rather than allowed to overflow. When a panel is open the
-band takes the full frame and the camera stops the picture down flat, flame
-included, so the rows are read against a dimmed room rather than the flame.
-The landing does the same for a visitor whose enlarged text no longer fits
-the strip, so the fit never shrinks type below the size they asked for;
-page zoom leaves the root font alone and never triggers it.
-The column is centred, `max-w-md` for a panel and about 30ch for a sentence;
-the horizontal rhythm is Tailwind's default 4px scale, with 1rem between a
-label and its answer, 1.5rem around a control's text, and 2.5rem between
-*Sound* and *End this sitting* so the one control that cannot be undone
-stands apart. Two controls only may live below the band, at the foot of the
-frame on the safe-area inset, and both are lifted buttons.
-
-Home scrolls. Below `lg` it is one column of at most 42rem: masthead, the
-bell time, the circle, the settings line and *Change*, the practice, recent
-sittings, the world, the account. From `lg` the same order becomes a masthead
-over two panes that together are exactly one viewport tall and each scroll
-themselves, sitting on the left, practice on the right, so the circle never
-moves while a long log does. The reading pages are one 62ch column.
-
-Every control is at least 44px tall; rows are 56px. Breakpoints in use are
-`sm` (640px) and `lg` (1024px) only.
+- **One column, 28rem wide, centred.** Every deciding screen is
+  `max-w-md` with `px-6`, from the welcome to the account panel. On a laptop
+  the column sits in the middle of the paper with air either side; nothing
+  is laid out in two columns anywhere.
+- **The rail is a track of viewport-wide panels.** `Rail` translates a flex
+  row by `-index * 100%`; each panel is `h-dvh` and scrolls itself if it
+  must; the page never does. Non-current panels are `inert`, `aria-hidden`,
+  and `visibility: hidden` once the slide has settled.
+- **A screen is title, lede, control, foot.** `Screen` puts the question and
+  one line at the top of the column's vertical centre, the control under it,
+  and a foot row on the safe-area inset: Back on the left, Skip (a quiet
+  word) and Next on the right.
+- **The sitting is one frame.** `Sitting` is `h-dvh` dusk: the clock top
+  right, the earth centred at its own 2.055 aspect and capped so the company
+  line under it always fits, Sound and End on the safe-area inset. By
+  yourself, the bowl stays faintly centred where the earth would be.
+- **Home and the documents scroll.** Home is the same 28rem column: wordmark
+  and menu in the header, greeting, the two doors, the *Your usual* card.
+  Panels behind the menu replace the body of the column and keep the header.
+- **The map's page is the column at `max-w-3xl`**, so the dusk panel can be
+  as wide as a laptop allows while the caption stays a paragraph.
 
 ## Elevation & Depth
 
-There are no shadows. Depth is the photograph's own: the camera's blur,
-brightness and vignette change per phase and the type sits in the darkest
-band of the picture. On the flat ground of Home and the map, depth is a
-hairline. The account panel and menu carry a `1px` border at white/20 and an
-opaque panel fill; that border is the only edge in the product, and it exists
-so the panel reads as a sheet over the room rather than a hole in it. The
-slider's thumb is the one element with a shadow (`0 1px 3px rgb(0 0 0 / 0.5)`
-and a hairline inner highlight), because it is the one thing meant to be
-picked up, and it swells 6% while held.
+Flat, with two exceptions. **Surfaces** are a step lighter than paper with a
+rule hairline: that is the whole depth model for fields, chips, cards and
+doors. **The menu** is the one thing that floats, with a 12px soft brown
+shadow, because it is the one thing that is over something else. The bowl's
+ripples are opacity, not shadow. On dusk there is no elevation at all: the
+Sound sheet mid-sitting is a light card on the dusk, which is contrast rather
+than depth.
 
-### Named Rules
-**The Type-Has-No-Surface Rule.** A sentence you have to scrim in order to
-read is a panel pasted on a picture. Type gets the band or gets cut; only a
-control may carry a fill on the photograph, and only at button size.
+### Named rules
+- **No shadow on a control.** A chip, a door, a button is flat on its
+  surface. If it needs to look pressable, the border or the fill does that.
+- **The lift is the only z-motion**, and it is the bowl panel scaling down
+  and away while the sitting scales in.
 
 ## Shapes
 
-Two radii and a pill. Controls, rows, inputs, chips, the account panel and
-menu share one soft corner, 0.75rem; the begin word carries the same corner
-for its focus ring alone. The pill (9999px) is for the circle you press to
-sit, the quiet secondary controls on flat ground, the switch and its thumb,
-and the slider's thumb, which is a 2.75rem by 1.5rem grip rather than a dot
-so it reads as a thing you slide. Practice-grid cells are 9px squares with a
-2px corner. Borders are 1px everywhere; there are no 2px strokes except the
-ring's arc and the focus ring. The ring itself is a 176-unit viewBox, arc
-radius 74, dots at 82, at most 36 of them, yours at twelve with a halo.
+- **Control radius 1rem** on fields, chips, the menu, the number field.
+- **Card radius 1.5rem** on the doors, the *Your usual* card, the delete
+  confirmation, the dusk panel around the earth.
+- **Pill** on every button and the icon trigger.
+- **The bowl is a drawn SVG**: a body in glow-to-ember with a flame rim, and
+  it wobbles and ripples when struck.
+- **A candle sprite is a teardrop over a wick** with a halo and two glints,
+  additive on the dusk, drawn at 1× and 1.5× for your own.
 
 ## Components
 
 ### Buttons
-Quiet by default, bounded always. A control whose only affordance is being a
-word is not a quiet control, it is an invisible one; every control is
-outlined, filled or underlined.
-
-- **Shape:** soft corner (0.75rem) on the photograph and in panels; pill on
-  flat ground.
-- **Begin word** (`{component.begin-word}`): the display face in ember with
-  no border, 3rem to 3.75rem, padding 1rem either side so the focus ring has
-  room; ink on hover over 500ms. The only unbounded control, allowed because
-  it is the largest thing on the screen.
-- **Sit circle** (`{component.sit-circle}`): a 1px ember ring 10rem to 14rem
-  across with the word inside in the display face; hover fills ember and
-  turns the word white over 500ms. Home's echo of the sitting ring.
-- **Primary** (`{component.button-primary}`): 1px ember outline, ember text,
-  2.75rem tall, 1.5rem side padding; hover fills ember with white text over
-  300 to 500ms. *Sit again*, *Send me a code*, *Keep it*. Disabled is 50%
-  opacity.
-- **Quiet** (`{component.button-quiet}`): rule outline, ink-2 text at label
-  size with wide tracking, pill, 2.75rem tall, 1rem side padding; ember
-  outline and text on hover. *Change*, *Sign out*, *Back*, the world door.
-  Only on flat dark ground or in the band.
-- **Lifted** (`{component.button-lifted}`): panel at 65% with a white/20
-  hairline and white control-size text, 2.75rem tall; hover deepens the fill
-  to 85% and the hairline to white/40. *Sound* and *End this sitting* during
-  a sitting, *Create account* after one. Only on the photograph. The square
-  variant (`{component.button-lifted-icon}`) holds the three-line menu icon.
-- **Hover / Focus:** hover changes colour and nothing else. Focus is one
-  2px ember ring offset 2px in the page colour, defined once in
-  `components/controls.ts`; the account panel offsets its ring in the panel
-  colour instead.
+- **Primary** (`PRIMARY`): ember fill, white 600 text, pill, 44px,
+  `hover:brightness-90`. One per screen: Next, Done, Save, Sit again,
+  Confirm and enter.
+- **Quiet** (`QUIET`): rule outline, ink-2 text, pill, 44px; ember outline
+  and text on hover. Back, Finish, Delete account, the map's Back.
+- **Quiet on dusk** (`QUIET_DUSK`): dusk-ink-2 at 55% outline, dusk-ink text;
+  flame on hover. Sound and End during the sitting, Done and Finish on the
+  ending.
+- **Word** (`WORD`): ink-2 600 text, underlined in rule, ember on hover.
+  Skip, Leave it out, Change on the bowl screen, the foot of the account
+  panel.
+- **Icon trigger** (`ICON`): 44px round surface with a rule hairline. The
+  menu's three lines and the account's.
 
 ### Chips
-- **Style** (`{component.choice-chip}`): soft-cornered, 3rem tall, rule
-  outline with ink-2 text; the bells share a row with `flex-1`, the sound beds
-  sit in a wrapping row.
-- **State:** selected is ember outline and ember text
-  (`{component.choice-chip-selected}`); a bed that is playing, and the
-  *Sit together until* button, add the ember-soft fill
-  (`{component.choice-chip-filled}`). `aria-pressed` throughout.
+Surface fill, rule outline, ink-2 600, control radius, 44px. **On**:
+ember-soft fill, ember outline, ember text. The three bells; the *Until the
+bell at 12:55, with everyone* stop under the slider; Keep it.
 
-### Settings rows
-- **Style** (`{component.settings-row}`): a full-width button 3.5rem tall
-  with the question at the left in ink-2, the current answer at the right in
-  ink, and a 14px ink-3 chevron that turns 180° in 300ms when the row opens.
-  Rows are divided by rule hairlines; one is open at a time and the open
-  row's controls appear beneath it.
+### Doors
+Two stacked cards, surface on rule, card radius, at least 96px tall, title in
+ink and one line in ink-2. The chosen door carries the ember outline. Pressing
+one both answers and advances. The same `Doors` sits on the mode screen and on
+Home.
+
+### Fields
+Surface on rule, 48px, ink text, ink-3 placeholder, control radius; ember
+border on hover and focus. The name, the origin, the minutes.
 
 ### Switch
-- **Style:** a 3.5rem by 2rem pill outline with a 1.25rem round thumb.
-  Off: rule outline, ink-3 thumb. On: ember outline, ember-soft fill, ember
-  thumb slid 1.5rem right over 300ms ease-out. The word beside it, *Yes* or
-  *No*, takes the same colour.
+`role="switch"`, 44×24 track, rule when off and ember when on, white thumb,
+label to the right with an optional description under it in ink-3. A `dusk`
+variant for the sitting's Sound sheet. *Sound on / In silence*, *Let others
+see Ana from Lisbon while you sit with them*, *Skip the questions and use
+these*, *Full screen*.
 
 ### Slider
-- **Style:** a 4px track, ember to the thumb and rule beyond it, under a
-  2.75rem by 1.5rem ember pill thumb with a vertical ember-to-lighter
-  gradient and a 1px ember border. Twelve stops, not a continuous range, with
-  `aria-valuetext` saying the minutes; the last stop is *Sit together until*
-  the bell and has its own chip.
+`.room-range`: a rule track with an ember thumb, 44px hit height, over the
+timer's stops with `aria-valuetext`; a number field beside it snaps on blur
+and says so in a status line.
 
-### Cards / Containers
-- **Corner Style:** 0.75rem.
-- **Background:** the panel colour, opaque, for the account panel and menu
-  (`{component.panel}`); Home's cards use surface on paper with a rule
-  hairline.
-- **Shadow Strategy:** none. See Elevation.
-- **Border:** 1px white/20 on the photograph, 1px rule on flat ground.
-- **Internal Padding:** 1.25rem in the account panel, 1.5rem in Home's
-  cards.
+### Cards
+Surface on rule, card radius, 20px padding. *Your usual* on the welcome and
+Home; the delete confirmation; the ending's fact rows are a list on dusk, not
+a card.
 
-### Inputs / Fields
-- **Style** (`{component.text-input}`): transparent fill, 1px white/40
-  outline, white centred text at control size, placeholder white/50, 2.75rem
-  tall. The code field is larger (1.25rem, tracked) and numeric. Both opacities
-  are the lowest that clear their contrast targets on the panel colour.
-- **Focus:** the outline turns ember and a 1px ember ring is added; no offset,
-  because the field is inside the panel.
-- **Error:** a reserved three-line slot under the submit, `role="alert"`, in
-  white/60, so an error never moves the field.
+### Menu
+The icon trigger opens a surface panel under it, right-aligned, control
+radius, with the one shadow. Items are 44px, ink-2 600, ember-soft on hover
+and focus. Up and Down wrap, Home and End, Escape closes and returns focus.
+Signed in: Account, Settings, Your practice, Sign out. Guest: Create account,
+Sign in.
 
-### Menu and panel
-- **Menu item** (`{component.menu-item}`): full width, 2.75rem tall, white/85
-  text, white/10 fill on hover and on focus. Arrow keys, Home and End move
-  between items; Escape returns focus to the trigger.
-- **Panel** (`{component.panel}`): 20rem or the viewport less 1.5rem,
-  dropping from its trigger in 150ms (opacity and a small translate, disabled
-  under reduced motion). One question at a time; quiet foot links
-  (`{component.foot-link}`) underlined in white/25 under white/50 text, never
-  bare.
+### The bowl
+A 12rem drawn bowl inside a button labelled *Strike the bowl and begin*,
+with *Strike the bowl to begin.* under it and the settings line under that.
+Struck: a 600ms rim wobble and three 1400ms ripple rings 180ms apart, then the
+lift. Under reduced motion, one opacity pulse.
 
-### Navigation
-Three lines at the top right of the landing open a two-item account menu.
-*Back* on the map and the reading pages is a quiet pill with a chevron. There
-is no nav bar and no footer; the site has four routes and the room links to
-one of them.
+### The earth
+`WorldMap` on dusk: filled land a hair above the ocean, one coastline, no
+borders, no labels, the real terminator. Each live cell is a candle sprite
+with its own tint, rate and phase; your own is 1.5× with a flame ring. Under
+it, one line in dusk-ink: who is with you, from the labels the world route
+hands back, rotating every 20s when there are several.
 
-### The Sitting Ring
-The signature component and the room itself. An ember arc at 85% opacity
-drains clockwise from twelve as your time runs out; the gap opens at twelve.
-Just outside it, one ember dot for every candle lit this hour, spread evenly
-around the circle (never fixed slots: three people in sixty slots is a broken
-room, not a quiet one), yours at twelve at 3.25 units with a faint halo, the
-rest at 2.5. Dots for people still here are full; those who lit a candle and
-left are at 38%. Each dot's angle eases over 2s with
-`cubic-bezier(0.22, 1, 0.36, 1)` so the ring opens for an arrival rather than
-snapping. In the last minute before a shared bell the dots brighten and draw
-in toward twelve from both sides. The clock inside is Plex Mono at 34 units in
-ink-2, tabular. The whole thing is one SVG sized against the band so the clock
-grows with the ring.
+### The clock
+Nunito 600, 1.25rem, `tabular-nums`, dusk-ink, top right, `role="timer"`.
+It is not the subject; it is never larger than this.
 
-### The Camera
-Not a component but the largest motion in the product. Six phases (`load`,
-`idle`, `quiet`, `open`, `sitting`, `returning`/`finished`) each set scale,
-blur, brightness, vignette, a flat stop and the flame's brightness, and the
-transform eases with `cubic-bezier(0.22, 0.61, 0.24, 1)` over 1.5s to 30s.
-The room and the copy come up together over 2.6s on
-`cubic-bezier(0, 0, 0.2, 1)`. A 23s drift breathes the photograph at rest.
-Under reduced motion the camera pins at scale 1.03 with no transform
-transition and the drift stops; blur, brightness and dim still change because
-they carry the phase's meaning and none of the vestibular risk.
+## Motion
+
+- **Rail**: `--rail-ms: 520ms`, `--ease-rail: cubic-bezier(0.22,1,0.36,1)`.
+  Only the arriving panel animates its content (`.screen-settle`, 240ms
+  fade-up); the departing panel just slides.
+- **Colour**: 200ms on every control.
+- **Strike**: `bowl-wobble` 600ms, `bowl-ripple` 1400ms ×3 at 180ms.
+- **Lift**: `--lift-ms: 1400ms`; `.lift-out` on the rail (scale to 0.55,
+  down 28vh, fade), `.lift-in` on the sitting (from 1.06 / 0 to 1 / 1), the
+  frame's background from paper to dusk on the same clock.
+- **Ending**: 10s hold on *Come back.* with the bell's tail, then 600ms
+  fades.
+- **Earth**: the shared breath and each candle's own flicker, from the cell's
+  coordinates rather than `Math.random()`.
+- **Reduced motion**: one `@media` block sets rail and settle to 0ms and the
+  lift to 400ms with no transforms; `useReducedMotion` holds the earth's
+  breath at 1 and its pulse at 0.5.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** put every word in the band above the flame, and cut copy before
-  letting the band scale below legibility.
-- **Do** choose the control style by what is behind it: quiet on flat dark,
-  lifted on the photograph, and nothing else without a written reason in
-  `components/controls.ts`.
-- **Do** keep ember for the one thing that starts a sitting and the one thing
-  currently chosen; let it fill a surface only on hover or when a switch is
-  on.
-- **Do** set every changing number in `tabular-nums`, and the ring's clock in
-  Plex Mono.
-- **Do** measure anything new on the photograph with
-  `scripts/contrast-room.js` before trusting the palette; the flat gate cannot
-  see the picture.
-- **Do** omit a number rather than guess it, and never report one candle as
-  company.
-- **Do** give the display face one word or one short line, at weight 400.
-- **Do** keep every control 44px tall and every row 56px, on the safe-area
-  inset when it sits at the foot of the frame.
+- **Do** ask one thing per screen, and make Next the only ember on it.
+- **Do** keep paper for deciding and dusk for sitting, and change grounds
+  only at the strike.
+- **Do** set the question in Comfortaa 700 and everything a person presses in
+  Nunito 600; every changing number in `tabular-nums`.
+- **Do** put a new colour through `scripts/contrast.mjs` before using it,
+  and never use glow as text or as a control's edge.
+- **Do** keep every control 44px and every door 96px, on the safe-area inset
+  when it is at the foot of the frame.
+- **Do** omit a number rather than guess it; never report one candle as
+  company; never invent a name on the earth.
+- **Do** give every motion a reduced version, and put it in the one
+  `@media (prefers-reduced-motion)` block.
 
 ### Don't:
-- **Don't** put a scrim, a card or a block-sized fill on the photograph to
-  make text readable. If it needs a surface it is a control or it moves to
-  the band.
-- **Don't** add a shadow, a gradient background, a scroll-reveal or a spring.
-  The only motion is the camera, the ring, and colour changes of 300 to
-  500ms.
-- **Don't** use bold, a second serif, or a second accent colour. There is one
-  weight, one serif, one ember.
-- **Don't** use tracked uppercase labels; Home's *Your practice* is the one
-  and it is a budget of one.
-- **Don't** raise ink-3 again if the photograph is regraded; retire it for the
-  room instead.
-- **Don't** show a count as a figure to compare, and don't let a dashboard's
-  vocabulary (cards, stats, badges) back into the room. Home is the only
-  screen allowed not to be the room.
-- **Don't** let the page scroll, except Home and the reading pages.
+- **Don't** put anything in the background of a question: no picture, no
+  gradient, no earth, no candle. The background arrives with the sitting.
+- **Don't** add a second filled control to a screen, a red for danger, or a
+  second accent. Ember is the accent and it is for going forward.
+- **Don't** use a serif, a mono, or tracked uppercase. The caps budget is
+  one and it is unspent.
+- **Don't** shadow a control, spring anything, or reveal on scroll. The
+  menu is the one shadow; the rail, the strike and the lift are the motion.
+- **Don't** let a question or the sitting scroll. Home, the account panel,
+  the practice panel and the documents are the screens that may.
+- **Don't** let a dashboard's vocabulary (stats, badges, progress) into the
+  sitting or the ending. The facts afterwards are rows in a sentence's
+  register, shown only when they say something.

@@ -358,7 +358,23 @@ export function useAuth() {
     }
   }, []);
 
-  return { state, linkError, signIn, verify, signOut, deleteAccount };
+  /**
+   * Change what to call them. `user_metadata.name` is where the name has
+   * always lived; `onAuthStateChange` fires USER_UPDATED with the new user,
+   * so the greeting follows without a reload. An error string, or null.
+   */
+  const updateName = useCallback(async (name: string): Promise<string | null> => {
+    try {
+      const { error } = await browserClient().auth.updateUser({
+        data: { name: name.trim() || null },
+      });
+      return error ? 'The name could not be saved just now. Please try again.' : null;
+    } catch {
+      return 'Could not reach the server. Please try again.';
+    }
+  }, []);
+
+  return { state, linkError, signIn, verify, signOut, deleteAccount, updateName };
 }
 
 /**

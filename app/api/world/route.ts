@@ -23,9 +23,11 @@ import type { WorldPoint } from '@/lib/geo';
  * viewer knows their own cell, so let the client mark it. Never the server.
  *
  * WHAT LEAVES THIS ROUTE
- * Cells and counts. No `anon_id`, no timestamps, no city, no country — see the
- * note on `cellFrom` in the heartbeat route for what is deliberately not stored
- * in the first place.
+ * Cells and counts, and since 14 September 2026 the labels of people who
+ * chose to be seen: "Ana from Lisbon", as they typed it and the heartbeat
+ * route cleaned it, for cells with somebody live in them, at most a few per
+ * cell and a few dozen in all. Still the same for every caller, so still
+ * cacheable. No `anon_id`, no timestamps, nothing inferred.
  */
 
 /** Same window as /api/count. A heartbeat older than this is not present. */
@@ -41,12 +43,17 @@ const LIVENESS_WINDOW_SECONDS = 90;
  */
 const MAX_POINTS = 600;
 
+/** Names per cell, and in all. Enough for a sentence, bounded for the wire. */
+const LABELS_PER_CELL = 3;
+const MAX_LABELS = 60;
+
 export const dynamic = 'force-dynamic';
 
 interface CellRow {
   cell_lat: number | null;
   cell_lon: number | null;
   last_seen: string;
+  label: string | null;
 }
 
 export async function GET() {
@@ -63,7 +70,7 @@ export async function GET() {
     // RPC — not a second table.
     const { data, error } = await supabase
       .from('heartbeats')
-      .select('cell_lat, cell_lon, last_seen')
+      .select('cell_lat, cell_lon, last_seen, label')
       .eq('hour_start', start.toISOString())
       .not('cell_lat', 'is', null)
       .limit(5000);
@@ -82,13 +89,31 @@ export async function GET() {
       // Lit and live are the same distinction the ring draws: somebody who sat
       // the first ten minutes of the hour and closed the tab lit a candle here,
       // and it does not go out because they left. The globe dims it instead.
-      if (Date.parse(row.last_seen) > cutoff) point.live += 1;
+      const live = Date.parse(row.last_seen) > cutoff;
+      if (live) point.live += 1;
+      // A name is shown only while its person is here now.
+      if (live && row.label) {
+        point.labels ??= [];
+        if (point.labels.length < LABELS_PER_CELL) point.labels.push(row.label);
+      }
       byCell.set(key, point);
     }
 
     const points = [...byCell.values()]
       .sort((a, b) => b.lit - a.lit)
       .slice(0, MAX_POINTS);
+
+    // Busiest cells keep their names first; past the cap the rest lose theirs.
+    let budget = MAX_LABELS;
+    for (const p of points) {
+      if (!p.labels) continue;
+      if (budget <= 0) {
+        delete p.labels;
+        continue;
+      }
+      if (p.labels.length > budget) p.labels = p.labels.slice(0, budget);
+      budget -= p.labels.length;
+    }
 
     return NextResponse.json(
       {

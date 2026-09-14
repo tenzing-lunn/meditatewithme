@@ -47,23 +47,22 @@ export default function Practice({
   return (
     <div className="flex w-full max-w-sm flex-col items-center gap-5">
       <div className="flex flex-col items-center gap-1">
-        <p className="font-serif text-2xl">
+        <p className="font-display text-2xl font-bold">
           {s.currentStreak > 0 ? (
             <>
               {s.currentStreak}{' '}
-              <span className="text-ink-3 font-sans text-sm">
+              <span className="text-ink-3 font-body text-sm font-normal">
                 day{s.currentStreak === 1 ? '' : 's'} in a row
               </span>
             </>
           ) : (
-            <span className="text-ink-2 font-sans text-base">
+            <span className="text-ink-2 font-body text-base font-normal">
               Begin again whenever you like
             </span>
           )}
         </p>
 
-        {/* ink-2, not ink-3. The log is read over the photograph with the
-            camera stopped down, and ink-3 measured 3.81:1 there. It stays
+        {/* ink-2, not ink-3: this line is a fact, not a caption. It stays
             secondary to the streak above it by being a third of its size. */}
         <p className="text-ink-2 text-sm tabular-nums">
           {s.sittings} sitting{s.sittings === 1 ? '' : 's'} ·{' '}
