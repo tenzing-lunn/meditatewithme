@@ -25,7 +25,11 @@ export interface World {
   loaded: boolean;
 }
 
-export function useWorld(): World {
+/**
+ * `enabled` false keeps the earth unfetched: somebody sitting by themselves
+ * has no earth on screen and should cost the edge nothing.
+ */
+export function useWorld(enabled = true): World {
   const [world, setWorld] = useState<World>({
     points: [],
     placed: null,
@@ -33,6 +37,7 @@ export function useWorld(): World {
   });
 
   useEffect(() => {
+    if (!enabled) return;
     // `/world?demo=1`, in `next dev` only — see `worldDemo.ts` for why this
     // exists and why it must not reach production.
     //
@@ -114,7 +119,7 @@ export function useWorld(): World {
       stop();
       document.removeEventListener('visibilitychange', onVisibility);
     };
-  }, []);
+  }, [enabled]);
 
   return world;
 }

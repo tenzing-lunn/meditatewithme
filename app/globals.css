@@ -275,3 +275,52 @@ body {
     animation: none;
   }
 }
+
+/*
+ * The camera lifting away from the bowl. The bowl's screen falls away and
+ * shrinks as the sitting settles in over it; the ground goes from paper to
+ * dusk underneath both. Under reduced motion both are a plain crossfade.
+ */
+@keyframes lift-out {
+  to {
+    opacity: 0;
+    transform: translateY(28vh) scale(0.55);
+  }
+}
+
+@keyframes lift-in {
+  from {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.lift-out {
+  animation: lift-out var(--lift-ms) var(--ease-lift) forwards;
+  transform-origin: 50% 60%;
+  pointer-events: none;
+}
+
+.lift-in {
+  animation: lift-in var(--lift-ms) var(--ease-lift) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes lift-out {
+    to {
+      opacity: 0;
+    }
+  }
+  @keyframes lift-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}

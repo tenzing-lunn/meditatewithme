@@ -111,6 +111,11 @@ export interface WorldPoint {
   lit: number;
   /** How many of those are still present. */
   live: number;
+  /**
+   * "Ana from Lisbon", for people here now who chose to be seen. At most a
+   * few per cell, and absent when nobody did. Since 14 September 2026.
+   */
+  labels?: string[];
 }
 
 /**

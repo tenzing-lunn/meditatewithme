@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState, type ComponentType } from 'react';
 
 import type { MASTER_KEY, TrackSlug } from './mix';
 import { unlockAudio } from './audio';
@@ -46,6 +46,22 @@ export default function Entry() {
   // sound, which is why it is handed prefs rather than any state of its own.
   const mix = useMix(prefs.soundMix);
 
+  /**
+   * `/?demo=sitting` and `/?demo=finished`, in `next dev` only. The import is
+   * dynamic and inside the dead branch for the reason `useWorld` gives: a
+   * static import would bundle the fixture into production, unreachable but
+   * shipped.
+   */
+  const [demo, setDemo] = useState<{ which: string; Demo: ComponentType<{ which: string }> } | null>(null);
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      const which = new URLSearchParams(window.location.search).get('demo');
+      if (which === 'sitting' || which === 'finished') {
+        void import('./Demo').then((m) => setDemo({ which, Demo: m.default }));
+      }
+    }
+  }, []);
+
   /** Signed in, and on the journey rather than at home. */
   const [seated, setSeated] = useState(false);
   const goHome = useCallback(() => setSeated(false), []);
@@ -73,6 +89,8 @@ export default function Entry() {
     },
     [mix, update, prefs.soundMix],
   );
+
+  if (demo) return <demo.Demo which={demo.which} />;
 
   if (auth.status === 'loading' || !loaded) {
     return <main className="h-dvh bg-paper" aria-busy />;

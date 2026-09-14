@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 
-import { subsolarPoint, type WorldPoint } from '@/lib/geo';
+import { subsolarPoint, type Cell, type WorldPoint } from '@/lib/geo';
 import { serverNow } from '@/lib/clock';
 import { ASPECT, X_MAX, Y_MAX, project, unproject } from '@/lib/projection';
 
@@ -86,10 +86,15 @@ interface LandData {
  * brightest thing here — which is still far below the dimmest candle. Nothing
  * is pure black or pure white. The ranking is not negotiable: candles first,
  * coastlines second, the edge of the world last.
+ *
+ * Warm since 14 September 2026: the ground under the earth is `dusk`
+ * (#2b1a10), the sitting's deep brown, and a blue-grey ocean on it read as a
+ * different picture pasted on. These are the same three ranks in the same
+ * family as the ground.
  */
-const OCEAN = '#1b2026';
-const LAND: [number, number, number] = [0x2b, 0x31, 0x38];
-const COAST = '#3f4854';
+const OCEAN = '#34201a';
+const LAND: [number, number, number] = [0x4b, 0x33, 0x28];
+const COAST = '#6d4e3c';
 
 /** How much of the night the terminator takes out. The shader's `mix(0.42, 1)`. */
 const NIGHT_DEPTH = 0.58;
@@ -422,49 +427,58 @@ function flameSprite(warmth: number): HTMLCanvasElement {
   ctx.globalCompositeOperation = 'lighter';
 
   /*
-    THE CORE OCCUPIES A THIRD OF THE SPRITE, NOT ALL OF IT — AND THAT IS WHY
-    THE STAR IS VISIBLE AT ALL.
+    A CANDLE, NOT A STAR. Since 14 September 2026 each light is a small
+    candle: a teardrop of flame with a paler heart, a short wick under it,
+    and the halo the cell's coarseness earns. Drawn about fifteen pixels
+    across, the teardrop reads as a light that is slightly taller than it is
+    wide, which is what a flame is and a dot is not. The footprint is still
+    large and the flame small inside it, for the reason the star had: the
+    whole sprite is drawn small, and a flame that filled it would be a blob.
 
-    Filling the sprite with the core and putting the glints at 96% of its radius
-    is correct in the texture and invisible on screen, because the whole sprite
-    is drawn about twenty pixels across and the spikes land sub-pixel. Making
-    the light bigger would fix the star and lose the pinprick, which was the
-    point. So the footprint is large and the core is small inside it.
-
-    Anything that changes one of these two numbers has to change the other:
-    `sizes[i]` in `setPoints` is the footprint, and this is the fraction of it
-    that is bright.
+    Anything that changes the flame's height has to change `sizes[i]` in
+    `setPoints`, which is the footprint.
   */
-  const core = ctx.createRadialGradient(c, c, 0, c, c, c * 0.3);
-  core.addColorStop(0, f(255, 252, 245, 1));
-  core.addColorStop(0.28, f(255, 238, 203, 0.92));
-  core.addColorStop(0.55, f(255, 198, 124, 0.4));
-  core.addColorStop(1, f(230, 150, 70, 0));
-  ctx.fillStyle = core;
-  ctx.fillRect(0, 0, size, size);
-
-  // The bloom the cell's coarseness earns — a degree is 111km, so a light is a
-  // region and not a pin. Faint and wide, under the core rather than around it.
   const halo = ctx.createRadialGradient(c, c, 0, c, c, c * 0.62);
-  halo.addColorStop(0, f(255, 206, 140, 0.16));
+  halo.addColorStop(0, f(255, 206, 140, 0.18));
   halo.addColorStop(0.5, f(232, 160, 86, 0.06));
   halo.addColorStop(1, f(224, 160, 87, 0));
   ctx.fillStyle = halo;
   ctx.fillRect(0, 0, size, size);
 
+  // The wick: a short dim stem below the flame, so the light has a foot.
+  ctx.fillStyle = f(210, 150, 100, 0.4);
+  const wickW = c * 0.05;
+  ctx.fillRect(c - wickW / 2, c + c * 0.16, wickW, c * 0.2);
+
+  // The flame: a teardrop, tip up, widest below its middle.
+  const tip = c - c * 0.36;
+  const foot = c + c * 0.2;
+  const wide = c * 0.17;
+  const flame = new Path2D();
+  flame.moveTo(c, tip);
+  flame.bezierCurveTo(c + wide * 0.4, c - c * 0.1, c + wide, c + c * 0.02, c + wide * 0.85, c + c * 0.12);
+  flame.bezierCurveTo(c + wide * 0.6, foot, c - wide * 0.6, foot, c - wide * 0.85, c + c * 0.12);
+  flame.bezierCurveTo(c - wide, c + c * 0.02, c - wide * 0.4, c - c * 0.1, c, tip);
+
+  const body = ctx.createRadialGradient(c, c + c * 0.06, 0, c, c + c * 0.04, c * 0.34);
+  body.addColorStop(0, f(255, 246, 214, 1));
+  body.addColorStop(0.35, f(255, 214, 140, 0.95));
+  body.addColorStop(0.75, f(240, 160, 80, 0.55));
+  body.addColorStop(1, f(220, 130, 60, 0));
+  ctx.fillStyle = body;
+  ctx.fill(flame);
+
+  // The heart: a paler, smaller flame inside the first, slightly low.
+  const heart = ctx.createRadialGradient(c, c + c * 0.08, 0, c, c + c * 0.08, c * 0.16);
+  heart.addColorStop(0, f(255, 255, 240, 0.9));
+  heart.addColorStop(1, f(255, 230, 180, 0));
+  ctx.fillStyle = heart;
+  ctx.fill(flame);
+
   /**
-   * A glint: a soft streak out from the centre.
-   *
-   * This is what turns a dot into a light. A disc of any size reads as a
-   * painted mark; the moment it has spikes the eye reads it as something
-   * *emitting*, because that is what a bright point does to a lens and to a
-   * squinted eye. It is the cheapest possible piece of life and it is why these
-   * stopped looking like yellow stickers.
-   *
-   * The gradient is built after the transform on purpose — canvas gradients
-   * live in user space, so creating it inside the scale is what stretches a
-   * circle into a streak. Building it first and scaling after would move the
-   * streak instead of shaping it.
+   * A glint: a soft streak out from the centre. What turns a mark into a
+   * light. Two now, on the axes, fainter than the star had: enough to say
+   * "emitting", not enough to turn the flame back into a spark.
    */
   const glint = (angle: number, reach: number, width: number, a: number) => {
     ctx.save();
@@ -480,13 +494,8 @@ function flameSprite(warmth: number): HTMLCanvasElement {
     ctx.restore();
   };
 
-  // Four spikes, the diagonals shorter and fainter than the axes. Kept well
-  // under the core's brightness: this should read as a twinkle at the size
-  // these are drawn, never as a lens flare on a photograph.
-  glint(0, c * 0.98, c * 0.022, 0.62);
-  glint(Math.PI / 2, c * 0.98, c * 0.022, 0.62);
-  glint(Math.PI / 4, c * 0.46, c * 0.016, 0.26);
-  glint(-Math.PI / 4, c * 0.46, c * 0.016, 0.26);
+  glint(0, c * 0.7, c * 0.02, 0.4);
+  glint(Math.PI / 2, c * 0.5, c * 0.018, 0.3);
 
   return canvas;
 }
@@ -497,9 +506,16 @@ function flameSprite(warmth: number): HTMLCanvasElement {
 
 export default function WorldMap({
   points,
+  you = null,
   className,
 }: {
   points: WorldPoint[];
+  /**
+   * Your own cell, marked client-side: a slightly larger candle with a soft
+   * ring. The server never says which light is whose (`/api/world` is the
+   * same for every caller), so this is the one thing the browser adds.
+   */
+  you?: Cell | null;
   className?: string;
 }) {
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -514,6 +530,7 @@ export default function WorldMap({
    */
   const sceneRef = useRef<{
     setPoints: (points: WorldPoint[]) => void;
+    setYou: (you: Cell | null) => void;
     dispose: () => void;
   } | null>(null);
 
@@ -559,9 +576,19 @@ export default function WorldMap({
     let seeds = new Float32Array(0);
 
     let latest: WorldPoint[] = points;
+    let mine: Cell | null = you;
+    let mineX = 0;
+    let mineY = 0;
+    let mineSize = 0;
 
     const place = () => {
       const next = latest;
+      if (mine) {
+        const p = project(mine.lat, mine.lon);
+        mineX = left + px(frame, p.x);
+        mineY = top + py(frame, p.y);
+        mineSize = Math.max(13, frame.width * 0.0135) * 1.5;
+      }
       count = next.length;
       xs = new Float32Array(count);
       ys = new Float32Array(count);
@@ -755,6 +782,19 @@ export default function WorldMap({
           s,
         );
       }
+      // Your own light: the same candle, half again as big, with a soft
+      // ring that breathes with the rest.
+      if (mine) {
+        const s = mineSize * breath;
+        ctx.globalAlpha = 1;
+        ctx.drawImage(sprites[0]!, mineX - s / 2, mineY - s / 2, s, s);
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.strokeStyle = 'rgba(224, 160, 87, 0.45)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(mineX, mineY, s * 0.42, 0, Math.PI * 2);
+        ctx.stroke();
+      }
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'source-over';
     };
@@ -767,6 +807,10 @@ export default function WorldMap({
     sceneRef.current = {
       setPoints: (next) => {
         latest = next;
+        place();
+      },
+      setYou: (next) => {
+        mine = next;
         place();
       },
       dispose: () => {
@@ -791,6 +835,10 @@ export default function WorldMap({
   useEffect(() => {
     sceneRef.current?.setPoints(points);
   }, [points]);
+
+  useEffect(() => {
+    sceneRef.current?.setYou(you);
+  }, [you]);
 
   return <div ref={hostRef} className={className} aria-hidden />;
 }

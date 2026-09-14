@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { serverNow } from '@/lib/clock';
 import { localTime } from '@/lib/format';
+import { composeLabel } from '@/lib/label';
 import {
   SETTINGS_SCREENS,
   screensFor,
@@ -30,7 +31,7 @@ import SoundScreen from './SoundScreen';
 import TimeScreen from './TimeScreen';
 import WelcomeScreen from './WelcomeScreen';
 import { openingBell, scheduleBell, unlockAudio, type ScheduledBell } from './audio';
-import { ICON, QUIET } from './controls';
+import { ICON, QUIET_DUSK } from './controls';
 import type { MASTER_KEY, TrackSlug } from './mix';
 import { settingsLine } from './settingsLine';
 import type { AuthState } from './useAuth';
@@ -40,8 +41,10 @@ import type { Mix } from './useMix';
 import { useOrigin } from './useOrigin';
 import { usePresence } from './usePresence';
 import { useProfile } from './useProfile';
+import { useReducedMotion } from './useReducedMotion';
 import type { SyncStatus } from './useSyncPreferences';
 import { useUsual } from './useUsual';
+import { useWorld } from './useWorld';
 
 /**
  * The journey: the rail of questions, the bowl, the sitting, and after.
@@ -143,6 +146,7 @@ export default function Journey({
   const { usual, setUsual, answered, markAnswered } = useUsual(prefs);
   const origin = useOrigin();
   const fullscreen = useFullscreen();
+  const reduced = useReducedMotion();
   const signedIn = Boolean(home);
 
   // Decided once, when the journey is mounted. The facts it reads can change
@@ -166,6 +170,23 @@ export default function Journey({
     dir: 1,
   }));
   const [struck, setStruck] = useState(0);
+
+  /**
+   * The bowl's screen is kept mounted under the sitting for the length of
+   * the lift, falling away as the sitting settles in, then let go.
+   */
+  const [lifting, setLifting] = useState(false);
+  useEffect(() => {
+    if (stage.kind !== 'sitting') return;
+    setLifting(true);
+    const t = window.setTimeout(() => setLifting(false), reduced ? 400 : 1400);
+    return () => window.clearTimeout(t);
+  }, [stage.kind, reduced]);
+
+  // The earth, only while sitting with others.
+  const world = useWorld(stage.kind === 'sitting' && stage.sit.withOthers);
+  const labels = world.points.flatMap((p) => p.labels ?? []);
+  const ownLabel = profile.share ? composeLabel(profile.name, profile.origin) : null;
 
   // Read in cleanup and at the bell, where a stale closure would otherwise
   // leave a bell scheduled after the component is gone, or read a count
@@ -339,9 +360,24 @@ export default function Journey({
     />
   ) : undefined;
 
-  if (stage.kind === 'sitting') {
-    return <Sitting sit={stage.sit} mono={mono} onEnd={endEarly} />;
-  }
+  const sitting =
+    stage.kind === 'sitting' ? (
+      <Sitting
+        sit={stage.sit}
+        now={now}
+        mono={mono}
+        count={count}
+        litCount={litCount}
+        points={world.points}
+        you={origin.cell}
+        labels={labels}
+        ownLabel={ownLabel}
+        soundMix={prefs.soundMix}
+        onSound={onSound}
+        onSoundOpen={mix.unmute}
+        onEnd={endEarly}
+      />
+    ) : null;
 
   if (stage.kind === 'finished') {
     return (
@@ -373,7 +409,7 @@ export default function Journey({
               signIn={signIn}
               verify={verify}
               signOut={signOut}
-              className={QUIET}
+              className={QUIET_DUSK}
               drop="up"
             />
           ) : undefined
@@ -386,11 +422,24 @@ export default function Journey({
   const doneLabel = (s: ScreenName) => (s === last ? 'Done' : undefined);
   const onNextFor = (s: ScreenName) => (s === last ? () => home?.() : next);
 
+  const at = stage.kind === 'rail' ? stage.at : 'bowl';
+  const showRail = stage.kind === 'rail' || lifting;
+
   return (
-    <main className="h-dvh overflow-clip bg-paper text-ink">
+    <main
+      className={`relative h-dvh overflow-clip text-ink transition-colors ease-[var(--ease-lift)] ${
+        stage.kind === 'sitting' ? 'bg-dusk' : 'bg-paper'
+      }`}
+      style={{ transitionDuration: 'var(--lift-ms)' }}
+    >
+      {sitting && (
+        <div className="lift-in absolute inset-0">{sitting}</div>
+      )}
+      {showRail && (
+      <div className={`absolute inset-0 ${stage.kind === 'sitting' ? 'lift-out' : ''}`} inert={stage.kind !== 'rail'}>
       <Rail
         screens={screens}
-        at={stage.at}
+        at={at}
         render={(screen, current) => {
           switch (screen) {
             case 'welcome':
@@ -504,6 +553,8 @@ export default function Journey({
           }
         }}
       />
+      </div>
+      )}
     </main>
   );
 }
