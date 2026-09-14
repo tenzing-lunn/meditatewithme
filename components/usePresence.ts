@@ -72,10 +72,20 @@ export interface Presence {
   begin: () => Promise<number | null>;
 }
 
-export function usePresence(): Presence {
+/**
+ * `label` is "Ana from Lisbon" while the person is sitting with others and
+ * has chosen to be seen, and null otherwise. It rides on every beat, so the
+ * server's copy lasts exactly as long as that; a change beats at once, so
+ * a name appears within one poll and disappears the moment the sitting
+ * ends.
+ */
+export function usePresence({ label = null }: { label?: string | null } = {}): Presence {
   const [count, setCount] = useState<number | null>(null);
   const [litCount, setLitCount] = useState<number | null>(null);
   const anonIdRef = useRef<string | null>(null);
+  const labelRef = useRef(label);
+  labelRef.current = label;
+  const beatRef = useRef<(() => Promise<void>) | null>(null);
 
   const begin = useCallback(async () => {
     const anonId = anonIdRef.current;
@@ -85,7 +95,7 @@ export function usePresence(): Presence {
       const res = await fetch('/api/heartbeat', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ anonId, began: true }),
+        body: JSON.stringify({ anonId, began: true, label: labelRef.current }),
         keepalive: true,
       });
       if (!res.ok) return null;
@@ -109,7 +119,7 @@ export function usePresence(): Presence {
         await fetch('/api/heartbeat', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ anonId }),
+          body: JSON.stringify({ anonId, label: labelRef.current }),
           keepalive: true,
         });
       } catch {
@@ -134,6 +144,8 @@ export function usePresence(): Presence {
         // Leave the last known number on screen rather than blanking it.
       }
     };
+
+    beatRef.current = beat;
 
     const start = () => {
       void beat();
@@ -165,10 +177,16 @@ export function usePresence(): Presence {
     return () => {
       stopped = true;
       anonIdRef.current = null;
+      beatRef.current = null;
       stop();
       document.removeEventListener('visibilitychange', onVisibility);
     };
   }, []);
+
+  // A label arriving or leaving is worth a beat of its own.
+  useEffect(() => {
+    void beatRef.current?.();
+  }, [label]);
 
   return { count, litCount, begin };
 }

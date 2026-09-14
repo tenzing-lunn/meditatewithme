@@ -34,7 +34,7 @@ import { openingBell, scheduleBell, unlockAudio, type ScheduledBell } from './au
 import { ICON, QUIET_DUSK } from './controls';
 import type { MASTER_KEY, TrackSlug } from './mix';
 import { settingsLine } from './settingsLine';
-import type { AuthState } from './useAuth';
+import { displayName, type AuthState } from './useAuth';
 import { useClock } from './useClock';
 import { useFullscreen } from './useFullscreen';
 import type { Mix } from './useMix';
@@ -141,8 +141,10 @@ export default function Journey({
   settings = false,
 }: JourneyProps) {
   const { now, mono } = useClock();
-  const { count, litCount, begin: recordBegin } = usePresence();
-  const { profile, setProfile } = useProfile();
+  const { profile, setProfile } = useProfile({
+    userId: auth.status === 'signed-in' ? auth.user.id : null,
+    name: auth.status === 'signed-in' ? displayName(auth.user) : undefined,
+  });
   const { usual, setUsual, answered, markAnswered } = useUsual(prefs);
   const origin = useOrigin();
   const fullscreen = useFullscreen();
@@ -184,9 +186,15 @@ export default function Journey({
   }, [stage.kind, reduced]);
 
   // The earth, only while sitting with others.
-  const world = useWorld(stage.kind === 'sitting' && stage.sit.withOthers);
+  const withOthersNow = stage.kind === 'sitting' && stage.sit.withOthers;
+  const world = useWorld(withOthersNow);
   const labels = world.points.flatMap((p) => p.labels ?? []);
   const ownLabel = profile.share ? composeLabel(profile.name, profile.origin) : null;
+
+  // Seen by name only while sitting with others, and only if they said so.
+  const { count, litCount, begin: recordBegin } = usePresence({
+    label: withOthersNow ? ownLabel : null,
+  });
 
   // Read in cleanup and at the bell, where a stale closure would otherwise
   // leave a bell scheduled after the component is gone, or read a count
