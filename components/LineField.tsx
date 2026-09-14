@@ -18,6 +18,12 @@ type InputRest = Omit<
  * placeholder cannot be animated; the input keeps a real label for anyone
  * who cannot see the line, and the drawing is hidden from them. Clicks go
  * straight through it to the field.
+ *
+ * The prompt is ink-3 at 60%, well lighter than the ink an answer is typed
+ * in, so the two are never mistaken for each other. That is below the 4.5:1
+ * body text needs, on purpose: it is a hint that vanishes on the first key,
+ * the field's name is its label, and `scripts/contrast.mjs` holds it at the
+ * lighter floor it was chosen at so it cannot drift lighter still.
  */
 export default function LineField({
   id,
@@ -57,7 +63,7 @@ export default function LineField({
       {value === '' && (
         <span
           aria-hidden
-          className="line-prompt pointer-events-none absolute inset-x-0 top-0 bottom-[2px] flex items-center pt-1 pb-2 text-[1.5rem] leading-normal text-ink-3 sm:text-[1.75rem]"
+          className="line-prompt pointer-events-none absolute inset-x-0 top-0 bottom-[2px] flex items-center pt-1 pb-2 text-[1.5rem] leading-normal text-ink-3/60 sm:text-[1.75rem]"
         >
           {typed}
           <span className="type-caret ml-0.5 inline-block h-[1.1em] w-0.5 rounded-full bg-ember" />

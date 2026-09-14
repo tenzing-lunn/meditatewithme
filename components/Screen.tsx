@@ -45,6 +45,7 @@ export default function Screen({
   onSkip,
   skipLabel = 'Skip',
   align = 'left',
+  bare = false,
 }: {
   title: ReactNode;
   titleClassName?: string;
@@ -63,6 +64,13 @@ export default function Screen({
   skipLabel?: string;
   /** The bowl centres itself; every question is anchored to the margin. */
   align?: 'left' | 'center';
+  /**
+   * The answer is the whole screen. The question and its line are still the
+   * `h2` the rail focuses and a screen reader is handed, but nobody sees
+   * them: a typed answer is a line with its prompt writing itself on it,
+   * and the prompt already says what goes there.
+   */
+  bare?: boolean;
 }) {
   // Only the arrival is animated. A screen sliding out keeps its content, or
   // it would vanish mid-slide.
@@ -78,15 +86,15 @@ export default function Screen({
 
       <div className={`flex w-full max-w-md flex-1 flex-col justify-center py-10 ${column}`}>
         <div className={settle} style={{ '--i': 0 } as CSSProperties}>
-          <h2 tabIndex={-1} className={`outline-none ${titleClassName}`}>
+          <h2 tabIndex={-1} className={`outline-none ${bare ? 'sr-only' : titleClassName}`}>
             {title}
           </h2>
           {lede && (
-            <p className="mt-3 text-base leading-relaxed text-ink-2">{lede}</p>
+            <p className={bare ? 'sr-only' : 'mt-3 text-base leading-relaxed text-ink-2'}>{lede}</p>
           )}
         </div>
         {children && (
-          <div className={`mt-8 ${settle}`} style={{ '--i': 1 } as CSSProperties}>
+          <div className={`${bare ? '' : 'mt-8'} ${settle}`} style={{ '--i': 1 } as CSSProperties}>
             {children}
           </div>
         )}

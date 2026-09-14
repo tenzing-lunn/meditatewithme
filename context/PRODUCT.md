@@ -111,20 +111,22 @@ small *Next* on the right, and the question itself is what a screen reader is ha
 arrival. Escape is *Back*. The
 questions, in order:
 
-1. *What should we call you?* — optional, a first name, *Skip*. The answer
-   goes on a line rather than in a box, with *Enter your name* typing itself
-   out on it and a caret after it when the screen arrives. Signed in, never
-   asked: the account's name is used.
-2. *Where are you sitting?* — typed, then chosen. The same line, *Enter your
-   town*; the letters search about 33,000 towns of 15,000 people or more and
-   every country (GeoNames, searched in the browser, so nothing typed is sent
-   anywhere), and the matches open under the line — *Lisbon · Portugal* —
-   with the arrows and Enter to take one. A town too small for the list is
-   still an answer: the last choice is always *Keep "…" as you typed it*.
-   While the line is empty, the town and country the server sees from the
-   connection sit under it as one word to tap — *It looks like Lisbon,
-   Portugal* — instead of being put in the field. *Leave it out*. Under it a
-   switch, off by default: *Let others
+1. *What should we call you?* — the screen is a line and nothing else: no
+   visible question, no explanation, only the small foot. *Enter your name*
+   types itself out on the line in a pale brown with a caret after it, and
+   goes on the first key; what you type is in full ink. Optional, *Skip*.
+   Signed in, never asked: the account's name is used. A name already given
+   shows on the line instead of the prompt.
+2. *Where are you sitting?* — the same bare line, *Enter your town*; typed,
+   then chosen. The letters search about 33,000 towns of 15,000 people or
+   more and every country (GeoNames, searched in the browser, so nothing
+   typed is sent anywhere), and the matches open under the line — *Lisbon ·
+   Portugal* — with the arrows and Enter to take one. A town too small for
+   the list is still an answer: the last choice is always *Keep "…" as you
+   typed it*. Clicking the empty line offers the town and country the server
+   sees from the connection as the one choice — *Lisbon, Portugal · near
+   you*. *Leave it out*. Once something is typed, a switch appears under the
+   line, off by default: *Let others
    see Ana from Lisbon while you sit with them*, and one line saying nothing
    is kept on our side until you say yes. Asked once; changeable from the
    account.

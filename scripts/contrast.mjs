@@ -92,6 +92,7 @@ const PAIRS = [
 const COMPOSITES = [
   ['dusk-ink-2', 0.55, 'dusk', 3.0, 'QUIET_DUSK border'],
   ['ink-3', 0.8, 'paper', 3.0, 'LINE, the field on the rail'],
+  ['ink-3', 0.6, 'paper', 2.3, 'the prompt typed on a LINE; a vanishing hint, the label names the field'],
 ];
 
 const channel = (c) => {

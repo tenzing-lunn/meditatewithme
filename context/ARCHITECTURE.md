@@ -1131,9 +1131,10 @@ the town when both would pass `ORIGIN_MAX` — and a place not in the list is
 kept as typed. Escape with the list open closes the list and is not Back:
 the combobox calls `preventDefault`, and Journey's document listener skips a
 prevented Escape — `stopPropagation` cannot do it, because the App Router's
-React listens on the document too. The connection's guess is no longer put in the field: it sits
-under the empty line as a word to tap, so nobody's origin is a guess they did
-not look at. To rebuild the list, download `cities15000.zip` from
+React listens on the document too. The connection's guess is no longer put in the field: focusing the empty
+line opens the list with the guess as its one option, so nobody's origin is a
+guess they did not look at. The share switch renders only once something is
+typed. To rebuild the list, download `cities15000.zip` from
 download.geonames.org and run `node scripts/places.mjs cities15000.txt`; the
 licence is CC BY 4.0 and the credit is on the privacy page and in the file's
 first line.
@@ -1141,7 +1142,12 @@ first line.
 The rail's typed answers are `LineField`: a 2px line (`LINE` in
 `controls.ts`, ink-3 at 80%, gated at 3:1 as a control boundary) with the
 prompt drawn over the empty input by `useTypedOut`, not set as its
-`placeholder`, because a placeholder cannot be animated. It types once per
+`placeholder`, because a placeholder cannot be animated. The prompt is ink-3
+at 60%, 2.4:1 — under AA for text, deliberately, so it cannot be mistaken
+for a typed answer; it is a hint gone on the first key, the input's label
+names the field, and the contrast script holds the floor. Both screens pass
+`bare` to `Screen`: the question and its line become `sr-only`, still the
+`h2` the rail focuses, and the line is all a sighted person sees. It types once per
 arrival, 55ms a character after 420ms, and its caret is hidden by CSS the
 moment the input has focus. The foot under every question is `PRIMARY_SM`,
 `QUIET_SM` and `WORD_SM`: 38px to look at, 44px to hit.

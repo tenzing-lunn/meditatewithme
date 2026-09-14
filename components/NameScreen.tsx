@@ -10,8 +10,9 @@ import Screen from './Screen';
  *
  * Optional. A first name is what other people would see beside your light
  * if you later choose to be seen; nothing here is sent anywhere until then.
- * The answer goes on a line with *Enter your name* typing itself out on it.
- * Enter is Next, because a name is typed and then you move on.
+ * The screen is the line and nothing else: *Enter your name* types itself
+ * out on it, and the question is there only for a screen reader. Enter is
+ * Next, because a name is typed and then you move on.
  */
 export default function NameScreen({
   current,
@@ -39,6 +40,7 @@ export default function NameScreen({
   return (
     <Screen
       current={current}
+      bare
       title="What should we call you?"
       lede="A first name is plenty. It is how you would be known if you sit with others and choose to be seen."
       onBack={onBack}

@@ -338,7 +338,8 @@ family for the candles.
 - **The display face never goes below 1.25rem.** Its rounds are the point and
   they close up small.
 - **One question per screen, and the question is the `h2`.** The rail moves
-  focus to it on arrival, so it is also the announcement.
+  focus to it on arrival, so it is also the announcement. On a typed answer
+  the `h2` is read and not seen; the prompt on the line says it instead.
 - **Copy is a sentence.** *Strike the bowl to begin.* *Your own timer, and
   nobody shown.* Not a label with a colon, not a fragment.
 
@@ -447,7 +448,11 @@ Home.
   ink-3 at 80% under 1.5rem type (1.75rem from `sm`), ink-2 under the pointer,
   ember with the caret in it — and that ember line is the focus indicator.
   The prompt, *Enter your name* or *Enter your town*, types itself out in
-  ink-3 with an ember caret when the screen arrives. The name and the origin.
+  ink-3 at 60% with an ember caret when the screen arrives, clearly lighter
+  than the ink an answer is typed in, and goes on the first key. The name and
+  the origin, and on those two screens **the line is all there is**: no
+  visible question, no line under it, only the foot. The question stays as an
+  `sr-only` `h2` (`Screen`'s `bare`).
 - **A place list under the origin line**: surface on rule with the menu's
   shadow, rows 44px, the town in ink 600 and the country beside it in ink-3;
   the active row ember on ember-soft. The last row is always *Keep "…" as you

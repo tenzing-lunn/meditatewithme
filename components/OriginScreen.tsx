@@ -6,7 +6,6 @@ import { searchPlaces } from '@/lib/places';
 import LineField from './LineField';
 import Screen from './Screen';
 import Switch from './Switch';
-import { WORD } from './controls';
 import { usePlaces } from './usePlaces';
 
 interface Option {
@@ -26,13 +25,16 @@ interface Option {
  * a real place spelled one way. A town too small for the list is still an
  * answer: the last choice is always to keep it as typed.
  *
- * Detected and confirmed, as before, but no longer by putting the guess in
- * the field. While the line is empty the guess sits under it as one word to
- * tap — *It looks like Lisbon, Portugal* — so the line stays a place to
- * type, and nobody's answer is a connection's guess they did not look at.
+ * The screen is the line and nothing else until there is an answer; the
+ * question is there only for a screen reader. Detected and confirmed, as
+ * before, but inside the list: click the empty line and the connection's
+ * guess is the one choice offered — *Lisbon, Portugal, near you* — so the
+ * line stays a place to type and nobody's answer is a guess they did not
+ * look at.
  *
- * Under it all is the one switch that decides whether anyone else ever sees
- * the answer: off by default, and explained in a line.
+ * Once something is typed, the one switch that decides whether anyone else
+ * ever sees it appears under the line: off by default, explained in a line.
+ * Before that there is nothing for it to share.
  */
 export default function OriginScreen({
   current,
@@ -66,7 +68,11 @@ export default function OriginScreen({
 
   const typed = draft.trim();
   const options = useMemo<Option[]>(() => {
-    if (!typed) return [];
+    if (!typed) {
+      return suggestion
+        ? [{ key: 'near', value: suggestion, primary: suggestion, secondary: 'near you' }]
+        : [];
+    }
     const found = index ? searchPlaces(index, typed, 5) : [];
     const list: Option[] = found.map((p) => ({
       key: `place:${p.label}`,
@@ -84,7 +90,7 @@ export default function OriginScreen({
       });
     }
     return list;
-  }, [index, typed]);
+  }, [index, typed, suggestion]);
 
   const listed = open && options.length > 0;
 
@@ -125,6 +131,7 @@ export default function OriginScreen({
   return (
     <Screen
       current={current}
+      bare
       title="Where are you sitting?"
       lede="Type a town or a country, then choose it. Or leave it out."
       onBack={onBack}
@@ -136,7 +143,7 @@ export default function OriginScreen({
       skipLabel="Leave it out"
     >
       <form
-        className="flex flex-col gap-6"
+        className="relative"
         onSubmit={(e) => {
           e.preventDefault();
           commit();
@@ -164,6 +171,7 @@ export default function OriginScreen({
               aria-autocomplete="list"
               aria-activedescendant={listed && active >= 0 ? `${listId}-${active}` : undefined}
               onKeyDown={onKeyDown}
+              onFocus={() => setOpen(true)}
               onBlur={() => {
                 setOpen(false);
                 setActive(-1);
@@ -201,26 +209,24 @@ export default function OriginScreen({
               </ul>
             )}
           </div>
-          {suggestion && !typed && (
-            <p className="mt-2 flex flex-wrap items-center text-[0.9375rem] text-ink-3">
-              It looks like
-              <button type="button" onClick={() => setDraft(suggestion)} className={WORD}>
-                {suggestion}
-              </button>
-            </p>
-          )}
         </div>
-        <Switch
-          checked={shareDraft}
-          onChange={setShareDraft}
-          label={
-            <>
-              Let others see <em className="not-italic text-ink">{label}</em> while
-              you sit with them
-            </>
-          }
-          description="Only while you sit with others, and only while this is on. Nothing is kept on our side until you say yes."
-        />
+        {/* Below the line, out of the flow, so the line stays where the
+            screen put it when the switch arrives. */}
+        {typed && (
+          <div className="absolute inset-x-0 top-full mt-6">
+            <Switch
+              checked={shareDraft}
+              onChange={setShareDraft}
+              label={
+                <>
+                  Let others see <em className="not-italic text-ink">{label}</em> while
+                  you sit with them
+                </>
+              }
+              description="Only while you sit with others, and only while this is on. Nothing is kept on our side until you say yes."
+            />
+          </div>
+        )}
       </form>
     </Screen>
   );
