@@ -1,50 +1,55 @@
 /**
- * Secondary controls, in one place.
+ * The controls, in one place.
  *
  * THE RULE THIS FILE EXISTS TO ENFORCE
  * Type can be quiet. A control cannot. Every control has to be bounded,
  * coloured or underlined — a control whose only affordance is being a word is
- * not a quiet control, it is an invisible one.
+ * not a quiet control, it is an invisible one. That was learned the expensive
+ * way in the first room, where five bare grey words were all the same
+ * mistake made five times because there was nowhere for the answer to live.
  *
- * That was learned the expensive way. `Change` on Home, `Sign in` on the
- * landing, `Sign out`, `Hide your practice` and `Back` were all written
- * independently as bare `text-ink-3` words, each one reasonable on its own and
- * each one sitting directly beneath or beside grey type of almost exactly the
- * same weight. None of them read as pressable. They were all the same mistake,
- * made five times, because there was nowhere for the answer to live.
+ * WHICH ONE TO USE
+ *   `PRIMARY`  the one thing this screen is for: Next, Join a session, Sit
+ *              again. Ember fill, white text, a pill. One per screen.
+ *   `QUIET`    the other thing: Back, Skip, Sound, End. A rule outline that
+ *              warms to ember on hover, so it reads as a sibling of the
+ *              primary rather than a rival to it.
+ *   `CHIP`     one of a set you pick from: a bell, a bed, a length. `CHIP_ON`
+ *              is the picked one, ember on ember-soft.
+ *   `FIELD`    something you type into.
  *
- * WHICH OF THE TWO TO USE
- * There are two, and the background decides:
+ * A fifth style needs a reason that is not "this one felt different".
  *
- *   `QUIET`   here. Flat dark ground — Home, `/world`, and the dark band in
- *             the room where the composition supplies its own contrast.
- *   `LIFTED`  in `Room.tsx`. Over the photograph, where nothing is readable
- *             without a surface of its own and the fill has to be warm enough
- *             to belong to the picture. It carries its own measurement note.
- *
- * If a new control is on the photograph it takes `LIFTED`, and if it is not it
- * takes `QUIET`. A third style needs a reason that is not "this one felt
- * different".
- *
- * WHY `rule` AND NOT `ember`
- * `ember` is the colour of the primary action — `Begin.`, `Sit`, `Send me a
- * link` — and it is worth more while it stays scarce. A `rule` outline is the
- * same value as the dividers on Home, so a secondary control reads as a quiet
- * sibling of the primary one rather than a rival to it. Ember returns on hover,
- * where it means "this one, now" rather than "this one, always".
+ * WHY `ember` IS SCARCE
+ * `ember` is the colour of the primary action and it is worth more while it
+ * stays scarce. It returns on hover, where it means "this one, now" rather
+ * than "this one, always".
  */
+
 /**
- * The focus ring, once. Every keyboard stop in the product draws the same
- * two-pixel ember ring, offset from the control by the page colour so it reads
- * on a photograph and on the flat ground alike. It was typed out by hand in
- * twenty-two places before this line existed; anything that changes it now
- * changes it everywhere, which is the only way a ring stays one ring.
- *
- * The account panel is the exception and stays in `Account.tsx`: its ring is
- * offset by the panel's own dark, not the page's.
+ * The focus ring, once. Every keyboard stop draws the same two-pixel ember
+ * ring, offset from the control by the page colour. Anything that changes it
+ * here changes it everywhere, which is the only way a ring stays one ring.
+ * On the dusk ground the offset is dusk: see `FOCUS_DUSK`.
  */
 export const FOCUS =
   'focus-visible:ring-ember focus-visible:ring-offset-paper focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none';
 
-export const QUIET =
-  `text-ink-2 border-rule hover:border-ember hover:text-ember rounded-action inline-flex min-h-11 items-center gap-2 border px-4 text-xs tracking-wide transition-colors ${FOCUS}`;
+export const FOCUS_DUSK =
+  'focus-visible:ring-flame focus-visible:ring-offset-dusk focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none';
+
+const BUTTON =
+  'inline-flex min-h-12 items-center justify-center gap-2 rounded-action px-7 text-[0.9375rem] font-semibold transition-[background-color,border-color,color,filter,transform] duration-200 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 motion-reduce:transition-none';
+
+export const PRIMARY = `${BUTTON} bg-ember text-white hover:brightness-90 ${FOCUS}`;
+
+export const QUIET = `${BUTTON} border border-rule text-ink-2 hover:border-ember hover:text-ember ${FOCUS}`;
+
+/** The same two on the dusk ground of the sitting. */
+export const QUIET_DUSK = `${BUTTON} border border-dusk-ink-2/55 text-dusk-ink hover:border-flame hover:text-flame ${FOCUS_DUSK}`;
+
+export const CHIP = `inline-flex min-h-11 items-center justify-center rounded-control border border-rule bg-surface px-4 text-[0.9375rem] font-semibold text-ink-2 transition-colors duration-200 hover:border-ember hover:text-ember motion-reduce:transition-none ${FOCUS}`;
+
+export const CHIP_ON = 'border-ember bg-ember-soft text-ember';
+
+export const FIELD = `min-h-12 w-full rounded-control border border-rule bg-surface px-4 text-base text-ink placeholder:text-ink-3 transition-colors duration-200 hover:border-ember focus-visible:border-ember motion-reduce:transition-none ${FOCUS}`;

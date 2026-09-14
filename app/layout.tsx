@@ -1,25 +1,24 @@
 import type { Metadata, Viewport } from 'next';
-import { IBM_Plex_Sans, IBM_Plex_Mono, Instrument_Serif } from 'next/font/google';
+import { Comfortaa, Nunito } from 'next/font/google';
 import './globals.css';
 
-const plexSans = IBM_Plex_Sans({
+/**
+ * Two rounded faces. Comfortaa is the wordmark, the question on each screen
+ * and the minutes at the end: it needs its 700 to hold a line on its own.
+ * Nunito is every sentence and every control; 600 is what a button reads
+ * in. Neither is used below 0.8125rem.
+ */
+const comfortaa = Comfortaa({
   subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  variable: '--font-plex-sans',
+  weight: ['400', '700'],
+  variable: '--font-comfortaa',
   display: 'swap',
 });
 
-const plexMono = IBM_Plex_Mono({
+const nunito = Nunito({
   subsets: ['latin'],
-  weight: ['400', '500'],
-  variable: '--font-plex-mono',
-  display: 'swap',
-});
-
-const instrumentSerif = Instrument_Serif({
-  subsets: ['latin'],
-  weight: '400',
-  variable: '--font-instrument-serif',
+  weight: ['400', '600'],
+  variable: '--font-nunito',
   display: 'swap',
 });
 
@@ -49,19 +48,17 @@ export const metadata: Metadata = {
     locale: 'en_GB',
   },
   twitter: { card: 'summary_large_image', title: 'Meditate With Me', description },
-  // The room is one page that does not scroll and has nothing to crawl, but
-  // it should still be findable.
+  // One screen at a time, nothing to crawl, but it should still be findable.
   robots: { index: true, follow: true },
 };
 
 export const viewport: Viewport = {
-  colorScheme: 'dark',
-  themeColor: '#131518',
+  colorScheme: 'light',
+  themeColor: '#f6e9d8',
   // Without this, `env(safe-area-inset-bottom)` is always zero on iOS and the
-  // controls at the foot of the sitting sit inside the home-indicator zone.
-  // The room is a full-bleed photograph that does not scroll, so drawing
-  // under the insets is what it wants anyway; the padding at the foot of the
-  // frame is the only thing that has to know they exist.
+  // controls at the foot of a screen sit inside the home-indicator zone. The
+  // frame does not scroll and draws under the insets; only the padding at the
+  // foot has to know they exist.
   viewportFit: 'cover',
 };
 
@@ -71,11 +68,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html
-      lang="en"
-      className={`${plexSans.variable} ${plexMono.variable} ${instrumentSerif.variable}`}
-    >
-      <body className="font-sans antialiased">{children}</body>
+    <html lang="en" className={`${comfortaa.variable} ${nunito.variable}`}>
+      <body className="font-body antialiased">{children}</body>
     </html>
   );
 }
