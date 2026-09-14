@@ -6,7 +6,7 @@ to get it here, and what is still undecided. `VISION.md` is the idea;
 changes what a visitor sees, fix this file in the same commit.**
 
 Last verified 14 September 2026 on `ui-warm`, the branch carrying the UI
-rebuild (`plans/ui-rebuild.md`). `main` still serves the photographic room
+rebuild (`docs/ui-rebuild.md`). `main` still serves the photographic room
 from the release merge `cc712c6` of 7 September; §2 describes the rebuild,
 and §3's history says what it replaced.
 
@@ -80,7 +80,7 @@ release, `7026657`.
 
 ## 2. What a visitor gets
 
-**Rebuilt on 14 September 2026** (`plans/ui-rebuild.md`, on `ui-warm`). The
+**Rebuilt on 14 September 2026** (`docs/ui-rebuild.md`, on `ui-warm`). The
 photographic room, the landing word, the settings panel and the ring are gone;
 what follows is the site as it is now. The functionality underneath — the
 shared hour, the bell at :55, the three bells, the five beds, the practice
@@ -88,8 +88,8 @@ log, accounts, the earth — is the same, and the history of each is in §3 and
 in `ARCHITECTURE.md`.
 
 **Welcome.** A warm, light screen: *Meditate with me* in a rounded face, one
-sentence — *Sit for a while, on your own or with whoever else is here.* — and
-*Join a session*. When two or more people are sitting it says so above the
+sentence — *A session begins at the top of every hour, and everyone in it
+sits together. Join this one, or sit on your own.* — and *Join a session*. When two or more people are sitting it says so above the
 button. Nothing is in the background. The three-line menu at the top right
 opens `Create account` and `Sign in`. A returning guest also sees a card,
 *Your usual: 10 minutes · singing bowl · in silence*, with a switch, *Skip the
@@ -225,7 +225,7 @@ imagery (§5), it is one file to replace.
 | `5b6b239` | Always dark | `ARCHITECTURE.md` §1 |
 | `626ef93` | Launched | §1 above |
 | `8d59fba` | Flame field deleted; the ring's dots are the room | `ARCHITECTURE.md` §16 |
-| `ui-warm`, 14 Sept 2026 | The photographic room, the landing word, the settings panel and the ring replaced by the warm rail: one question per screen, a bowl to strike, the earth with names | `plans/ui-rebuild.md`, `DESIGN.md` |
+| `ui-warm`, 14 Sept 2026 | The photographic room, the landing word, the settings panel and the ring replaced by the warm rail: one question per screen, a bowl to strike, the earth with names | `docs/ui-rebuild.md`, `DESIGN.md` |
 | same | Every sitting starts from the bowl; the signed-in auto-start is gone | `ARCHITECTURE.md` §16 |
 | same | A name and an origin, opt-in, shown on the earth for the length of a with-others sitting | `ARCHITECTURE.md` §16, `plans/privacy-data-inventory.md` |
 

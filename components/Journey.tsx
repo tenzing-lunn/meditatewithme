@@ -158,16 +158,19 @@ export default function Journey({
   // while the rail is walked (the bowl marks the device as answered), and a
   // rail that re-arranged itself underfoot would be worse than one that
   // asked a question it could have skipped.
-  const [screens] = useState<readonly ScreenName[]>(() =>
-    settings
-      ? SETTINGS_SCREENS
-      : screensFor({
-          signedIn,
-          usual,
-          hasAnswers: answered,
-          originAsked: profile.share !== null,
-        }),
+  const decide = useCallback(
+    (): readonly ScreenName[] =>
+      settings
+        ? SETTINGS_SCREENS
+        : screensFor({
+            signedIn,
+            usual,
+            hasAnswers: answered,
+            originAsked: profile.share !== null,
+          }),
+    [settings, signedIn, usual, answered, profile.share],
   );
+  const [screens, setScreens] = useState<readonly ScreenName[]>(decide);
 
   const [stage, setStage] = useState<Stage>(() => {
     const first = afterMode ? step(screens, 'mode', 1) : null;
@@ -233,6 +236,17 @@ export default function Journey({
     if (step(screens, s.at, -1) === null) home?.();
     else go(-1);
   }, [screens, go, home]);
+
+  /**
+   * A guest coming back to the welcome after a sitting is starting a new
+   * journey, so the list is decided again: the strike marked this device as
+   * answered, and the name and origin are not asked twice.
+   */
+  const restart = useCallback(() => {
+    const next = decide();
+    setScreens(next);
+    setStage({ kind: 'rail', at: next[0]!, dir: -1 });
+  }, [decide]);
 
   /**
    * The first gesture of the journey. Autoplay policy only lets an
@@ -319,8 +333,8 @@ export default function Journey({
     }
     fullscreen.exit();
     if (home) home();
-    else setStage({ kind: 'rail', at: screens[0]!, dir: -1 });
-  }, [mix, record, fullscreen, home, screens]);
+    else restart();
+  }, [mix, record, fullscreen, home, restart]);
 
   // The bell rings itself, on the audio clock. This only moves the UI on.
   useEffect(() => {
@@ -413,7 +427,7 @@ export default function Journey({
         }
         onFinish={() => {
           fullscreen.exit();
-          setStage({ kind: 'rail', at: screens[0]!, dir: -1 });
+          restart();
         }}
         offer={
           !signedIn ? (

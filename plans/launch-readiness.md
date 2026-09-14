@@ -193,7 +193,7 @@ invoice you weren't expecting" promise forbids.
   privacy-safely. One conversation, after the status update above.
 - [x] ~~Whether the photograph in `public/room-base.png` is the candle that
   ships~~ — moot since 14 September 2026: the photographic room was replaced
-  by the warm rail (`plans/ui-rebuild.md`) and the photograph is deleted.
+  by the warm rail (`docs/ui-rebuild.md`) and the photograph is deleted.
   Jonny's licensed imagery, if it comes, is a different question now: what,
   if anything, sits behind the sitting besides the earth. `context/PRODUCT.md` §5.
 
@@ -315,6 +315,9 @@ invoice you weren't expecting" promise forbids.
   Vercel preview; ask before merging `dev` into `main`.
 
 ## Completed plans
+
+- `docs/ui-rebuild.md` — the warm rail, 14 September 2026, on `dev` and not
+  yet released.
 
 - `docs/presence-spec.md` — B, C, D delivered on `dev`; A delivered then
   deleted (`8d59fba`).

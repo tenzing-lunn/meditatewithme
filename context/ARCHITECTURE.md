@@ -929,7 +929,7 @@ writes to production metadata and that is a decision, not a side effect.
 **Rewritten 14 September 2026.** Until then this section was the photographic
 room: a picture of a candle with one word on it, a ring for the sitting, a
 camera that racked between phases, and a page of measurements for setting
-type over lit wax. That room is deleted (`plans/ui-rebuild.md`; the last
+type over lit wax. That room is deleted (`docs/ui-rebuild.md`; the last
 commit that carried it is `86454e6` on `dev`). What stands from it is the
 premise — a candle is lit at the top of every hour, nothing is gated, you sit
 whenever you like — and the reasoning below is kept where it still applies.

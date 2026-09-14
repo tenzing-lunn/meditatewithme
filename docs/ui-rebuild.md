@@ -1,5 +1,20 @@
 # Meditate with me — the warm rail (UI rebuild)
 
+**Finished 14 September 2026 on `ui-warm`, merged to `dev` the same day.**
+Phases 0 to 7 landed as `4c29025`, `a0d9a0f`, `e15510c`, `1ad1c9c`,
+`cca03e6`, `791f680`, `6cba53b` and the merge. What Phase 7 found on the
+preview: the deployment's SSO protection lets a share link's bypass lapse
+after a few minutes, so `/api/count`, `/api/world` and the map chunk start
+returning 401 mid-sitting; the site degrades as designed (no line rather than
+a wrong one) but a long sitting cannot be watched end to end there until the
+custom domain, which is exempt, carries the rebuild. The company line, the
+ending's rows and both practice-log entries were seen on the preview
+regardless. Keyboard-only walking could not be proved on the preview because
+Vercel's feedback toolbar takes the key events in the pane; it was proved on
+localhost (menu arrows, Escape, Enter in the fields). iPhone Safari was not
+run: the Mac has no full Xcode, so the simulator is unavailable.
+
+
 ## Context
 
 The 13 September audit (`plans/audit-2026-09-13.md`) scored the dark photographic room and fixed its three P1s. Tenzing's decision on 14 September is to step away from that room entirely and rebuild the UI around the same functionality with a different setup:
