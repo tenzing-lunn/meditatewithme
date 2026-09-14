@@ -179,8 +179,9 @@ invoice you weren't expecting" promise forbids.
   counted against the 55-hour cap.
 - [ ] **The presence work** (B/C/D live, A built and deleted). The change order
   in `plans/presence-change-order.md` was never sent; Tenzing chose to show the
-  work first. Decide whether it is quoted as a one-off or absorbed into the
-  cap, then say so in the same update. Until then it is inside the cap.
+  work first. **Decided 13 September 2026: quoted as a £300 one-off**, to be
+  said at the meeting that day (`plans/meeting-with-jonny.md` §4). Until Jonny
+  answers it is inside the cap.
 - [ ] Confirm `TIMELOG.md` before sending — "where are we against the 55?" is
   the first reply this update will get, and there is no confirmed number yet.
 
@@ -254,6 +255,38 @@ invoice you weren't expecting" promise forbids.
 - [x] ~~After the SMTP sender is in, add `{{ .Token }}` to the Magic Link
   template (4b).~~ Done 7 September 2026, proved with a real code in a real
   inbox. The code box on the last step is no longer decorative.
+- [ ] **Attach `meditatewithme.online` first.** 13 September 2026: it is in
+  Jonny's IONOS account (with `.info` and `.store`), DNS at IONOS, parked, so
+  it needs nobody's yes. Tenzing chose it; added to the Vercel project the
+  same day the way `.com` is (`www` primary, apex 308 → `www`). Records at
+  IONOS: apex A `216.198.79.1` in place of IONOS's `217.160.0.138`, **delete
+  the apex AAAA** `2001:8d8:100f:f000::200` (the parking page over IPv6),
+  `www` CNAME `4ab769caa170d937.vercel-dns-017.com`. The root SPF
+  (`include:_spf-eu.ionos.com`) can stay — Resend's sit on `send.`. Then the
+  same Resend / Supabase steps below, with `.online` in place of `.com`.
+  **Done the same afternoon:** Tenzing made those edits (IONOS disabled its
+  *Default Site*, taking the parking A/AAAA and a `_dep_ws_mutex` TXT with
+  it); Vercel read both as configured but issued no certificate in 15
+  minutes, so `vercel certs issue www.meditatewithme.online
+  meditatewithme.online` was run by hand — Let's Encrypt, expires 12 December
+  2026; check it renews. `https://www.meditatewithme.online` serves the site,
+  apex 308s to it. Resend domain added (Ireland, manual setup, receiving off,
+  no tracking subdomain), and its three records are in and resolving: TXT
+  `resend._domainkey`, MX `send` → `feedback-smtp.eu-west-1.amazonses.com`,
+  TXT `send` `v=spf1 include:amazonses.com ~all`. Resend then read the
+  domain as **Verified**, and Tenzing changed in the Supabase dashboard (the
+  Supabase MCP has no auth-config tool): Site URL →
+  `https://www.meditatewithme.online`, `https://www.meditatewithme.online/**`
+  added to the redirect allow-list, SMTP sender email →
+  `signin@meditatewithme.online`. First second-device test, 18:09 UTC: the
+  request came from the new origin and the mail arrived — **with no code**.
+  The address was new, so Supabase logged `user_confirmation_requested` and
+  sent the **Confirm signup** template, which never got `{{ .Token }}`; only
+  Magic Link did on 7 September. Every first-time visitor was getting a
+  link-only email. Fix is the dashboard (the MCP can't edit templates):
+  Confirm signup gets Magic Link's subject and body. The app needs nothing —
+  `verifyOtp` uses `type: 'email'`, which takes either. Still to do: that
+  template, then the test again, to a sign-in recorded in `auth.users`.
 - [ ] **Attach `meditatewithme.com`.** Looked up 7 September 2026: created
   25 February 2013 at GoDaddy (expires February 2027, auto-renew unknown),
   nameservers `bruce`/`kim.ns.cloudflare.com`, so **the records go in a
@@ -290,3 +323,6 @@ invoice you weren't expecting" promise forbids.
 - `plans/presence-change-order.md` — unsent. Moved back out of `docs/` on
   1 September because it is a decision still to be made, not a record.
 - `plans/room-polish.md` — §4 only.
+- `plans/audit-2026-09-13.md` — the whole-site audit of 13 September: a
+  Web Interface Guidelines punch list (Part A) and the Impeccable
+  audit + critique re-run (Part B). Nothing in it is fixed yet.

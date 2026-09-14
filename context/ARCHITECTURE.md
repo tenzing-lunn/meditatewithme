@@ -1473,6 +1473,18 @@ first. A fraction of the slack rather than a fixed percentage: when the copy was
 tall enough to need scaling there is no slack, so there is nothing to lift and
 nothing can be pushed off the top.
 
+**The fit has one exception, for enlarged text (13 September 2026).** Every
+size in the band is in rem, so a visitor who has set a larger text size gets
+taller copy in the same strip, and the scale cancelled their enlargement and
+kept going: measured at 150% root font on a 375×812 phone, `Change` was 35px
+and the type about 80% of default. Now, on the landing only, when the root
+font is above 16px and the copy no longer fits the strip at that size,
+`useFitToBand` reports `zoomed` and the band takes the frame with the `open`
+camera, the same thing a question does. Verified: 150% gives scale 1 and
+`Change` at 66px; 200% gives scale 0.96. Page zoom scales CSS px and leaves
+the root font at 16px, so it never triggers this. The *Not floored* argument
+still holds for viewport size; the 0.91 scale at 1024×768 is untouched.
+
 **A question being asked is the one time the copy may leave the band.** `open`
 racks the camera to blur 4.8, dims it, and — this is the part a vignette cannot
 do — stops the whole frame down flat, middle included. A vignette is

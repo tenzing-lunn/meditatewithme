@@ -42,7 +42,9 @@ Known open at the moment of launch, and still open:
   not reaching ordinary visitors. Before Resend, the shared Supabase sender
   had already cost a real sign-up: of the four accounts on the project, one,
   created 4 September at 13:50, never confirmed and never signed in.
-- The email now carries the six-digit code. With the default sender gone the
+- The email now carries the six-digit code — **for a returning address only,
+  until the Confirm signup template gets it too** (found 13 September 2026: a
+  new address is sent that template, which was never edited). With the default sender gone the
   template could be edited, and it was, the same evening, through the
   Management API: subject *Your code for Meditate With Me*, the code in large
   type, the link underneath as the alternative. Proved end to end: a real
@@ -50,7 +52,13 @@ Known open at the moment of launch, and still open:
   `{{ .Token }}` was, in Tenzing's inbox. The auth server's code length had
   been moved from eight digits to six earlier that day.
 - The custom domain is unattached; Supabase Site URL points at the Vercel
-  address. **This is now the one thing between visitors and a working
+  address. **13 September 2026: going with `meditatewithme.online`** — in
+  Jonny's own IONOS account. The same day it was pointed and certified
+  (`https://www.meditatewithme.online` serves the site), verified in Resend,
+  and made the Supabase Site URL and the SMTP sender
+  (`signin@meditatewithme.online`); a second-device sign-in test is what's
+  left (`plans/launch-readiness.md`, the domain rows).
+  What follows about `.com` still stands for whenever that is sorted. **This is now the one thing between visitors and a working
   sign-in email.** The domain is **`meditatewithme.com`** — looked up 7
   September 2026: registered February 2013 at GoDaddy, DNS served by
   Cloudflare, and at present it **302-redirects to
@@ -186,7 +194,10 @@ candle, correctly, and still do.
 **The ending, thirty seconds long.** Ten seconds of *Come back.* with the
 bowl still ringing and the mix receding; then the minutes sat at display size
 and a table of facts (streak and total, shown only when they say something;
-how many you sat with, read once at the bell); then the controls, and, alone
+how many candles were lit alongside yours this hour, read once at the bell —
+*Candles this hour · Yours and 3 others* since 13 September 2026; it said *In
+the room · 3 others* before, which called people present whom the ring had
+already dimmed); then the controls, and, alone
 at the foot of the frame, the account offer. Signed in, the controls are *Sit
 again* and *Done* and nothing else — the practice log and the room switch are
 on Home. A guest has no Home, so their ending keeps *Your practice* as well:
@@ -262,6 +273,11 @@ the page lurching; `ARCHITECTURE.md` §16 has the mechanism.
 **Always dark, never scrolls, always works.** One palette regardless of system
 setting. One viewport; all type in the band above the flame. Supabase down
 still leaves a candle, a timer and a mix — nothing shows an error screen.
+Since 13 September 2026 a visitor who has set a larger text size, and whose
+landing copy no longer fits the band at that size, sees the landing the way
+everyone sees the settings: the band takes the frame and the picture is
+stopped down. Until then their enlargement was cancelled by the fit and the
+type came out smaller than default.
 
 **Before a visitor arrives.** A shared link now unfurls into a card — the
 flame, the name in Instrument Serif, and *A candle is lit at the top of every
@@ -301,9 +317,10 @@ the £300 deposit and, separately, $500 — see `TIMELOG.md` › *Money*.
 
 1. **The practice log** (~4h) is in v1 and counted against the cap.
 2. **The presence work** exists. The change order in
-   `plans/presence-change-order.md` — £300 as a one-off for ~12h — was never
-   sent; Tenzing chose to show the work first. Until it is raised and Jonny
-   answers, presence hours sit inside the 55-hour cap.
+   `plans/presence-change-order.md` was never sent; Tenzing chose to show the
+   work first. **Decided 13 September 2026: it is quoted as a £300 one-off**,
+   raised at the meeting that day (`plans/meeting-with-jonny.md` §4). Until
+   Jonny answers, presence hours sit inside the 55-hour cap.
 
 Both go in one status update, with a preview link, before any number is asked
 for. The rules for how are in `plans/presence-change-order.md` and the project
@@ -325,6 +342,15 @@ joining the shared hour should become the *primary* path, is
 bring to it is the five-question comprehension test in that section, run on
 the current build.
 
+**Jonny's direction, 13 September 2026 (meeting):** split them into two
+options. (a) The timer and people on the map — sit any length; session time,
+and a name and location if the person chooses, are shown to others on the
+map; otherwise only presence, *You are meditating with X people live*. (b) The
+live video — join at :55, wait for the hour, told someone is about to join. So
+(3) becomes an option in its own right and (1) becomes the live video. A
+direction, not a spec: nothing is scoped or priced, and the open questions
+are in `plans/meeting-with-jonny.md` §5.
+
 **Measurement.** v1 exists to learn whether people gather and whether they
 return, and nothing records either — `heartbeats` is discarded on purpose.
 Retaining anything is an architecture change and cannot be designed
@@ -335,7 +361,12 @@ made, and is now the master the served `.avif` and `.jpg` are built from. The pr
 licensed in his name. Whether this photograph ships as the candle, or is the
 stand-in until his loop arrives, has not been asked. The burn — flame scale and
 glow across the hour — is linear and `ARCHITECTURE.md` notes it may want a
-curve.
+curve. **Tenzing's view, 13 September 2026:** the candle is the main thing on
+the screen and its visual can be improved — a better still photograph, not a
+filmed loop. That is the one direction a "UI overhaul" has been given;
+nothing about it is scoped, and it does not change
+the composition rules in `DESIGN.md`, which were written to survive the
+picture being replaced.
 
 **The sounds.** All five beds and three bells are synthesised in
 `components/audio.ts` / `lib/noise.ts`. They are the stand-in for licensed
@@ -399,6 +430,12 @@ untouched by it. Streaming still costs real money annually, and broadcasting
 identifiable people to an anonymous audience is still a safeguarding question
 that needs a solicitor before it needs a developer — more so, not less, if the
 volunteers live at the address they broadcast from.
+
+**Made concrete on 13 September 2026**, in a doc of his: six meditators in a
+house in Chiang Mai, 24 hours a day for thirty days from 9 November 2026, each
+sitting 55 minutes with five to hand over, live video with no audio, then
+volunteer candlelighters. Still not scoped, costed or agreed. His words,
+unreviewed, are in `context/JONNY-IDEAS.md`.
 
 What was built for it is only the gap: the last five minutes of every hour are
 now clear of the shared bell (`ARCHITECTURE.md` §6.3). That is the cheap half

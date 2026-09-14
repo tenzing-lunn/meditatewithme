@@ -18,6 +18,11 @@ Before the first edit of a session, read in this order — it is short:
 3. The `context/ARCHITECTURE.md` section for whatever subsystem you are about
    to touch (§4 sessions, §5 count, §6 time, §7 audio, §8 identity, §16 the
    room).
+4. `DESIGN.md` at the root, before touching anything a visitor sees. It is
+   the visual system as built, extracted from the code on 13 September 2026
+   by Impeccable's `document` command: tokens in the frontmatter, the rules
+   in prose. If a change makes it wrong, fix it in the same commit, the same
+   as `context/`.
 
 The SessionStart hook already puts the last fifteen commits and the working
 tree in front of you. Everything else is in the folders below.
@@ -28,7 +33,7 @@ Anything written that isn't code lives in one of three places:
 
 | Folder | Holds | Rule |
 |---|---|---|
-| `context/` | Standing knowledge about the project as a whole — `VISION.md` (the idea, and v1's place in it), `PRODUCT.md` (the product as built, decisions, what's undecided, what the client knows), `ARCHITECTURE.md` (how it runs and why) | **Read this before working.** Living reference: keep it true. If a change makes something here wrong, fix it in the same commit — a commit that changes what a visitor sees updates `PRODUCT.md`. |
+| `context/` | Standing knowledge about the project as a whole — `VISION.md` (the idea, and v1's place in it), `PRODUCT.md` (the product as built, decisions, what's undecided, what the client knows), `ARCHITECTURE.md` (how it runs and why), `JONNY-IDEAS.md` (Jonny's own ideas as he wrote them, unreviewed — never read as agreed) | **Read this before working.** Living reference: keep it true. If a change makes something here wrong, fix it in the same commit — a commit that changes what a visitor sees updates `PRODUCT.md`. |
 | `plans/` | Active plans — specs, proposals, build orders, anything we're still working from | Working documents. Edit them freely as the work moves. |
 | `docs/` | Everything finished — completed plans, delivered client documents, anything we keep but no longer act on | Archive. Don't rewrite history here; if a doc needs changing, it's probably active again. |
 

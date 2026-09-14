@@ -135,6 +135,21 @@ type Activity =
  * has, between clipping the copy and putting it on the candle — and small is
  * recoverable where either of those is not.
  *
+ * ONE EXCEPTION, FOR TEXT SOMEBODY HAS ENLARGED (13 September 2026)
+ * The argument above is about viewport size. It was never about a visitor
+ * who has set a larger text size, and for them it did the opposite of what
+ * they asked: everything here is sized in rem, so their copy grew, the band
+ * did not, and the scale cancelled the enlargement and kept going. Measured
+ * at 150% root font on a 375×812 phone, `Change` settled at 35px tall and
+ * the type at about 80% of default. So when the root font is above 16px and
+ * the landing's copy no longer fits the strip at that size, the band takes
+ * the whole frame and the camera stops the picture down — the same thing it
+ * already does while a question is open, reused rather than invented, and
+ * seen only by visitors who enlarged their text. `mayTakeFrame` limits it to
+ * the landing: the sitting and the ending have their own cameras and are not
+ * given this one. Page zoom (pinch, Ctrl +) scales CSS px and leaves the
+ * root font at 16px, so it never triggers this and never needed to.
+ *
  * Callback refs rather than `useRef`, because the band is not in the first
  * render: `Room` returns the scene alone until the clock answers, so a `useRef`
  * read inside a `[]` effect finds null, gives up, and is never asked again.
@@ -148,10 +163,10 @@ type Activity =
  * DOM is written and before the paint, so the first frame anybody sees is
  * already the right size. There is nothing to transition and nothing to catch.
  */
-function useFitToBand(screen: string, open: boolean) {
+function useFitToBand(screen: string, open: boolean, mayTakeFrame: boolean) {
   const [outer, setOuter] = useState<HTMLDivElement | null>(null);
   const [inner, setInner] = useState<HTMLDivElement | null>(null);
-  const [fit, setFit] = useState({ scale: 1, slack: 0 });
+  const [fit, setFit] = useState({ scale: 1, slack: 0, zoomed: false });
 
   useLayoutEffect(() => {
     if (!outer || !inner) return;
@@ -184,9 +199,16 @@ function useFitToBand(screen: string, open: boolean) {
       // computed once per screen, the observer's forty callbacks all compute
       // the same numbers and are dropped by the equality check below, and the
       // transform transitions exactly once.
-      const available = open ? frame.clientHeight : restingBandHeight(frame);
+      const resting = restingBandHeight(frame);
       const needed = inner.offsetHeight;
-      if (!available || !needed) return;
+      if (!resting || !needed) return;
+      // Above 1 only when the visitor has set a larger text size; page zoom
+      // leaves this at exactly 1. See ONE EXCEPTION above.
+      const zoom =
+        Number.parseFloat(getComputedStyle(document.documentElement).fontSize) / 16;
+      const zoomed = !open && mayTakeFrame && zoom > 1.001 && needed > resting;
+      const available = open || zoomed ? frame.clientHeight : resting;
+      if (!available) return;
       const scale = Math.min(1, available / needed);
       // How much room is left over once it fits. Zero whenever the copy had to
       // be scaled down, positive only when it was already short enough — which
@@ -196,9 +218,11 @@ function useFitToBand(screen: string, open: boolean) {
       // Only when it actually moves. Writing the same numbers back on every
       // observer callback re-renders the whole room for nothing.
       setFit((was) =>
-        Math.abs(scale - was.scale) < 0.001 && Math.abs(slack - was.slack) < 1
+        Math.abs(scale - was.scale) < 0.001 &&
+        Math.abs(slack - was.slack) < 1 &&
+        zoomed === was.zoomed
           ? was
-          : { scale, slack },
+          : { scale, slack, zoomed },
       );
     };
 
@@ -217,7 +241,7 @@ function useFitToBand(screen: string, open: boolean) {
     //
     // `open` joins it because it changes which of the two targets is the right
     // one, and it changes on the same click that changes `screen`.
-  }, [outer, inner, screen, open]);
+  }, [outer, inner, screen, open, mayTakeFrame]);
 
   return { outer: setOuter, inner: setInner, ...fit };
 }
@@ -528,7 +552,13 @@ export default function Room({
     // block at stage 1, and those are different heights.
     `${activity.kind}:${changing}:${soundOpen}:${practiceOpen}:${prefs.showCount}:${reveal}`,
     bandOpen,
+    // The landing only may take the frame for enlarged text — see the hook.
+    booted && activity.kind === 'idle',
   );
+  // The band is the whole frame either because a question is open or because
+  // the visitor's enlarged text no longer fits the strip. `phase` reads this,
+  // not `bandOpen`, so the camera and the band's height cannot disagree.
+  const frameTaken = bandOpen || band.zoomed;
   /**
    * PRESENCE DID NOT LIFT WITH THE REST, AND MUST NOT.
    *
@@ -908,12 +938,13 @@ export default function Room({
    */
   const phase: ScenePhase = !booted
     ? 'load'
-    : // `bandOpen` is the same condition, declared above because the fit hook
-      // needs it too. The account panel is deliberately absent from it: it is a
-      // dropdown with its own surface, not a question taking the frame, and
-      // racking the whole photograph behind a 320px panel was most of what
-      // made opening it feel like the page lurching.
-      bandOpen
+    : // `frameTaken` is `bandOpen` plus the enlarged-text case, declared above
+      // because the fit hook needs the first and produces the second. The
+      // account panel is deliberately absent from it: it is a dropdown with
+      // its own surface, not a question taking the frame, and racking the
+      // whole photograph behind a 320px panel was most of what made opening
+      // it feel like the page lurching.
+      frameTaken
       ? 'open'
       : activity.kind === 'sitting'
         ? 'sitting'
@@ -1095,7 +1126,13 @@ export default function Room({
             !practiceOpen &&
             !home && (
               <div
-                className="flex flex-col items-center transition-opacity"
+                // `w-full`, because a flex item in a centred column is sized to
+                // its content, and this column's widest content was the
+                // settings line at 30ch. `Settings` below asks for `w-full
+                // max-w-md` and got 30ch: measured 239px on a 375px phone, 68px
+                // dead each side, the twelve-stop slider at 20px a stop. The
+                // width belongs to the band; the line keeps its own `max-w`.
+                className="flex w-full flex-col items-center transition-opacity"
                 style={{
                   opacity: booted ? 1 : 0,
                   transitionDuration: `${REVEAL_MS}ms`,
@@ -2062,15 +2099,23 @@ function Afterwards({
    * same sitting counted again. `withOthers` null means the count was
    * unavailable, and the row is absent rather than guessed at - a meditation
    * site does not invent company.
+   *
+   * Candles, not people. The number is everyone who lit this hour minus you
+   * (see where it is set), which includes people who sat ten minutes and
+   * left. It read `In the room · 3 others` until 13 September 2026, which
+   * called them present when the ring had already dimmed them and the
+   * sitting's own caption called them candles. Never inventing company also
+   * means never overstating it, and least of all in the table a guest reads
+   * directly above the account offer.
    */
   const rows: [string, string][] = [];
   if (streak > 1) rows.push(['Days in a row', String(streak)]);
   if (withOthers !== null)
     rows.push([
-      'In the room',
+      'Candles this hour',
       withOthers === 0
-        ? 'Just you'
-        : `${withOthers} ${withOthers === 1 ? 'other' : 'others'}`,
+        ? 'Just yours'
+        : `Yours and ${withOthers} ${withOthers === 1 ? 'other' : 'others'}`,
     ]);
   if (total.sittings > 1)
     rows.push(['Altogether', `${total.sittings} sittings`]);
