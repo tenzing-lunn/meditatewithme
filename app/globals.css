@@ -211,6 +211,27 @@ body {
 }
 
 /*
+ * The dot beside the count on the welcome, which is the only thing on the
+ * paper that moves on its own. It breathes over four seconds and never goes
+ * out: a candle already lit, not a notification asking to be dealt with.
+ */
+@keyframes live-breath {
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.live-dot {
+  animation: live-breath 4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-dot {
+    animation: none;
+  }
+}
+
+/*
  * The bowl, struck. The body gives and recovers; three rings leave the rim
  * and fade. Under reduced motion the body pulses once and nothing travels.
  */

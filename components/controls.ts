@@ -38,10 +38,24 @@ export const FOCUS =
 export const FOCUS_DUSK =
   'focus-visible:ring-flame focus-visible:ring-offset-dusk focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none';
 
-const BUTTON =
-  'inline-flex min-h-12 items-center justify-center gap-2 rounded-action px-7 text-[0.9375rem] font-semibold transition-[background-color,border-color,color,filter,transform] duration-200 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 motion-reduce:transition-none';
+const BUTTON_SHAPE =
+  'inline-flex items-center justify-center gap-2 rounded-action font-semibold transition-[background-color,border-color,color,filter,transform] duration-200 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 motion-reduce:transition-none';
+
+const BUTTON = `${BUTTON_SHAPE} min-h-12 px-7 text-[0.9375rem]`;
 
 export const PRIMARY = `${BUTTON} bg-ember text-white hover:brightness-90 ${FOCUS}`;
+
+/**
+ * The invitation, once, on the welcome.
+ *
+ * Not a fifth style: the same ember pill as `PRIMARY`, at the size a title
+ * screen asks for. A question's Next answers something above it and belongs
+ * to that column; *Join a session* is the end of the sentence that invites
+ * you, set at the scale of the sentence. Nothing else on the site uses it,
+ * and nothing else should — two sizes of the one action colour is the most
+ * a product this quiet can carry.
+ */
+export const PRIMARY_LG = `${BUTTON_SHAPE} min-h-14 px-8 text-[1.0625rem] bg-ember text-white hover:brightness-90 ${FOCUS}`;
 
 export const QUIET = `${BUTTON} border border-rule text-ink-2 hover:border-ember hover:text-ember ${FOCUS}`;
 

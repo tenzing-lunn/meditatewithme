@@ -87,18 +87,28 @@ shared hour, the bell at :55, the three bells, the five beds, the practice
 log, accounts, the earth — is the same, and the history of each is in §3 and
 in `ARCHITECTURE.md`.
 
-**Welcome.** A warm, light screen: *Meditate with me* in a rounded face, one
-sentence — *A session begins at the top of every hour, and everyone in it
-sits together. Join this one, or sit on your own.* — and *Join a session*. When two or more people are sitting it says so above the
-button. Nothing is in the background. The three-line menu at the top right
-opens `Create account` and `Sign in`. A returning guest also sees a card,
-*Your usual: 10 minutes · singing bowl · in silence*, with a switch, *Skip the
+**Welcome.** A warm, light screen, set like a title page: everything hangs
+from the left margin and is centred against the height of the window, and the
+wordmark grows with the screen it is opened on — the size of a title on a
+laptop, not a heading in an app. *Meditate with me* in the rounded face, one
+sentence under it — *A session begins at the top of every hour, and everyone
+in it sits together. Join this one, or sit on your own.* — and *Join a
+session* immediately beneath that sentence, an arrow on it pointing the way
+the screens move. When two or more people are sitting, one ember line above
+the wordmark says so, with a dot beside it that breathes; the line keeps its
+height whether or not the count has arrived, so nothing moves when it does.
+Nothing is in the background. The three-line menu at the top right opens
+`Create account` and `Sign in`. A returning guest also sees a card, *Your
+usual: 10 minutes · singing bowl · in silence*, with a switch, *Skip the
 questions next time*; with it on, *Join a session* goes to the doors and then
-straight to the bowl.
+straight to the bowl. **Rewritten 14 September 2026**, replacing a 28rem
+column centred in the window with the invitation stranded at the foot of it.
 
 **The questions, one screen each.** Each slides in from the right as the last
-slides out, with *Back* on the left and *Next* on the right, and the question
-itself is what a screen reader is handed on arrival. Escape is *Back*. The
+slides out, hanging from the same left margin as the welcome so the rail
+reads as one page whose content moves, with *Back* on the left and *Next* on
+the right, and the question itself is what a screen reader is handed on
+arrival. Escape is *Back*. The
 questions, in order:
 
 1. *What should we call you?* — optional, a first name, *Skip*. Signed in,

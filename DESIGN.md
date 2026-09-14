@@ -19,13 +19,13 @@ colors:
 typography:
   wordmark:
     fontFamily: "Comfortaa, ui-rounded, system-ui, sans-serif"
-    fontSize: "2.25rem / 3rem at sm"
+    fontSize: "2.25rem / 3.25rem at sm / 4rem at md / 4.5rem at lg / 5rem at xl"
     fontWeight: 700
-    lineHeight: 1.1
+    lineHeight: 1.06
     letterSpacing: "-0.01em"
   question:
     fontFamily: "Comfortaa, ui-rounded, system-ui, sans-serif"
-    fontSize: "1.75rem / 2.25rem at sm"
+    fontSize: "1.75rem / 2.25rem at sm / 2.5rem at lg"
     fontWeight: 700
     lineHeight: 1.15
     letterSpacing: "normal"
@@ -44,6 +44,12 @@ typography:
   body:
     fontFamily: "Nunito, ui-rounded, system-ui, sans-serif"
     fontSize: "1rem"
+    fontWeight: 400
+    lineHeight: 1.625
+    letterSpacing: "normal"
+  lede:
+    fontFamily: "Nunito, ui-rounded, system-ui, sans-serif"
+    fontSize: "1.0625rem / 1.125rem at sm / 1.1875rem at lg"
     fontWeight: 400
     lineHeight: 1.625
     letterSpacing: "normal"
@@ -76,11 +82,14 @@ spacing:
   lg: "2rem"
   xl: "2.5rem"
   column: "28rem"
+  title-column: "46rem"
+  gutter: "1.5rem / 2.5rem at sm / 3.5rem at md / 5rem at lg / 6rem at xl"
 motion:
   rail: "520ms cubic-bezier(0.22, 1, 0.36, 1)"
   settle: "240ms ease-out"
   colour: "200ms"
   strike: "600ms wobble, three 1400ms rings 180ms apart"
+  breath: "4s ease-in-out, the live dot on the welcome"
   lift: "1400ms cubic-bezier(0.4, 0, 0.2, 1)"
   hold: "10s"
   reduced: "rail 0ms, settle 0ms, lift 400ms crossfade, earth still"
@@ -92,6 +101,14 @@ components:
     rounded: "{rounded.action}"
     padding: "0 1.5rem"
     height: "2.75rem"
+  button-primary-lg:
+    backgroundColor: "{colors.ember}"
+    textColor: "{colors.white}"
+    fontSize: "1.0625rem"
+    fontWeight: 600
+    rounded: "{rounded.action}"
+    padding: "0 2rem"
+    height: "3.5rem"
   button-quiet:
     backgroundColor: transparent
     textColor: "{colors.ink-2}"
@@ -311,24 +328,38 @@ family for the candles.
 
 ## Layout
 
-- **One column, 28rem wide, centred.** Every deciding screen is
-  `max-w-md` with `px-6`, from the welcome to the account panel. On a laptop
-  the column sits in the middle of the paper with air either side; nothing
-  is laid out in two columns anywhere.
+- **One left margin, and everything on the rail hangs from it.** The gutter
+  grows with the window — 1.5rem on a phone, 6rem on a wide laptop — and the
+  content is vertically centred against it. A question's measure is still
+  28rem, because a field wider than that is harder to read, not easier; what
+  changed on 14 September 2026 is that the column is anchored to the margin
+  rather than floating in the middle of the window. The air is on the side
+  the eye leaves. Nothing is laid out in two columns anywhere.
 - **The rail is a track of viewport-wide panels.** `Rail` translates a flex
   row by `-index * 100%`; each panel is `h-dvh` and scrolls itself if it
   must; the page never does. Non-current panels are `inert`, `aria-hidden`,
   and `visibility: hidden` once the slide has settled.
-- **A screen is title, lede, control, foot.** `Screen` puts the question and
+- **The welcome is a title page, not a question.** `WelcomeScreen` is the one
+  screen that does not use `Screen`: a 46rem column holding the count line,
+  the wordmark at the size of the window, one sentence at a 40-character
+  measure, and *Join a session* immediately under it. A question's Next
+  answers something above it and belongs at the foot; the invitation is the
+  end of the sentence that makes it and sits where the reading stops.
+- **A question is title, lede, control, foot.** `Screen` puts the question and
   one line at the top of the column's vertical centre, the control under it,
   and a foot row on the safe-area inset: Back on the left, Skip (a quiet
   word) and Next on the right.
+- **The bowl is the one screen that centres itself** (`align="center"`). The
+  rail walks in from the margin and arrives in the middle of the frame, which
+  is where the camera lifts from and where the sitting is.
 - **The sitting is one frame.** `Sitting` is `h-dvh` dusk: the clock top
   right, the earth centred at its own 2.055 aspect and capped so the company
   line under it always fits, Sound and End on the safe-area inset. By
   yourself, the bowl stays faintly centred where the earth would be.
-- **Home and the documents scroll.** Home is the same 28rem column: wordmark
-  and menu in the header, greeting, the two doors, the *Your usual* card.
+- **Home and the documents scroll.** Home is still a centred 28rem column —
+  a page with a header, like the map's, rather than a panel on the rail:
+  wordmark and menu in the header, greeting, the two doors, the *Your usual*
+  card.
   Panels behind the menu replace the body of the column and keep the header.
 - **The map's page is the column at `max-w-3xl`**, so the dusk panel can be
   as wide as a laptop allows while the caption stays a paragraph.
@@ -366,6 +397,9 @@ than depth.
 - **Primary** (`PRIMARY`): ember fill, white 600 text, pill, 44px,
   `hover:brightness-90`. One per screen: Next, Done, Save, Sit again,
   Confirm and enter.
+- **Primary, large** (`PRIMARY_LG`): the same pill at 56px with 1.0625rem
+  type and an arrow that travels 4px on hover, the way the rail travels when
+  it is pressed. *Join a session* on the welcome, and nothing else.
 - **Quiet** (`QUIET`): rule outline, ink-2 text, pill, 44px; ember outline
   and text on hover. Back, Finish, Delete account, the map's Back.
 - **Quiet on dusk** (`QUIET_DUSK`): dusk-ink-2 at 55% outline, dusk-ink text;
@@ -439,6 +473,10 @@ It is not the subject; it is never larger than this.
   Only the arriving panel animates its content (`.screen-settle`, 240ms
   fade-up); the departing panel just slides.
 - **Colour**: 200ms on every control.
+- **Breath**: `live-breath`, 4s, the dot beside the count on the welcome —
+  the only thing on paper that moves on its own, and it never goes out. The
+  count itself fades in over 500ms into a line whose height is already
+  reserved, so nothing under it moves when the number arrives.
 - **Strike**: `bowl-wobble` 600ms, `bowl-ripple` 1400ms ×3 at 180ms.
 - **Lift**: `--lift-ms: 1400ms`; `.lift-out` on the rail (scale to 0.55,
   down 28vh, fade), `.lift-in` on the sitting (from 1.06 / 0 to 1 / 1), the

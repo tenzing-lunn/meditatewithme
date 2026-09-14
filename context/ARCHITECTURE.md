@@ -998,6 +998,25 @@ and `clip` cannot scroll.
 inset: Back left, Skip and Next right. A screen's `settle` class is applied
 only while it is current, so it settles on arrival and not on mount.
 
+**The column is anchored left, and that is the whole layout** (since
+14 September 2026, the same day as the welcome below). The measure is still
+28rem — widening a name field does not make it easier to read — but the
+column and the foot row sit at a gutter that grows with the window, from
+1.5rem on a phone to 6rem past 1280. Centred, the rail was a phone's screen
+floating in the middle of a large warm page and each question read as its own
+small panel; against a margin the rail reads as one page whose content moves.
+The bowl passes `align="center"` and is the exception: it is not a question
+but the thing you strike, and the camera lifts from the middle of the frame.
+
+`WelcomeScreen.tsx` does not use `Screen` at all. It is a title page — a
+46rem column holding the reserved count line, the wordmark at the size of the
+window (2.25rem to 5rem), one sentence at a 40-character measure, and *Join a
+session* directly under it rather than at the foot of the viewport. The
+invitation is the end of the sentence that makes it, so it is set where the
+reading stops; a question's Next answers something above it, so it belongs
+with the other feet. `PRIMARY_LG` in `controls.ts` is that one button and
+nothing else uses it.
+
 ### Where the audio unlocks
 
 Autoplay policy only lets an `AudioContext` start inside a gesture, and the

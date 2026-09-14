@@ -42,7 +42,8 @@ export default function BowlScreen({
     <Screen
       current={current}
       title="When you are ready."
-      titleClassName="font-display text-[1.75rem] font-bold leading-[1.15] text-ink text-center sm:text-[2.25rem]"
+      titleClassName="font-display text-[1.75rem] font-bold leading-[1.15] text-ink text-center sm:text-[2.25rem] lg:text-[2.5rem]"
+      align="center"
       onBack={onBack}
     >
       <div className="flex flex-col items-center gap-6">
