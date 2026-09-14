@@ -47,16 +47,16 @@ export default function Practice({
   return (
     <div className="flex w-full max-w-sm flex-col items-center gap-5">
       <div className="flex flex-col items-center gap-1">
-        <p className="font-serif text-2xl">
+        <p className="font-display text-2xl font-bold">
           {s.currentStreak > 0 ? (
             <>
               {s.currentStreak}{' '}
-              <span className="text-ink-3 font-sans text-sm">
+              <span className="text-ink-3 font-body text-sm font-normal">
                 day{s.currentStreak === 1 ? '' : 's'} in a row
               </span>
             </>
           ) : (
-            <span className="text-ink-2 font-sans text-base">
+            <span className="text-ink-2 font-body text-base font-normal">
               Begin again whenever you like
             </span>
           )}

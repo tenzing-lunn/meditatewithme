@@ -1,5 +1,6 @@
 'use client';
 
+import type { UserPreferences } from '@/lib/types';
 import Screen from './Screen';
 import { FOCUS } from './controls';
 
@@ -15,6 +16,16 @@ const DOOR =
  * pair on its own, which the signed-in home also draws, and `ModeScreen`
  * is the pair on the rail with its question over it.
  */
+/**
+ * What a door writes. Together proposes the shared bell, but only on the way
+ * in from By yourself: somebody who sits with others for their own fifteen
+ * minutes keeps that, and so keeps their usual, every time they press it.
+ */
+export function doorPatch(mode: Mode, prefs: UserPreferences): Partial<UserPreferences> {
+  if (mode === 'alone') return { showCount: false, untilBell: false };
+  return prefs.showCount ? { showCount: true } : { showCount: true, untilBell: true };
+}
+
 export function Doors({
   mode,
   bellLabel,

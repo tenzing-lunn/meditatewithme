@@ -22,7 +22,7 @@ import Account from './Account';
 import Afterwards from './Afterwards';
 import BellScreen from './BellScreen';
 import BowlScreen from './BowlScreen';
-import ModeScreen, { type Mode } from './ModeScreen';
+import ModeScreen, { doorPatch, type Mode } from './ModeScreen';
 import NameScreen from './NameScreen';
 import OriginScreen from './OriginScreen';
 import Rail from './Rail';
@@ -119,6 +119,8 @@ export interface JourneyProps {
   home?: () => void;
   /** Where the rail begins, when not at its first screen. */
   start?: ScreenName;
+  /** Through a door on the home: the rail begins just past the mode screen. */
+  afterMode?: boolean;
   /** Settings from the menu: the three questions, then Done goes home. */
   settings?: boolean;
 }
@@ -138,6 +140,7 @@ export default function Journey({
   signOut,
   home,
   start,
+  afterMode = false,
   settings = false,
 }: JourneyProps) {
   const { now, mono } = useClock();
@@ -166,11 +169,14 @@ export default function Journey({
         }),
   );
 
-  const [stage, setStage] = useState<Stage>(() => ({
-    kind: 'rail',
-    at: start && screens.includes(start) ? start : screens[0]!,
-    dir: 1,
-  }));
+  const [stage, setStage] = useState<Stage>(() => {
+    const first = afterMode ? step(screens, 'mode', 1) : null;
+    return {
+      kind: 'rail',
+      at: first ?? (start && screens.includes(start) ? start : screens[0]!),
+      dir: 1,
+    };
+  });
   const [struck, setStruck] = useState(0);
 
   /**
@@ -494,11 +500,7 @@ export default function Journey({
                   mode={mode}
                   bellLabel={bellLabel}
                   onChoose={(m) => {
-                    update(
-                      m === 'together'
-                        ? { showCount: true, untilBell: true }
-                        : { showCount: false, untilBell: false },
-                    );
+                    update(doorPatch(m, prefs));
                     next();
                   }}
                   onBack={signedIn || step(screens, 'mode', -1) ? back : undefined}

@@ -6,6 +6,7 @@ import type { MASTER_KEY, TrackSlug } from './mix';
 import { unlockAudio } from './audio';
 import Home from './Home';
 import Journey from './Journey';
+import { doorPatch, type Mode } from './ModeScreen';
 import { displayName, useAuth } from './useAuth';
 import { useMix } from './useMix';
 import { usePractice } from './usePractice';
@@ -32,8 +33,15 @@ import { useSyncPreferences } from './useSyncPreferences';
  * than deciding on defaults and correcting itself a moment later.
  */
 export default function Entry() {
-  const { state: auth, linkError, signIn, verify, signOut, deleteAccount } =
-    useAuth();
+  const {
+    state: auth,
+    linkError,
+    signIn,
+    verify,
+    signOut,
+    deleteAccount,
+    updateName,
+  } = useAuth();
   const { prefs, update, replace, loaded } = usePreferences();
 
   const userId = auth.status === 'signed-in' ? auth.user.id : null;
@@ -62,19 +70,29 @@ export default function Entry() {
     }
   }, []);
 
-  /** Signed in, and on the journey rather than at home. */
-  const [seated, setSeated] = useState(false);
-  const goHome = useCallback(() => setSeated(false), []);
+  /** Signed in: at home, through a door, or in the settings from the menu. */
+  const [view, setView] = useState<'home' | 'journey' | 'settings'>('home');
+  const goHome = useCallback(() => setView('home'), []);
 
   /**
    * A door on Home. The graph is built silent inside this click so that the
    * Bell and Sound screens have a context to play through; the bowl is what
-   * raises it.
+   * raises it. The door's answer is written here, in the same click.
    */
-  const startJourney = useCallback(() => {
+  const openDoor = useCallback(
+    (mode: Mode) => {
+      unlockAudio();
+      mix.ensure({ silent: true });
+      update(doorPatch(mode, prefs));
+      setView('journey');
+    },
+    [mix, update, prefs],
+  );
+
+  const openSettings = useCallback(() => {
     unlockAudio();
     mix.ensure({ silent: true });
-    setSeated(true);
+    setView('settings');
   }, [mix]);
 
   /**
@@ -113,25 +131,28 @@ export default function Entry() {
         linkError={linkError}
         signOut={signOut}
         home={auth.status === 'signed-in' ? goHome : undefined}
-        start={auth.status === 'signed-in' ? 'bowl' : undefined}
+        afterMode={auth.status === 'signed-in' && view === 'journey'}
+        settings={auth.status === 'signed-in' && view === 'settings'}
       />
     </>
   );
 
   if (auth.status !== 'signed-in') return journey;
-  if (seated) return journey;
+  if (view !== 'home') return journey;
 
   return (
     <Home
       prefs={prefs}
       update={update}
-      onSound={setSound}
-      onSit={startJourney}
       entries={entries}
+      userId={auth.user.id}
       email={auth.user.email}
       name={displayName(auth.user)}
+      onDoor={openDoor}
+      onSettings={openSettings}
       signOut={signOut}
       deleteAccount={deleteAccount}
+      updateName={updateName}
     />
   );
 }
