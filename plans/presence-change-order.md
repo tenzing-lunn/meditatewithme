@@ -1,5 +1,12 @@
 # Change order — Presence
 
+**Decided 13 September 2026: quoted as a one-off, £300**, on top of the hourly —
+Tenzing's call. Raised at the meeting that day, in the words in
+`plans/meeting-with-jonny.md` §4, which describe what was actually built rather
+than the flame field the message below proposes, and which drop "about twelve
+hours": that was the spec's estimate, and no hours are confirmed. Move this file
+to `docs/` once Jonny has heard it and answered.
+
 **Status, 1 September 2026: never sent.** Tenzing told Jonny he would show the
 work first rather than quote it up front. The scope in
 [`../docs/presence-spec.md`](../docs/presence-spec.md) was then built on `dev`
