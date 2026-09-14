@@ -2,14 +2,15 @@
 
 import { useId, useState } from 'react';
 import { NAME_MAX } from '@/lib/label';
+import LineField from './LineField';
 import Screen from './Screen';
-import { FIELD } from './controls';
 
 /**
  * "What should we call you?"
  *
  * Optional. A first name is what other people would see beside your light
  * if you later choose to be seen; nothing here is sent anywhere until then.
+ * The answer goes on a line with *Enter your name* typing itself out on it.
  * Enter is Next, because a name is typed and then you move on.
  */
 export default function NameScreen({
@@ -54,18 +55,16 @@ export default function NameScreen({
           if (draft.trim()) commit();
         }}
       >
-        <label htmlFor={id} className="sr-only">
-          Your name
-        </label>
-        <input
+        <LineField
           id={id}
-          type="text"
-          autoComplete="off"
-          maxLength={NAME_MAX}
+          label="Your name"
+          prompt="Enter your name"
           value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder="Your name"
-          className={FIELD}
+          onChange={setDraft}
+          active={current}
+          maxLength={NAME_MAX}
+          autoCapitalize="words"
+          enterKeyHint="next"
         />
       </form>
     </Screen>

@@ -260,10 +260,15 @@ export default function Journey({
     go(1);
   }, [mix, go]);
 
-  // Escape is Back, unless a dialog or menu has the keyboard.
+  // Escape is Back, unless a dialog or menu has the keyboard, or a control
+  // has already used this Escape for itself and said so with preventDefault
+  // (the place list on the origin question closes on it). React listens on
+  // the document in the App Router, the same node as this, so a control's
+  // stopPropagation cannot keep the key from reaching here; defaultPrevented
+  // can.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape' || stageRef.current.kind !== 'rail') return;
+      if (e.key !== 'Escape' || e.defaultPrevented || stageRef.current.kind !== 'rail') return;
       const el = document.activeElement;
       if (el?.closest('[role="dialog"], [role="menu"]')) return;
       back();

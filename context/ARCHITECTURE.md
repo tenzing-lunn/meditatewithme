@@ -1111,9 +1111,40 @@ is what "when nothing changed" means. Guests get the same; `hasAnswers` is
 `x-vercel-ip-country` (ISO-2, turned into a name client-side with
 `Intl.DisplayNames`), snaps the coordinates with `snapToCell`, and returns
 all three `private, no-store`. Nothing is stored. Null on localhost and behind
-VPNs, in which case the field is simply empty. `useOrigin()` fetches once per
-page, memory only. §14 point 4 used to say the city header was deliberately
+VPNs, in which case there is simply no suggestion. `useOrigin()` fetches once
+per page, memory only. §14 point 4 used to say the city header was deliberately
 not read; it is read to suggest, and never stored until confirmed.
+
+**The answer is typed, then chosen** (14 September 2026). `public/places.txt`
+is GeoNames' `cities15000` cut down by `scripts/places.mjs` to a name and a
+country code per line, largest first, one per name within a country: 33,090
+lines, 445KB, about 230KB gzipped. `usePlaces` fetches it the first time the
+origin question is on screen — a signed-in person who has answered never
+downloads it — and `lib/places.ts` folds it once (accents off, lower case,
+punctuation to spaces) and searches it on each key: whole name, then start of
+name, then start of a later word, a country before a town at the same rank,
+the larger place otherwise, and anything after a comma narrowing the country.
+**The search runs in the browser, not in a route**, so the letters a person
+types reach no server and no request log; that is the reason it is not
+`/api/places`. The kept value is `placeLabel()` — *Lisbon, Portugal*, or just
+the town when both would pass `ORIGIN_MAX` — and a place not in the list is
+kept as typed. Escape with the list open closes the list and is not Back:
+the combobox calls `preventDefault`, and Journey's document listener skips a
+prevented Escape — `stopPropagation` cannot do it, because the App Router's
+React listens on the document too. The connection's guess is no longer put in the field: it sits
+under the empty line as a word to tap, so nobody's origin is a guess they did
+not look at. To rebuild the list, download `cities15000.zip` from
+download.geonames.org and run `node scripts/places.mjs cities15000.txt`; the
+licence is CC BY 4.0 and the credit is on the privacy page and in the file's
+first line.
+
+The rail's typed answers are `LineField`: a 2px line (`LINE` in
+`controls.ts`, ink-3 at 80%, gated at 3:1 as a control boundary) with the
+prompt drawn over the empty input by `useTypedOut`, not set as its
+`placeholder`, because a placeholder cannot be animated. It types once per
+arrival, 55ms a character after 420ms, and its caret is hidden by CSS the
+moment the input has focus. The foot under every question is `PRIMARY_SM`,
+`QUIET_SM` and `WORD_SM`: 38px to look at, 44px to hit.
 
 `useProfile` holds the name, the origin and the switch in `mwm.profile` for
 everybody, and for a signed-in person pulls the origin and the switch from

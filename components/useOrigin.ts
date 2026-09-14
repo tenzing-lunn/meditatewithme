@@ -16,7 +16,8 @@ const NONE: OriginReading = { suggestion: null, cell: null, loaded: false };
 /** One fetch per page. Every screen that asks gets the same answer. */
 let pending: Promise<OriginReading> | null = null;
 
-function regionName(code: string | null): string | null {
+/** "PT" to "Portugal", in English like the rest of the site. */
+export function regionName(code: string | null): string | null {
   if (!code) return null;
   try {
     return new Intl.DisplayNames(['en'], { type: 'region' }).of(code) ?? code;

@@ -101,6 +101,21 @@ components:
     rounded: "{rounded.action}"
     padding: "0 1.5rem"
     height: "2.75rem"
+  button-primary-sm:
+    backgroundColor: "{colors.ember}"
+    textColor: "{colors.white}"
+    fontSize: "0.875rem"
+    fontWeight: 600
+    rounded: "{rounded.action}"
+    padding: "0 1.25rem"
+    height: "2.375rem, 2.75rem hit area"
+  field-line:
+    backgroundColor: transparent
+    textColor: "{colors.ink}"
+    borderBottom: "2px {colors.ink-3} at 80%"
+    borderBottomFocus: "2px {colors.ember}"
+    fontSize: "1.5rem / 1.75rem at sm"
+    height: "3.5rem"
   button-primary-lg:
     backgroundColor: "{colors.ember}"
     textColor: "{colors.white}"
@@ -240,7 +255,8 @@ read or press.
 - Company is a sentence built from the earth (*Ana from Lisbon is meditating
   with you*), never a figure to compare; a number that was not read is left
   out.
-- Every control is 44px tall; the doors are 96px. Sentence case everywhere.
+- Every control is 44px to hit; the doors are 96px. A typed answer is a
+  line, not a box. Sentence case everywhere.
 - Reduced motion is honoured in one place, and the rail, the strike and the
   lift all have a still version.
 
@@ -397,6 +413,10 @@ than depth.
 - **Primary** (`PRIMARY`): ember fill, white 600 text, pill, 44px,
   `hover:brightness-90`. One per screen: Next, Done, Save, Sit again,
   Confirm and enter.
+- **The foot, small** (`PRIMARY_SM`, `QUIET_SM`, `WORD_SM`): Back, Skip and
+  Next under every question, 38px to look at with 0.875rem type, and an
+  `::after` that makes the target 44px. The question is the point; the way on
+  only needs finding.
 - **Primary, large** (`PRIMARY_LG`): the same pill at 56px with 1.0625rem
   type and an arrow that travels 4px on hover, the way the rail travels when
   it is pressed. *Join a session* on the welcome, and nothing else.
@@ -423,8 +443,18 @@ one both answers and advances. The same `Doors` sits on the mode screen and on
 Home.
 
 ### Fields
-Surface on rule, 48px, ink text, ink-3 placeholder, control radius; ember
-border on hover and focus. The name, the origin, the minutes.
+- **On the rail, a line** (`LINE`, through `LineField`): no box, a 2px line in
+  ink-3 at 80% under 1.5rem type (1.75rem from `sm`), ink-2 under the pointer,
+  ember with the caret in it — and that ember line is the focus indicator.
+  The prompt, *Enter your name* or *Enter your town*, types itself out in
+  ink-3 with an ember caret when the screen arrives. The name and the origin.
+- **A place list under the origin line**: surface on rule with the menu's
+  shadow, rows 44px, the town in ink 600 and the country beside it in ink-3;
+  the active row ember on ember-soft. The last row is always *Keep "…" as you
+  typed it*.
+- **Everywhere else, a box** (`FIELD`): surface on rule, 48px, ink text,
+  ink-3 placeholder, control radius; ember border on hover and focus. The
+  minutes beside the slider, the account panel, signing in.
 
 ### Switch
 `role="switch"`, 44×24 track, rule when off and ember when on, white thumb,
@@ -473,6 +503,10 @@ It is not the subject; it is never larger than this.
   Only the arriving panel animates its content (`.screen-settle`, 240ms
   fade-up); the departing panel just slides.
 - **Colour**: 200ms on every control.
+- **Typed prompt**: `useTypedOut`, 55ms a character (45ms more after a
+  space) starting 420ms after the screen arrives, once per arrival; the caret
+  blinks on `type-caret`, 1.1s in steps, and is hidden when the field has
+  focus. Under reduced motion the prompt is whole and the caret still.
 - **Breath**: `live-breath`, 4s, the dot beside the count on the welcome —
   the only thing on paper that moves on its own, and it never goes out. The
   count itself fades in over 500ms into a line whose height is already

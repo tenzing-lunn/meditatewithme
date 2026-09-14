@@ -57,6 +57,19 @@ export const PRIMARY = `${BUTTON} bg-ember text-white hover:brightness-90 ${FOCU
  */
 export const PRIMARY_LG = `${BUTTON_SHAPE} min-h-14 px-8 text-[1.0625rem] bg-ember text-white hover:brightness-90 ${FOCUS}`;
 
+/**
+ * The foot of a question — Back, Skip, Next — a size down.
+ *
+ * The question and its answer are what a screen is for, so the way on is
+ * set smaller than both: 38px to look at. The `::after` reaches 3px above
+ * and below, so what a finger lands on is still 44px.
+ */
+const BUTTON_SM = `${BUTTON_SHAPE} relative min-h-[2.375rem] px-5 text-[0.875rem] after:absolute after:inset-x-0 after:inset-y-[-3px] after:content-['']`;
+
+export const PRIMARY_SM = `${BUTTON_SM} bg-ember text-white hover:brightness-90 ${FOCUS}`;
+
+export const QUIET_SM = `${BUTTON_SM} border border-rule text-ink-2 hover:border-ember hover:text-ember ${FOCUS}`;
+
 export const QUIET = `${BUTTON} border border-rule text-ink-2 hover:border-ember hover:text-ember ${FOCUS}`;
 
 /** The same two on the dusk ground of the sitting. */
@@ -72,7 +85,25 @@ export const FIELD = `min-h-12 w-full rounded-control border border-rule bg-surf
  * A quiet word: Skip, Change, Leave it blank. Bounded by an underline, and
  * 44px tall so the thing you hit is bigger than the thing you read.
  */
-export const WORD = `inline-flex min-h-11 items-center px-2 text-[0.9375rem] font-semibold text-ink-2 underline decoration-rule underline-offset-4 transition-colors duration-200 hover:text-ember hover:decoration-ember motion-reduce:transition-none ${FOCUS}`;
+const WORD_SHAPE = `inline-flex min-h-11 items-center px-2 font-semibold text-ink-2 underline decoration-rule underline-offset-4 transition-colors duration-200 hover:text-ember hover:decoration-ember motion-reduce:transition-none ${FOCUS}`;
+
+export const WORD = `${WORD_SHAPE} text-[0.9375rem]`;
+
+/** The same word in the foot, beside the small buttons. */
+export const WORD_SM = `${WORD_SHAPE} text-[0.875rem]`;
+
+/**
+ * Something typed on the rail: a line, not a box.
+ *
+ * A question asks for a word or two, so the field is where the words go
+ * rather than a container for them — a 2px line under large type. The line
+ * is ink-3 at 80%, which clears the 3:1 a control's boundary needs on paper
+ * (`scripts/contrast.mjs`); it darkens under the pointer and turns ember
+ * with the caret in it. That ember line is the focus indicator, so no ring
+ * is drawn round a field that has no box to ring. `line-field` is what the
+ * typed-out prompt's caret listens to (`globals.css`).
+ */
+export const LINE = 'line-field h-14 w-full rounded-none border-b-2 border-ink-3/80 bg-transparent px-0 pt-1 pb-2 text-[1.5rem] leading-normal text-ink outline-none transition-colors duration-200 hover:border-ink-2 focus:border-ember motion-reduce:transition-none sm:text-[1.75rem]';
 
 /** The three-line trigger in the top corner. */
 export const ICON = `inline-flex size-11 items-center justify-center rounded-action border border-rule bg-surface text-ink-2 transition-colors duration-200 hover:border-ember hover:text-ember motion-reduce:transition-none ${FOCUS}`;

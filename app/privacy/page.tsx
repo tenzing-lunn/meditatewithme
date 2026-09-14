@@ -69,6 +69,15 @@ export default function PrivacyPage() {
           not saved. Only what you type and confirm is kept, and the next
           section says where.
         </p>
+        <p>
+          As you type, the matching places are found by your own browser, from
+          a list of towns it downloads from this site, so the letters you type
+          are not sent to us or to anyone else. The list comes from{' '}
+          <a href="https://www.geonames.org/" className="underline underline-offset-4">
+            GeoNames
+          </a>
+          , used under the Creative Commons Attribution 4.0 licence.
+        </p>
       </Section>
 
       <Section title="Your name and where you are from">

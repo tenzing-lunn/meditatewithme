@@ -1,7 +1,7 @@
 'use client';
 
 import type { CSSProperties, ReactNode } from 'react';
-import { PRIMARY, QUIET, WORD } from './controls';
+import { PRIMARY_SM, QUIET_SM, WORD_SM } from './controls';
 
 /**
  * One question, and the way on.
@@ -9,7 +9,8 @@ import { PRIMARY, QUIET, WORD } from './controls';
  * Every screen on the rail is this shape: a heading in the rounded face, a
  * line under it, the one control that answers it, and at the foot Back on
  * the left and Next on the right, with Skip as a quiet word beside Next
- * when the question is optional. The foot sits on the safe-area inset so
+ * when the question is optional. The foot is a size down from everything
+ * above it: the question is the point, and the way on only needs finding. The foot sits on the safe-area inset so
  * it clears a phone's home indicator; the middle takes the rest of the
  * height and centres what it holds, and scrolls on its own if a question
  * is taller than a short window. The page never scrolls.
@@ -94,7 +95,7 @@ export default function Screen({
       {(onBack || onNext || onSkip) && (
         <div className={`flex w-full max-w-md items-center justify-between gap-3 ${column}`}>
           {onBack ? (
-            <button type="button" onClick={onBack} className={QUIET}>
+            <button type="button" onClick={onBack} className={QUIET_SM}>
               {backLabel}
             </button>
           ) : (
@@ -102,7 +103,7 @@ export default function Screen({
           )}
           <div className="flex items-center gap-3">
             {onSkip && (
-              <button type="button" onClick={onSkip} className={WORD}>
+              <button type="button" onClick={onSkip} className={WORD_SM}>
                 {skipLabel}
               </button>
             )}
@@ -111,7 +112,7 @@ export default function Screen({
                 type="button"
                 onClick={onNext}
                 disabled={nextDisabled}
-                className={PRIMARY}
+                className={PRIMARY_SM}
               >
                 {nextLabel}
               </button>

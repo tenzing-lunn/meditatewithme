@@ -91,6 +91,7 @@ const PAIRS = [
  */
 const COMPOSITES = [
   ['dusk-ink-2', 0.55, 'dusk', 3.0, 'QUIET_DUSK border'],
+  ['ink-3', 0.8, 'paper', 3.0, 'LINE, the field on the rail'],
 ];
 
 const channel = (c) => {
