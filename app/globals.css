@@ -190,21 +190,88 @@ body {
 }
 
 /*
- * Retired with the photograph; kept for one commit while `CandleScene.tsx`
- * still imports the class. Deleted in the same change as that file.
+ * A screen arriving. The heading and then the control settle upward as the
+ * rail brings a screen into the frame; `--i` is the row's place in that
+ * order. Zero under reduced motion, where `--settle-ms` is zero.
  */
-@keyframes room-drift {
-  0%,
-  100% {
-    transform: scale(1.025) translate(0.3%, 0.2%);
+@keyframes screen-settle {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
   }
-  50% {
-    transform: scale(1.05) translate(-0.4%, -0.6%);
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 
+.screen-settle {
+  animation: screen-settle var(--settle-ms) var(--ease-rail) both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+
+/*
+ * The bowl, struck. The body gives and recovers; three rings leave the rim
+ * and fade. Under reduced motion the body pulses once and nothing travels.
+ */
+@keyframes bowl-wobble {
+  0% {
+    transform: scale(1);
+  }
+  15% {
+    transform: scale(1.035, 0.965);
+  }
+  35% {
+    transform: scale(0.985, 1.02);
+  }
+  55% {
+    transform: scale(1.012, 0.992);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes bowl-ripple {
+  0% {
+    opacity: 0.75;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.7, 1.9);
+  }
+}
+
+@keyframes bowl-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.bowl-body,
+.bowl-ripple {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.bowl-ripple {
+  opacity: 0;
+}
+
+.bowl-struck .bowl-body {
+  animation: bowl-wobble 600ms ease-out;
+}
+
+.bowl-struck .bowl-ripple {
+  animation: bowl-ripple 1400ms ease-out forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .room-drift {
-    animation: none !important;
+  .bowl-struck .bowl-body {
+    animation: bowl-pulse 300ms ease-out;
+  }
+  .bowl-struck .bowl-ripple {
+    animation: none;
   }
 }

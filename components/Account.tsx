@@ -68,19 +68,15 @@ type Drop = 'down' | 'up';
 /** name → email → code. Two questions and a confirmation, one at a time. */
 type Step = 'name' | 'email' | 'code';
 
-// white/40 for the border and white/50 for the placeholder, measured against
-// the panel's own `#1c1410`: white/25 was 2.25 for a boundary that owes 3.0,
-// and white/35 was 3.22 for placeholder text that owes 4.5. Both are the
-// lowest opacity that clears with something in hand — see scripts/contrast.mjs.
 const FIELD =
-  'min-h-11 w-full rounded-control border border-white/40 bg-transparent px-4 text-center text-sm text-white placeholder:text-white/50 focus-visible:border-ember focus-visible:ring-1 focus-visible:ring-ember focus-visible:outline-none';
+  'min-h-11 w-full rounded-control border border-rule bg-paper px-4 text-center text-sm text-ink placeholder:text-ink-3 focus-visible:border-ember focus-visible:ring-1 focus-visible:ring-ember focus-visible:outline-none';
 
 const SUBMIT =
-  'min-h-11 w-full rounded-control border border-ember px-6 text-sm text-ember transition-colors duration-300 hover:bg-ember hover:text-white focus-visible:ring-2 focus-visible:ring-ember focus-visible:ring-offset-2 focus-visible:ring-offset-panel focus-visible:outline-none disabled:opacity-50';
+  'min-h-11 w-full rounded-action bg-ember px-6 text-sm font-semibold text-white transition-[filter] duration-200 hover:brightness-90 focus-visible:ring-2 focus-visible:ring-ember focus-visible:ring-offset-2 focus-visible:ring-offset-surface focus-visible:outline-none disabled:opacity-50';
 
 /** One choice on the menu. Full width of it, lit on hover, nothing else. */
 const ITEM =
-  'min-h-11 px-5 text-left text-sm text-white/85 transition-colors hover:bg-white/10 hover:text-white focus-visible:bg-white/10 focus-visible:text-white focus-visible:outline-none';
+  'min-h-11 px-5 text-left text-sm font-semibold text-ink-2 transition-colors hover:bg-ember-soft hover:text-ember focus-visible:bg-ember-soft focus-visible:text-ember focus-visible:outline-none';
 
 /**
  * The quiet word under the button. Bounded by an underline, never bare.
@@ -94,7 +90,7 @@ const ITEM =
  * words rather than the box.
  */
 const FOOT =
-  'inline-flex min-h-11 items-center px-2 text-xs text-white/50 underline decoration-white/25 underline-offset-4 transition-colors hover:text-white/80 hover:decoration-white/60 focus-visible:ring-1 focus-visible:ring-ember focus-visible:outline-none';
+  'inline-flex min-h-11 items-center px-2 text-xs text-ink-3 underline decoration-rule underline-offset-4 transition-colors hover:text-ember hover:decoration-ember focus-visible:ring-1 focus-visible:ring-ember focus-visible:outline-none';
 
 export default function Account({
   state,
@@ -393,7 +389,7 @@ export default function Account({
           `sm` up there is room beside the word — at 640 wide the menu clears
           it by 7px — so there it hangs from the trigger as it did. */}
       {menuOpen && (
-        <div className="absolute top-[20dvh] right-0 z-20 mt-2 sm:top-full">
+        <div className="absolute top-full right-0 z-20 mt-2">
           {/* `role="menu"` is a promise about the keyboard, and it was made
               without being kept: the two items were reachable by Tab and by
               nothing else, so anyone who took the ARIA at its word and pressed
@@ -424,7 +420,7 @@ export default function Account({
               else if (e.key === 'Home') go(0);
               else if (e.key === 'End') go(items.length - 1);
             }}
-            className={`rounded-control flex min-w-44 flex-col overflow-hidden border border-white/20 bg-panel py-1 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none ${
+            className={`rounded-control flex min-w-44 flex-col overflow-hidden border border-rule bg-surface shadow-[0_12px_32px_-12px_rgb(59_42_29_/_0.35)] py-1 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none ${
               entered ? 'translate-y-0 opacity-100' : '-translate-y-1.5 opacity-0'
             }`}
           >
@@ -476,14 +472,14 @@ export default function Account({
             // because the panel has not far to come and nothing to explain;
             // anything slower and the press and the arrival stop feeling like
             // one event.
-            className={`rounded-control w-[min(20rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-6rem)] overflow-y-auto border border-white/20 bg-panel p-5 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none ${
+            className={`rounded-control w-[min(20rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-6rem)] overflow-y-auto border border-rule bg-surface shadow-[0_12px_32px_-12px_rgb(59_42_29_/_0.35)] p-5 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none ${
               entered
                 ? 'translate-y-0 opacity-100'
                 : `opacity-0 ${drop === 'down' ? '-translate-y-1.5' : 'translate-y-1.5'}`
             }`}
           >
             <form onSubmit={onSubmit} className="flex flex-col gap-3">
-              <h2 className="font-display text-2xl leading-tight text-white">
+              <h2 className="font-display text-2xl font-bold leading-tight text-ink">
                 {heading}
               </h2>
 
@@ -497,7 +493,7 @@ export default function Account({
 
                   `break-words` because an address long enough to overflow a
                   280px line has no space in it to break at. */}
-              <p className="min-h-[3.75rem] text-left text-xs leading-relaxed break-words text-white/60">
+              <p className="min-h-[3.75rem] text-left text-xs leading-relaxed break-words text-ink-3">
                 {hint}
               </p>
 
@@ -505,7 +501,7 @@ export default function Account({
                 <>
                   <label
                     htmlFor={nameId}
-                    className="text-center text-sm text-white/70"
+                    className="text-center text-sm text-ink-2"
                   >
                     What should we call you?
                   </label>
@@ -536,7 +532,7 @@ export default function Account({
                 <>
                   <label
                     htmlFor={emailId}
-                    className="text-center text-sm text-white/70"
+                    className="text-center text-sm text-ink-2"
                   >
                     {name.trim()
                       ? `And your email, ${name.trim()}?`
@@ -560,7 +556,7 @@ export default function Account({
                 <>
                   <label
                     htmlFor={codeId}
-                    className="text-center text-sm text-white/70"
+                    className="text-center text-sm text-ink-2"
                   >
                     The code
                   </label>
@@ -611,7 +607,7 @@ export default function Account({
               {/* Reserved too, for the same reason the hint is. */}
               <p
                 role="alert"
-                className="min-h-4 text-center text-xs text-white/80"
+                className="min-h-4 text-center text-xs text-ember"
               >
                 {error ?? (resent ? 'Sent again.' : '')}
               </p>

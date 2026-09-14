@@ -53,3 +53,12 @@ export const CHIP = `inline-flex min-h-11 items-center justify-center rounded-co
 export const CHIP_ON = 'border-ember bg-ember-soft text-ember';
 
 export const FIELD = `min-h-12 w-full rounded-control border border-rule bg-surface px-4 text-base text-ink placeholder:text-ink-3 transition-colors duration-200 hover:border-ember focus-visible:border-ember motion-reduce:transition-none ${FOCUS}`;
+
+/**
+ * A quiet word: Skip, Change, Leave it blank. Bounded by an underline, and
+ * 44px tall so the thing you hit is bigger than the thing you read.
+ */
+export const WORD = `inline-flex min-h-11 items-center px-2 text-[0.9375rem] font-semibold text-ink-2 underline decoration-rule underline-offset-4 transition-colors duration-200 hover:text-ember hover:decoration-ember motion-reduce:transition-none ${FOCUS}`;
+
+/** The three-line trigger in the top corner. */
+export const ICON = `inline-flex size-11 items-center justify-center rounded-action border border-rule bg-surface text-ink-2 transition-colors duration-200 hover:border-ember hover:text-ember motion-reduce:transition-none ${FOCUS}`;
