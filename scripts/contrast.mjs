@@ -150,7 +150,7 @@ for (const [fg, bg, min] of PAIRS) {
 for (const [fg, alpha, bg, min, where] of COMPOSITES) {
   const ground = resolve(bg);
   report(
-    `${fg}/${alpha * 100} on ${bg} (${where})`,
+    `${fg}/${Math.round(alpha * 100)} on ${bg} (${where})`,
     contrast(over(resolve(fg), alpha, ground), ground),
     min,
   );
