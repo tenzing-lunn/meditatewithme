@@ -9,17 +9,19 @@
  * a colour to the palette means adding its pairs here, and using a palette
  * colour at partial opacity means adding it to COMPOSITES.
  *
- * What this cannot see: text set over the photograph. Those ratios depend on
- * the camera phase and were sampled in the browser instead — see
- * `docs/design-audit.md` §10 for the method and the numbers.
+ * Since 14 September 2026 the palette is flat: there is no photograph and no
+ * runtime override, so `@theme` is the whole truth and this gate is the whole
+ * gate.
  *
  * Thresholds (WCAG 2.1):
  *   4.5  normal text
  *   3.0  large text (>=24px, or >=18.66px bold) and UI component boundaries
  *
- * `rule` fails deliberately and is excluded from the pass/fail exit code — it
- * is a decorative hairline, and the rule enforced instead is that it never
- * carries a control's state on its own.
+ * `rule` and `glow` fail deliberately and are not listed: `rule` is a
+ * decorative hairline that never carries a control's state on its own, and
+ * `glow` is the bowl's rim and the flames' tint, never text and never a
+ * control's edge. `glow` on dusk is listed at 3.0 because the flames sit
+ * there.
  */
 
 import { readFileSync } from 'node:fs';
@@ -52,43 +54,57 @@ function colorsIn(selector) {
   return colors;
 }
 
-// Palette values have one source of truth: the build-time theme and the
-// deliberate runtime override in globals.css. This check must fail with the
-// page instead of staying green against an old hand-copied object.
-const THEME = {
-  theme: colorsIn('@theme'),
-  runtime: colorsIn(':root'),
-};
+// Palette values have one source of truth. This check must fail with the page
+// instead of staying green against an old hand-copied object.
+const COLORS = colorsIn('@theme');
 
 /** Foreground, background, and the threshold that pair must clear. */
 const PAIRS = [
+  // The light screens.
   ['ink', 'paper', 4.5],
   ['ink-2', 'paper', 4.5],
   ['ink-3', 'paper', 4.5],
   ['ember', 'paper', 4.5],
+  ['ink', 'surface', 4.5],
+  ['ink-2', 'surface', 4.5],
   ['ink-3', 'surface', 4.5],
   ['ember', 'surface', 4.5],
+  // A picked chip: ember type on ember-soft.
+  ['ember', 'ember-soft', 4.5],
+  ['ink', 'ember-soft', 4.5],
+  // The primary button: white on ember.
+  ['#ffffff', 'ember', 4.5],
+  // The sitting.
+  ['dusk-ink', 'dusk', 4.5],
+  ['dusk-ink-2', 'dusk', 4.5],
+  ['flame', 'dusk', 4.5],
+  ['glow', 'dusk', 3.0],
+  // The lit door on the earth: dusk type on flame.
+  ['dusk', 'flame', 4.5],
+  // The room at dusk: its edge, and the lit door's line (dusk at 80% on flame).
+  ['room-edge', 'room', 3.0],
+  ['room-action-ink-2', 'room-action', 4.5],
+  // A chosen bell, bed or chip: the action's own colour on a 15% wash of
+  // itself over the room. Precomputed, one per room.
+  ['flame', '#462e1b', 4.5],
+  ['ember', '#e9cfba', 4.5],
+  // The room at dawn, whose values live under [data-room="dawn"], not @theme.
+  ['#907b6a', 'paper', 3.0],
+  ['#f8d7b8', 'ember', 4.5],
 ];
 
 /**
  * Pairs where the foreground is a palette colour at partial opacity — a
- * Tailwind `border-ink-2/60` or `placeholder:text-white/50` — composited over
- * its ground before the ratio is taken. The design audit of 7 September 2026
- * found four of these under threshold while this script reported everything
- * green, because it only knew about the six solid pairs above. A green gate
- * over a partial set is worse than no gate.
- *
- * Grounds and foregrounds may be palette names or literal hex. `panel` is the
- * account panel's dark, the one colour that sits over the photograph; it
- * lives in `@theme` and nothing overrides it at runtime.
+ * Tailwind `border-dusk-ink-2/40` — composited over its ground before the
+ * ratio is taken. A green gate over a partial set is worse than no gate, so
+ * every alpha the components use is listed here.
  *
  * `[foreground, opacity, ground, threshold, where it is used]`
  */
 const COMPOSITES = [
-  ['ink-2', 0.65, 'paper', 3.0, 'Room secondary button border'],
-  ['#ffffff', 0.4, 'panel', 3.0, 'Account FIELD border'],
-  ['#ffffff', 0.5, 'panel', 4.5, 'Account FIELD placeholder'],
-  ['#ffffff', 0.5, 'panel', 4.5, 'Account FOOT text'],
+  ['dusk-ink-2', 0.55, 'dusk', 3.0, 'room-edge at dusk, as a composite'],
+  ['ink-3', 0.8, 'paper', 3.0, 'LINE, the field on the rail'],
+  ['ink-3', 0.6, 'paper', 2.3, 'the prompt typed on a LINE; a vanishing hint, the label names the field'],
 ];
 
 const channel = (c) => {
@@ -124,33 +140,34 @@ const over = (fg, alpha, bg) => {
   );
 };
 
+const resolve = (c) => {
+  if (c.startsWith('#')) return c;
+  if (!COLORS[c]) throw new Error(`No --color-${c} in @theme`);
+  return COLORS[c];
+};
+
 let failed = 0;
 
 function report(label, ratio, min) {
   const ok = ratio >= min;
   if (!ok) failed++;
   console.log(
-    `  ${ok ? 'pass' : 'FAIL'}  ${label.padEnd(34)} ` +
+    `  ${ok ? 'pass' : 'FAIL'}  ${label.padEnd(36)} ` +
       `${ratio.toFixed(2).padStart(6)}  needs ${min.toFixed(1)}`,
   );
 }
 
-for (const [mode, colors] of Object.entries(THEME)) {
-  // A token the runtime block does not override keeps its `@theme` value,
-  // which is what the browser does too.
-  const resolve = (c) => (c.startsWith('#') ? c : (colors[c] ?? THEME.theme[c]));
-  console.log(`\n${mode}`);
-  for (const [fg, bg, min] of PAIRS) {
-    report(`${fg} on ${bg}`, contrast(colors[fg], colors[bg]), min);
-  }
-  for (const [fg, alpha, bg, min, where] of COMPOSITES) {
-    const ground = resolve(bg);
-    report(
-      `${fg}/${alpha * 100} on ${bg} (${where})`,
-      contrast(over(resolve(fg), alpha, ground), ground),
-      min,
-    );
-  }
+console.log('\n@theme');
+for (const [fg, bg, min] of PAIRS) {
+  report(`${fg} on ${bg}`, contrast(resolve(fg), resolve(bg)), min);
+}
+for (const [fg, alpha, bg, min, where] of COMPOSITES) {
+  const ground = resolve(bg);
+  report(
+    `${fg}/${Math.round(alpha * 100)} on ${bg} (${where})`,
+    contrast(over(resolve(fg), alpha, ground), ground),
+    min,
+  );
 }
 
 console.log(

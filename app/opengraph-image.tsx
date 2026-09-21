@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 
-import { FlameMark, EMBER, PAPER } from '@/components/FlameMark';
+import { FlameMark } from '@/components/FlameMark';
 
 /**
  * The card a shared link unfurls into, in Slack, iMessage, WhatsApp, anywhere.
@@ -11,19 +11,22 @@ import { FlameMark, EMBER, PAPER } from '@/components/FlameMark';
  * shown to everyone, forever, saying the opposite of "come and sit". A full
  * flame is the invitation, and it is the honest thing to cache.
  *
- * It echoes the landing rather than summarising the site: the flame and the
- * words, on the dark, with room around them.
+ * It echoes the welcome screen rather than summarising the site: the flame
+ * and the words, on the warm paper, with room around them.
  */
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
-const INK = '#e9e7e3';
-const INK_2 = '#b5b2ad';
+/** The warm palette from `@theme` in app/globals.css; satori cannot read it. */
+const PAPER = '#f6e9d8';
+const INK = '#3b2a1d';
+const INK_2 = '#6a5342';
+const EMBER = '#9c3d12';
 
 /**
- * The site's own two faces: Instrument Serif for the name, IBM Plex Sans for
- * everything else — the pairing app/layout.tsx already uses.
+ * The site's own two faces: Comfortaa for the name, Nunito for everything
+ * else — the pairing app/layout.tsx already uses.
  *
  * Two rules learned by rendering it wrong:
  *
@@ -54,19 +57,18 @@ async function siteFonts() {
   }
 
   try {
-    const [serif, sans] = await Promise.all([
-      face('Instrument+Serif'),
-      face('IBM+Plex+Sans'),
+    const [display, body] = await Promise.all([
+      face('Comfortaa:wght@700'),
+      face('Nunito:wght@600'),
     ]);
-    if (!serif || !sans) return null;
-    return { serif, sans };
+    if (!display || !body) return null;
+    return { display, body };
   } catch {
     return null;
   }
 }
 
 export default async function OpengraphImage() {
-  const title = 'Meditate With Me';
   const fonts = await siteFonts();
 
   return new ImageResponse(
@@ -80,8 +82,8 @@ export default async function OpengraphImage() {
           alignItems: 'center',
           justifyContent: 'center',
           background: PAPER,
-          // The glow the flame would actually throw on the wall behind it.
-          backgroundImage: `radial-gradient(circle at 50% 38%, rgba(224,160,87,0.15), rgba(19,21,24,0) 55%)`,
+          // The warmth the flame throws on the paper around it.
+          backgroundImage: `radial-gradient(circle at 50% 38%, rgba(217,102,31,0.18), rgba(246,233,216,0) 55%)`,
         }}
       >
         <FlameMark size={132} />
@@ -90,12 +92,13 @@ export default async function OpengraphImage() {
           style={{
             marginTop: 44,
             fontSize: 84,
-            letterSpacing: '-0.015em',
+            fontWeight: 700,
+            letterSpacing: '-0.01em',
             color: INK,
-            ...(fonts ? { fontFamily: 'Instrument Serif' } : {}),
+            ...(fonts ? { fontFamily: 'Comfortaa' } : {}),
           }}
         >
-          {title}
+          Meditate with me
         </div>
 
         <div
@@ -114,9 +117,8 @@ export default async function OpengraphImage() {
         <div
           style={{
             marginTop: 52,
-            fontSize: 22,
-            letterSpacing: '0.14em',
-            textTransform: 'uppercase',
+            fontSize: 24,
+            fontWeight: 600,
             color: EMBER,
           }}
         >
@@ -128,11 +130,11 @@ export default async function OpengraphImage() {
       ...size,
       ...(fonts
         ? {
-            // Plex first: satori treats the first entry as the default, and
-            // everything except the name is set in the sans.
+            // Nunito first: satori treats the first entry as the default, and
+            // everything except the name is set in the body face.
             fonts: [
-              { name: 'IBM Plex Sans', data: fonts.sans, style: 'normal' as const },
-              { name: 'Instrument Serif', data: fonts.serif, style: 'normal' as const },
+              { name: 'Nunito', data: fonts.body, weight: 600 as const, style: 'normal' as const },
+              { name: 'Comfortaa', data: fonts.display, weight: 700 as const, style: 'normal' as const },
             ],
           }
         : {}),

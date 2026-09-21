@@ -31,7 +31,7 @@ ever chose between them:
 
 1. Everyone gathers at the top of the hour. — the proposal
 2. Nobody is ever told to come back later. — `8821de1`, and right
-3. Everyone sets an independent timer. — what `SessionSetup` actually does
+3. Everyone sets an independent timer. — what the settings actually do
 
 Each was a defensible decision at the moment it was made. Nobody rewrote the
 end-to-end model afterwards, so the interface silently defaults to (3): the
@@ -232,7 +232,7 @@ unstyled `<select>`, on the control the product is most often touched by. Thin
 track, small warm thumb, `ember` fill behind the thumb, focus ring that matches
 the rest of the page. ~30 lines in `globals.css`, `::-webkit-slider-thumb` and
 `::-moz-range-thumb`. Keep the elements native — the accessibility work in
-`SessionSetup.tsx` (`aria-valuetext`, the index-into-`TIMER_STOPS` trick) is
+`Settings.tsx` (`aria-valuetext`, the index-into-`TIMER_STOPS` trick) is
 correct and must not be rewritten into a div.
 
 ### C · Move the countdown below the candle, and shrink it

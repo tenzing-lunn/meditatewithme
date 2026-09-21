@@ -142,10 +142,10 @@ Facts only. What to do about the second line is an open decision.
 | | Amount | What it is |
 |---|---|---|
 | Received | **£300** | The deposit — "£300 to get started" in `docs/payment-message-to-jonny.md`. Comes off the final hourly total. |
-| Received | **$500** | Sent separately from the hourly arrangement. **$100 of it is for the Claude Max subscription** — a tool cost, not hours. The remaining **$400 has no agreed meaning yet.** |
+| Received | **$500** | Sent separately from the hourly arrangement. Tool costs come off it first (Tenzing, 13 September 2026): **$100 for the Claude Max subscription**, and **Supabase Pro** at $25 a month for the months it runs — the organisation was still on the Free plan when checked that day, so that line is $0 so far. What is left after both **has no agreed meaning yet.** |
 | Owed | £25 × confirmed hours − £300 | Cannot be computed until the `Engaged` column is filled. |
 
-**The $400.** Two honest treatments, and Jonny should be told which one is
+**What is left of the $500.** Two honest treatments, and Jonny should be told which one is
 being used on the first invoice rather than discovering it there:
 
 1. **Credit against the hourly.** Convert at the rate on the day it was
@@ -156,8 +156,8 @@ being used on the first invoice rather than discovering it there:
    shows £300 received only.
 
 The arithmetic works either way; what does not work is silence. If it is not
-clear what he meant, one line in the next status update — "the $500: I've put
-$100 against the Claude subscription as agreed; do you want the other $400
+clear what he meant, one line in the next status update — "the $500: I've taken
+the Claude and Supabase subscriptions off it; do you want the rest
 treated as a payment towards the hours, or kept separate?" — settles it and
 costs nothing. **Never decide it unilaterally in his favour or yours.**
 

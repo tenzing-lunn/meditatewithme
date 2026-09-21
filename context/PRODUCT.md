@@ -5,8 +5,10 @@ to get it here, and what is still undecided. `VISION.md` is the idea;
 `ARCHITECTURE.md` is how it runs; this is the thing in between. **When a commit
 changes what a visitor sees, fix this file in the same commit.**
 
-Last verified 7 September 2026 at `353aee0` (`dev`), which is what `main`
-serves as of the release merge `cc712c6` the same day.
+Last verified 14 September 2026 on `ui-warm`, the branch carrying the UI
+rebuild (`docs/ui-rebuild.md`). `main` still serves the photographic room
+from the release merge `cc712c6` of 7 September; §2 describes the rebuild,
+and §3's history says what it replaced.
 
 ---
 
@@ -42,7 +44,9 @@ Known open at the moment of launch, and still open:
   not reaching ordinary visitors. Before Resend, the shared Supabase sender
   had already cost a real sign-up: of the four accounts on the project, one,
   created 4 September at 13:50, never confirmed and never signed in.
-- The email now carries the six-digit code. With the default sender gone the
+- The email now carries the six-digit code — **for a returning address only,
+  until the Confirm signup template gets it too** (found 13 September 2026: a
+  new address is sent that template, which was never edited). With the default sender gone the
   template could be edited, and it was, the same evening, through the
   Management API: subject *Your code for Meditate With Me*, the code in large
   type, the link underneath as the alternative. Proved end to end: a real
@@ -50,7 +54,13 @@ Known open at the moment of launch, and still open:
   `{{ .Token }}` was, in Tenzing's inbox. The auth server's code length had
   been moved from eight digits to six earlier that day.
 - The custom domain is unattached; Supabase Site URL points at the Vercel
-  address. **This is now the one thing between visitors and a working
+  address. **13 September 2026: going with `meditatewithme.online`** — in
+  Jonny's own IONOS account. The same day it was pointed and certified
+  (`https://www.meditatewithme.online` serves the site), verified in Resend,
+  and made the Supabase Site URL and the SMTP sender
+  (`signin@meditatewithme.online`); a second-device sign-in test is what's
+  left (`plans/launch-readiness.md`, the domain rows).
+  What follows about `.com` still stands for whenever that is sorted. **This is now the one thing between visitors and a working
   sign-in email.** The domain is **`meditatewithme.com`** — looked up 7
   September 2026: registered February 2013 at GoDaddy, DNS served by
   Cloudflare, and at present it **302-redirects to
@@ -70,170 +80,230 @@ release, `7026657`.
 
 ## 2. What a visitor gets
 
-**Landing.** A photograph of a candle in a dark room, the words *Let’s begin.*,
-one sentence saying what the place is, and one link to the world map. No title
-and no settings. The candle is the one lit at the top of this UTC hour; its
-flame is smaller and dimmer the further through the hour you arrive.
+**Rebuilt on 14 September 2026** (`docs/ui-rebuild.md`, on `ui-warm`). The
+photographic room, the landing word, the settings panel and the ring are gone;
+what follows is the site as it is now. The functionality underneath — the
+shared hour, the bell at :55, the three bells, the five beds, the practice
+log, accounts, the earth — is the same, and the history of each is in §3 and
+in `ARCHITECTURE.md`.
 
-The sentence is live when it can be and standing when it cannot: *A candle was
-lit at 12:00. 11 people are looking at the same one.* whenever two or more have
-lit this hour, and otherwise the Open Graph card's own words, *A candle is lit
-at the top of every hour. Everyone is looking at the same one.* One candle lit
-is you, so it is never reported as company — the same rule the ring, the
-ending, Home and `/world` all keep. With *Hide the room* set, the standing
-sentence is the only one shown.
+**The front page is the doors.** A guest lands on this hour's earth, full
+screen, with the doors at the bottom over the dusk veil: *Meditate with me*
+in the rounded face where the mode question would be, one line above it
+saying who else is sitting right now, and the two doors beside it — *Sit with
+everyone* (everyone finishes together at the next :55) and *Sit on your own*.
+Choosing a door is the first click on the site. A returning guest also sees a
+quiet line at the foot — *Your usual is 10 minutes · singing bowl · in
+silence* — with a switch, *Skip the questions next time*; with it on, a door
+goes straight to the bowl. A first-time guest is asked their name and place
+just after choosing. There are no step marks here: it is the way in, not one
+of the questions. The sun-and-moon and the three-line menu (`Create account`,
+`Sign in`) sit at the top right and stay there, still, until the bowl is
+struck. **Changed 19 September 2026**: until then a paper title page came
+first — the wordmark, one sentence and *Come and sit*, with the earth pale
+beside it — and the doors were the screen after it. Two front doors, and the
+second showed the thing itself, so it became the only one.
 
-Added 7 September 2026, from the design audit in `docs/design-audit.md`. Until
-then the screen carried the word alone, and the sentence explaining the site
-existed only in `app/opengraph-image.tsx` and the meta description — served to
-crawlers and withheld from visitors, so a link preview said more about the
-product than the product did. The world map had exactly one link in the whole
-codebase, on Home, which is signed in; a guest could reach the site's strongest
-piece of evidence for its own claim only by typing the address.
+**The questions, one screen each.** Moving on is a quick, short vertical
+switch — the last question lifts away and the next rises into its place —
+not a page sliding sideways; going back runs it downward. Every question
+hangs from the same left margin, so the rail reads as one page
+whose content changes, with a small *Back* on the left and a small *Next* on
+the right, and the question itself is what a screen reader is handed on
+arrival. Escape is *Back*. **Changed 14 September 2026** from a full-width
+slide left to right. The questions, in order:
 
-The room and the words come up out of the dark together, over 2.6 seconds, while
-the camera settles out of its opening push. Nothing is shown and nothing is said
-before that — the page no longer holds a *Finding the hour…* line, and the
-photograph no longer appears on its own the moment it finishes loading.
+1. *What should we call you?* — the screen is a line and nothing else: no
+   visible question, no explanation, and the small *Back* at the foot. The
+   line draws itself out as
+   *Enter your name* types on it in a pale brown with a caret blinking at the front of the line; the
+   prompt goes on the first key, and what you type is in full ink. The line
+   is ready for typing the moment the screen arrives, no click. *Skip* is
+   under the left end of the line, arriving last, once the prompt has typed itself out; *Next* appears under the right end once
+   something is typed, and Enter does the same. Signed in, never asked: the
+   account's name is used. The line always arrives empty, even when a name
+   was given on an earlier visit.
+2. *Where are you sitting?* — the same bare line, *Enter your city*; typed,
+   then chosen. The letters search about 33,000 towns of 15,000 people or
+   more and every country (GeoNames, searched in the browser, so nothing
+   typed is sent anywhere), and the matches open under the line — *Lisbon ·
+   Portugal* — with the arrows and Enter to take one. A town too small for
+   the list is still an answer: the last choice is always *Keep "…" as you
+   typed it*. Clicking the empty line offers the town and country the server
+   sees from the connection as the one choice — *Lisbon, Portugal · near
+   you*. *Back*, *Next* and *Leave it out* are where *Back*, *Next* and
+   *Skip* are on the name: *Leave it out* under the line once the prompt has typed,
+   *Next* appearing to the right of it once something is typed. With it, a
+   switch appears below them, off by default: *Let others
+   see Ana from Lisbon while you sit with them*, and one line saying nothing
+   is kept on our side until you say yes. Asked once; changeable from the
+   account.
+3. *How would you like to sit?* — the whole screen is this hour's earth at
+   night, the same map and candles as the sitting, with a light for everyone
+   sitting this hour and a dashed ring marked *You* where you are (the edge's
+   guess, never kept). On a phone it shows the part of the earth around you;
+   on a laptop, all of it. At the bottom, *● 43 others are sitting right now*
+   (the count less you; *Nobody else yet. Yours will be the first light.*
+   when nobody is), the question, and two doors of the same size: **Sit with
+   everyone**, lit in the candle's colour — *Everyone finishes together at
+   12:55* — and **Sit on your own**, outlined — *Your own length, the same
+   sky*. Pressing either answers and advances; neither is shown as chosen
+   on arrival. Back is in the foot as on every question. Home is the same
+   scene under *Hello, Ana.*, with the usual and its switch below the doors.
+   **Redrawn 15 September 2026** from a map in a card over a small row, after
+   a mockup Tenzing approved (*Under one sky*).
+4. *How long will you sit?* — two different screens, by door. **By
+   yourself**, since 15 September 2026, one large sentence, *You're sitting
+   for 10 minutes.*, over *11 others are sitting somewhere right now.
+   They'll come and go; your time is your own.* (with nobody else there,
+   *Others will come and go while you sit; your time is your own.*), and a
+   lit candle on a dark stage whose height is the length: dragging it up or
+   down, or the arrow keys, sets any stop from 1 to 55, and the minutes ride
+   beside its rim. Around it, far off, a small breathing light for each other
+   person on the site right now — the count only, placed for looks, never
+   where anyone is and never a name. Nobody is joined here, so the length is
+   free; the lights are company. The idea: meditating by yourself is still
+   meditating at the same time as other people. It replaced the slider on
+   this path. **With others**, since 15 September 2026, the screen is one
+   large sentence and a timer dial: *You're sitting for 10 minutes with 11
+   people.* — the live count less you — or, with nobody else there, *You're
+   sitting for 10 minutes, with anyone who joins.* No names: those are shown
+   only to people already sitting. The dial is a round timer face beside the
+   sentence on a laptop and under it on a phone; dragging its ember knob round
+   the ring (or the arrow keys) turns through every length, with the shared
+   bell as a marked stop where it falls in time, and the sentence changes as
+   it turns — on the bell, *until 12:55*. A
+   private length under with-others is still allowed and survives the door.
+   The settings drawer on Home keeps a slider for both.
+5. *How will it end?* — the singing bowl, the gong and the struck bell as
+   three drawn cards, each with what it sounds like under its name; tapping
+   one rings it and sends two rings out of the drawing.
+6. *Anything underneath?* — six tiles: silence and the five beds, silence
+   chosen to begin with. Tapping a bed plays it, and its level is a bar on
+   its own tile; a *Volume* row appears under them once anything is on.
+   **Rebuilt 17 September 2026** from a lone switch that revealed a card of
+   pills and a second page called *Adjust levels*. Since **20 September
+   2026** it is the same control in all three places it appears — here, in
+   *Underneath* in the settings drawer, and in the sheet during a sitting —
+   where before, the drawer's tiles had no level on them at all and the
+   sitting had a different mixer again.
+7. *When you are ready.* — a drawn singing bowl over *Strike the bowl to
+   begin.* and the line of what the sitting will be (*Until 12:55 · singing
+   bowl · rain*) with *Change* beside it. On a Mac, a *Full screen* switch,
+   remembered.
 
-It read *Begin.* until now, which is an instruction. *Let’s* makes it an
-invitation from someone sitting down with you — the premise of the whole site,
-and it was being spent nowhere else on the one screen a first-time visitor reads
-before deciding.
+**Every question says where it is.** Since 17 September 2026 a short row of
+marks above each question shows which one of them it is, the current one lit,
+and a returning guest asked fewer questions is shown the shorter rail rather
+than a fixed count. On a laptop each question now sets its control beside it
+rather than under it, and Back and Next sit with the control instead of at
+the bottom of the window.
 
-**Begin → three questions, one per screen.** *How long* (1 minute, then 5 to
-55 in fives, or *until the bell*, which now rings at :55), *which bell* (singing bowl, gong, struck
-bell — each can be auditioned), *any sound* — a switch, `No` by
-default, and only when it is flipped to `Yes` do the five ambient beds appear,
-as five named chips in a row: tap one and it plays at its stored level (or an
-audition level if it has never been heard), tap again and it stops. The
-faders — one per bed and a master named *Volume* (it was *All*, which read as
-a sixth bed rather than as the master) — sit behind *Adjust levels* under the
-chips, one tap away. Until the evening of 7 September 2026 the whole mixer
-opened here, eleven controls on the last screen of a flow built on one thing
-at a time. The five beds *were* the question until earlier that day, which
-asked somebody who wanted to sit in silence to understand a mixer before they
-could decline one.
-Saying `No` silences the beds for real rather than hiding them, and saying
-`Yes` again within the flow puts back what was there. Answers are
-remembered. A back arrow leaves
-from the first screen and steps back from the others. *Start* is at the foot of
-the last screen. The audio context is unlocked on *Begin*, not on *Start* —
-but it is unlocked **silent**, and nothing is audible until the background-noise
-question is on screen. Until 7 September 2026 those were the same act, so a
-returning visitor with a stored mix heard it start under the words *How long?*,
-two screens before being asked whether they wanted any. That is the one thing
-`VISION.md` says v1 must not become, and the fix is a master held at zero rather
-than a change to anybody's stored levels: saying *No* still writes real zeros to
-the beds, so raising the master on a declined mix plays nothing.
+**The bowl is the only thing that starts a sitting.** Striking it wobbles
+the rim and sends three rings out; the bell you chose sounds; the light goes
+over 1.4 seconds while the bowl screen drops away and
+the sitting rises into place — the camera lifting to your seated view. Until
+this rebuild a signed-in visitor's sitting started on arrival; nothing starts
+now without the strike, because a sitting should begin with a gesture.
 
-**The bell rings twice.** The one you chose sounds at *Start* as well as at the
-end, so a sitting is bounded at both ends by the same sound rather than
-beginning in silence. The opening strike has a shorter tail — around 60% of the
-closing one — because it marks the threshold and then gets out of the way, and
-it is clamped so it can never still be ringing when the closing bell lands.
-Stopping early silences it.
+**Dawn or dusk.** From *How would you like to sit?* to the ending, and on the
+signed-in Home, the screens are the room rather than paper, and the room
+follows the visitor's own day: dawn — the paper's light, a pale earth, ember
+controls — from six in the morning, dusk — the dark earth and flame — from six
+in the evening. A sun or moon beside the menu switches it, and the switch
+lasts until the next six o'clock, on that device only. **Added 16 September 2026**, at Tenzing's request; not yet shown to
+Jonny.
 
-**The sitting.** A ring. The arc drains clockwise; the dots just outside it
-are the candles lit this hour, one each, spread evenly, yours at twelve with a
-halo. Dots for people still here are full strength; people who lit a candle
-and left are dimmed. Underneath, one sentence at the start: *You began with N
-others* or *You are the first here this hour*. At the foot of the frame:
-*Sound* (opens the mixer mid-sitting) and *End this sitting*. *Hide the room*
-turns the dots off for anyone who finds them distracting.
+**The sitting.** The room. *With others:* the earth, full width, with a candle for
+every place somebody lit one this hour; the ones still here are bright, the
+ones who left are dim; your own is a little larger with a soft ring. Under it,
+one line: *Ana from Lisbon is meditating with you*, *Ana from Lisbon and 3
+others are meditating with you*, *4 others are meditating with you*, *You are
+the first here this hour*, or nothing when the count could not be read — never
+a guess. Names are only the ones people chose to share, at most three per
+place and sixty in all, and when there are several they take turns every
+twenty seconds. The clock is small in the top right. At the foot, *Sound*
+(opens the same six tiles and *Volume* as the sound question, as a sheet) and
+*End*. *By yourself:* the same room, no
+earth, no line, the bowl faintly centred, the same clock and the same two
+controls. Sound, End and the dawn or dusk switch fade after four seconds and
+come back at a tap anywhere, so the sitting is the earth and the clock.
 
-**Until the bell.** Everyone who chooses it hears the same bell at the same
-second, at the top of the next hour. Arriving with under five minutes to go
-rolls forward to the hour after. Nobody is refused. Over the last minute
-before that bell — and only for sittings that end on it — the ring's dots
-brighten to full and draw in toward twelve from both sides, so that at the
-bell the room is a small bright cluster around your own light. It is the one
-moment strangers do something at the same second, and until 7 September 2026
-nothing on screen marked it. A sitting on its own timer gets none of this.
+**Until the bell.** Everyone who chooses *with others* hears the same bell at
+the same second, at :55. Arriving with under five minutes to go rolls forward
+to the next hour's bell. Nobody is refused. The bell you chose sounds at the
+start as well as the end, the opening strike with a shorter tail.
 
-**The ending, thirty seconds long.** Ten seconds of *Come back.* with the
-bowl still ringing and the mix receding; then the minutes sat at display size
-and a table of facts (streak and total, shown only when they say something;
-how many you sat with, read once at the bell); then the controls, and, alone
-at the foot of the frame, the account offer. Signed in, the controls are *Sit
-again* and *Done* and nothing else — the practice log and the room switch are
-on Home. A guest has no Home, so their ending keeps *Your practice* and
-*Hide the room* as well: it is the only place they can reach either.
+**Afterwards.** Ten seconds of *Come back.* with the bowl still ringing and
+the mix receding; then the minutes sat at display size; then the rows that
+say something — days in a row, *With you this hour · 3 others* for a
+with-others sitting, altogether — and *Sit again* with *Done* (signed in,
+back to Home) or *Finish* (a guest, back to the doors). A guest's ending
+carries the account offer at the foot. Full screen is left on the way out,
+and the ground lifts back to paper.
+
+**Home, signed in.** *Meditate with me* small, the three-line menu, *Hello,
+Ana.*, the two doors, and under them one bar: *Your sitting* with the three
+answers as pills — *Until 12:55*, *Singing bowl*, *Rain* — and *Change*, which
+opens the settings drawer, and beside it the switch *Go straight to the
+bowl*. A door goes to the questions the account has not answered — origin,
+once — then time, bell, sound, the bowl; with the switch on, straight to the
+bowl. The switch turns itself off when an answer changes on the rail or on
+another device, so it never skips a question whose answer moved; a change
+made in the drawer keeps it on, because the drawer is where the answers are
+being chosen. **The drawer, 19 September 2026:** one page sliding in from the
+right over Home with every setting on it — how long (a slider), the bell
+(three cards; tapping one rings it), the sound underneath (silence or any of
+the five beds; not played there, the level is set while sitting), and the
+switch. The three lines open the same drawer as a menu — *Account*,
+*Settings*, *Your practice*, *Sign out* — with Settings opening in place.
+Not yet shown to Jonny. When two or more are sitting the count
+is on the *With others* door, the same door as on the rail. The menu: *Account* (email, the name, where you are
+from and the switch that shows it, *Delete account* with its confirmation),
+*Settings* (the drawer's own settings, opening in place), *Your
+practice* (the streak, the totals, the recent sittings), *Sign out*.
 
 **The practice log.** Every sitting is recorded locally; a streak is computed
 in local time and not sitting today does not break it. With an account it
 syncs across devices. Not in the proposal — see §4.
 
-**This hour, on the earth.** `/world`, reached from Home, is a flat map of the
-planet with a light where a candle was lit this hour. It was a globe you turned
-with your finger until 6 September 2026, when Jonny asked for a 2D map; the
-projection is Equal Earth, so the whole world is visible at once without the
-north being given more room per person than the south. The night side is the
-real one, from the same corrected clock the candle uses. Under it, the count of
-candles this hour, and — said on the page rather than only in a privacy notice —
-that each light is placed to within about a hundred kilometres and nobody is
-asked for their location. On localhost the map is correctly empty: the edge
-headers it places people from do not exist in `next dev`.
+**This hour, on the earth.** `/world`: the same earth as the sitting, in a
+dusk panel on the paper, with the count under it and — said on the page rather
+than only in a privacy notice — that each light is placed to within about a
+hundred kilometres and nobody is asked for their location. The projection is
+Equal Earth; the night side is real. On localhost the map is correctly empty:
+the edge headers it places people from do not exist in `next dev`.
 
-**Accounts.** Optional. A three-line menu button sits at the top right of the
-landing and opens two choices, `Create account` and `Sign in` — Jonny's ask on
-7 September 2026, replacing a single `Create account` button that carried the
-other case as a footnote. `Create account` alone still sits at the foot of the
-frame after a sitting. All of them open the same panel, which drops from the
-control that opened it in 150ms and takes no other part of the picture. It asks
-one thing at a time — your name, then your email, then the six-digit code from
-that email, with `Confirm and enter` under it. `Sign in`, and `I already have
-one` inside the panel, skip the name. Nothing is asked for that is not used:
-the name is what Home's masthead greets you by.
+**Accounts.** Optional. The menu opens `Create account` and `Sign in`; both
+open the same panel under the trigger, asking one thing at a time — your
+name, then your email, then the six-digit code, with `Confirm and enter`.
+Nothing is asked for that is not used: the name is *Hello, Ana* and, if you
+chose to be seen, the name on the earth. Signing in once is enough; the
+session renews itself. `Sign out` ends it on that device only.
 
-**Signing in once is enough.** The session is stored in the browser and renews
-itself, with no expiry and no inactivity cutoff, so somebody who signs in is
-remembered across tabs, restarts and days — confirmed against the live project,
-where a session created on 3 September was still refreshing itself on the 7th.
-`Sign out` now ends the session **on that device only**; until 7 September 2026
-it quietly ended every session the account had, so signing out on a laptop
-signed you out on your phone as well.
+**Closing an account.** *Delete account*, in the account panel, opens a
+confirmation naming what goes — the email address, the name, where you are
+from, the settings and the sittings, counted — and saying the practice log on
+this device stays. `Keep it` carries the chosen treatment and the destructive
+control does not. Deletion is immediate and total.
 
-**Closing an account.** *Your account* is the last thing on Home, under the
-practice log, showing the email the account is held under and a `Delete
-account` control. Pressing it opens a confirmation naming what goes — the email
-address, the name, the settings and the sittings, counted — and saying that the
-practice log on this device stays, because it does. `Keep it` carries the ember
-treatment and the destructive control does not: the emphasis belongs on the
-safe answer. Deletion is immediate and total; `profiles`, `preferences` and
-`sittings` all cascade from the auth row, and nothing is soft-deleted.
+**A link that does not work says so.** A spent magic link bounces to the
+front page signed out, with the reason in the URL fragment; the panel opens
+itself on the address step carrying the reason, and the fragment is cleaned
+off.
 
-Deliberately nowhere near `Sign out` in the masthead. The two are close enough
-in meaning that putting them close together in space invites the wrong one.
+**Paper for who you are, then the room. The questions and the sitting never
+scroll.** One palette regardless of system setting. Supabase down still
+leaves a bowl, a timer and a mix — nothing shows an error screen. Reduced
+motion is honoured: the rail jumps, the strike is one pulse, the lift is a
+crossfade, the earth holds still.
 
-**A link that does not work says so.** Magic links are single-use and a new one
-kills the last; clicking a spent one bounces you back to the landing signed out,
-with the reason in the URL fragment and nothing on screen. The panel now opens
-itself on the address step carrying *"That link had already been used, or a
-newer email replaced it"*, and the fragment is cleaned off the URL.
-
-It used to say `Sign in`, which described the API call rather than the act —
-`signInWithOtp` has always created the account on first use — and asked a
-first-time visitor for credentials they did not have. It also used to take over
-the whole frame like a setup question, which is what made opening it feel like
-the page lurching; `ARCHITECTURE.md` §16 has the mechanism.
-
-**Always dark, never scrolls, always works.** One palette regardless of system
-setting. One viewport; all type in the band above the flame. Supabase down
-still leaves a candle, a timer and a mix — nothing shows an error screen.
-
-**Before a visitor arrives.** A shared link now unfurls into a card — the
-flame, the name in Instrument Serif, and *A candle is lit at the top of every
-hour. Everyone is looking at the same one.* The tab and the iPhone home screen
-carry the same flame. It is drawn (`components/FlameMark.tsx`), not the
-photograph: `flame.png` is a composite that turns to a smudge below about
-200px, and a favicon is 32.
-
-The card deliberately shows a **full** flame rather than this hour's. Crawlers
-fetch it once and cache it, so an image that burned down would freeze at
-whatever height the first crawl caught and show a half-spent candle to everyone
-thereafter — the opposite of an invitation. The mark is ours and provisional:
-if Jonny licenses his own candle imagery (§5), it is one file to replace.
+**Before a visitor arrives.** A shared link unfurls into a card — the flame
+mark, *Meditate with me* in the rounded face on the warm paper, and *A candle
+is lit at the top of every hour. Everyone is looking at the same one.* The
+tab and the iPhone home screen carry the same flame on dusk. The mark is
+drawn (`components/FlameMark.tsx`) and provisional: if Jonny licenses his own
+imagery (§5), it is one file to replace.
 
 ## 3. Decisions that shaped it, in order
 
@@ -247,6 +317,9 @@ if Jonny licenses his own candle imagery (§5), it is one file to replace.
 | `5b6b239` | Always dark | `ARCHITECTURE.md` §1 |
 | `626ef93` | Launched | §1 above |
 | `8d59fba` | Flame field deleted; the ring's dots are the room | `ARCHITECTURE.md` §16 |
+| `ui-warm`, 14 Sept 2026 | The photographic room, the landing word, the settings panel and the ring replaced by the warm rail: one question per screen, a bowl to strike, the earth with names | `docs/ui-rebuild.md`, `DESIGN.md` |
+| same | Every sitting starts from the bowl; the signed-in auto-start is gone | `ARCHITECTURE.md` §16 |
+| same | A name and an origin, opt-in, shown on the earth for the length of a with-others sitting | `ARCHITECTURE.md` §16, `plans/privacy-data-inventory.md` |
 
 ## 4. Commercial — what Jonny holds, and what he has not been told
 
@@ -260,9 +333,10 @@ the £300 deposit and, separately, $500 — see `TIMELOG.md` › *Money*.
 
 1. **The practice log** (~4h) is in v1 and counted against the cap.
 2. **The presence work** exists. The change order in
-   `plans/presence-change-order.md` — £300 as a one-off for ~12h — was never
-   sent; Tenzing chose to show the work first. Until it is raised and Jonny
-   answers, presence hours sit inside the 55-hour cap.
+   `plans/presence-change-order.md` was never sent; Tenzing chose to show the
+   work first. **Decided 13 September 2026: it is quoted as a £300 one-off**,
+   raised at the meeting that day (`plans/meeting-with-jonny.md` §4). Until
+   Jonny answers, presence hours sit inside the 55-hour cap.
 
 Both go in one status update, with a preview link, before any number is asked
 for. The rules for how are in `plans/presence-change-order.md` and the project
@@ -284,17 +358,29 @@ joining the shared hour should become the *primary* path, is
 bring to it is the five-question comprehension test in that section, run on
 the current build.
 
+**Jonny's direction, 13 September 2026 (meeting):** split them into two
+options. (a) The timer and people on the map — sit any length; session time,
+and a name and location if the person chooses, are shown to others on the
+map; otherwise only presence, *You are meditating with X people live*. (b) The
+live video — join at :55, wait for the hour, told someone is about to join. So
+(3) becomes an option in its own right and (1) becomes the live video. A
+direction, not a spec: nothing is scoped or priced, and the open questions
+are in `plans/meeting-with-jonny.md` §5.
+
 **Measurement.** v1 exists to learn whether people gather and whether they
 return, and nothing records either — `heartbeats` is discarded on purpose.
 Retaining anything is an architecture change and cannot be designed
 privacy-safely before Jonny names the data controller. `room-polish.md` §4D.
 
-**The candle itself.** `public/room-base.png` is a photograph the project
-made, and is now the master the served `.avif` and `.jpg` are built from. The proposal promised a candle plus two other visuals *chosen by Jonny*,
-licensed in his name. Whether this photograph ships as the candle, or is the
-stand-in until his loop arrives, has not been asked. The burn — flame scale and
-glow across the hour — is linear and `ARCHITECTURE.md` notes it may want a
-curve.
+**The candle itself.** The photograph the project made as its candle is
+deleted with the room it was in (14 September 2026). The proposal promised a
+candle plus two other visuals *chosen by Jonny*, licensed in his name; what
+that means now is an open question about the sitting — whether anything
+besides the earth, or the faint bowl under by-yourself, sits behind a person
+while they meditate — and it has not been asked. Tenzing's earlier view, that
+the candle is the main thing on the screen and wants a better still, was
+overtaken by the rebuild: the main thing on the screen is the earth, and the
+candles are on it.
 
 **The sounds.** All five beds and three bells are synthesised in
 `components/audio.ts` / `lib/noise.ts`. They are the stand-in for licensed
@@ -343,8 +429,9 @@ through a taper is a change to how everybody's stored mix sounds, and it is a
 judgement no measurement settles — it needs somebody to listen. The
 loudness-matching did not need ears and could be proved.
 
-**The other two focus loops.** Only `candle` exists. `Focus()` in `Room.tsx`
-is where the others go when Jonny chooses them.
+**The other two focus loops.** `focusSlug` is still a preference and still
+`candle`; nothing renders it since the rebuild, and where Jonny's loops would
+go is the same open question as the candle above.
 
 **A house of lighters in Thailand.** Said by Jonny on 7 September 2026, for
 "later on", around the app launch: several meditators living in one house and
@@ -358,6 +445,12 @@ untouched by it. Streaming still costs real money annually, and broadcasting
 identifiable people to an anonymous audience is still a safeguarding question
 that needs a solicitor before it needs a developer — more so, not less, if the
 volunteers live at the address they broadcast from.
+
+**Made concrete on 13 September 2026**, in a doc of his: six meditators in a
+house in Chiang Mai, 24 hours a day for thirty days from 9 November 2026, each
+sitting 55 minutes with five to hand over, live video with no audio, then
+volunteer candlelighters. Still not scoped, costed or agreed. His words,
+unreviewed, are in `context/JONNY-IDEAS.md`.
 
 What was built for it is only the gap: the last five minutes of every hour are
 now clear of the shared bell (`ARCHITECTURE.md` §6.3). That is the cheap half

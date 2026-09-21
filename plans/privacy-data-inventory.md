@@ -17,7 +17,7 @@ added, not the week of launch.
 
 ## The whole inventory
 
-Six things are stored anywhere, and four of them only exist if you make an
+Eight things are stored anywhere, and five of them only exist if you make an
 account.
 
 | What | Where | Identifies you? | Kept for |
@@ -28,14 +28,25 @@ account.
 | Your sittings | Your browser; `sittings` if you sign in | Only if you sign in | Until you delete them |
 | Your email address | `auth.users` | **Yes** | Until you delete the account |
 | The name you gave | `auth.users` (`user_metadata.name`) | **Yes, if you gave a real one** | Until you delete the account |
+| Where you said you are from, and whether you share it | Your browser (`mwm.profile`); `profiles.origin` and `profiles.share_label` if you sign in | **Yes, if you typed a real place** | Until you change or delete them |
+| "Name from Origin", shown to others | `heartbeats.label`, only while you sit with others with the switch on | **Yes, as much as the two above** | 2 days, with the row |
 
-**The last two rows are new and they are the only directly identifying data the
-site holds.** The email address was always there — an account has always been an
+**The last two rows are from 14 September 2026.** They are the first thing
+the site has ever shown one stranger about another. Both are opt-in twice
+over: nothing is typed unless the person types it, and nothing is sent unless
+the switch under the origin question is on. `lib/label.ts` cleans and caps
+both on the way in, and the heartbeat route cleans them again. The
+suggestion the origin question makes (`/api/origin`, from
+`x-vercel-ip-city` and `x-vercel-ip-country`) is never stored.
+
+**The email and name rows were the only directly identifying data the site
+held until 14 September.** The email address was always there — an account has always been an
 address — but it was never written down here, and the name did not exist until
 the account flow started asking for it. Whatever the notice ends up saying about
 them, it has to say that the name is optional in substance: nothing checks it,
-nothing but the greeting on Home reads it, and the site works entirely without
-an account.
+nothing but the greeting on Home reads it (and, since 14 September, the sentence
+on the earth for people who chose to be seen), and the site works entirely
+without an account.
 
 `profiles.display_name` exists in the schema and is still unused — the name
 lives only in `auth.users`. If anything server-side ever needs it, that column is
@@ -50,9 +61,10 @@ leaving somebody to infer it.
 
 ## Draft copy
 
-**Rendered as `app/privacy/page.tsx` on 8 September 2026** — unlinked and
-`noindex` until the two placeholders are filled. The page and this draft must
-say the same thing; change both. Two lines were corrected the day the page
+**Rendered as `app/privacy/page.tsx` on 8 September 2026**, and brought up to
+date with the name and origin on 14 September — unlinked and `noindex` until
+the two placeholders are filled. The page and this draft must say the same
+thing; change both. Two lines were corrected the day the page
 was built: an account now also holds the optional name, and sign-in is a code
 or a link, not only a link.
 
@@ -62,8 +74,8 @@ a data-processing agreement has said something about itself.
 
 ### Where you are
 
-> When you open the room, our server works out roughly where you are from your
-> internet connection, so the globe can show a light for each part of the world
+> When you open the site, our server works out roughly where you are from your
+> internet connection, so the earth can show a light for each part of the world
 > someone is sitting in.
 >
 > It is deliberately rough. Before anything is saved, your position is rounded
@@ -75,10 +87,29 @@ a data-processing agreement has said something about itself.
 > We never ask your device for your location and we do not use GPS. You will
 > never see a location permission prompt from this site. The square is deleted
 > with the rest of the session record after two days.
+>
+> When the site asks where you are sitting, it suggests a town and a country
+> worked out from the same connection, so you can answer with a nod. The
+> suggestion is shown to you and to nobody else, and it is not saved. Only what
+> you type and confirm is kept, and the next section says where.
 
-### Being counted in the room
+### Your name and where you are from
 
-> While the room is open in front of you, your browser tells us it is there
+> Both are optional. A first name and a place, as you typed them, are saved on
+> your own device, and in your profile if you have an account, so they follow
+> you between your phone and your computer.
+>
+> They are shown to other people only if you turn on the switch under the
+> question, and then only while you are sitting with others: your browser adds
+> them to the record that says it is there, and the earth on other people's
+> screens says "Ana from Lisbon is meditating with you". Turn the switch off, or
+> finish sitting, and they stop being sent; the copy in that record is deleted
+> with it after two days. You can change either answer, or the switch, from the
+> origin question or from your account.
+
+### Being counted
+
+> While the site is open in front of you, your browser tells us it is there
 > every thirty seconds, so the site can say how many people are sitting. It
 > sends a random identifier that is created by your browser, belongs only to
 > that browser, and is not connected to your name, your email or any account.
@@ -94,9 +125,9 @@ a data-processing agreement has said something about itself.
 >
 > If you do create an account, they are also saved to our database so that they
 > follow you between your phone and your computer. An account stores your email
-> address and, if you typed one, the name you gave. Nothing checks the name and
-> nothing reads it except the greeting on your own home page; you can leave it
-> blank.
+> address and, if you typed one, the name you gave. Nothing checks the name, and
+> nothing reads it except the greeting on your own home page and, if you chose
+> to be seen, the sentence described above; you can leave it blank.
 
 ### Signing in
 
@@ -123,10 +154,12 @@ a data-processing agreement has said something about itself.
   saying "city" would overstate what is held, in the direction that matters.
   `GRID_DEGREES` in `lib/geo.ts` is the number; if it ever changes, this copy
   changes with it.
-- **`x-vercel-ip-city` and `x-vercel-ip-country` are available and deliberately
-  unused.** Worth knowing so nobody adds them later thinking they are harmless:
-  a city name identifies somebody in a small one far more sharply than a grid
-  square does.
+- **`x-vercel-ip-city` and `x-vercel-ip-country` are read by one route and
+  stored by none.** `/api/origin` returns them to the browser that asked, as
+  a suggestion for the origin question, uncached and unlogged. Nothing writes
+  them: the heartbeat route still derives only the grid square. A city name
+  identifies somebody in a small one far more sharply than a grid square does,
+  which is why the person confirms or corrects it before it is kept anywhere.
 - **The two-day figure is real again**, not aspirational: `prune_heartbeats()`
   deletes `hour_start < now() - interval '2 days'`, and `pg_cron` runs it at
   seven minutes past every hour, so the honest worst case is two days and an

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { serviceClient } from '@/lib/supabase';
 import { hourStart } from '@/lib/session';
 import { snapToCell, type Cell } from '@/lib/geo';
+import { LABEL_MAX, cleanText } from '@/lib/label';
 
 /**
  * Record that an anonymous participant is present in the current session.
@@ -34,10 +35,11 @@ const UUID_RE =
  * absent — `snapToCell` returns null and the heartbeat is written without a
  * cell. It still counts. It is just not on the globe.
  *
- * Note what is NOT read: `x-vercel-ip-city` and `x-vercel-ip-country` are both
- * available and neither is stored. A city name is a much stronger identifier
- * than a one-degree cell for anyone in a small one, and the globe has no use
- * for a label.
+ * Note what is NOT read here: `x-vercel-ip-city` and `x-vercel-ip-country`.
+ * A city name is a much stronger identifier than a one-degree cell for
+ * anyone in a small one. Since 14 September 2026 `/api/origin` reads them
+ * to *suggest* an answer to the origin question, and what the person keeps
+ * arrives back here as `label`, typed and chosen, never inferred.
  */
 function cellFrom(request: Request): Cell | null {
   const h = request.headers;
@@ -52,11 +54,30 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: Request) {
   let anonId: unknown;
   let began = false;
+  /**
+   * "Ana from Lisbon", or null to clear it, or undefined to leave it alone.
+   *
+   * Sent by the client on every beat as a string while the person is sitting
+   * with others and has chosen to be seen, and as null otherwise, so a label
+   * lasts exactly as long as that. Cleaned and capped here regardless of
+   * what the browser did; an older client that sends nothing changes nothing.
+   */
+  let label: string | null | undefined;
 
   try {
-    const body = (await request.json()) as { anonId?: unknown; began?: unknown };
+    const body = (await request.json()) as {
+      anonId?: unknown;
+      began?: unknown;
+      label?: unknown;
+    };
     anonId = body.anonId;
     began = body.began === true;
+    label =
+      body.label === undefined
+        ? undefined
+        : body.label === null
+          ? null
+          : cleanText(body.label, LABEL_MAX);
   } catch {
     return NextResponse.json({ ok: false }, { status: 400 });
   }
@@ -88,6 +109,7 @@ export async function POST(request: Request) {
       // train should stay where they started rather than falling off the
       // globe, and a request the edge cannot place should change nothing.
       ...(cell ? { cell_lat: cell.lat, cell_lon: cell.lon } : {}),
+      ...(label !== undefined ? { label } : {}),
     };
 
     const { error } = await supabase.from('heartbeats').upsert(

@@ -2,9 +2,11 @@
 
 import { useEffect, useRef } from 'react';
 
-import { subsolarPoint, type WorldPoint } from '@/lib/geo';
+import { subsolarPoint, type Cell, type WorldPoint } from '@/lib/geo';
 import { serverNow } from '@/lib/clock';
 import { ASPECT, X_MAX, Y_MAX, project, unproject } from '@/lib/projection';
+import { containFit, coverFit, longitudeFromOffset } from '@/lib/earthView';
+import type { Room } from '@/lib/room';
 
 /**
  * The earth laid flat, with a light where somebody is sitting.
@@ -86,13 +88,54 @@ interface LandData {
  * brightest thing here — which is still far below the dimmest candle. Nothing
  * is pure black or pure white. The ranking is not negotiable: candles first,
  * coastlines second, the edge of the world last.
+ *
+ * Warm since 14 September 2026: the ground under the earth is `dusk`
+ * (#2b1a10), the sitting's deep brown, and a blue-grey ocean on it read as a
+ * different picture pasted on. These are the same three ranks in the same
+ * family as the ground.
  */
-const OCEAN = '#1b2026';
-const LAND: [number, number, number] = [0x2b, 0x31, 0x38];
-const COAST = '#3f4854';
+const OCEAN = '#34201a';
+const LAND: [number, number, number] = [0x4b, 0x33, 0x28];
+const COAST = '#6d4e3c';
 
 /** How much of the night the terminator takes out. The shader's `mix(0.42, 1)`. */
 const NIGHT_DEPTH = 0.58;
+
+/**
+ * The same three ranks in daylight, for the room at dawn: the ocean a shade
+ * under the paper, the land a shade under that, the coast the darkest line.
+ * Night is a light wash of the page's ink rather than black, and the terrain
+ * is only a faint texture, because a light ground has no headroom to brighten
+ * into.
+ */
+interface Palette {
+  ocean: string;
+  land: [number, number, number];
+  coast: string;
+  night: [number, number, number];
+  nightDepth: number;
+  /** The terrain multiplier from `reliefAt`, remapped for this ground. */
+  relief: (k: number) => number;
+}
+
+const PALETTES: Record<Room, Palette> = {
+  dusk: {
+    ocean: OCEAN,
+    land: LAND,
+    coast: COAST,
+    night: [0, 0, 0],
+    nightDepth: NIGHT_DEPTH,
+    relief: (k) => k,
+  },
+  dawn: {
+    ocean: '#ecdcc6',
+    land: [0xdc, 0xc6, 0xab],
+    coast: '#b9a085',
+    night: [0x3b, 0x2a, 0x1d],
+    nightDepth: 0.2,
+    relief: (k) => 0.93 + (k - 0.7) * 0.11,
+  },
+};
 
 /** Where the map sits inside the canvas, and how big projection units are. */
 interface Frame {
@@ -198,6 +241,7 @@ function buildGround(
   dpr: number,
   land: LandData | null,
   relief: ImageData | null,
+  palette: Palette,
 ): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   canvas.width = Math.round(frame.width * dpr);
@@ -207,7 +251,7 @@ function buildGround(
   if (!ctx) return canvas;
   ctx.scale(dpr, dpr);
 
-  ctx.fillStyle = OCEAN;
+  ctx.fillStyle = palette.ocean;
   ctx.fill(edgePath(frame));
 
   if (!land) return canvas;
@@ -215,7 +259,7 @@ function buildGround(
 
   // Even-odd, so a hole ring inside an outer ring is punched out rather than
   // filled over — lakes stay water.
-  ctx.fillStyle = `rgb(${LAND[0]} ${LAND[1]} ${LAND[2]})`;
+  ctx.fillStyle = `rgb(${palette.land[0]} ${palette.land[1]} ${palette.land[2]})`;
   ctx.fill(shape, 'evenodd');
 
   if (relief) {
@@ -239,10 +283,10 @@ function buildGround(
           );
           const at = (j * w + i) * 4;
           if (!place) continue;
-          const k = reliefAt(relief, place.lat, place.lon);
-          image.data[at] = Math.min(255, LAND[0] * k);
-          image.data[at + 1] = Math.min(255, LAND[1] * k);
-          image.data[at + 2] = Math.min(255, LAND[2] * k);
+          const k = palette.relief(reliefAt(relief, place.lat, place.lon));
+          image.data[at] = Math.min(255, palette.land[0] * k);
+          image.data[at + 1] = Math.min(255, palette.land[1] * k);
+          image.data[at + 2] = Math.min(255, palette.land[2] * k);
           image.data[at + 3] = 255;
         }
       }
@@ -261,7 +305,7 @@ function buildGround(
   // Last, and at full resolution: the only line on this earth is where water
   // meets land. No political borders, no graticule, no labels — the moment
   // there are, this is a dashboard.
-  ctx.strokeStyle = COAST;
+  ctx.strokeStyle = palette.coast;
   ctx.lineWidth = 0.75;
   ctx.lineJoin = 'round';
   ctx.stroke(shape);
@@ -283,7 +327,7 @@ function buildGround(
  * all the way round or half the candles sit on nothing, and an earth whose dark
  * side is genuinely black is a crescent rather than a planet.
  */
-function buildNight(at: number): HTMLCanvasElement {
+function buildNight(at: number, palette: Palette): HTMLCanvasElement {
   const w = 200;
   const h = Math.max(1, Math.round(w / ASPECT));
 
@@ -299,6 +343,7 @@ function buildNight(at: number): HTMLCanvasElement {
   const sunLon = sun.lon * RAD;
 
   const image = ctx.createImageData(w, h);
+  const inside = new Uint8Array(w * h);
   for (let j = 0; j < h; j += 1) {
     for (let i = 0; i < w; i += 1) {
       const place = unproject(
@@ -307,6 +352,7 @@ function buildNight(at: number): HTMLCanvasElement {
       );
       const at4 = (j * w + i) * 4;
       if (!place) continue;
+      inside[j * w + i] = 1;
 
       // The cosine of the sun's zenith angle: the sphere's own dot product,
       // written in latitude and longitude because that is what we have.
@@ -316,7 +362,34 @@ function buildNight(at: number): HTMLCanvasElement {
         Math.cos(sunLat) * Math.cos(lat) * Math.cos(place.lon * RAD - sunLon);
 
       const daylight = smoothstep(-0.14, 0.24, lambert);
-      image.data[at4 + 3] = Math.round((1 - daylight) * NIGHT_DEPTH * 255);
+      image.data[at4] = palette.night[0];
+      image.data[at4 + 1] = palette.night[1];
+      image.data[at4 + 2] = palette.night[2];
+      image.data[at4 + 3] = Math.round((1 - daylight) * palette.nightDepth * 255);
+    }
+  }
+
+  // Bled past the edge of the world, row by row, from the last pixel inside.
+  // Scaled up, a pixel here is fifteen on a phone; left transparent, the rim
+  // would fade to nothing across one of them and draw the grid as a stepped,
+  // blurred ring round the earth. Filled, the scaling has nothing to fade
+  // towards, and the draw is clipped to the vector outline instead.
+  for (let j = 0; j < h; j += 1) {
+    const row = j * w * 4;
+    let first = -1;
+    let last = -1;
+    for (let i = 0; i < w; i += 1) {
+      if (inside[j * w + i]) {
+        if (first < 0) first = i;
+        last = i;
+      }
+    }
+    if (first < 0) continue;
+    for (let i = 0; i < first; i += 1) {
+      image.data.copyWithin(row + i * 4, row + first * 4, row + first * 4 + 4);
+    }
+    for (let i = last + 1; i < w; i += 1) {
+      image.data.copyWithin(row + i * 4, row + last * 4, row + last * 4 + 4);
     }
   }
   ctx.putImageData(image, 0, 0);
@@ -422,49 +495,58 @@ function flameSprite(warmth: number): HTMLCanvasElement {
   ctx.globalCompositeOperation = 'lighter';
 
   /*
-    THE CORE OCCUPIES A THIRD OF THE SPRITE, NOT ALL OF IT — AND THAT IS WHY
-    THE STAR IS VISIBLE AT ALL.
+    A CANDLE, NOT A STAR. Since 14 September 2026 each light is a small
+    candle: a teardrop of flame with a paler heart, a short wick under it,
+    and the halo the cell's coarseness earns. Drawn about fifteen pixels
+    across, the teardrop reads as a light that is slightly taller than it is
+    wide, which is what a flame is and a dot is not. The footprint is still
+    large and the flame small inside it, for the reason the star had: the
+    whole sprite is drawn small, and a flame that filled it would be a blob.
 
-    Filling the sprite with the core and putting the glints at 96% of its radius
-    is correct in the texture and invisible on screen, because the whole sprite
-    is drawn about twenty pixels across and the spikes land sub-pixel. Making
-    the light bigger would fix the star and lose the pinprick, which was the
-    point. So the footprint is large and the core is small inside it.
-
-    Anything that changes one of these two numbers has to change the other:
-    `sizes[i]` in `setPoints` is the footprint, and this is the fraction of it
-    that is bright.
+    Anything that changes the flame's height has to change `sizes[i]` in
+    `setPoints`, which is the footprint.
   */
-  const core = ctx.createRadialGradient(c, c, 0, c, c, c * 0.3);
-  core.addColorStop(0, f(255, 252, 245, 1));
-  core.addColorStop(0.28, f(255, 238, 203, 0.92));
-  core.addColorStop(0.55, f(255, 198, 124, 0.4));
-  core.addColorStop(1, f(230, 150, 70, 0));
-  ctx.fillStyle = core;
-  ctx.fillRect(0, 0, size, size);
-
-  // The bloom the cell's coarseness earns — a degree is 111km, so a light is a
-  // region and not a pin. Faint and wide, under the core rather than around it.
   const halo = ctx.createRadialGradient(c, c, 0, c, c, c * 0.62);
-  halo.addColorStop(0, f(255, 206, 140, 0.16));
+  halo.addColorStop(0, f(255, 206, 140, 0.18));
   halo.addColorStop(0.5, f(232, 160, 86, 0.06));
   halo.addColorStop(1, f(224, 160, 87, 0));
   ctx.fillStyle = halo;
   ctx.fillRect(0, 0, size, size);
 
+  // The wick: a short dim stem below the flame, so the light has a foot.
+  ctx.fillStyle = f(210, 150, 100, 0.4);
+  const wickW = c * 0.05;
+  ctx.fillRect(c - wickW / 2, c + c * 0.16, wickW, c * 0.2);
+
+  // The flame: a teardrop, tip up, widest below its middle.
+  const tip = c - c * 0.36;
+  const foot = c + c * 0.2;
+  const wide = c * 0.17;
+  const flame = new Path2D();
+  flame.moveTo(c, tip);
+  flame.bezierCurveTo(c + wide * 0.4, c - c * 0.1, c + wide, c + c * 0.02, c + wide * 0.85, c + c * 0.12);
+  flame.bezierCurveTo(c + wide * 0.6, foot, c - wide * 0.6, foot, c - wide * 0.85, c + c * 0.12);
+  flame.bezierCurveTo(c - wide, c + c * 0.02, c - wide * 0.4, c - c * 0.1, c, tip);
+
+  const body = ctx.createRadialGradient(c, c + c * 0.06, 0, c, c + c * 0.04, c * 0.34);
+  body.addColorStop(0, f(255, 246, 214, 1));
+  body.addColorStop(0.35, f(255, 214, 140, 0.95));
+  body.addColorStop(0.75, f(240, 160, 80, 0.55));
+  body.addColorStop(1, f(220, 130, 60, 0));
+  ctx.fillStyle = body;
+  ctx.fill(flame);
+
+  // The heart: a paler, smaller flame inside the first, slightly low.
+  const heart = ctx.createRadialGradient(c, c + c * 0.08, 0, c, c + c * 0.08, c * 0.16);
+  heart.addColorStop(0, f(255, 255, 240, 0.9));
+  heart.addColorStop(1, f(255, 230, 180, 0));
+  ctx.fillStyle = heart;
+  ctx.fill(flame);
+
   /**
-   * A glint: a soft streak out from the centre.
-   *
-   * This is what turns a dot into a light. A disc of any size reads as a
-   * painted mark; the moment it has spikes the eye reads it as something
-   * *emitting*, because that is what a bright point does to a lens and to a
-   * squinted eye. It is the cheapest possible piece of life and it is why these
-   * stopped looking like yellow stickers.
-   *
-   * The gradient is built after the transform on purpose — canvas gradients
-   * live in user space, so creating it inside the scale is what stretches a
-   * circle into a streak. Building it first and scaling after would move the
-   * streak instead of shaping it.
+   * A glint: a soft streak out from the centre. What turns a mark into a
+   * light. Two now, on the axes, fainter than the star had: enough to say
+   * "emitting", not enough to turn the flame back into a spark.
    */
   const glint = (angle: number, reach: number, width: number, a: number) => {
     ctx.save();
@@ -480,13 +562,8 @@ function flameSprite(warmth: number): HTMLCanvasElement {
     ctx.restore();
   };
 
-  // Four spikes, the diagonals shorter and fainter than the axes. Kept well
-  // under the core's brightness: this should read as a twinkle at the size
-  // these are drawn, never as a lens flare on a photograph.
-  glint(0, c * 0.98, c * 0.022, 0.62);
-  glint(Math.PI / 2, c * 0.98, c * 0.022, 0.62);
-  glint(Math.PI / 4, c * 0.46, c * 0.016, 0.26);
-  glint(-Math.PI / 4, c * 0.46, c * 0.016, 0.26);
+  glint(0, c * 0.7, c * 0.02, 0.4);
+  glint(Math.PI / 2, c * 0.5, c * 0.018, 0.3);
 
   return canvas;
 }
@@ -497,12 +574,52 @@ function flameSprite(warmth: number): HTMLCanvasElement {
 
 export default function WorldMap({
   points,
+  you = null,
+  fit = 'contain',
+  waiting = false,
+  room = 'dusk',
+  paused = false,
   className,
 }: {
   points: WorldPoint[];
+  /**
+   * Your own cell, marked client-side: a slightly larger candle with a soft
+   * ring. The server never says which light is whose (`/api/world` is the
+   * same for every caller), so this is the one thing the browser adds.
+   */
+  you?: Cell | null;
+  /**
+   * `contain`, the whole earth fitted, for the sitting and `/world`. `cover`
+   * fills the frame for the doors: the whole width on a wide screen, and on a
+   * tall one cropped to the longitudes around `you` — or, before the edge has
+   * said where that is, around the device's time zone. See `lib/earthView.ts`.
+   */
+  fit?: 'contain' | 'cover';
+  /**
+   * Not sitting yet: your place is an unlit dashed ring marked *You* rather
+   * than a candle, because nothing of yours has been lit.
+   */
+  waiting?: boolean;
+  /** Dawn or dusk: which palette the ground, the night and the lights are drawn in. */
+  room?: Room;
+  /**
+   * Hold the last frame and stop the loop: something covers the earth, and
+   * a full-screen canvas repainting sixty times a second under it is what
+   * makes that thing stutter.
+   */
+  paused?: boolean;
   className?: string;
 }) {
   const hostRef = useRef<HTMLDivElement | null>(null);
+  const pausedRef = useRef(paused);
+  pausedRef.current = paused;
+  // Read by the scene, which is built once; a render only updates them.
+  const fitRef = useRef(fit);
+  fitRef.current = fit;
+  const waitingRef = useRef(waiting);
+  waitingRef.current = waiting;
+  const roomRef = useRef(room);
+  roomRef.current = room;
 
   /**
    * The live scene, kept out of React state on purpose.
@@ -514,6 +631,9 @@ export default function WorldMap({
    */
   const sceneRef = useRef<{
     setPoints: (points: WorldPoint[]) => void;
+    setYou: (you: Cell | null) => void;
+    setRoom: (room: Room) => void;
+    setPaused: (paused: boolean) => void;
     dispose: () => void;
   } | null>(null);
 
@@ -533,6 +653,8 @@ export default function WorldMap({
     host.appendChild(canvas);
 
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    // The page's own body face, for the one word drawn on the earth.
+    const youFont = `700 12px ${getComputedStyle(host).fontFamily}`;
 
     let disposed = false;
     let land: LandData | null = null;
@@ -542,8 +664,15 @@ export default function WorldMap({
     let left = 0;
     let top = 0;
     let ground: HTMLCanvasElement | null = null;
-    let night: HTMLCanvasElement | null = null;
+    // The ground with the night laid over it, at device resolution: what the
+    // frame loop draws, in one copy with no scaling. Clipping and upscaling
+    // the night every frame instead cost more than every light on the earth.
+    const base = document.createElement('canvas');
+    let edge: Path2D | null = null;
     let nightAt = 0;
+    // The room the ground was last built for, so a render that did not change
+    // it does not rebuild the most expensive thing in this file.
+    let builtRoom: Room = room;
 
     const sprites = Array.from({ length: TINTS }, (_, i) =>
       flameSprite(i / (TINTS - 1)),
@@ -559,9 +688,19 @@ export default function WorldMap({
     let seeds = new Float32Array(0);
 
     let latest: WorldPoint[] = points;
+    let mine: Cell | null = you;
+    let mineX = 0;
+    let mineY = 0;
+    let mineSize = 0;
 
     const place = () => {
       const next = latest;
+      if (mine) {
+        const p = project(mine.lat, mine.lon);
+        mineX = left + px(frame, p.x);
+        mineY = top + py(frame, p.y);
+        mineSize = Math.max(13, frame.width * 0.0135) * 1.5;
+      }
       count = next.length;
       xs = new Float32Array(count);
       ys = new Float32Array(count);
@@ -612,6 +751,25 @@ export default function WorldMap({
       });
     };
 
+    const bake = () => {
+      nightAt = serverNow();
+      const b = ground && base.getContext('2d');
+      if (!ground || !b) return;
+      base.width = ground.width;
+      base.height = ground.height;
+      b.drawImage(ground, 0, 0);
+      // Clipped to the world's outline, so the rim is a vector edge at
+      // device resolution like the coast, not the night layer's grid.
+      b.setTransform(base.width / frame.width, 0, 0, base.height / frame.height, 0, 0);
+      if (edge) b.clip(edge);
+      b.imageSmoothingQuality = 'high';
+      b.drawImage(buildNight(nightAt, PALETTES[builtRoom]), 0, 0, frame.width, frame.height);
+    };
+
+    // Repaints once after a layout while the loop is paused, since resizing
+    // the canvas clears it. Set once the frame loop exists.
+    let redraw = () => {};
+
     const layout = () => {
       const w = host.clientWidth;
       const h = host.clientHeight;
@@ -620,18 +778,29 @@ export default function WorldMap({
       canvas.width = Math.round(w * dpr);
       canvas.height = Math.round(h * dpr);
 
-      // Fitted to whichever dimension runs out first, never cropped. A world
-      // map that does not show the whole world is answering a different
-      // question from the one this page asks.
-      const scale = Math.min(w / (2 * X_MAX), h / (2 * Y_MAX));
-      frame = { width: 2 * X_MAX * scale, height: 2 * Y_MAX * scale, scale };
-      left = (w - frame.width) / 2;
-      top = (h - frame.height) / 2;
+      // Fitted to whichever dimension runs out first, never cropped, for the
+      // sitting and `/world`: a world map that does not show the whole world
+      // is answering a different question from the one those pages ask. The
+      // doors ask another — where am I, among these people — and cover the
+      // frame instead.
+      const fitted =
+        fitRef.current === 'cover'
+          ? coverFit(
+              w,
+              h,
+              mine ?? { lat: 20, lon: longitudeFromOffset(new Date().getTimezoneOffset()) },
+            )
+          : containFit(w, h);
+      frame = { width: fitted.width, height: fitted.height, scale: fitted.scale };
+      left = fitted.left;
+      top = fitted.top;
+      edge = edgePath(frame);
 
-      ground = buildGround(frame, dpr, land, relief);
-      night = buildNight(serverNow());
-      nightAt = serverNow();
+      builtRoom = roomRef.current;
+      ground = buildGround(frame, dpr, land, relief, PALETTES[builtRoom]);
+      bake();
       place();
+      redraw();
     };
 
     /*
@@ -686,36 +855,34 @@ export default function WorldMap({
     const startedAt = performance.now();
 
     const render = () => {
+      raf = 0;
       if (disposed) return;
-      raf = requestAnimationFrame(render);
+      // Paused, this frame is drawn and it is the last until play resumes.
+      if (!pausedRef.current) raf = requestAnimationFrame(render);
 
       const elapsed = reducedMotion ? 0 : (performance.now() - startedAt) / 1000;
 
       // The sun moves a quarter of a degree a minute, which is under a pixel
       // here, so the night is rebuilt on the minute rather than on the frame.
-      const now = serverNow();
-      if (now - nightAt > 60_000) {
-        night = buildNight(now);
-        nightAt = now;
-      }
+      if (serverNow() - nightAt > 60_000) bake();
 
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.globalCompositeOperation = 'source-over';
       ctx.globalAlpha = 1;
       ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
 
-      if (ground) ctx.drawImage(ground, left, top, frame.width, frame.height);
-      if (night) {
-        ctx.imageSmoothingQuality = 'high';
-        ctx.drawImage(night, left, top, frame.width, frame.height);
-      }
+      if (ground) ctx.drawImage(base, left, top, frame.width, frame.height);
 
       // One breath for the whole earth: about five and a half seconds in and
       // out, which is roughly a resting breath and slower than anybody watches
       // for. Every light does it together, which is the point of the page.
       const breath = 1 + Math.sin(elapsed * 1.15) * 0.075;
 
-      ctx.globalCompositeOperation = 'lighter';
+      // Light adds on dusk. At dawn there is nothing to add to, so the flames
+      // darken the ground instead (multiply), and each gets a small ember
+      // heart so the lights can still be counted.
+      const dawn = builtRoom === 'dawn';
+      ctx.globalCompositeOperation = dawn ? 'multiply' : 'lighter';
       for (let i = 0; i < count; i += 1) {
         const seed = seeds[i]!;
 
@@ -754,12 +921,53 @@ export default function WorldMap({
           s,
           s,
         );
+        if (dawn) {
+          ctx.fillStyle = 'rgba(156, 61, 18, 0.85)';
+          ctx.beginPath();
+          ctx.arc(xs[i]!, ys[i]! + s * 0.04, Math.max(1.4, s * 0.06), 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      // Your own light: the same candle, half again as big, with a soft
+      // ring that breathes with the rest.
+      if (mine && waitingRef.current) {
+        // Before the strike: the place, unlit, and the word. Breathes with
+        // the rest so it belongs to the same earth.
+        const r = mineSize * 0.42 * breath;
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.globalAlpha = 1;
+        ctx.setLineDash([3, 3.5]);
+        ctx.strokeStyle = dawn ? 'rgba(106, 83, 66, 0.85)' : 'rgba(215, 191, 166, 0.85)';
+        ctx.lineWidth = 1.25;
+        ctx.beginPath();
+        ctx.arc(mineX, mineY, r, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.font = youFont;
+        ctx.fillStyle = dawn ? 'rgba(59, 42, 29, 0.92)' : 'rgba(246, 233, 216, 0.92)';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('You', mineX - r - 7, mineY);
+        ctx.textAlign = 'start';
+      } else if (mine) {
+        const s = mineSize * breath;
+        ctx.globalAlpha = 1;
+        ctx.drawImage(sprites[0]!, mineX - s / 2, mineY - s / 2, s, s);
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.strokeStyle = dawn ? 'rgba(156, 61, 18, 0.5)' : 'rgba(224, 160, 87, 0.45)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(mineX, mineY, s * 0.42, 0, Math.PI * 2);
+        ctx.stroke();
       }
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'source-over';
     };
 
     render();
+    redraw = () => {
+      if (!raf) render();
+    };
 
     const observer = new ResizeObserver(layout);
     observer.observe(host);
@@ -768,6 +976,20 @@ export default function WorldMap({
       setPoints: (next) => {
         latest = next;
         place();
+      },
+      setYou: (next) => {
+        mine = next;
+        // A covered earth is cropped around you, so knowing where you are
+        // moves the whole map, not just your mark.
+        if (fitRef.current === 'cover') layout();
+        else place();
+      },
+      setRoom: (next) => {
+        // Another palette is another ground and another night.
+        if (next !== builtRoom) layout();
+      },
+      setPaused: (next) => {
+        if (!next && !raf && !disposed) raf = requestAnimationFrame(render);
       },
       dispose: () => {
         disposed = true;
@@ -791,6 +1013,18 @@ export default function WorldMap({
   useEffect(() => {
     sceneRef.current?.setPoints(points);
   }, [points]);
+
+  useEffect(() => {
+    sceneRef.current?.setYou(you);
+  }, [you]);
+
+  useEffect(() => {
+    sceneRef.current?.setRoom(room);
+  }, [room]);
+
+  useEffect(() => {
+    sceneRef.current?.setPaused(paused);
+  }, [paused]);
 
   return <div ref={hostRef} className={className} aria-hidden />;
 }

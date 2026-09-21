@@ -48,10 +48,18 @@ import {
  * silent path through the setup flow."*
  *
  * The autoplay reason for building early is real and unchanged — a context can
- * only start inside a gesture, and the five audition buttons on the sound step
- * are far too late to be the first one. So the graph is still built on
- * `Begin.`, but silent: `ensure({ silent: true })` starts the master at zero
- * and `unmute()` raises it when the sound question is actually on screen.
+ * only start inside a gesture, and the five chips in the Sound row are far too
+ * late to be the first one. So the graph is still built on the first press,
+ * but silent: `ensure({ silent: true })` starts the master at zero and
+ * `unmute()` raises it when the Sound row is actually opened.
+ *
+ * Since 14 September 2026 the gestures are the rail's. A door on a guest's
+ * first screen, and a door on the signed-in home, call `ensure({ silent:
+ * true })`; the Sound screen's switch calls `unmute()` when it is turned on;
+ * and the bowl strike builds the graph audibly through `begin` — `ensure()`
+ * then `restore()` — which is the case this note describes as allowed: the
+ * mix is the one the person built for the sitting they are starting, and the
+ * line under the bowl says what it is.
  *
  * The beds' own levels are left alone throughout, which is what makes this
  * safe rather than clever: saying *No* to the question writes real zeros to
