@@ -211,8 +211,7 @@ signed-in Home, the screens are the room rather than paper, and the room
 follows the visitor's own day: dawn — the paper's light, a pale earth, ember
 controls — from six in the morning, dusk — the dark earth and flame — from six
 in the evening. A sun or moon beside the menu switches it, and the switch
-lasts until the next six o'clock, on that device only. **Added 16 September 2026**, at Tenzing's request; not yet shown to
-Jonny.
+lasts until the next six o'clock, on that device only. **Added 16 September 2026**, at Tenzing's request; shown to Jonny by 21 September 2026.
 
 **The sitting.** The room. *With others:* the earth, full width, with a candle for
 every place somebody lit one this hour; the ones still here are bright, the
@@ -257,7 +256,7 @@ right over Home with every setting on it — how long (a slider), the bell
 the five beds; not played there, the level is set while sitting), and the
 switch. The three lines open the same drawer as a menu — *Account*,
 *Settings*, *Your practice*, *Sign out* — with Settings opening in place.
-Not yet shown to Jonny. When two or more are sitting the count
+Shown to Jonny by 21 September 2026. When two or more are sitting the count
 is on the *With others* door, the same door as on the rail. The menu: *Account* (email, the name, where you are
 from and the switch that shows it, *Delete account* with its confirmation),
 *Settings* (the drawer's own settings, opening in place), *Your
