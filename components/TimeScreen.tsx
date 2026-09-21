@@ -1,163 +1,239 @@
 'use client';
 
-import { useId, useState, type CSSProperties } from 'react';
+import { joinStops } from '@/lib/dial';
 import { localTime } from '@/lib/format';
-import {
-  TIMER_MAX_MINUTES,
-  TIMER_MIN_MINUTES,
-  TIMER_STOPS,
-  clampMinutes,
-  durationLabel,
-  nextSharedBellAt,
-  timerStopIndex,
-} from '@/lib/timer';
+import { TIMER_STOPS, clampMinutes, durationLabel, nextSharedBellAt } from '@/lib/timer';
 import type { UserPreferences } from '@/lib/types';
+import Candle from './Candle';
 import Screen from './Screen';
-import { CHIP, CHIP_ON, FIELD } from './controls';
+import TimerDial from './TimerDial';
 
-/**
- * "How long will you sit?"
- *
- * The slider over the twelve stops, and a number you can type instead. A
- * typed number snaps to the nearest stop when you leave the field, and
- * says so, because seventeen minutes is not a length the slider has and
- * the sitting should not quietly be a different one from the one typed.
- *
- * Sitting with others adds a thirteenth answer, the shared bell: the far
- * end of the slider, and a chip that says what time that is.
- */
-export default function TimeScreen({
-  current,
-  prefs,
-  update,
-  now,
-  onBack,
-  onNext,
-}: {
+interface TimeProps {
   current: boolean;
   prefs: UserPreferences;
   update: (patch: Partial<UserPreferences>) => void;
   now: number | null;
   onBack: () => void;
   onNext: () => void;
+  step?: number;
+  steps?: number;
+}
+
+const SENTENCE =
+  'font-display text-[2.25rem] font-bold leading-[1.1] text-balance text-room-ink sm:text-[3rem] lg:text-[3.75rem]';
+
+/**
+ * "How long will you sit?"
+ *
+ * Two answers under one name, because the two doors ask different things.
+ * By yourself, it is a sentence and a candle whose height is the length,
+ * with a light for everyone else sitting now (`CandleTime`). With others, it
+ * is a sentence about the sitting you are joining, with a timer dial that
+ * turns the length inside it (`JoinTime`). Settings on Home has its own
+ * slider (`SettingsDrawer`).
+ */
+export default function TimeScreen({
+  count,
+  ...props
+}: TimeProps & {
+  /** People present now, you among them. Null when unknown. */
+  count: number | null;
 }) {
-  const id = useId();
-  const together = prefs.showCount;
-  const bellAt = now === null ? null : nextSharedBellAt(now);
-  const bellLabel = bellAt === null ? null : localTime(bellAt);
-  const stops = together ? TIMER_STOPS.length : TIMER_STOPS.length - 1;
-  const stop = prefs.untilBell && together
-    ? TIMER_STOPS.length
-    : timerStopIndex(prefs.timerMinutes);
-  const duration = durationLabel(prefs.timerMinutes);
+  return props.prefs.showCount ? (
+    <JoinTime {...props} count={count} />
+  ) : (
+    <CandleTime {...props} count={count} />
+  );
+}
 
-  const [typed, setTyped] = useState<string | null>(null);
-  const [rounded, setRounded] = useState<number | null>(null);
-
-  const commitTyped = () => {
-    if (typed === null) return;
-    const n = Number(typed);
-    setTyped(null);
-    if (!Number.isFinite(n) || typed.trim() === '') return;
-    const snapped = clampMinutes(n);
-    setRounded(snapped !== n ? n : null);
-    update({ timerMinutes: snapped, untilBell: false });
-  };
+/**
+ * By yourself: your length, and the feeling that you are not the only one.
+ *
+ * *You're sitting for 10 minutes.* over *11 others are sitting somewhere
+ * right now. They'll come and go; your time is your own.* — and beside it on
+ * a laptop, under it on a phone, the candle that sets the length. Nobody
+ * joins anybody here, so the length is chosen freely and the people are
+ * only company: a count and a light each, no names and no places. The count
+ * is everyone with the page open, you among them, so the number said is one
+ * less; with nobody else there, the line is about the ones who will come.
+ */
+function CandleTime({
+  current,
+  prefs,
+  update,
+  count,
+  onBack,
+  onNext,
+  step,
+  steps,
+}: TimeProps & { count: number | null }) {
+  const minutes = clampMinutes(prefs.timerMinutes);
+  const duration = durationLabel(minutes);
+  const others = count === null ? 0 : Math.max(0, count - 1);
 
   return (
     <Screen
       current={current}
-      title="How long will you sit?"
+      title={
+        <>
+          You’re sitting for{' '}
+          <span className="text-room-action tabular-nums">
+            {duration.value} {duration.unit}
+          </span>
+          .
+        </>
+      }
+      lede={
+        others >= 1 ? (
+          <>
+            <span
+              aria-hidden
+              className="live-dot mr-2 mb-0.5 inline-block size-2 rounded-full bg-glow align-middle"
+            />
+            <span className="tabular-nums">{others}</span>{' '}
+            {others === 1 ? 'other person is' : 'others are'} sitting somewhere right now.
+            They’ll come and go; your time is your own.
+          </>
+        ) : (
+          <>Others will come and go while you sit; your time is your own.</>
+        )
+      }
+      titleClassName={SENTENCE}
       onBack={onBack}
       onNext={onNext}
+      split="md:grid-cols-[minmax(0,1fr)_18rem] lg:grid-cols-[minmax(0,1fr)_22rem]"
+      middle
+      step={step}
+      steps={steps}
+      room
     >
-      <div className="flex flex-col gap-6">
-        <p
-          aria-live="polite"
-          className="font-display text-[2.5rem] leading-none font-bold text-ember"
-        >
-          {prefs.untilBell && together ? (
-            <>
-              Until <span className="tabular-nums">{bellLabel ?? 'the bell'}</span>
-            </>
-          ) : (
-            <>
-              {duration.value}{' '}
-              <span className="text-2xl text-ink-2">{duration.unit}</span>
-            </>
-          )}
-        </p>
+      <Candle
+        minutes={minutes}
+        others={others}
+        label="How long to sit"
+        valueText={`${duration.value} ${duration.unit}`}
+        onChange={(m) => update({ timerMinutes: m, untilBell: false })}
+      />
+    </Screen>
+  );
+}
 
-        <input
-          type="range"
-          min={0}
-          max={stops}
-          step={1}
-          value={stop}
-          aria-label="How long to sit"
-          aria-valuetext={
-            prefs.untilBell && together
+/**
+ * With others: the sentence is the screen, and the dial turns it.
+ *
+ * *You're sitting for 10 minutes with 11 people.* — or *until 10:55*, when
+ * the dial is on the bell. The count is everyone with the page open, you
+ * among them, so the number said is one less; below one it is not a number
+ * at all but *with anyone who joins*, which is true whoever arrives. No
+ * names: a name is shown to others only while its owner is sitting with
+ * them, and somebody reading this has not sat down yet.
+ *
+ * The dial turns through every length with the shared bell placed where it
+ * falls in time (`joinStops`), so a dial twelve minutes before the bell goes
+ * 1, 5, 10, the bell, 15. On a laptop the sentence takes the width and the
+ * dial sits beside it; on a phone the dial is under the sentence.
+ */
+function JoinTime({
+  current,
+  prefs,
+  update,
+  now,
+  count,
+  onBack,
+  onNext,
+  step,
+  steps,
+}: TimeProps & { count: number | null }) {
+  const bellAt = now === null ? null : nextSharedBellAt(now);
+  const bellLabel = bellAt === null ? null : localTime(bellAt);
+  const minutesToBell =
+    bellAt === null || now === null ? null : Math.ceil((bellAt - now) / 60_000);
+  const stops = joinStops(TIMER_STOPS, minutesToBell);
+  const bellIndex = stops.findIndex((s) => s.bell);
+  const minutes = clampMinutes(prefs.timerMinutes);
+  const index = prefs.untilBell
+    ? bellIndex
+    : Math.max(0, stops.findIndex((s) => !s.bell && s.minutes === minutes));
+  const duration = durationLabel(minutes);
+  const others = count === null ? 0 : count - 1;
+
+  const time = prefs.untilBell ? (
+    <>
+      until <span className="text-room-action tabular-nums">{bellLabel ?? 'the bell'}</span>
+    </>
+  ) : (
+    <>
+      for{' '}
+      <span className="text-room-action tabular-nums">
+        {duration.value} {duration.unit}
+      </span>
+    </>
+  );
+
+  return (
+    <Screen
+      current={current}
+      title={
+        others >= 1 ? (
+          <>
+            You’re sitting {time} with{' '}
+            <span className="text-room-action tabular-nums">
+              {others} {others === 1 ? 'person' : 'people'}
+            </span>
+            .
+          </>
+        ) : (
+          <>You’re sitting {time}, with anyone who joins.</>
+        )
+      }
+      titleClassName={SENTENCE}
+      onBack={onBack}
+      onNext={onNext}
+      split="md:grid-cols-[minmax(0,1fr)_16rem] lg:grid-cols-[minmax(0,1fr)_19rem]"
+      middle
+      step={step}
+      steps={steps}
+      room
+    >
+      <div className="w-full max-w-60 md:max-w-none">
+        <TimerDial
+          count={stops.length}
+          index={index}
+          marked={bellIndex}
+          markLabel="bell"
+          label="How long to sit"
+          valueText={
+            prefs.untilBell
               ? `Until the bell${bellLabel ? ` at ${bellLabel}` : ''}`
               : `${duration.value} ${duration.unit}`
           }
-          onChange={(e) => {
-            const i = Number(e.target.value);
-            setRounded(null);
-            if (i === TIMER_STOPS.length) {
-              update({ untilBell: true });
-              return;
-            }
-            update({
-              timerMinutes: clampMinutes(TIMER_STOPS[i] ?? prefs.timerMinutes),
-              untilBell: false,
-            });
+          onChange={(i) => {
+            const stop = stops[i];
+            if (!stop) return;
+            update(
+              stop.bell
+                ? { untilBell: true }
+                : { timerMinutes: stop.minutes ?? prefs.timerMinutes, untilBell: false },
+            );
           }}
-          className="room-range w-full"
-          style={{ '--range-fill': `${(stop / stops) * 100}%` } as CSSProperties}
+          centre={
+            prefs.untilBell ? (
+              <>
+                <span className="font-display text-2xl font-bold text-room-ink tabular-nums">
+                  {bellLabel ?? 'Bell'}
+                </span>
+                <span className="text-[0.8125rem] text-room-ink-2">the bell</span>
+              </>
+            ) : (
+              <>
+                <span className="font-display text-[2.5rem] leading-none font-bold text-room-ink tabular-nums">
+                  {duration.value}
+                </span>
+                <span className="mt-1 text-[0.8125rem] text-room-ink-2">{duration.unit}</span>
+              </>
+            )
+          }
         />
-
-        <div className="flex items-center gap-3">
-          <label htmlFor={id} className="shrink-0 text-[0.9375rem] text-ink-2">
-            Or type it
-          </label>
-          <input
-            id={id}
-            type="number"
-            inputMode="numeric"
-            min={TIMER_MIN_MINUTES}
-            max={TIMER_MAX_MINUTES}
-            value={typed ?? (prefs.untilBell && together ? '' : String(prefs.timerMinutes))}
-            onChange={(e) => setTyped(e.target.value)}
-            onBlur={commitTyped}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                commitTyped();
-              }
-            }}
-            className={`${FIELD} max-w-28 text-center tabular-nums`}
-          />
-          <span className="text-[0.9375rem] text-ink-2">minutes</span>
-        </div>
-        <p className="min-h-5 text-[0.8125rem] text-ink-3" role="status">
-          {rounded !== null
-            ? `${rounded} became ${prefs.timerMinutes}: the sitting keeps to the slider's stops.`
-            : ''}
-        </p>
-
-        {together && (
-          <button
-            type="button"
-            onClick={() => {
-              setRounded(null);
-              update({ untilBell: !prefs.untilBell });
-            }}
-            aria-pressed={prefs.untilBell}
-            className={`${CHIP} w-full ${prefs.untilBell ? CHIP_ON : ''}`}
-          >
-            Until the bell{bellLabel ? ` at ${bellLabel}` : ''}, with everyone
-          </button>
-        )}
       </div>
     </Screen>
   );

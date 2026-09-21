@@ -5,7 +5,6 @@ import { serverNow } from '@/lib/clock';
 import { localTime } from '@/lib/format';
 import { composeLabel } from '@/lib/label';
 import {
-  SETTINGS_SCREENS,
   screensFor,
   step,
   type Screen as ScreenName,
@@ -22,17 +21,17 @@ import Account from './Account';
 import Afterwards from './Afterwards';
 import BellScreen from './BellScreen';
 import BowlScreen from './BowlScreen';
-import ModeScreen, { doorPatch, type Mode } from './ModeScreen';
+import ModeScreen, { doorPatch } from './ModeScreen';
 import NameScreen from './NameScreen';
 import OriginScreen from './OriginScreen';
 import Rail from './Rail';
+import RoomToggle from './RoomToggle';
 import Sitting, { type Sit } from './Sitting';
 import SoundScreen from './SoundScreen';
+import type { MixPatch } from './Sounds';
 import TimeScreen from './TimeScreen';
-import WelcomeScreen from './WelcomeScreen';
 import { openingBell, scheduleBell, unlockAudio, type ScheduledBell } from './audio';
-import { ICON, QUIET_DUSK } from './controls';
-import type { MASTER_KEY, TrackSlug } from './mix';
+import { ICON, ICON_ROOM, QUIET_ROOM } from './controls';
 import { settingsLine } from './settingsLine';
 import { displayName, type AuthState } from './useAuth';
 import { useClock } from './useClock';
@@ -42,6 +41,7 @@ import { useOrigin } from './useOrigin';
 import { usePresence } from './usePresence';
 import { useProfile } from './useProfile';
 import { useReducedMotion } from './useReducedMotion';
+import { useRoom } from './useRoom';
 import type { SyncStatus } from './useSyncPreferences';
 import { useUsual } from './useUsual';
 import { useWorld } from './useWorld';
@@ -50,8 +50,8 @@ import { useWorld } from './useWorld';
  * The journey: the rail of questions, the bowl, the sitting, and after.
  *
  * ONE STAGE AT A TIME
- * The rail holds every question side by side and slides between them; the
- * bowl is its last screen. Striking the bowl is the only way a sitting
+ * The rail holds every question in one frame and switches between them; the
+ * bowl is its last screen. The guest's menu is pinned over it until the strike. Striking the bowl is the only way a sitting
  * begins, and that is deliberate: it is a real gesture, so the audio can
  * start inside it, and it is the same gesture for a guest, for somebody
  * signed in, and for Sit again at the end. There is no auto-start and no
@@ -65,11 +65,18 @@ import { useWorld } from './useWorld';
  * interrupted.
  *
  * WHAT MAKES SOUND, AND WHEN
- * The first Next unlocks the audio and builds the graph silent. The Bell
+ * The first click — a door on the first screen — unlocks the audio and
+ * builds the graph silent. The Bell
  * screen strikes the bell you pick, straight to the context. The Sound
  * screen's switch unmutes the beds. The bowl restores the stored mix and
  * rings the opening bell. Nothing else does.
  */
+
+/**
+ * The screens drawn in the room, dawn or dusk, rather than on paper: from
+ * the choice onward. Paper is for who you are; the room is where you sit.
+ */
+const ROOM_SCREENS: readonly ScreenName[] = ['mode', 'time', 'bell', 'sound', 'bowl'];
 
 type Stage =
   | { kind: 'rail'; at: ScreenName; dir: 1 | -1 }
@@ -96,7 +103,7 @@ export interface JourneyProps {
   prefs: UserPreferences;
   update: (patch: Partial<UserPreferences>) => void;
   /** Runs inside the change event, because the graph needs a gesture. */
-  onSound: (slug: TrackSlug | typeof MASTER_KEY, gain: number) => void;
+  onSound: (patch: MixPatch) => void;
   mix: Mix;
   entries: PracticeEntry[];
   record: (entry: {
@@ -113,16 +120,14 @@ export interface JourneyProps {
   signOut: () => void;
   /**
    * Present when signed in, and it carries the whole difference: the rail
-   * has no welcome, Back off its first screen goes here, and Done at the
-   * end goes here. Absent for a guest, whose way out is the welcome screen.
+   * begins past the doors, Back off its first screen goes here, and Done at
+   * the end goes here. Absent for a guest, whose way out is the doors.
    */
   home?: () => void;
   /** Where the rail begins, when not at its first screen. */
   start?: ScreenName;
   /** Through a door on the home: the rail begins just past the mode screen. */
   afterMode?: boolean;
-  /** Settings from the menu: the three questions, then Done goes home. */
-  settings?: boolean;
 }
 
 export default function Journey({
@@ -141,7 +146,6 @@ export default function Journey({
   home,
   start,
   afterMode = false,
-  settings = false,
 }: JourneyProps) {
   const { now, mono } = useClock();
   const { profile, setProfile } = useProfile({
@@ -153,6 +157,7 @@ export default function Journey({
   const fullscreen = useFullscreen();
   const reduced = useReducedMotion();
   const signedIn = Boolean(home);
+  const { room, toggle: toggleRoom } = useRoom();
 
   // Decided once, when the journey is mounted. The facts it reads can change
   // while the rail is walked (the bowl marks the device as answered), and a
@@ -160,15 +165,13 @@ export default function Journey({
   // asked a question it could have skipped.
   const decide = useCallback(
     (): readonly ScreenName[] =>
-      settings
-        ? SETTINGS_SCREENS
-        : screensFor({
-            signedIn,
-            usual,
-            hasAnswers: answered,
-            originAsked: profile.share !== null,
-          }),
-    [settings, signedIn, usual, answered, profile.share],
+      screensFor({
+        signedIn,
+        usual,
+        hasAnswers: answered,
+        originAsked: profile.share !== null,
+      }),
+    [signedIn, usual, answered, profile.share],
   );
   const [screens, setScreens] = useState<readonly ScreenName[]>(decide);
 
@@ -196,7 +199,8 @@ export default function Journey({
 
   // The earth, only while sitting with others.
   const withOthersNow = stage.kind === 'sitting' && stage.sit.withOthers;
-  const world = useWorld(withOthersNow);
+  // And on the doors, which open on the earth.
+  const world = useWorld(withOthersNow || (stage.kind === 'rail' && stage.at === 'mode'));
   const labels = world.points.flatMap((p) => p.labels ?? []);
   const ownLabel = profile.share ? composeLabel(profile.name, profile.origin) : null;
 
@@ -238,7 +242,7 @@ export default function Journey({
   }, [screens, go, home]);
 
   /**
-   * A guest coming back to the welcome after a sitting is starting a new
+   * A guest coming back to the doors after a sitting is starting a new
    * journey, so the list is decided again: the strike marked this device as
    * answered, and the name and origin are not asked twice.
    */
@@ -378,7 +382,17 @@ export default function Journey({
   }, []);
 
   const bellLabel = now === null ? null : localTime(nextSharedBellAt(now));
-  const mode: Mode | null = prefs.showCount ? 'together' : 'alone';
+
+  const inRoom = stage.kind !== 'rail' || ROOM_SCREENS.includes(stage.at);
+  const roomToggle = (
+    <RoomToggle room={room} onToggle={toggleRoom} variant={inRoom ? 'room' : 'paper'} />
+  );
+
+  // Where each question sits on this visitor's own rail. A guest's doors are
+  // the front page and have no mark; a returning guest whose name and place
+  // are known walks a shorter rail and is told so.
+  const questions: readonly ScreenName[] = signedIn ? screens : screens.filter((s) => s !== 'mode');
+  const stepOf = (s: ScreenName) => questions.indexOf(s) + 1;
 
   const menu = !signedIn ? (
     <Account
@@ -388,7 +402,7 @@ export default function Journey({
       verify={verify}
       linkError={linkError}
       signOut={signOut}
-      className={ICON}
+      className={inRoom ? ICON_ROOM : ICON}
       menu
     />
   ) : undefined;
@@ -409,11 +423,14 @@ export default function Journey({
         onSound={onSound}
         onSoundOpen={mix.unmute}
         onEnd={endEarly}
+        room={room}
+        toggle={roomToggle}
       />
     ) : null;
 
   if (stage.kind === 'finished') {
     return (
+      <div data-room={room} className="contents">
       <Afterwards
         minutes={stage.minutes}
         withOthers={stage.withOthersShown ? stage.withOthers : null}
@@ -442,60 +459,61 @@ export default function Journey({
               signIn={signIn}
               verify={verify}
               signOut={signOut}
-              className={QUIET_DUSK}
+              className={QUIET_ROOM}
               drop="up"
             />
           ) : undefined
         }
       />
+      </div>
     );
   }
-
-  const last = settings ? screens[screens.length - 1] : null;
-  const doneLabel = (s: ScreenName) => (s === last ? 'Done' : undefined);
-  const onNextFor = (s: ScreenName) => (s === last ? () => home?.() : next);
 
   const at = stage.kind === 'rail' ? stage.at : 'bowl';
   const showRail = stage.kind === 'rail' || lifting;
 
+  // The ground changes over the lift at the strike; stepping into or out of
+  // the room on the rail takes half as long, so it changes under the question
+  // rather than after it.
   return (
     <main
+      data-room={room}
       className={`relative h-dvh overflow-clip text-ink transition-colors ease-[var(--ease-lift)] ${
-        stage.kind === 'sitting' ? 'bg-dusk' : 'bg-paper'
+        inRoom ? 'bg-room' : 'bg-paper'
       }`}
-      style={{ transitionDuration: 'var(--lift-ms)' }}
+      style={{
+        transitionDuration: stage.kind === 'rail' ? 'calc(var(--lift-ms) / 2)' : 'var(--lift-ms)',
+      }}
     >
       {sitting && (
         <div className="lift-in absolute inset-0">{sitting}</div>
+      )}
+      {/* Pinned over the rail rather than drawn on a screen, so it stays
+          put while the questions change under it, and gone at the strike. */}
+      {stage.kind === 'rail' && (menu || roomToggle) && (
+        <div className="absolute top-[calc(0.875rem+env(safe-area-inset-top))] right-4 z-20 flex items-center gap-2 sm:right-10 md:right-14 lg:right-20 xl:right-24">
+          {roomToggle}
+          {menu}
+        </div>
       )}
       {showRail && (
       <div className={`absolute inset-0 ${stage.kind === 'sitting' ? 'lift-out' : ''}`} inert={stage.kind !== 'rail'}>
       <Rail
         screens={screens}
         at={at}
+        dir={stage.kind === 'rail' ? stage.dir : 1}
         render={(screen, current) => {
           switch (screen) {
-            case 'welcome':
-              return (
-                <WelcomeScreen
-                  current={current}
-                  count={count}
-                  usualLine={answered ? settingsLine(prefs, now) : null}
-                  usual={usual}
-                  onUsual={setUsual}
-                  onJoin={next}
-                  menu={menu}
-                />
-              );
             case 'name':
               return (
                 <NameScreen
                   current={current}
-                  value={profile.name}
                   onChange={(name) => setProfile({ name })}
                   onBack={back}
                   onNext={next}
                   onSkip={next}
+                  step={stepOf('name')}
+                  steps={questions.length}
                 />
               );
             case 'origin':
@@ -510,19 +528,35 @@ export default function Journey({
                   onBack={back}
                   onNext={next}
                   onSkip={next}
+                  step={stepOf('origin')}
+                  steps={questions.length}
                 />
               );
             case 'mode':
               return (
                 <ModeScreen
                   current={current}
-                  mode={mode}
+                  room={room}
+                  step={stepOf('mode')}
+                  steps={questions.length}
                   bellLabel={bellLabel}
+                  others={count === null ? null : Math.max(0, count - 1)}
+                  points={world.points}
+                  you={origin.cell}
                   onChoose={(m) => {
                     update(doorPatch(m, prefs));
                     next();
                   }}
                   onBack={signedIn || step(screens, 'mode', -1) ? back : undefined}
+                  landing={
+                    signedIn
+                      ? undefined
+                      : {
+                          usualLine: answered ? settingsLine(prefs, now) : null,
+                          usual,
+                          onUsual: setUsual,
+                        }
+                  }
                 />
               );
             case 'time':
@@ -532,6 +566,9 @@ export default function Journey({
                   prefs={prefs}
                   update={update}
                   now={now}
+                  count={count}
+                  step={stepOf('time')}
+                  steps={questions.length}
                   onBack={back}
                   onNext={next}
                 />
@@ -543,8 +580,9 @@ export default function Journey({
                   endBell={prefs.endBell}
                   onPick={(endBell) => update({ endBell })}
                   onBack={back}
-                  onNext={onNextFor('bell')}
-                  nextLabel={doneLabel('bell')}
+                  onNext={next}
+                  step={stepOf('bell')}
+                  steps={questions.length}
                 />
               );
             case 'sound':
@@ -552,12 +590,12 @@ export default function Journey({
                 <SoundScreen
                   current={current}
                   prefs={prefs}
-                  update={update}
                   onSound={onSound}
                   onUnmute={mix.unmute}
                   onBack={back}
-                  onNext={onNextFor('sound')}
-                  nextLabel={doneLabel('sound')}
+                  onNext={next}
+                  step={stepOf('sound')}
+                  steps={questions.length}
                 />
               );
             case 'bowl':
@@ -572,6 +610,8 @@ export default function Journey({
                     goTo(screens.includes('time') ? 'time' : 'mode')
                   }
                   onBack={back}
+                  step={stepOf('bowl')}
+                  steps={questions.length}
                   fullscreen={
                     fullscreen.supported
                       ? { wanted: fullscreen.wanted, setWanted: fullscreen.setWanted }

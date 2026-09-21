@@ -161,10 +161,11 @@ Saying "not visually checked, it is a label change" is a fine answer.
 The site is a rail of questions ending at a bowl (`components/Journey.tsx`,
 since 14 September 2026). What each step does to the audio:
 
-- **Welcome → Next**, and **a door on the signed-in home**, call
+- **A door on the first screen** (a guest's front page) and **a door on the
+  signed-in home** call
   `unlockAudio()` and `mix.ensure({ silent: true })`: the graph is built with
   the master at zero. Silent.
-- **Name, Origin, Mode, Time**: silent.
+- **Name, Origin, Time**: silent.
 - **Bell**: tapping a chip calls `previewBell`, which strikes that bell at a
   third of its tail. Audible, and never through the master. Read the chips;
   do not tap one.

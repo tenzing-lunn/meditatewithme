@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { currentStreak, summarise, type PracticeEntry } from '@/lib/practice';
-import { PRIMARY, QUIET_DUSK } from './controls';
+import { PRIMARY_ROOM, QUIET_ROOM } from './controls';
 
 /** The held beat after the bell, before anything is said. */
 export const COOLDOWN_MS = 10_000;
@@ -60,13 +60,13 @@ export default function Afterwards({
   if (total.sittings > 1) rows.push(['Altogether', `${total.sittings} sittings`]);
 
   return (
-    <div className="relative flex h-dvh w-full flex-col items-center justify-center bg-dusk px-6 text-dusk-ink">
+    <div className="relative flex h-dvh w-full flex-col items-center justify-center bg-room px-6 text-room-ink">
       {holding ? (
         <div className="flex flex-col items-center" role="status" aria-label="Coming back">
           <p className="font-display text-[2.25rem] font-bold leading-none sm:text-[3rem]">
             Come back.
           </p>
-          <p aria-hidden className="mt-5 text-lg tabular-nums text-dusk-ink-2">
+          <p aria-hidden className="mt-5 text-lg tabular-nums text-room-ink-2">
             {left}
           </p>
         </div>
@@ -80,7 +80,7 @@ export default function Afterwards({
             <dl className="mt-7 w-full max-w-[16rem] space-y-2 text-[0.9375rem]">
               {rows.map(([label, value]) => (
                 <div key={label} className="flex items-baseline justify-between gap-6">
-                  <dt className="text-dusk-ink-2">{label}</dt>
+                  <dt className="text-room-ink-2">{label}</dt>
                   <dd className="tabular-nums">{value}</dd>
                 </div>
               ))}
@@ -88,10 +88,10 @@ export default function Afterwards({
           )}
 
           <div className="mt-9 flex gap-3">
-            <button type="button" onClick={onAgain} className={PRIMARY}>
+            <button type="button" onClick={onAgain} className={PRIMARY_ROOM}>
               Sit again
             </button>
-            <button type="button" onClick={onDone ?? onFinish} className={QUIET_DUSK}>
+            <button type="button" onClick={onDone ?? onFinish} className={QUIET_ROOM}>
               {onDone ? 'Done' : 'Finish'}
             </button>
           </div>

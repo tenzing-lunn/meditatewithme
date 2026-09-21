@@ -1,8 +1,8 @@
 'use client';
 
-import type { InputHTMLAttributes } from 'react';
-import { LINE } from './controls';
-import { useTypedOut } from './useTypedOut';
+import type { CSSProperties, InputHTMLAttributes } from 'react';
+import { LINE, LINE_RULE } from './controls';
+import { START_MS, typingMs, useTypedOut } from './useTypedOut';
 
 type InputRest = Omit<
   InputHTMLAttributes<HTMLInputElement>,
@@ -13,7 +13,13 @@ type InputRest = Omit<
  * A typed answer on the rail: a line, and a prompt that writes itself on it.
  *
  * The prompt — *Enter your name* — types out when the screen arrives, with
- * a caret after it, so an empty line already looks like the place to type.
+ * a caret blinking at the front of the line, where the first letter will
+ * land, so an empty line already looks like the place to type.
+ * The line draws itself out from the left over the same stretch of time, so
+ * the two arrive as one gesture. It is its own element under the input
+ * (`LINE_RULE`) rather than the input's border, because a border cannot be
+ * drawn; it still turns ink-2 under the pointer and ember with the caret in
+ * the field, through `peer`.
  * It is drawn over the input rather than being its `placeholder`, because a
  * placeholder cannot be animated; the input keeps a real label for anyone
  * who cannot see the line, and the drawing is hidden from them. Clicks go
@@ -57,16 +63,31 @@ export default function LineField({
         spellCheck={false}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={LINE}
+        // Empty, the real caret is hidden and the drawn one at the front
+        // stands in for it, even with focus; the first key brings it back.
+        className={`${LINE} ${value === '' ? 'caret-transparent' : ''}`}
         {...rest}
+      />
+      <span
+        aria-hidden
+        className={`${LINE_RULE} ${active ? 'line-draw' : ''}`}
+        style={
+          {
+            '--draw-ms': `${typingMs(prompt)}ms`,
+            '--draw-delay': `${START_MS}ms`,
+          } as CSSProperties
+        }
       />
       {value === '' && (
         <span
           aria-hidden
           className="line-prompt pointer-events-none absolute inset-x-0 top-0 bottom-[2px] flex items-center pt-1 pb-2 text-[1.5rem] leading-normal text-ink-3/60 sm:text-[1.75rem]"
         >
+          {/* At the front, where the first letter will land, the way a real
+              caret sits in an empty field; pulled into the margin by its own
+              width so the prompt starts exactly where typed text does. */}
+          <span className="type-caret mr-px -ml-[3px] inline-block h-[1.1em] w-0.5 shrink-0 rounded-full bg-ember" />
           {typed}
-          <span className="type-caret ml-0.5 inline-block h-[1.1em] w-0.5 rounded-full bg-ember" />
         </span>
       )}
     </div>

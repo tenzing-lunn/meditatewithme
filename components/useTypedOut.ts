@@ -3,11 +3,20 @@
 import { useEffect, useState } from 'react';
 import { useReducedMotion } from './useReducedMotion';
 
-/** Long enough for the rail to have brought the screen in. */
-const START_MS = 420;
+/** As the rail brings the screen in; the line starts drawing at the same moment. */
+export const START_MS = 200;
 const CHAR_MS = 55;
 /** A beat after each word, the way a person types. */
 const SPACE_MS = 45;
+
+/** From the first letter to the last, so a line drawn alongside ends with it. */
+export function typingMs(text: string): number {
+  let ms = 0;
+  for (let i = 1; i < text.length; i += 1) {
+    ms += CHAR_MS + (text[i - 1] === ' ' ? SPACE_MS : 0);
+  }
+  return ms;
+}
 
 /**
  * A prompt typing itself out, once each time its screen arrives.

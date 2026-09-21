@@ -45,8 +45,9 @@ function readAnswered(): boolean {
  *
  * The switch remembers the preferences it was turned on with, and the skip
  * is honoured only while they are still the preferences: change the length
- * from the menu, or let another device's copy arrive, and the questions come
- * back until it is switched on again. That is what "when nothing changed"
+ * on the rail, or let another device's copy arrive, and the questions come
+ * back until it is switched on again. A change made in the settings drawer
+ * on Home carries the switch with it (`forPrefs` below). That is what "when nothing changed"
  * means, and it is why the fingerprint is stored beside the flag rather than
  * the flag alone.
  *
@@ -63,9 +64,12 @@ export function useUsual(prefs: UserPreferences) {
 
   const usual = stored.enabled && stored.fingerprint === usualFingerprint(prefs);
 
+  // `forPrefs`: the settings drawer changes a setting and keeps the skip on
+  // in one gesture, so it fingerprints the preferences being written rather
+  // than the ones this render was given.
   const setUsual = useCallback(
-    (enabled: boolean) => {
-      const next = { enabled, fingerprint: usualFingerprint(prefs) };
+    (enabled: boolean, forPrefs: UserPreferences = prefs) => {
+      const next = { enabled, fingerprint: usualFingerprint(forPrefs) };
       try {
         localStorage.setItem(USUAL_KEY, JSON.stringify(next));
       } catch {

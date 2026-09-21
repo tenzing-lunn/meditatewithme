@@ -3,7 +3,7 @@
 import Bowl from './Bowl';
 import Screen from './Screen';
 import Switch from './Switch';
-import { FOCUS, WORD } from './controls';
+import { FOCUS_ROOM, WORD_ROOM } from './controls';
 
 /**
  * The last screen: the bowl, and the strike that begins the sitting.
@@ -24,6 +24,8 @@ export default function BowlScreen({
   onChange,
   onBack,
   fullscreen,
+  step,
+  steps,
 }: {
   current: boolean;
   /** "Until 12:55 · singing bowl · in silence" */
@@ -37,14 +39,19 @@ export default function BowlScreen({
   onBack: () => void;
   /** Null where the API does not exist, and then the switch is not drawn. */
   fullscreen: { wanted: boolean; setWanted: (v: boolean) => void } | null;
+  step?: number;
+  steps?: number;
 }) {
   return (
     <Screen
       current={current}
       title="When you are ready."
-      titleClassName="font-display text-[1.75rem] font-bold leading-[1.15] text-ink text-center sm:text-[2.25rem] lg:text-[2.5rem]"
+      titleClassName="font-display text-[1.75rem] font-bold leading-[1.15] text-room-ink text-center sm:text-[2.25rem] lg:text-[2.5rem]"
       align="center"
       onBack={onBack}
+      step={step}
+      steps={steps}
+      room
     >
       <div className="flex flex-col items-center gap-6">
         <button
@@ -52,19 +59,20 @@ export default function BowlScreen({
           onClick={onStrike}
           disabled={!ready}
           aria-label="Strike the bowl and begin"
-          className={`group w-full max-w-[18rem] rounded-card transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 motion-reduce:transition-none ${FOCUS}`}
+          className={`group w-full max-w-[18rem] rounded-card transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 motion-reduce:transition-none ${FOCUS_ROOM}`}
         >
           <Bowl struck={struck} className="w-full" />
         </button>
-        <p className="text-base text-ink-2">Strike the bowl to begin.</p>
-        <p className="flex flex-wrap items-center justify-center gap-x-2 text-[0.9375rem] text-ink-3">
+        <p className="text-base text-room-ink-2">Strike the bowl to begin.</p>
+        <p className="flex flex-wrap items-center justify-center gap-x-2 text-[0.9375rem] text-room-ink-2">
           <span>{line}</span>
-          <button type="button" onClick={onChange} className={WORD}>
+          <button type="button" onClick={onChange} className={WORD_ROOM}>
             Change
           </button>
         </p>
         {fullscreen && (
           <Switch
+            room
             checked={fullscreen.wanted}
             onChange={fullscreen.setWanted}
             label="Full screen while you sit"

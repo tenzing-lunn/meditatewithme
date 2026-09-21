@@ -1,91 +1,93 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import type { Screen } from '@/lib/journey';
 
 /**
- * The screens, side by side, and the frame that shows one of them.
+ * The screens, stacked in one frame, and the switch between them.
  *
- * Every screen of the journey is mounted on one track; the track slides so
- * the current one is in the frame. Moving on is moving right, going back is
- * moving left, and the eye keeps its place: the question you answered is
- * still there, just off to the side, which is what makes the questions read
- * as a sequence rather than as panels appearing.
+ * Every screen of the journey is mounted in the same place; only the current
+ * one is shown. Moving on, the screen you answered lifts a little and fades
+ * as the next rises into its place from just below; going back runs the same
+ * move downward. It is a short move, not a page sliding away: the frame, the
+ * margin and the menu in the corner stay where they are, and only what is
+ * asked changes. It is quick because a question answered should not be made
+ * to wait for its own exit.
  *
  * Only the current screen is in the tab order or read out. The others are
  * `inert` and hidden from assistive technology the moment they leave, and
- * `visibility: hidden` once the slide has finished, so nothing can be
- * scrolled or focused into from off-screen. Focus goes to the new screen's
- * heading, so a keyboard walks the rail from the top of each question.
+ * `visibility: hidden` once the leaving screen has faded, so nothing can be
+ * focused into from behind. Focus goes to the new screen's heading, so a
+ * keyboard walks the rail from the top of each question — or, on a screen
+ * whose answer is simply typed, to the element it marks `data-autofocus`,
+ * so the typing can start without a click. The field's label is then what
+ * a screen reader is handed.
  *
- * Under reduced motion `--rail-ms` is zero and the track jumps.
- *
- * `overflow-clip`, not `overflow-hidden`. A hidden overflow can still be
- * scrolled by the browser itself: focusing a field while the track is
- * mid-slide scrolled the frame a whole screen sideways to bring the field
- * into view, and left the next screen's hidden panel in the frame. Clip
- * cannot be scrolled by anything.
+ * Under reduced motion `--rail-ms` is zero and the screens swap.
  */
 export default function Rail({
   screens,
   at,
+  dir,
   render,
 }: {
   screens: readonly Screen[];
   at: Screen;
+  /** 1 moving on, -1 going back: which way the switch runs. */
+  dir: 1 | -1;
   render: (screen: Screen, current: boolean) => ReactNode;
 }) {
   const index = Math.max(0, screens.indexOf(at));
 
-  // The screen that was current when the slide began. Both it and the new
-  // one stay visible until the track has settled, then only the new one.
-  const [settled, setSettled] = useState(index);
+  // The screen that was current when the switch began, kept visible while it
+  // fades. Derived during render, so the leaving screen never has a frame in
+  // which it has already vanished.
+  const [shown, setShown] = useState(index);
+  const [leaving, setLeaving] = useState<number | null>(null);
+  if (shown !== index) {
+    setShown(index);
+    setLeaving(shown);
+  }
 
   useEffect(() => {
-    // A fallback for the case where `transitionend` never fires: a zero
-    // duration under reduced motion, or a tab that was hidden mid-slide.
-    const t = window.setTimeout(() => setSettled(index), 800);
+    // A fallback for the case where `animationend` never fires: a tab that
+    // was hidden mid-switch.
+    if (leaving === null) return;
+    const t = window.setTimeout(() => setLeaving(null), 800);
     return () => window.clearTimeout(t);
-  }, [index]);
+  }, [leaving]);
 
   useEffect(() => {
-    const heading = document.querySelector<HTMLElement>(
-      `[data-screen="${at}"] h2`,
-    );
-    heading?.focus({ preventScroll: true });
+    const target =
+      document.querySelector<HTMLElement>(`[data-screen="${at}"] [data-autofocus]`) ??
+      document.querySelector<HTMLElement>(`[data-screen="${at}"] h2`);
+    target?.focus({ preventScroll: true });
   }, [at]);
 
   return (
-    <div className="h-dvh w-full overflow-clip">
-      <div
-        className="flex h-full w-full"
-        style={{
-          transform: `translateX(${-index * 100}%)`,
-          transition: 'transform var(--rail-ms) var(--ease-rail)',
-        }}
-        onTransitionEnd={(e) => {
-          if (e.target === e.currentTarget && e.propertyName === 'transform') {
-            setSettled(index);
-          }
-        }}
-      >
-        {screens.map((screen, i) => {
-          const current = i === index;
-          const shown = current || i === settled;
-          return (
-            <div
-              key={screen}
-              data-screen={screen}
-              className="h-full w-full shrink-0"
-              inert={!current}
-              aria-hidden={!current}
-              style={{ visibility: shown ? 'visible' : 'hidden' }}
-            >
-              {render(screen, current)}
-            </div>
-          );
-        })}
-      </div>
+    <div
+      className="relative h-dvh w-full overflow-clip"
+      style={{ '--rail-dir': dir } as CSSProperties}
+    >
+      {screens.map((screen, i) => {
+        const current = i === index;
+        const out = !current && i === leaving;
+        return (
+          <div
+            key={screen}
+            data-screen={screen}
+            className={`absolute inset-0 ${current ? 'rail-enter' : out ? 'rail-leave' : ''}`}
+            inert={!current}
+            aria-hidden={!current}
+            style={{ visibility: current || out ? 'visible' : 'hidden' }}
+            onAnimationEnd={(e) => {
+              if (out && e.target === e.currentTarget) setLeaving(null);
+            }}
+          >
+            {render(screen, current)}
+          </div>
+        );
+      })}
     </div>
   );
 }

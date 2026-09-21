@@ -87,37 +87,43 @@ shared hour, the bell at :55, the three bells, the five beds, the practice
 log, accounts, the earth — is the same, and the history of each is in §3 and
 in `ARCHITECTURE.md`.
 
-**Welcome.** A warm, light screen, set like a title page: everything hangs
-from the left margin and is centred against the height of the window, and the
-wordmark grows with the screen it is opened on — the size of a title on a
-laptop, not a heading in an app. *Meditate with me* in the rounded face, one
-sentence under it — *A session begins at the top of every hour, and everyone
-in it sits together. Join this one, or sit on your own.* — and *Join a
-session* immediately beneath that sentence, an arrow on it pointing the way
-the screens move. When two or more people are sitting, one ember line above
-the wordmark says so, with a dot beside it that breathes; the line keeps its
-height whether or not the count has arrived, so nothing moves when it does.
-Nothing is in the background. The three-line menu at the top right opens
-`Create account` and `Sign in`. A returning guest also sees a card, *Your
-usual: 10 minutes · singing bowl · in silence*, with a switch, *Skip the
-questions next time*; with it on, *Join a session* goes to the doors and then
-straight to the bowl. **Rewritten 14 September 2026**, replacing a 28rem
-column centred in the window with the invitation stranded at the foot of it.
+**The front page is the doors.** A guest lands on this hour's earth, full
+screen, with the doors at the bottom over the dusk veil: *Meditate with me*
+in the rounded face where the mode question would be, one line above it
+saying who else is sitting right now, and the two doors beside it — *Sit with
+everyone* (everyone finishes together at the next :55) and *Sit on your own*.
+Choosing a door is the first click on the site. A returning guest also sees a
+quiet line at the foot — *Your usual is 10 minutes · singing bowl · in
+silence* — with a switch, *Skip the questions next time*; with it on, a door
+goes straight to the bowl. A first-time guest is asked their name and place
+just after choosing. There are no step marks here: it is the way in, not one
+of the questions. The sun-and-moon and the three-line menu (`Create account`,
+`Sign in`) sit at the top right and stay there, still, until the bowl is
+struck. **Changed 19 September 2026**: until then a paper title page came
+first — the wordmark, one sentence and *Come and sit*, with the earth pale
+beside it — and the doors were the screen after it. Two front doors, and the
+second showed the thing itself, so it became the only one.
 
-**The questions, one screen each.** Each slides in from the right as the last
-slides out, hanging from the same left margin as the welcome so the rail
-reads as one page whose content moves, with a small *Back* on the left and a
-small *Next* on the right, and the question itself is what a screen reader is handed on
-arrival. Escape is *Back*. The
-questions, in order:
+**The questions, one screen each.** Moving on is a quick, short vertical
+switch — the last question lifts away and the next rises into its place —
+not a page sliding sideways; going back runs it downward. Every question
+hangs from the same left margin, so the rail reads as one page
+whose content changes, with a small *Back* on the left and a small *Next* on
+the right, and the question itself is what a screen reader is handed on
+arrival. Escape is *Back*. **Changed 14 September 2026** from a full-width
+slide left to right. The questions, in order:
 
 1. *What should we call you?* — the screen is a line and nothing else: no
-   visible question, no explanation, only the small foot. *Enter your name*
-   types itself out on the line in a pale brown with a caret after it, and
-   goes on the first key; what you type is in full ink. Optional, *Skip*.
-   Signed in, never asked: the account's name is used. A name already given
-   shows on the line instead of the prompt.
-2. *Where are you sitting?* — the same bare line, *Enter your town*; typed,
+   visible question, no explanation, and the small *Back* at the foot. The
+   line draws itself out as
+   *Enter your name* types on it in a pale brown with a caret blinking at the front of the line; the
+   prompt goes on the first key, and what you type is in full ink. The line
+   is ready for typing the moment the screen arrives, no click. *Skip* is
+   under the left end of the line, arriving last, once the prompt has typed itself out; *Next* appears under the right end once
+   something is typed, and Enter does the same. Signed in, never asked: the
+   account's name is used. The line always arrives empty, even when a name
+   was given on an earlier visit.
+2. *Where are you sitting?* — the same bare line, *Enter your city*; typed,
    then chosen. The letters search about 33,000 towns of 15,000 people or
    more and every country (GeoNames, searched in the browser, so nothing
    typed is sent anywhere), and the matches open under the line — *Lisbon ·
@@ -125,36 +131,90 @@ questions, in order:
    the list is still an answer: the last choice is always *Keep "…" as you
    typed it*. Clicking the empty line offers the town and country the server
    sees from the connection as the one choice — *Lisbon, Portugal · near
-   you*. *Leave it out*. Once something is typed, a switch appears under the
-   line, off by default: *Let others
+   you*. *Back*, *Next* and *Leave it out* are where *Back*, *Next* and
+   *Skip* are on the name: *Leave it out* under the line once the prompt has typed,
+   *Next* appearing to the right of it once something is typed. With it, a
+   switch appears below them, off by default: *Let others
    see Ana from Lisbon while you sit with them*, and one line saying nothing
    is kept on our side until you say yes. Asked once; changeable from the
    account.
-3. *With others, or by yourself?* — two doors. *With others: sit until the
-   bell at 12:55 with everyone, and see them on the earth.* *By yourself:
-   your own timer, and nobody shown.* Pressing a door answers and advances.
-4. *How long will you sit?* — a slider over the stops (1, then 5 to 55 in
-   fives) with a number field beside it that snaps to the nearest stop and
-   says so (*17 became 15*). With others, a chip above the slider: *Until the
-   bell at 12:55, with everyone*, chosen by default; a private length under
-   with-others is allowed and survives the door.
-5. *How should it end?* — singing bowl, gong, struck bell, each sounding when
-   chosen.
-6. *Any sound?* — a switch, *In silence* by default. On, the five beds appear
-   as chips, and *Adjust levels* opens the faders and a master.
+3. *How would you like to sit?* — the whole screen is this hour's earth at
+   night, the same map and candles as the sitting, with a light for everyone
+   sitting this hour and a dashed ring marked *You* where you are (the edge's
+   guess, never kept). On a phone it shows the part of the earth around you;
+   on a laptop, all of it. At the bottom, *● 43 others are sitting right now*
+   (the count less you; *Nobody else yet. Yours will be the first light.*
+   when nobody is), the question, and two doors of the same size: **Sit with
+   everyone**, lit in the candle's colour — *Everyone finishes together at
+   12:55* — and **Sit on your own**, outlined — *Your own length, the same
+   sky*. Pressing either answers and advances; neither is shown as chosen
+   on arrival. Back is in the foot as on every question. Home is the same
+   scene under *Hello, Ana.*, with the usual and its switch below the doors.
+   **Redrawn 15 September 2026** from a map in a card over a small row, after
+   a mockup Tenzing approved (*Under one sky*).
+4. *How long will you sit?* — two different screens, by door. **By
+   yourself**, since 15 September 2026, one large sentence, *You're sitting
+   for 10 minutes.*, over *11 others are sitting somewhere right now.
+   They'll come and go; your time is your own.* (with nobody else there,
+   *Others will come and go while you sit; your time is your own.*), and a
+   lit candle on a dark stage whose height is the length: dragging it up or
+   down, or the arrow keys, sets any stop from 1 to 55, and the minutes ride
+   beside its rim. Around it, far off, a small breathing light for each other
+   person on the site right now — the count only, placed for looks, never
+   where anyone is and never a name. Nobody is joined here, so the length is
+   free; the lights are company. The idea: meditating by yourself is still
+   meditating at the same time as other people. It replaced the slider on
+   this path. **With others**, since 15 September 2026, the screen is one
+   large sentence and a timer dial: *You're sitting for 10 minutes with 11
+   people.* — the live count less you — or, with nobody else there, *You're
+   sitting for 10 minutes, with anyone who joins.* No names: those are shown
+   only to people already sitting. The dial is a round timer face beside the
+   sentence on a laptop and under it on a phone; dragging its ember knob round
+   the ring (or the arrow keys) turns through every length, with the shared
+   bell as a marked stop where it falls in time, and the sentence changes as
+   it turns — on the bell, *until 12:55*. A
+   private length under with-others is still allowed and survives the door.
+   The settings drawer on Home keeps a slider for both.
+5. *How will it end?* — the singing bowl, the gong and the struck bell as
+   three drawn cards, each with what it sounds like under its name; tapping
+   one rings it and sends two rings out of the drawing.
+6. *Anything underneath?* — six tiles: silence and the five beds, silence
+   chosen to begin with. Tapping a bed plays it, and its level is a bar on
+   its own tile; a *Volume* row appears under them once anything is on.
+   **Rebuilt 17 September 2026** from a lone switch that revealed a card of
+   pills and a second page called *Adjust levels*. Since **20 September
+   2026** it is the same control in all three places it appears — here, in
+   *Underneath* in the settings drawer, and in the sheet during a sitting —
+   where before, the drawer's tiles had no level on them at all and the
+   sitting had a different mixer again.
 7. *When you are ready.* — a drawn singing bowl over *Strike the bowl to
    begin.* and the line of what the sitting will be (*Until 12:55 · singing
    bowl · rain*) with *Change* beside it. On a Mac, a *Full screen* switch,
    remembered.
 
+**Every question says where it is.** Since 17 September 2026 a short row of
+marks above each question shows which one of them it is, the current one lit,
+and a returning guest asked fewer questions is shown the shorter rail rather
+than a fixed count. On a laptop each question now sets its control beside it
+rather than under it, and Back and Next sit with the control instead of at
+the bottom of the window.
+
 **The bowl is the only thing that starts a sitting.** Striking it wobbles
 the rim and sends three rings out; the bell you chose sounds; the light goes
-down from paper to dusk over 1.4 seconds while the bowl screen drops away and
+over 1.4 seconds while the bowl screen drops away and
 the sitting rises into place — the camera lifting to your seated view. Until
 this rebuild a signed-in visitor's sitting started on arrival; nothing starts
 now without the strike, because a sitting should begin with a gesture.
 
-**The sitting.** Dusk. *With others:* the earth, full width, with a candle for
+**Dawn or dusk.** From *How would you like to sit?* to the ending, and on the
+signed-in Home, the screens are the room rather than paper, and the room
+follows the visitor's own day: dawn — the paper's light, a pale earth, ember
+controls — from six in the morning, dusk — the dark earth and flame — from six
+in the evening. A sun or moon beside the menu switches it, and the switch
+lasts until the next six o'clock, on that device only. **Added 16 September 2026**, at Tenzing's request; not yet shown to
+Jonny.
+
+**The sitting.** The room. *With others:* the earth, full width, with a candle for
 every place somebody lit one this hour; the ones still here are bright, the
 ones who left are dim; your own is a little larger with a soft ring. Under it,
 one line: *Ana from Lisbon is meditating with you*, *Ana from Lisbon and 3
@@ -163,9 +223,11 @@ the first here this hour*, or nothing when the count could not be read — never
 a guess. Names are only the ones people chose to share, at most three per
 place and sixty in all, and when there are several they take turns every
 twenty seconds. The clock is small in the top right. At the foot, *Sound*
-(opens the mixer as a sheet) and *End*. *By yourself:* the same dusk, no
+(opens the same six tiles and *Volume* as the sound question, as a sheet) and
+*End*. *By yourself:* the same room, no
 earth, no line, the bowl faintly centred, the same clock and the same two
-controls.
+controls. Sound, End and the dawn or dusk switch fade after four seconds and
+come back at a tap anywhere, so the sitting is the earth and the clock.
 
 **Until the bell.** Everyone who chooses *with others* hears the same bell at
 the same second, at :55. Arriving with under five minutes to go rolls forward
@@ -176,20 +238,29 @@ start as well as the end, the opening strike with a shorter tail.
 the mix receding; then the minutes sat at display size; then the rows that
 say something — days in a row, *With you this hour · 3 others* for a
 with-others sitting, altogether — and *Sit again* with *Done* (signed in,
-back to Home) or *Finish* (a guest, back to the welcome). A guest's ending
+back to Home) or *Finish* (a guest, back to the doors). A guest's ending
 carries the account offer at the foot. Full screen is left on the way out,
 and the ground lifts back to paper.
 
 **Home, signed in.** *Meditate with me* small, the three-line menu, *Hello,
-Ana.*, the two doors, and under them *Your usual: until 12:55 · singing bowl ·
-rain* with the switch *Skip the questions and use these*. A door goes to the
-questions the account has not answered — origin, once — then time, bell,
-sound, the bowl; with the switch on, straight to the bowl. The switch turns
-itself off when anything changes, on this device or another, so it never
-skips a question whose answer moved. When two or more are sitting the count
-is said above the doors. The menu: *Account* (email, the name, where you are
+Ana.*, the two doors, and under them one bar: *Your sitting* with the three
+answers as pills — *Until 12:55*, *Singing bowl*, *Rain* — and *Change*, which
+opens the settings drawer, and beside it the switch *Go straight to the
+bowl*. A door goes to the questions the account has not answered — origin,
+once — then time, bell, sound, the bowl; with the switch on, straight to the
+bowl. The switch turns itself off when an answer changes on the rail or on
+another device, so it never skips a question whose answer moved; a change
+made in the drawer keeps it on, because the drawer is where the answers are
+being chosen. **The drawer, 19 September 2026:** one page sliding in from the
+right over Home with every setting on it — how long (a slider), the bell
+(three cards; tapping one rings it), the sound underneath (silence or any of
+the five beds; not played there, the level is set while sitting), and the
+switch. The three lines open the same drawer as a menu — *Account*,
+*Settings*, *Your practice*, *Sign out* — with Settings opening in place.
+Not yet shown to Jonny. When two or more are sitting the count
+is on the *With others* door, the same door as on the rail. The menu: *Account* (email, the name, where you are
 from and the switch that shows it, *Delete account* with its confirmation),
-*Settings* (the three questions, ending at Home rather than the bowl), *Your
+*Settings* (the drawer's own settings, opening in place), *Your
 practice* (the streak, the totals, the recent sittings), *Sign out*.
 
 **The practice log.** Every sitting is recorded locally; a streak is computed
@@ -217,11 +288,11 @@ this device stays. `Keep it` carries the chosen treatment and the destructive
 control does not. Deletion is immediate and total.
 
 **A link that does not work says so.** A spent magic link bounces to the
-welcome signed out, with the reason in the URL fragment; the panel opens
+front page signed out, with the reason in the URL fragment; the panel opens
 itself on the address step carrying the reason, and the fragment is cleaned
 off.
 
-**Light until the strike, then dusk. The questions and the sitting never
+**Paper for who you are, then the room. The questions and the sitting never
 scroll.** One palette regardless of system setting. Supabase down still
 leaves a bowl, a timer and a mix — nothing shows an error screen. Reduced
 motion is honoured: the rail jumps, the strike is one pulse, the lift is a

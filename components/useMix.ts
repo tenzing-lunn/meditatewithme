@@ -53,8 +53,8 @@ import {
  * but silent: `ensure({ silent: true })` starts the master at zero and
  * `unmute()` raises it when the Sound row is actually opened.
  *
- * Since 14 September 2026 the gestures are the rail's. The first Next on the
- * welcome screen, and a door on the signed-in home, call `ensure({ silent:
+ * Since 14 September 2026 the gestures are the rail's. A door on a guest's
+ * first screen, and a door on the signed-in home, call `ensure({ silent:
  * true })`; the Sound screen's switch calls `unmute()` when it is turned on;
  * and the bowl strike builds the graph audibly through `begin` — `ensure()`
  * then `restore()` — which is the case this note describes as allowed: the

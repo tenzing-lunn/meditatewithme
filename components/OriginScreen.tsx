@@ -3,6 +3,7 @@
 import { useId, useMemo, useState, type KeyboardEvent } from 'react';
 import { ORIGIN_MAX, composeLabel } from '@/lib/label';
 import { searchPlaces } from '@/lib/places';
+import LineActions from './LineActions';
 import LineField from './LineField';
 import Screen from './Screen';
 import Switch from './Switch';
@@ -32,9 +33,11 @@ interface Option {
  * line stays a place to type and nobody's answer is a guess they did not
  * look at.
  *
- * Once something is typed, the one switch that decides whether anyone else
- * ever sees it appears under the line: off by default, explained in a line.
- * Before that there is nothing for it to share.
+ * Back is at the foot; Next and *Leave it out* are under the line, in the
+ * same places as on the name (`LineActions`), and Next appears once
+ * something is typed. So does the one switch that decides whether anyone
+ * else ever sees it, under them: off by default, explained in a line. Before
+ * that there is nothing for it to share.
  */
 export default function OriginScreen({
   current,
@@ -46,6 +49,8 @@ export default function OriginScreen({
   onBack,
   onNext,
   onSkip,
+  step,
+  steps,
 }: {
   current: boolean;
   name: string | null;
@@ -57,6 +62,8 @@ export default function OriginScreen({
   onBack: () => void;
   onNext: () => void;
   onSkip: () => void;
+  step?: number;
+  steps?: number;
 }) {
   const id = useId();
   const listId = `${id}-places`;
@@ -133,20 +140,16 @@ export default function OriginScreen({
       current={current}
       bare
       title="Where are you sitting?"
-      lede="Type a town or a country, then choose it. Or leave it out."
+      lede="Type a city or a country, then choose it. Or leave it out."
       onBack={onBack}
-      onNext={commit}
-      onSkip={() => {
-        onChange('', false);
-        onSkip();
-      }}
-      skipLabel="Leave it out"
+      step={step}
+      steps={steps}
     >
       <form
         className="relative"
         onSubmit={(e) => {
           e.preventDefault();
-          commit();
+          if (typed) commit();
         }}
       >
         <div>
@@ -154,7 +157,7 @@ export default function OriginScreen({
             <LineField
               id={id}
               label="Where you are"
-              prompt="Enter your town"
+              prompt="Enter your city"
               value={draft}
               onChange={(v) => {
                 setDraft(v);
@@ -165,6 +168,7 @@ export default function OriginScreen({
               maxLength={ORIGIN_MAX}
               autoCapitalize="words"
               enterKeyHint="next"
+              data-autofocus
               role="combobox"
               aria-expanded={listed}
               aria-controls={listId}
@@ -210,10 +214,17 @@ export default function OriginScreen({
             )}
           </div>
         </div>
-        {/* Below the line, out of the flow, so the line stays where the
-            screen put it when the switch arrives. */}
-        {typed && (
-          <div className="absolute inset-x-0 top-full mt-6">
+        <LineActions
+          typed={Boolean(typed)}
+          active={current}
+          prompt="Enter your city"
+          onSkip={() => {
+            onChange('', false);
+            onSkip();
+          }}
+          skipLabel="Leave it out"
+        >
+          {typed && (
             <Switch
               checked={shareDraft}
               onChange={setShareDraft}
@@ -225,8 +236,8 @@ export default function OriginScreen({
               }
               description="Only while you sit with others, and only while this is on. Nothing is kept on our side until you say yes."
             />
-          </div>
-        )}
+          )}
+        </LineActions>
       </form>
     </Screen>
   );

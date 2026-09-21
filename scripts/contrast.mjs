@@ -79,6 +79,18 @@ const PAIRS = [
   ['dusk-ink-2', 'dusk', 4.5],
   ['flame', 'dusk', 4.5],
   ['glow', 'dusk', 3.0],
+  // The lit door on the earth: dusk type on flame.
+  ['dusk', 'flame', 4.5],
+  // The room at dusk: its edge, and the lit door's line (dusk at 80% on flame).
+  ['room-edge', 'room', 3.0],
+  ['room-action-ink-2', 'room-action', 4.5],
+  // A chosen bell, bed or chip: the action's own colour on a 15% wash of
+  // itself over the room. Precomputed, one per room.
+  ['flame', '#462e1b', 4.5],
+  ['ember', '#e9cfba', 4.5],
+  // The room at dawn, whose values live under [data-room="dawn"], not @theme.
+  ['#907b6a', 'paper', 3.0],
+  ['#f8d7b8', 'ember', 4.5],
 ];
 
 /**
@@ -90,7 +102,7 @@ const PAIRS = [
  * `[foreground, opacity, ground, threshold, where it is used]`
  */
 const COMPOSITES = [
-  ['dusk-ink-2', 0.55, 'dusk', 3.0, 'QUIET_DUSK border'],
+  ['dusk-ink-2', 0.55, 'dusk', 3.0, 'room-edge at dusk, as a composite'],
   ['ink-3', 0.8, 'paper', 3.0, 'LINE, the field on the rail'],
   ['ink-3', 0.6, 'paper', 2.3, 'the prompt typed on a LINE; a vanishing hint, the label names the field'],
 ];

@@ -16,12 +16,19 @@ Every decision below falls out of these five. When something in this doc looks o
 | Must extend to live video | The seams that matter are named in §9. Nothing else needs to be future-proofed. |
 | "Same moment" is the product | Clock correctness is a feature, not an implementation detail. See §6.2. |
 
-### Light until the strike, then dusk
+### Paper, then the room: dawn or dusk
 
-One palette regardless of the visitor's system preference, and it is a light
-one: the questions are asked on warm paper, and the sitting is dusk. The
-document advertises only a light colour scheme, so a device's scheduled
-light/dark rollover cannot change a screen mid-sitting. Until 14 September
+One palette regardless of the visitor's system preference: the name and the
+place are asked on warm paper, and everywhere else on the rail — the doors
+the site opens on, and every question after the place — the ground is the room, which is dawn or dusk by the visitor's own clock
+(`lib/room.ts`, 06:00–18:00 is dawn) or by the toggle beside the menu, whose
+choice lapses at the next six o'clock. The room is a set of `room-*` colour
+tokens with dusk values in `@theme` and paper values under
+`[data-room="dawn"]`; `useRoom` (`useSyncExternalStore` over `mwm.room`,
+re-read each minute) decides, and `Journey`, `EarthScene` and `Demo` set the
+attribute. The document advertises only a light colour scheme, so a device's
+scheduled light/dark rollover cannot change a screen mid-sitting, and the
+room's own turn at six is read once a minute, not mid-transition. Until 14 September
 2026 the site was always dark, because the candle was a photograph and its
 glow was designed as light inside a dark room; the earth still needs that
 dark, and gets it, but only once you are sitting in front of it (§16).
@@ -648,14 +655,16 @@ meditatewithme/
 │   ├── Entry.tsx                # auth branch; owns every shared hook
 │   ├── Journey.tsx              # the stage machine: rail | sitting | finished
 │   ├── Rail.tsx, Screen.tsx     # the track, and one screen's shape
-│   ├── *Screen.tsx              # Welcome, Name, Origin, Mode, Time, Bell, Sound, Bowl
+│   ├── *Screen.tsx              # Name, Origin, Mode, Time, Bell, Sound, Bowl
 │   ├── Bowl.tsx                 # the drawn bowl and its strike
 │   ├── Sitting.tsx              # the dusk frame with the earth
 │   ├── Afterwards.tsx           # the ending
-│   ├── Home.tsx, Menu.tsx       # the signed-in page and its three lines
+│   ├── Home.tsx, SettingsDrawer.tsx # the signed-in page and its drawer
 │   ├── WorldMap.tsx             # canvas earth; the sitting and /world
 │   ├── World.tsx                # the map's page chrome
-│   ├── Account.tsx, Practice.tsx, SoundMixer.tsx, Switch.tsx, Wordmark.tsx
+│   ├── Sounds.tsx               # the six tiles and Volume; the rail, the
+│   │                            #   drawer and the sitting all render this
+│   ├── Account.tsx, Practice.tsx, Switch.tsx, Wordmark.tsx
 │   ├── controls.ts              # the six control styles
 │   ├── use*.ts                  # every hook: auth, prefs, practice, mix, presence,
 │   │                            #   world, count, session, clock, profile, origin,
@@ -969,11 +978,10 @@ visitor sees from four facts — signed in, usual on, has answered before,
 origin asked — and `step()` walks the list:
 
 ```
-guest, first time:   welcome name origin mode time bell sound bowl
-guest, usual on:     welcome mode bowl
+guest, first time:   mode name origin time bell sound bowl
+guest, usual on:     mode bowl
 signed in, first:    [origin] time bell sound bowl      (after a door on Home)
 signed in, usual:    bowl
-settings from menu:  time bell sound                    (ends at home, no bowl)
 ```
 
 `components/Journey.tsx` owns the stage machine — `rail | sitting | finished`
@@ -982,21 +990,86 @@ bells), all carried over from the room unchanged. The list of screens is
 decided **once, at mount**, so a switch flipped mid-rail does not reorder the
 panels under somebody's feet; the next journey reads the new facts.
 
-`Rail.tsx` is a flex track of viewport-wide panels translated by
-`-index * 100%` over `--rail-ms`. Every screen in the list is mounted, so
-Back is instant and typed answers survive; non-current panels are `inert`,
-`aria-hidden`, and `visibility: hidden` once the slide has settled
-(`transitionend`, with an 800ms fallback for the hidden-tab case where the
-event never fires). Focus moves to the arriving panel's `h2`. Only the
-arriving panel animates its content — the departing one just slides, because
-fading it out mid-slide made the screen you were leaving vanish before it had
-left. The frame is `overflow-clip`, not `overflow-hidden`: focusing a field in
-a panel that is still off-screen made a hidden frame scroll sideways to it,
-and `clip` cannot scroll.
+`Rail.tsx` stacks every panel in one frame (`absolute inset-0`) — since
+14 September 2026, replacing a sideways track that slid the whole page. The
+current panel carries `rail-enter` and the one just left carries `rail-leave`:
+a 1.5rem lift and fade out, a 1.5rem rise into place, 300ms, with
+`--rail-dir` (the stage's `dir`) running both downward on Back. The leaving
+index is derived during render from the previous one, so it never has a frame
+in which it has already gone. Every screen in the list stays mounted, so Back
+is instant and typed answers survive; non-current panels are `inert`,
+`aria-hidden`, and `visibility: hidden` once the leaving one has faded
+(`animationend`, with an 800ms fallback for the hidden-tab case where the
+event never fires). Focus moves to the arriving panel's `[data-autofocus]`
+if it has one — the name's field, so typing needs no click — and otherwise to
+its `h2`. The arrival
+uses `backwards` fill, not `both`: a transform left filling would make every
+panel a containing block. The frame is still `overflow-clip`.
 
-`Screen.tsx` is title, one line, the control, and a foot row on the safe-area
-inset: Back left, Skip and Next right. A screen's `settle` class is applied
-only while it is current, so it settles on arrival and not on mount.
+A guest's menu is rendered by `Journey`, pinned top right over the rail
+while the stage is `rail`, so it does not move with the panels and is gone at
+the strike.
+
+`Screen.tsx` is the bar (`RailBar.tsx`: Back left, the marks centred, level
+with the toggle and menu `Journey` pins top right), the title, one line, the
+control, and Skip and Next under the control at its right edge. The block hangs from a
+fixed baseline (`clamp(1rem, 7vh, 5rem)`) rather than being centred, so the
+heading is at the same height on every step and only the answer grows
+downward; before 17 September 2026 it was centred with the foot pinned to the
+bottom inset, which moved the heading with the length of the lede and left
+the buttons stranded below the control. `Steps.tsx` draws the marks from
+`step`/`steps`, which `Journey` computes from the screens this visitor is
+actually being shown. Nothing inside it animates; the rail does the arrival. `NameScreen` and `OriginScreen` pass only `onBack`, which goes to the
+bar; their Skip and Next are `LineActions`, under the line. `ModeScreen`
+is not a `Screen` at all: it is the earth scene below, with its question and
+doors at the bottom and the same `RailBar` at the top. `Screen`'s `split`, from `md` up, turns
+the column into a two-column grid — question left, control right — so a
+laptop window is not half empty; the time, bell and sound screens use it. `TimeScreen` is two components
+behind one name: `CandleTime`
+for by-yourself on the rail — a sentence, `usePresence`'s count less one as
+company, and `Candle`, a vertical `role="slider"` over minutes whose wax
+height is `waxHeight` in `lib/candle.ts` (proportional to the minutes above a
+stub; `minutesAtHeight` reads a dragged height back onto the stops, tested).
+The candle has no frame loop at all: held, the rim follows the finger
+relative to where it was grabbed and the height transition is off; let go,
+it is the stop's height with a CSS `height` transition on the rail's ease.
+The flame, glow, drips and far lights are CSS animations in `globals.css`,
+all off under reduced motion. The lights are a count and nothing more —
+placed from their index, not from anybody's location. And
+`JoinTime` when `showCount` is on — a sentence
+built from `usePresence`'s count less one and `nextSharedBellAt`, turned by
+`TimerDial`. The dial's stops come from `joinStops` in `lib/dial.ts`, which
+places the bell among the lengths where it falls in time, and which stop an
+angle means is `stopAt` there too, tested, including the gap at twelve
+o'clock that holds the hand at the nearer end instead of flinging it round.
+`Screen`'s `split` takes a class string here, for a narrow dial column.
+The knob is drawn where a critically damped spring has reached, not at the
+stop: its state lives in refs and a `requestAnimationFrame` loop steps it at
+a fixed 240Hz and stops when it is at rest, and only the reached angle is
+React state. Held, there is no spring: every pointer move sets the drawn angle to the
+finger's (`clampToArc`, tested) directly, so a drag never waits on a frame;
+released, the spring carries it to the nearest stop. Each `aim`
+cancels any running loop and starts a fresh one rather than checking whether
+one is running: the request id once kept to answer that went stale when React
+remounted the effects (twice in development, and across Fast Refresh, which
+keeps refs), and the knob stopped following the drag. They are separate
+components rather than a branch inside one because the mode can change while
+the screen stays mounted, and the slider's hooks must not appear and vanish. The mode question and Home share `EarthScene`, `LiveLine` and `Doors` from
+`ModeScreen.tsx`. `EarthScene` mounts the same `WorldMap` the sitting uses,
+through `next/dynamic`, only while `earth` is true (the mode screen is
+current; Home with no panel open), with `fit="cover"` and `waiting`. Cover is
+`coverFit` in `lib/earthView.ts`, tested: the larger of the full width and 72%
+of the height, slid so `you` is centred and clamped so no dusk shows beside
+the map. Until `useOrigin` has a cell — and on localhost, where it never
+does — the centre is `longitudeFromOffset(getTimezoneOffset())`, computed in
+the browser and sent nowhere; a cell arriving re-lays the earth, since it
+moves the crop. `waiting` draws your cell as a dashed ring and *You* rather
+than a candle. `LiveLine` takes `others`, never including the reader:
+`usePresence`'s count less one on the rail, where you beat, and `useCount`'s
+as it is on Home, which only reads. `Doors` no longer takes the mode — nothing
+is drawn as chosen. `Journey` enables `useWorld` while the rail is at `mode` as well as
+while sitting with others, and Home enables it while no panel is open; both
+only read, and `/api/world` is the same edge-cached response for everyone.
 
 **The column is anchored left, and that is the whole layout** (since
 14 September 2026, the same day as the welcome below). The measure is still
@@ -1008,21 +1081,20 @@ small panel; against a margin the rail reads as one page whose content moves.
 The bowl passes `align="center"` and is the exception: it is not a question
 but the thing you strike, and the camera lifts from the middle of the frame.
 
-`WelcomeScreen.tsx` does not use `Screen` at all. It is a title page — a
-46rem column holding the reserved count line, the wordmark at the size of the
-window (2.25rem to 5rem), one sentence at a 40-character measure, and *Join a
-session* directly under it rather than at the foot of the viewport. The
-invitation is the end of the sentence that makes it, so it is set where the
-reading stops; a question's Next answers something above it, so it belongs
-with the other feet. `PRIMARY_LG` in `controls.ts` is that one button and
-nothing else uses it.
+There is no welcome screen. A guest's rail opens on `mode`, and
+`ModeScreen` takes `landing` for it: the wordmark in place of the question,
+no step marks, and the returning guest's usual and the skip switch in the
+foot where Back would be. `Journey` leaves `mode` out of a guest's step count
+for the same reason. Until 19 September 2026 `WelcomeScreen.tsx` was a paper
+title page before the doors, with the earth pale beside the wordmark; it was
+retired because it was a second front door in front of the better one.
 
 ### Where the audio unlocks
 
 Autoplay policy only lets an `AudioContext` start inside a gesture, and the
 Bell and Sound screens need one to exist. So:
 
-- The first Next on the welcome, and a door on Home, call `unlockAudio()` and
+- A door on a guest's first screen, and a door on Home, call `unlockAudio()` and
   `mix.ensure({ silent: true })`: the graph exists with the master at zero.
 - The Bell screen's chips call `previewBell`, which never goes through the
   master. The Sound screen's switch calls `mix.unmute()` when turned on, and
@@ -1043,7 +1115,8 @@ animated group, so a second strike plays the wobble and the three ripple rings
 from the start rather than from wherever the first left off. The lift is two
 layers in `Journey`: the rail keeps rendering under `.lift-out` (scale to
 0.55, down 28vh, fade) while `Sitting` mounts under `.lift-in`, and the
-frame's background transitions paper to dusk on `--lift-ms`. `lifting` state
+frame's background, already the room, transitions on `--lift-ms` if the room
+itself changed; stepping into the room on the rail transitions it over half that. `lifting` state
 holds both mounted for the duration (1400ms, 400ms under reduced motion) and
 then the rail unmounts. First-party CSS throughout — no `motion` package and
 no `<ViewTransition>`, which only fires inside `startTransition` and differs
@@ -1054,8 +1127,10 @@ earth's breath.
 ### The sitting
 
 `Sitting.tsx` takes a `Sit` — id, `startedAt` on the monotonic clock,
-`startedAtWall`, `endsAt`, `together`, `withOthers` — and renders the dusk
-frame. **With others:** `WorldMap` with a `you` prop, the viewer's own cell
+`startedAtWall`, `endsAt`, `together`, `withOthers` — plus the `room` and the
+toggle, and renders the frame in the room. Sound, End and the toggle rest
+(opacity 0, no pointer events) after 4s without a pointer-down or key on the
+frame, and not while the sound card is open or focus is inside them. **With others:** `WorldMap` with a `you` prop, the viewer's own cell
 from `useOrigin()`, drawn at 1.5× with a ring. The client marks itself; the
 server never does (`app/api/world/route.ts`). Under the earth, one line from
 `companyLine()` in `lib/company.ts`, built from the labels `/api/world` hands
@@ -1085,7 +1160,7 @@ with others with the switch on, beats immediately when it changes, and sends
 (`COOLDOWN_MS`), then the minutes at 3.5rem and the rows that say something
 (`summarise` in `lib/practice.ts` decides), *With you this hour* only for a
 with-others sitting and only when `withOthers !== null`. *Sit again* calls
-`begin()` inside the click; *Done* goes home, *Finish* goes to the welcome.
+`begin()` inside the click; *Done* goes home, *Finish* goes back to the doors.
 Fullscreen is exited on the way out.
 
 ### The doors are a preference
@@ -1100,9 +1175,12 @@ otherwise a chosen length survives, which is what keeps *Your usual* honest.
 
 `useUsual.ts`, `mwm.usual`: `{ enabled, fingerprint }`, the fingerprint being
 `usualFingerprint(prefs)` at the moment the switch was turned on. Honoured
-only while the fingerprint matches, so any change to a preference — a
-settings edit here, a sync from another device — turns the skip off, which
-is what "when nothing changed" means. Guests get the same; `hasAnswers` is
+only while the fingerprint matches, so any change to a preference — an
+answer changed on the rail, a sync from another device — turns the skip off,
+which is what "when nothing changed" means. The one exception is Home's
+settings drawer (`SettingsDrawer.tsx`): its changes go through Home's
+`change`, which re-fingerprints with `setUsual(true, nextPrefs)` when the
+switch is on, since the drawer is where the answers are being chosen. Guests get the same; `hasAnswers` is
 `mwm.flow.answeredAt`, written on the first strike.
 
 ### The origin, and who sees a name
@@ -1134,13 +1212,16 @@ prevented Escape — `stopPropagation` cannot do it, because the App Router's
 React listens on the document too. The connection's guess is no longer put in the field: focusing the empty
 line opens the list with the guess as its one option, so nobody's origin is a
 guess they did not look at. The share switch renders only once something is
-typed. To rebuild the list, download `cities15000.zip` from
+typed, as `LineActions`' child, under the *Leave it out* and Next row. To rebuild the list, download `cities15000.zip` from
 download.geonames.org and run `node scripts/places.mjs cities15000.txt`; the
 licence is CC BY 4.0 and the credit is on the privacy page and in the file's
 first line.
 
-The rail's typed answers are `LineField`: a 2px line (`LINE` in
-`controls.ts`, ink-3 at 80%, gated at 3:1 as a control boundary) with the
+The rail's typed answers are `LineField`: a 2px line (`LINE_RULE` in
+`controls.ts`, ink-3 at 80%, gated at 3:1 as a control boundary — its own
+span under the input, coloured through `peer`, because an input's border
+cannot be drawn out; `.line-draw` scales it in from the left over
+`typingMs(prompt)`, starting with the typing) with the
 prompt drawn over the empty input by `useTypedOut`, not set as its
 `placeholder`, because a placeholder cannot be animated. The prompt is ink-3
 at 60%, 2.4:1 — under AA for text, deliberately, so it cannot be mistaken
@@ -1148,9 +1229,17 @@ for a typed answer; it is a hint gone on the first key, the input's label
 names the field, and the contrast script holds the floor. Both screens pass
 `bare` to `Screen`: the question and its line become `sr-only`, still the
 `h2` the rail focuses, and the line is all a sighted person sees. It types once per
-arrival, 55ms a character after 420ms, and its caret is hidden by CSS the
-moment the input has focus. The foot under every question is `PRIMARY_SM`,
-`QUIET_SM` and `WORD_SM`: 38px to look at, 44px to hit.
+arrival, 55ms a character after 200ms, and its drawn caret stands in for the
+real one while the field is empty, focused or not: the input is
+`caret-transparent` until the first key. The foot under every question is `PRIMARY_SM`,
+`QUIET_SM` and `WORD_SM`: 38px to look at, 44px to hit. On the name and
+origin screens the foot is Back alone, and `LineActions` puts the rest in the
+same places on both: the skip under the line's left end, settling in last — delayed by
+`START_MS + typingMs(prompt)` so it follows the typing — and
+Next under its right end once something is typed, out of the flow so the line
+does not move. Next is a submit button, so it and Enter are one path, and an
+empty line submits nothing. The name's draft starts empty rather than from `mwm.profile`, so the prompt is what is
+seen; Skip still clears the stored name.
 
 `useProfile` holds the name, the origin and the switch in `mwm.profile` for
 everybody, and for a signed-in person pulls the origin and the switch from
@@ -1195,9 +1284,9 @@ Which screen you get at `/` is decided by one fact: whether you are signed in.
 
 | | Signed out | Signed in |
 |---|---|---|
-| `/` | The rail: welcome, the questions, the bowl, the sitting, the ending, the account offer. | Home: the two doors. |
+| `/` | The rail: the doors, the questions, the bowl, the sitting, the ending, the account offer. | Home: the two doors. |
 | `/` after a door | — | The rail from the first unanswered question, or the bowl; the ending returns to Home. |
-| `/` from *Settings* | — | Time, Bell, Sound; *Done* returns to Home. |
+| `/`, *Settings* | — | In the menu drawer over Home: length, bell, sound, the skip. |
 | `/world` | The map. | The map. |
 
 ### `Entry` owns every shared hook, and that is not tidiness
@@ -1212,22 +1301,23 @@ the same table.
 
 **`usePresence` deliberately did not lift.** It writes heartbeats, and a
 heartbeat is a claim to be in the room. §14 settled that the count means
-"here", and somebody reading their own streak is not here. Home and the
-welcome read the number through `useCount`, which polls and never writes.
-`Journey` beats for as long as it is mounted — the welcome, the questions,
+"here", and somebody reading their own streak is not here. Home reads the
+number through `useCount`, which polls and never writes.
+`Journey` beats for as long as it is mounted — the doors, the questions,
 the sitting, the ending — which is §14's rule that everyone on the page
 counts; only the *name* is gated, sent while sitting with others with the
 switch on and cleared otherwise.
 
-### Journey takes three props that carry the whole difference
+### Journey takes two props that carry the whole difference
 
 `home?: () => void` present means signed in: the ending says *Done* and
 comes back here, Back on the first screen comes back here, and the account
 offer at the foot is not rendered. `afterMode` means the rail begins just
-past the mode screen, because a door on Home already answered it. `settings`
-means the three settings screens with *Done* on the last, and no bowl.
+past the mode screen, because a door on Home already answered it. (Until 19
+September 2026 a third, `settings`, walked time, bell and sound and ended at
+Home; Settings is now a drawer on Home, `SettingsDrawer.tsx`.)
 
-The rail's list is fixed at mount, which is what makes those three safe: a
+The rail's list is fixed at mount, which is what makes those safe: a
 prop cannot reorder the panels once somebody is standing on one.
 
 ### Home is the one screen that shows several things
@@ -1235,14 +1325,16 @@ prop cannot reorder the panels once somebody is standing on one.
 It scrolls and it has a header, which the rail forbids. The rail is one
 question at a time for somebody on their way to sit; Home is somebody
 deciding whether to. The order of the page is the order of what they came
-for: the greeting, the two doors, then *Your usual* and the switch that skips
-the questions. Everything else — the account, the settings, the practice log,
-the way out — is behind the three lines, so the page is the doors.
+for: the greeting, the two doors, then one bar with the next sitting's
+answers (which open the settings drawer) and the switch that skips the
+questions. Everything else — the account, the settings, the practice log,
+the way out — is behind the three lines, which open the same drawer on its
+menu, with Settings a disclosure in it, so the page is the doors. The drawer renders inside the earth scene so it inherits
+`data-room` and follows dawn or dusk; Escape, the scrim and the close button
+shut it, Tab is kept inside it, and focus goes back where it came from.
 
 The account panel and the practice panel replace the body of the column and
-keep the header; `Menu.tsx` is the trigger and the list, with the keyboard
-behaviour `role="menu"` promises (Up and Down wrap, Home and End, Escape
-returns focus). `useAuth.updateName` writes `user_metadata.name` through
+keep the header, and the three lines there open the same drawer. `useAuth.updateName` writes `user_metadata.name` through
 `auth.updateUser`; `onAuthStateChange` fires `USER_UPDATED` and the greeting
 follows without a reload.
 
@@ -1259,7 +1351,8 @@ The answer lives in one file, and **the ground picks which applies**:
 |---|---|---|
 | `PRIMARY` | One per screen, on paper | Ember fill, white type. Next, Save, Sit again. |
 | `QUIET` | Paper | A `rule` outline, `ink-2`, ember on hover. Back, Finish, Delete account. |
-| `QUIET_DUSK` | Dusk | `dusk-ink-2` at 55%, `dusk-ink`, flame on hover. Sound, End, Done. |
+
+| `*_ROOM` | The room, dawn or dusk | The same shapes in the `room-*` tokens: ember and white at dawn, flame and dusk at dusk. Doors, Next and Back from the mode question on, Sound, End, Sit again, Done, the menu trigger and the toggle. |
 | `WORD` | Paper, beside a Next | Underlined in `rule`, ember on hover. Skip, Change, Leave it out. |
 | `CHIP` / `CHIP_ON` | Paper | Surface on `rule`; chosen is `ember-soft` with an ember edge. |
 | `ICON` | Paper | A 44px round surface. The two menus. |
@@ -1326,8 +1419,12 @@ they can be seen next to the code:
    terminator is its own layer, rebuilt on the minute (the sun moves a quarter
    of a degree a minute, which is under a pixel), at a two-hundredth of the
    map's width and scaled up: it is the softest gradient on the page and there
-   is nothing there for the resolution to lose. The frame loop is two
-   `drawImage`s and the lights.
+   is nothing there for the resolution to lose. Scaled up it would draw a
+   stepped rim, so it is bled past the earth's edge and clipped to the vector
+   outline — once, when it is baked over the ground into a single
+   device-resolution image. The frame loop is one `drawImage` and the lights,
+   and it stops altogether (`paused`) while Home's settings drawer covers the
+   earth.
 2. **The terrain pass is per-pixel and runs at half resolution**, which is
    invisible because the terrain has no edges of its own — every edge on this
    earth belongs to the coastline, and that is stroked over the top at full

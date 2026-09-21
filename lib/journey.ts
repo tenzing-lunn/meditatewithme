@@ -10,10 +10,9 @@ import type { UserPreferences } from './types';
  */
 
 export const SCREENS = [
-  'welcome',
+  'mode',
   'name',
   'origin',
-  'mode',
   'time',
   'bell',
   'sound',
@@ -33,23 +32,17 @@ export interface JourneyFacts {
   originAsked: boolean;
 }
 
-/** Settings, from the menu: the three questions and no bowl. */
-export const SETTINGS_SCREENS: readonly Screen[] = ['time', 'bell', 'sound'];
-
 /**
- * A guest walks: welcome, name, origin, with others or by yourself, and
- * then the questions and the bowl. Somebody signed in arrives through a door
- * on their home, so the rail begins at the door and asks their origin once,
- * just after it. "Usual" drops the three questions and keeps the door and
- * the bowl.
+ * Everybody starts at the doors: with everyone, or on your own, on this
+ * hour's earth. For a guest that screen is the front page — there is no
+ * title page before it — and a first-time guest is asked their name and
+ * place just after choosing. Somebody signed in arrives through a door on
+ * their home, so their rail begins just past it and asks their origin once.
+ * "Usual" drops the three questions and keeps the door and the bowl.
  */
 export function screensFor(f: JourneyFacts): Screen[] {
-  const out: Screen[] = [];
-  if (!f.signedIn) {
-    out.push('welcome');
-    if (!f.hasAnswers) out.push('name', 'origin');
-  }
-  out.push('mode');
+  const out: Screen[] = ['mode'];
+  if (!f.signedIn && !f.hasAnswers) out.push('name', 'origin');
   if (f.signedIn && !f.originAsked) out.push('origin');
   if (!f.usual) out.push('time', 'bell', 'sound');
   out.push('bowl');

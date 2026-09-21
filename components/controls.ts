@@ -46,18 +46,6 @@ const BUTTON = `${BUTTON_SHAPE} min-h-12 px-7 text-[0.9375rem]`;
 export const PRIMARY = `${BUTTON} bg-ember text-white hover:brightness-90 ${FOCUS}`;
 
 /**
- * The invitation, once, on the welcome.
- *
- * Not a fifth style: the same ember pill as `PRIMARY`, at the size a title
- * screen asks for. A question's Next answers something above it and belongs
- * to that column; *Join a session* is the end of the sentence that invites
- * you, set at the scale of the sentence. Nothing else on the site uses it,
- * and nothing else should — two sizes of the one action colour is the most
- * a product this quiet can carry.
- */
-export const PRIMARY_LG = `${BUTTON_SHAPE} min-h-14 px-8 text-[1.0625rem] bg-ember text-white hover:brightness-90 ${FOCUS}`;
-
-/**
  * The foot of a question — Back, Skip, Next — a size down.
  *
  * The question and its answer are what a screen is for, so the way on is
@@ -72,8 +60,6 @@ export const QUIET_SM = `${BUTTON_SM} border border-rule text-ink-2 hover:border
 
 export const QUIET = `${BUTTON} border border-rule text-ink-2 hover:border-ember hover:text-ember ${FOCUS}`;
 
-/** The same two on the dusk ground of the sitting. */
-export const QUIET_DUSK = `${BUTTON} border border-dusk-ink-2/55 text-dusk-ink hover:border-flame hover:text-flame ${FOCUS_DUSK}`;
 
 export const CHIP = `inline-flex min-h-11 items-center justify-center rounded-control border border-rule bg-surface px-4 text-[0.9375rem] font-semibold text-ink-2 transition-colors duration-200 hover:border-ember hover:text-ember motion-reduce:transition-none ${FOCUS}`;
 
@@ -103,7 +89,33 @@ export const WORD_SM = `${WORD_SHAPE} text-[0.875rem]`;
  * is drawn round a field that has no box to ring. `line-field` is what the
  * typed-out prompt's caret listens to (`globals.css`).
  */
-export const LINE = 'line-field h-14 w-full rounded-none border-b-2 border-ink-3/80 bg-transparent px-0 pt-1 pb-2 text-[1.5rem] leading-normal text-ink outline-none transition-colors duration-200 hover:border-ink-2 focus:border-ember motion-reduce:transition-none sm:text-[1.75rem]';
+export const LINE = 'line-field peer h-14 w-full rounded-none border-b-2 border-transparent bg-transparent px-0 pt-1 pb-2 text-[1.5rem] leading-normal text-ink outline-none sm:text-[1.75rem]';
+
+/** The line itself, drawn under a `LINE` as its own element so it can be drawn out. */
+export const LINE_RULE = 'pointer-events-none absolute inset-x-0 bottom-0 h-0.5 origin-left bg-ink-3/80 transition-colors duration-200 peer-hover:bg-ink-2 peer-focus:bg-ember motion-reduce:transition-none';
 
 /** The three-line trigger in the top corner. */
 export const ICON = `inline-flex size-11 items-center justify-center rounded-action border border-rule bg-surface text-ink-2 transition-colors duration-200 hover:border-ember hover:text-ember motion-reduce:transition-none ${FOCUS}`;
+
+/**
+ * THE ROOM'S CONTROLS
+ * From the choice to the ending the ground is the room, dawn or dusk
+ * (`useRoom`), so these are drawn in the `room-*` tokens and follow it: at
+ * dusk the action is flame with dusk type, at dawn it is ember with white —
+ * the paper controls above, exactly. Settings is always dawn.
+ */
+export const FOCUS_ROOM =
+  'focus-visible:ring-room-action focus-visible:ring-offset-room focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none';
+
+/** The corner triggers in the room: the menu, and dawn or dusk. */
+export const ICON_ROOM = `inline-flex size-11 items-center justify-center rounded-action border border-room-edge bg-room/40 text-room-ink backdrop-blur-sm transition-colors duration-200 hover:border-room-action hover:text-room-action motion-reduce:transition-none ${FOCUS_ROOM}`;
+
+export const PRIMARY_ROOM = `${BUTTON} bg-room-action text-room-action-ink hover:brightness-110 ${FOCUS_ROOM}`;
+
+export const PRIMARY_ROOM_SM = `${BUTTON_SM} bg-room-action text-room-action-ink hover:brightness-110 ${FOCUS_ROOM}`;
+
+export const QUIET_ROOM = `${BUTTON} border border-room-edge text-room-ink hover:border-room-action hover:text-room-action ${FOCUS_ROOM}`;
+
+export const QUIET_ROOM_SM = `${BUTTON_SM} border border-room-edge text-room-ink hover:border-room-action hover:text-room-action ${FOCUS_ROOM}`;
+
+export const WORD_ROOM = `inline-flex min-h-11 items-center px-2 text-[0.9375rem] font-semibold text-room-ink-2 underline decoration-room-edge underline-offset-4 transition-colors duration-200 hover:text-room-action hover:decoration-room-action motion-reduce:transition-none ${FOCUS_ROOM}`;

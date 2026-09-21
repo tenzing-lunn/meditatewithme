@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, type ComponentType } from 'react';
 
-import type { MASTER_KEY, TrackSlug } from './mix';
+import type { MixPatch } from './Sounds';
 import { unlockAudio } from './audio';
 import Home from './Home';
 import Journey from './Journey';
@@ -16,7 +16,7 @@ import { useSyncPreferences } from './useSyncPreferences';
 /**
  * What is at the root, and which of the two things you get.
  *
- * A guest gets the journey, from its welcome screen. Somebody signed in gets
+ * A guest gets the journey, from its doors. Somebody signed in gets
  * their home, and the journey from a door on it. Which one is decided here,
  * by exactly one fact: whether they are signed in.
  *
@@ -70,8 +70,8 @@ export default function Entry() {
     }
   }, []);
 
-  /** Signed in: at home, through a door, or in the settings from the menu. */
-  const [view, setView] = useState<'home' | 'journey' | 'settings'>('home');
+  /** Signed in: at home, or through a door. Settings is a drawer on Home. */
+  const [view, setView] = useState<'home' | 'journey'>('home');
   const goHome = useCallback(() => setView('home'), []);
 
   /**
@@ -89,21 +89,20 @@ export default function Entry() {
     [mix, update, prefs],
   );
 
-  const openSettings = useCallback(() => {
-    unlockAudio();
-    mix.ensure({ silent: true });
-    setView('settings');
-  }, [mix]);
-
   /**
-   * A sound fader moved. `ensure()` first and synchronously, because this
-   * runs inside the change event, which is the only place the browser will
-   * let a context start.
+   * A sound fader moved, or a bed was pressed, or five were silenced at once
+   * — a patch rather than a single level, because silence is one decision and
+   * five calls in a tick would each start from this same object.
+   *
+   * `ensure()` first and synchronously, because this runs inside the change
+   * event, which is the only place the browser will let a context start. The
+   * levels themselves reach the graph through `useMix`, which pushes
+   * preferences into it whenever they change.
    */
   const setSound = useCallback(
-    (slug: TrackSlug | typeof MASTER_KEY, gain: number) => {
+    (patch: MixPatch) => {
       mix.ensure();
-      update({ soundMix: { ...prefs.soundMix, [slug]: gain } });
+      update({ soundMix: { ...prefs.soundMix, ...patch } });
     },
     [mix, update, prefs.soundMix],
   );
@@ -132,7 +131,6 @@ export default function Entry() {
         signOut={signOut}
         home={auth.status === 'signed-in' ? goHome : undefined}
         afterMode={auth.status === 'signed-in' && view === 'journey'}
-        settings={auth.status === 'signed-in' && view === 'settings'}
       />
     </>
   );
@@ -149,7 +147,6 @@ export default function Entry() {
       email={auth.user.email}
       name={displayName(auth.user)}
       onDoor={openDoor}
-      onSettings={openSettings}
       signOut={signOut}
       deleteAccount={deleteAccount}
       updateName={updateName}

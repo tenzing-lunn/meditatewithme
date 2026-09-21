@@ -8,21 +8,21 @@ describe('screensFor', () => {
   test('a guest, first time', () => {
     assert.deepEqual(
       screensFor({ signedIn: false, usual: false, hasAnswers: false, originAsked: false }),
-      ['welcome', 'name', 'origin', 'mode', 'time', 'bell', 'sound', 'bowl'],
+      ['mode', 'name', 'origin', 'time', 'bell', 'sound', 'bowl'],
     );
   });
 
   test('a guest who has answered before', () => {
     assert.deepEqual(
       screensFor({ signedIn: false, usual: false, hasAnswers: true, originAsked: true }),
-      ['welcome', 'mode', 'time', 'bell', 'sound', 'bowl'],
+      ['mode', 'time', 'bell', 'sound', 'bowl'],
     );
   });
 
   test('a guest who skips the questions', () => {
     assert.deepEqual(
       screensFor({ signedIn: false, usual: true, hasAnswers: true, originAsked: true }),
-      ['welcome', 'mode', 'bowl'],
+      ['mode', 'bowl'],
     );
   });
 
@@ -40,14 +40,14 @@ describe('screensFor', () => {
     );
   });
 
-  test('the bowl is always last and the door is always there', () => {
+  test('the bowl is always last and the doors are always first', () => {
     for (const signedIn of [true, false])
       for (const usual of [true, false])
         for (const hasAnswers of [true, false])
           for (const originAsked of [true, false]) {
             const s = screensFor({ signedIn, usual, hasAnswers, originAsked });
             assert.equal(s[s.length - 1], 'bowl');
-            assert.ok(s.includes('mode'));
+            assert.equal(s[0], 'mode');
             assert.equal(new Set(s).size, s.length);
           }
   });
@@ -56,9 +56,9 @@ describe('screensFor', () => {
 describe('step', () => {
   const s = screensFor({ signedIn: false, usual: false, hasAnswers: false, originAsked: false });
   test('forward, back, and off the ends', () => {
-    assert.equal(step(s, 'welcome', 1), 'name');
-    assert.equal(step(s, 'name', -1), 'welcome');
-    assert.equal(step(s, 'welcome', -1), null);
+    assert.equal(step(s, 'mode', 1), 'name');
+    assert.equal(step(s, 'name', -1), 'mode');
+    assert.equal(step(s, 'mode', -1), null);
     assert.equal(step(s, 'bowl', 1), null);
     assert.equal(step(s, 'sound', 1), 'bowl');
   });

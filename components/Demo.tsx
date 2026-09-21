@@ -19,6 +19,10 @@ import { DEMO_POINTS } from './worldDemo';
  */
 export default function Demo({ which }: { which: string }) {
   const [mono, setMono] = useState(0);
+  // Its own mix, going nowhere: the sound sheet is a real control and a dead
+  // `onSound` made it a picture of one — no tile would light and the Volume
+  // would never appear, which is most of what there is to look at.
+  const [soundMix, setSoundMix] = useState<Record<string, number>>({});
   useEffect(() => {
     const t = window.setInterval(() => setMono(performance.now()), 250);
     return () => window.clearInterval(t);
@@ -26,9 +30,12 @@ export default function Demo({ which }: { which: string }) {
 
   const params = new URLSearchParams(window.location.search);
   const alone = params.has('alone');
+  // `&dawn` for the room in daylight.
+  const room = params.has('dawn') ? 'dawn' : 'dusk';
 
   if (which === 'finished') {
     return (
+      <div data-room={room} className="contents">
       <Afterwards
         minutes={10}
         withOthers={alone ? null : 3}
@@ -39,10 +46,12 @@ export default function Demo({ which }: { which: string }) {
         onAgain={() => {}}
         onFinish={() => {}}
       />
+      </div>
     );
   }
 
   return (
+    <div data-room={room} className="contents">
     <Sitting
       sit={{
         id: 'demo',
@@ -60,10 +69,13 @@ export default function Demo({ which }: { which: string }) {
       you={{ lat: 51.5, lon: -0.5 }}
       labels={['Ana from Lisbon', 'Bo from Oslo']}
       ownLabel={null}
-      soundMix={{}}
-      onSound={() => {}}
+      soundMix={soundMix}
+      onSound={(patch) => setSoundMix((current) => ({ ...current, ...patch }))}
       onSoundOpen={() => {}}
       onEnd={() => {}}
+      room={room}
+      toggle={null}
     />
+    </div>
   );
 }

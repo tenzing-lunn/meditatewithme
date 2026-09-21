@@ -7,25 +7,33 @@ import { NAME_MAX, ORIGIN_MAX, composeLabel } from '@/lib/label';
 import { humanMinutes, type PracticeEntry } from '@/lib/practice';
 import { nextSharedBellAt } from '@/lib/timer';
 import type { UserPreferences } from '@/lib/types';
-import Menu from './Menu';
-import { Doors, type Mode } from './ModeScreen';
+import { Doors, EarthScene, LiveLine, type Mode } from './ModeScreen';
 import Practice from './Practice';
+import RoomToggle from './RoomToggle';
+import SettingsDrawer from './SettingsDrawer';
 import Switch from './Switch';
 import Wordmark from './Wordmark';
-import { CHIP, CHIP_ON, FIELD, PRIMARY, QUIET } from './controls';
-import { settingsLine } from './settingsLine';
+import { BELLS } from './audio';
+import { CHIP, CHIP_ON, FIELD, FOCUS_ROOM, ICON, ICON_ROOM, PRIMARY, QUIET } from './controls';
+import { durationAnswer, soundAnswer } from './settingsLine';
 import { useCount } from './useCount';
+import { useOrigin } from './useOrigin';
 import { useProfile } from './useProfile';
+import { useRoom } from './useRoom';
 import { useUsual } from './useUsual';
+import { useWorld } from './useWorld';
 
 /**
  * Home, for somebody signed in.
  *
- * It goes straight to the two doors: with others, or by yourself. Under
- * them, the settings the next sitting will use and a switch to skip the
- * questions, so a person who always sits the same way presses one door and
- * meets the bowl. Everything else is behind the three lines in the corner:
- * the account, the settings, the practice log, and the way out.
+ * It is this hour's earth, full-bleed, with the two doors on it — the same
+ * scene as the mode question (`EarthScene`), under a greeting. Under
+ * them, one bar: the settings the next sitting will use, as three words that
+ * open the settings drawer, and a switch to go straight to the bowl, so a
+ * person who always sits the same way presses one door and meets the bowl.
+ * Everything else is behind the three lines in the corner, which open the
+ * same drawer on its menu: the account, the settings, the practice log, and
+ * the way out.
  *
  * No time of day in the greeting: `now` is null until the clock has synced,
  * and a heading that changes half a second after it is read is a flicker on
@@ -39,7 +47,6 @@ export default function Home({
   email,
   name,
   onDoor,
-  onSettings,
   signOut,
   deleteAccount,
   updateName,
@@ -53,69 +60,134 @@ export default function Home({
   name: string | undefined;
   /** A door. Runs inside the click, so the audio can be unlocked in it. */
   onDoor: (mode: Mode) => void;
-  /** The three questions, from the menu. */
-  onSettings: () => void;
   signOut: () => void;
   deleteAccount: () => Promise<string | null>;
   updateName: (name: string) => Promise<string | null>;
 }) {
   const now = useCorrectedClock();
   const { count } = useCount();
-  const { usual, setUsual, answered } = useUsual(prefs);
+  const { usual, setUsual } = useUsual(prefs);
   const { profile, setProfile } = useProfile({ userId, name });
   const [panel, setPanel] = useState<'account' | 'practice' | null>(null);
+  const [drawer, setDrawer] = useState<'menu' | 'settings' | null>(null);
+  // Read-only, like the count: the with-others door is drawn as this hour's earth.
+  const world = useWorld(panel === null);
+  const origin = useOrigin();
+  const { room, toggle } = useRoom();
 
-  const mode: Mode = prefs.showCount ? 'together' : 'alone';
+  const go = (to: 'account' | 'practice') => {
+    setDrawer(null);
+    setPanel(to);
+  };
+  const menuButton = (onRoom: boolean) => (
+    <button
+      type="button"
+      onClick={() => setDrawer('menu')}
+      aria-haspopup="dialog"
+      aria-expanded={drawer !== null}
+      aria-label="Menu"
+      className={onRoom ? ICON_ROOM : ICON}
+    >
+      <svg viewBox="0 0 24 24" className="size-5" fill="none" aria-hidden>
+        <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+      </svg>
+    </button>
+  );
   const bellLabel = now === null ? null : localTime(nextSharedBellAt(now));
+
+  // A change in the drawer keeps the skip switch as it was; see `useUsual`.
+  const change = (patch: Partial<UserPreferences>) => {
+    update(patch);
+    if (usual) setUsual(true, { ...prefs, ...patch });
+  };
+  const sound = soundAnswer(prefs);
+  const summary = [
+    durationAnswer(prefs, now),
+    BELLS[prefs.endBell].label,
+    sound === 'in silence' ? 'Silence' : sound.charAt(0).toUpperCase() + sound.slice(1),
+  ];
+
+  const drawerEl = (
+    <SettingsDrawer
+      open={drawer}
+      onClose={() => setDrawer(null)}
+      room={room}
+      onAccount={() => go('account')}
+      onPractice={() => go('practice')}
+      onSignOut={signOut}
+      prefs={prefs}
+      onChange={change}
+      now={now}
+      usual={usual}
+      onUsual={setUsual}
+    />
+  );
+
+  if (panel === null) {
+    return (
+      <EarthScene points={world.points} you={origin.cell} room={room} earth paused={drawer !== null} className="min-h-dvh">
+        <main className="flex min-h-dvh flex-col px-6 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:px-10 md:px-14 lg:px-20 xl:px-24">
+          <header className="flex items-center justify-between gap-4">
+            <Wordmark size="sm" room />
+            <div className="flex items-center gap-2">
+              <RoomToggle room={room} onToggle={toggle} />
+              {menuButton(true)}
+            </div>
+          </header>
+
+          <div className="flex flex-1 flex-col justify-end gap-6 pt-16 md:grid md:grid-cols-[minmax(0,1fr)_auto] md:content-end md:items-end md:gap-12">
+            <div className="flex flex-col gap-2.5 md:gap-3.5">
+              {/* useCount reads without beating, so nobody it counts is you. */}
+              <LiveLine others={count} lit={world.points.length > 0} />
+              <h1 className="font-display text-[2.125rem] leading-[1.08] font-bold tracking-[-0.015em] text-balance text-room-ink sm:text-[2.75rem] lg:text-[3.5rem]">
+                {name ? `Hello, ${name}.` : 'Welcome back.'}
+              </h1>
+            </div>
+            <Doors bellLabel={bellLabel} onChoose={onDoor} />
+          </div>
+
+          {/* One bar, on its own ground so it reads over the map: what the
+              next sitting will be, which opens the drawer, and the skip. */}
+          <div className="mt-6 flex flex-col gap-3 rounded-card border border-room-edge/50 bg-room/90 p-3 sm:p-4 md:flex-row md:items-center md:justify-between md:gap-8 md:py-3 md:pr-5 md:pl-4">
+            <button
+              type="button"
+              onClick={() => setDrawer('settings')}
+              aria-label={`Your sitting: ${summary.join(', ')}. Change`}
+              className={`group flex min-h-11 flex-wrap items-center gap-x-3 gap-y-2 rounded-control text-left ${FOCUS_ROOM}`}
+            >
+              <span className="text-[0.875rem] text-room-ink-2">
+                Your sitting
+              </span>
+              <span className="flex flex-wrap gap-1.5">
+                {summary.map((part) => (
+                  <span
+                    key={part}
+                    className="rounded-full border border-room-edge px-3 py-1 text-[0.875rem] font-semibold text-room-ink transition-colors duration-200 group-hover:border-room-action motion-reduce:transition-none"
+                  >
+                    {part}
+                  </span>
+                ))}
+              </span>
+              <span className="text-[0.875rem] font-semibold text-room-action underline decoration-room-action/40 underline-offset-4 group-hover:decoration-room-action">
+                Change
+              </span>
+            </button>
+            <Switch room checked={usual} onChange={setUsual} label="Go straight to the bowl" />
+          </div>
+
+          {drawerEl}
+        </main>
+      </EarthScene>
+    );
+  }
 
   return (
     <main className="min-h-dvh bg-paper text-ink">
       <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
         <header className="flex items-center justify-between gap-4">
           <Wordmark size="sm" />
-          <Menu
-            items={[
-              { label: 'Account', onSelect: () => setPanel('account') },
-              { label: 'Settings', onSelect: onSettings },
-              { label: 'Your practice', onSelect: () => setPanel('practice') },
-              { label: 'Sign out', onSelect: signOut },
-            ]}
-          />
+          {menuButton(false)}
         </header>
-
-        {panel === null && (
-          <div className="flex flex-1 flex-col justify-center gap-7 py-10">
-            <div>
-              <h1 className="font-display text-[1.75rem] font-bold leading-[1.15] sm:text-[2.25rem]">
-                {name ? `Hello, ${name}.` : 'Welcome back.'}
-              </h1>
-              {count !== null && count >= 2 && (
-                <p className="mt-3 text-[0.9375rem] font-semibold text-ember" role="status">
-                  {count} people are sitting right now.
-                </p>
-              )}
-            </div>
-
-            <Doors mode={mode} bellLabel={bellLabel} onChoose={onDoor} />
-
-            <div className="rounded-card border border-rule bg-surface p-5">
-              <p className="text-[0.8125rem] text-ink-3">Your usual</p>
-              <p className="mt-1 text-[0.9375rem] font-semibold">{settingsLine(prefs, now)}</p>
-              <div className="mt-4">
-                <Switch
-                  checked={usual}
-                  onChange={setUsual}
-                  label="Skip the questions and use these"
-                  description={
-                    answered
-                      ? 'A door goes straight to the bowl. Change anything from the menu and the questions come back once.'
-                      : undefined
-                  }
-                />
-              </div>
-            </div>
-          </div>
-        )}
 
         {panel === 'account' && (
           <Panel title="Your account" onClose={() => setPanel(null)}>
@@ -142,6 +214,8 @@ export default function Home({
             </div>
           </Panel>
         )}
+
+        {drawerEl}
       </div>
     </main>
   );

@@ -1,7 +1,7 @@
 'use client';
 
 import { useId, type ReactNode } from 'react';
-import { FOCUS, FOCUS_DUSK } from './controls';
+import { FOCUS, FOCUS_DUSK, FOCUS_ROOM } from './controls';
 
 /**
  * A switch, for the questions with two answers and no middle.
@@ -17,6 +17,7 @@ export default function Switch({
   label,
   description,
   dusk = false,
+  room = false,
 }: {
   checked: boolean;
   onChange: (next: boolean) => void;
@@ -24,6 +25,8 @@ export default function Switch({
   description?: ReactNode;
   /** On the sitting's dark ground. */
   dusk?: boolean;
+  /** In the room, dawn or dusk: the `room-*` tokens. */
+  room?: boolean;
 }) {
   const id = useId();
   return (
@@ -35,32 +38,36 @@ export default function Switch({
         aria-describedby={description ? id : undefined}
         onClick={() => onChange(!checked)}
         className={`group flex min-h-11 items-center gap-3 rounded-control text-left ${
-          dusk ? FOCUS_DUSK : FOCUS
+          room ? FOCUS_ROOM : dusk ? FOCUS_DUSK : FOCUS
         }`}
       >
         <span
           aria-hidden
           className={`flex h-8 w-14 shrink-0 items-center rounded-full border p-1 transition-colors duration-200 motion-reduce:transition-none ${
             checked
-              ? dusk
-                ? 'border-flame bg-flame/20'
-                : 'border-ember bg-ember-soft'
-              : dusk
-                ? 'border-dusk-ink-2/55 group-hover:border-flame'
-                : 'border-rule bg-surface group-hover:border-ember'
+              ? room
+                ? 'border-room-action bg-room-action/20'
+                : dusk
+                  ? 'border-flame bg-flame/20'
+                  : 'border-ember bg-ember-soft'
+              : room
+                ? 'border-room-edge group-hover:border-room-action'
+                : dusk
+                  ? 'border-dusk-ink-2/55 group-hover:border-flame'
+                  : 'border-rule bg-surface group-hover:border-ember'
           }`}
         >
           <span
             className={`size-5 rounded-full transition-[transform,background-color] duration-200 ease-out motion-reduce:transition-none ${
               checked
-                ? `translate-x-6 ${dusk ? 'bg-flame' : 'bg-ember'}`
-                : `translate-x-0 ${dusk ? 'bg-dusk-ink-2' : 'bg-ink-3 group-hover:bg-ink-2'}`
+                ? `translate-x-6 ${room ? 'bg-room-action' : dusk ? 'bg-flame' : 'bg-ember'}`
+                : `translate-x-0 ${room ? 'bg-room-ink-2' : dusk ? 'bg-dusk-ink-2' : 'bg-ink-3 group-hover:bg-ink-2'}`
             }`}
           />
         </span>
         <span
           className={`text-[0.9375rem] font-semibold ${
-            dusk ? 'text-dusk-ink' : checked ? 'text-ember' : 'text-ink-2'
+            room ? 'text-room-ink' : dusk ? 'text-dusk-ink' : checked ? 'text-ember' : 'text-ink-2'
           }`}
         >
           {label}
@@ -70,7 +77,7 @@ export default function Switch({
         <p
           id={id}
           className={`pl-[4.25rem] text-[0.8125rem] leading-relaxed ${
-            dusk ? 'text-dusk-ink-2' : 'text-ink-3'
+            room ? 'text-room-ink-2' : dusk ? 'text-dusk-ink-2' : 'text-ink-3'
           }`}
         >
           {description}
