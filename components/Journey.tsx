@@ -491,6 +491,7 @@ export default function Journey({
   // rather than after it.
   return (
     <main
+      id="main"
       data-room={room}
       className={`relative h-dvh overflow-clip text-ink transition-colors ease-[var(--ease-lift)] ${
         inRoom ? 'bg-room' : 'bg-paper'

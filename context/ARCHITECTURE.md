@@ -230,9 +230,10 @@ sitting that ends while the tab is still hidden stops the beats then.
 
 **A count that cannot be read goes quiet.** One missed poll keeps the last
 number, since a blink of network is not worth a line vanishing; two in a row
-(thirty seconds) and `usePresence` sets it null, and `useWorld` empties the
-earth on the same rule. `companyLine` says nothing for a null count rather
-than something forty minutes old, and no error is shown either way.
+(thirty seconds) and `usePresence` sets it null, `useCount` (Home's line)
+does the same, and `useWorld` empties the earth on the same rule.
+`companyLine` says nothing for a null count rather than something forty
+minutes old, and no error is shown either way.
 
 ### The general lesson
 
@@ -1265,7 +1266,9 @@ is GeoNames' `cities15000` cut down by `scripts/places.mjs` to a name and a
 country code per line, largest first, one per name within a country: 33,090
 lines, 445KB, about 230KB gzipped. `usePlaces` fetches it the first time the
 origin question is on screen — a signed-in person who has answered never
-downloads it — and `lib/places.ts` folds it once (accents off, lower case,
+downloads it — and reports `loading` until it is here or the fetch has
+failed, which the list shows as a first row, *Looking up places…*, that
+cannot be chosen; `lib/places.ts` folds it once (accents off, lower case,
 punctuation to spaces) and searches it on each key: whole name, then start of
 name, then start of a later word, a country before a town at the same rank,
 the larger place otherwise, and anything after a comma narrowing the country.

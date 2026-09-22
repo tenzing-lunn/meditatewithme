@@ -671,6 +671,9 @@ on its left and a scrim over Home. Slides in over 300ms on `--ease-lift`;
 none under reduced motion. *Menu* and the round close button, then the menu
 as rows: Comfortaa 600 at 1.125rem, 56px tall, `room-edge` hairlines between,
 action colour on hover — *Account*, *Settings*, *Your practice*, *Sign out*.
+*Sign out* asks once more in its own row before it acts — *Sign out?*, with
+*Stay* (`PRIMARY_ROOM_SM`) and *Yes, sign out* (`QUIET_ROOM_SM`) — the
+delete confirm's pattern, the way out emphasised and the act quiet.
 *Settings* is a disclosure with a chevron that turns over; it opens in place
 (grid rows 0fr to 1fr, 300ms) to three sections headed in Comfortaa 600 at 1rem, each with an optional ink-2 aside
 on the right: *How long* (the answer large in the action colour, the slider,

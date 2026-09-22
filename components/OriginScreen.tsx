@@ -24,7 +24,8 @@ interface Option {
  * the browser (`usePlaces`, `lib/places.ts`) and the matches open under the
  * line; the arrows move through them and Enter takes one, so what is kept is
  * a real place spelled one way. A town too small for the list is still an
- * answer: the last choice is always to keep it as typed.
+ * answer: the last choice is always to keep it as typed. While the list is
+ * still on its way the first row says so, and cannot be chosen.
  *
  * The screen is the line and nothing else until there is an answer; the
  * question is there only for a screen reader. Detected and confirmed, as
@@ -71,7 +72,7 @@ export default function OriginScreen({
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
   const [shareDraft, setShareDraft] = useState(share);
-  const index = usePlaces(current);
+  const { index, loading } = usePlaces(current);
 
   const typed = draft.trim();
   const options = useMemo<Option[]>(() => {
@@ -188,6 +189,16 @@ export default function OriginScreen({
                 aria-label="Places"
                 className="absolute inset-x-0 top-full z-20 mt-2 flex flex-col overflow-hidden rounded-control border border-rule bg-surface py-1 shadow-[0_12px_32px_-12px_rgb(59_42_29_/_0.35)]"
               >
+                {typed && loading && (
+                  <li
+                    role="option"
+                    aria-disabled
+                    aria-selected={false}
+                    className="flex min-h-11 items-baseline px-4 py-2.5 text-base text-ink-3"
+                  >
+                    Looking up places…
+                  </li>
+                )}
                 {options.map((o, i) => (
                   <li
                     key={o.key}

@@ -41,17 +41,32 @@ export function useCount(): CountReading {
     let stopped = false;
     let timer: number | undefined;
 
+    // One missed poll keeps the last number: a blink of network is not worth
+    // a line vanishing. Two in a row (thirty seconds) and it goes null, the
+    // same rule as `usePresence` and `useWorld`, so Home's line says nothing
+    // rather than something old. No error is shown either way.
+    let misses = 0;
+    const missed = () => {
+      misses += 1;
+      if (misses >= 2 && !stopped) {
+        setReading({ count: null, litCount: null });
+      }
+    };
+
     const poll = async () => {
       try {
         const res = await fetch('/api/count');
-        if (!res.ok) return;
+        if (!res.ok) {
+          missed();
+          return;
+        }
         const body = (await res.json()) as CountReading;
+        misses = 0;
         if (!stopped) {
           setReading({ count: body.count, litCount: body.litCount });
         }
       } catch {
-        // Leave the last known number on screen rather than blanking it. A
-        // missing count hides a line here; it never shows an error.
+        missed();
       }
     };
 

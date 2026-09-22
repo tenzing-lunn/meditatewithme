@@ -25,24 +25,32 @@ async function load(): Promise<PlaceIndex | null> {
  * downloads it. The search then runs here, in the browser, so the letters a
  * person types are not sent anywhere. A failed fetch is retried on the next
  * arrival; until then the question still takes whatever is typed.
+ *
+ * `loading` is true from the first arrival until the list is here or the
+ * fetch has failed, so the question can say it is looking rather than offer
+ * only "keep it as typed" for the seconds the list takes to arrive.
  */
-export function usePlaces(want: boolean): PlaceIndex | null {
+export function usePlaces(want: boolean): { index: PlaceIndex | null; loading: boolean } {
   const [index, setIndex] = useState<PlaceIndex | null>(null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     if (!want) return;
     let live = true;
+    setFailed(false);
     pending ??= load().then((i) => {
       if (!i) pending = null;
       return i;
     });
     void pending.then((i) => {
-      if (live && i) setIndex(i);
+      if (!live) return;
+      if (i) setIndex(i);
+      else setFailed(true);
     });
     return () => {
       live = false;
     };
   }, [want]);
 
-  return index;
+  return { index, loading: want && index === null && !failed };
 }

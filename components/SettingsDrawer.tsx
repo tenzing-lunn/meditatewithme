@@ -14,7 +14,7 @@ import type { BellKind, UserPreferences } from '@/lib/types';
 import { CHARACTER, Glyph } from './BellScreen';
 import Sounds from './Sounds';
 import { BELLS, previewBell, unlockAudio } from './audio';
-import { FOCUS_ROOM, ICON_ROOM } from './controls';
+import { FOCUS_ROOM, ICON_ROOM, PRIMARY_ROOM_SM, QUIET_ROOM_SM } from './controls';
 
 /**
  * The three lines' drawer: from the right over Home, full height, with the
@@ -66,10 +66,15 @@ export default function SettingsDrawer({
   // Mounted for the length of the slide out, then let go.
   const [mounted, setMounted] = useState(open !== null);
   const [entered, setEntered] = useState(false);
+  // Sign out asks once more in its row before it acts, the delete confirm's
+  // pattern: it sits directly under Your practice, and one press that ends
+  // the session on this device is one press too few.
+  const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
     if (open) {
       setSettings(open === 'settings');
+      setLeaving(false);
       setMounted(true);
       const raf = requestAnimationFrame(() => setEntered(true));
       return () => cancelAnimationFrame(raf);
@@ -195,9 +200,23 @@ export default function SettingsDrawer({
           <button type="button" onClick={onPractice} className={ROW}>
             Your practice
           </button>
-          <button type="button" onClick={onSignOut} className={ROW}>
-            Sign out
-          </button>
+          {!leaving ? (
+            <button type="button" onClick={() => setLeaving(true)} className={ROW}>
+              Sign out
+            </button>
+          ) : (
+            <div className="flex min-h-14 flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-room-edge/50 py-3">
+              <p className="font-display text-[1.125rem] font-semibold text-room-ink">Sign out?</p>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setLeaving(false)} className={PRIMARY_ROOM_SM}>
+                  Stay
+                </button>
+                <button type="button" onClick={onSignOut} className={QUIET_ROOM_SM}>
+                  Yes, sign out
+                </button>
+              </div>
+            </div>
+          )}
         </nav>
       </div>
     </div>

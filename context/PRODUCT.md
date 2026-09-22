@@ -141,7 +141,9 @@ slide left to right. The questions, in order:
    typed is sent anywhere), and the matches open under the line — *Lisbon ·
    Portugal* — with the arrows and Enter to take one. A town too small for
    the list is still an answer: the last choice is always *Keep "…" as you
-   typed it*. Clicking the empty line offers the town and country the server
+   typed it*, and while the list is still downloading the first row says
+   *Looking up places…* and cannot be chosen (since 22 September 2026; until
+   then *Keep …* was the only row for those seconds). Clicking the empty line offers the town and country the server
    sees from the connection as the one choice — *Lisbon, Portugal · near
    you*. *Back*, *Next* and *Skip* are where they are on the name (one word
    for skipping on both, since 22 September 2026; the origin's said *Leave it
@@ -292,7 +294,10 @@ Shown to Jonny by 21 September 2026. When two or more are sitting the count
 is on the *With others* door, the same door as on the rail. The menu: *Account* (email, the name, where you are
 from and the switch that shows it, *Delete account* with its confirmation),
 *Settings* (the drawer's own settings, opening in place), *Your
-practice* (the streak, the totals, the recent sittings), *Sign out*.
+practice* (the streak, the totals, the recent sittings), *Sign out* — which
+asks once more in its row, *Sign out?* with *Stay* and *Yes, sign out*,
+before it acts (since 22 September 2026; it sat one press under *Your
+practice*).
 
 **The practice log.** Every sitting is recorded locally; a streak is computed
 in local time and not sitting today does not break it. With an account it
@@ -307,7 +312,8 @@ route was deleted on 22 September 2026 as an unlinked third copy, so the
 precision is now stated in the privacy notice alone. On localhost the map is
 correctly empty: the edge headers it places people from do not exist in
 `next dev`. A count or an earth that cannot be read for two polls in a row
-goes quiet rather than staying old.
+goes quiet rather than staying old — Home's line included, since 22
+September 2026.
 
 **Accounts.** Optional. The menu opens `Create account` and `Sign in`; both
 open the same panel under the trigger, asking one thing at a time — your
