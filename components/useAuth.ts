@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { browserClient } from '@/lib/supabase';
+import { SERVICE_UNREACHABLE, authErrorMessage } from '@/lib/authErrors';
 
 /**
  * Who is signed in, if anyone.
@@ -226,7 +227,8 @@ export function useAuth() {
    * the account flow can ask the question without qualifying it.
    *
    * Returns an error string rather than throwing, because every caller wants to
-   * put it on screen.
+   * put it on screen — in the site's own words (`lib/authErrors.ts`), never
+   * Supabase's.
    */
   const signIn = useCallback(
     async (email: string, name?: string): Promise<string | null> => {
@@ -245,9 +247,9 @@ export function useAuth() {
             data: name ? { name } : undefined,
           },
         });
-        return error ? error.message : null;
+        return error ? authErrorMessage(error.code, error.message) : null;
       } catch {
-        return 'Could not reach the sign-in service. Please try again.';
+        return SERVICE_UNREACHABLE;
       }
     },
     [],
@@ -279,9 +281,9 @@ export function useAuth() {
           token,
           type: 'email',
         });
-        return error ? error.message : null;
+        return error ? authErrorMessage(error.code, error.message) : null;
       } catch {
-        return 'Could not reach the sign-in service. Please try again.';
+        return SERVICE_UNREACHABLE;
       }
     },
     [],

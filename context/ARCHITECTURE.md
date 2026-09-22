@@ -695,6 +695,7 @@ meditatewithme/
 │   ├── geo.ts                   # snapToCell, subsolarPoint
 │   ├── projection.ts            # Equal Earth
 │   ├── practice.ts              # the log and its summary
+│   ├── authErrors.ts            # the three sentences said when Supabase says no
 │   └── supabase.ts
 ├── public/earth/                # land.json + relief.jpg — 273KB
 ├── supabase/migrations/
