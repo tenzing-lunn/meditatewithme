@@ -140,6 +140,7 @@ export default function Journey({
   onSound,
   mix,
   record,
+  entries,
   auth,
   sync,
   signIn,
