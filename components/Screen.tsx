@@ -140,7 +140,7 @@ export default function Screen({
           centred || bare
             ? 'justify-center'
             : middle
-              ? 'md:justify-center'
+              ? 'pt-[clamp(3rem,9vh,5rem)] md:pt-0 md:justify-center'
               : 'pt-[clamp(1rem,7vh,5rem)]'
         }`}
       >

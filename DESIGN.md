@@ -363,20 +363,24 @@ family for the candles.
   harder to read, not easier; what changed on 14 September 2026 is that the
   column is anchored to the margin rather than floating in the middle of the
   window. The air is on the side the eye leaves.
-- **One baseline for every question, and the foot belongs to the answer.**
-  `Screen` hangs its block from a fixed height near the top — `clamp(1rem,
-  7vh, 5rem)` — so stepping from one question to the next moves the answer
-  and nothing else; and Next sits directly under the control, at its right
-  edge. Until 17 September 2026 the block was centred
+- **One baseline for every question below `md`, and the foot belongs to the
+  answer.** On a phone, `Screen` hangs the time, bell and sound questions
+  (`middle`) from a fixed height under the bar — `clamp(3rem, 9vh, 5rem)`,
+  since 22 September 2026; until then that branch had no phone padding at
+  all and the heading sat under Back and the marks — so stepping from one
+  question to the next moves the answer and nothing else; and Next sits
+  directly under the control, at its right edge. `Screen`'s plain default,
+  `clamp(1rem, 7vh, 5rem)`, has no caller today: every question is
+  `middle`, `bare` or centred. Until 17 September 2026 the block was centred
   and the foot pinned to the window's bottom, which put the heading at a
   different height on every step (a two-line lede moved it sixty pixels) and
   left the buttons as much as three hundred pixels below what they answered,
   one hard left and one mid-column. The name and origin (`bare`) are the
   exception: they are only a line, so it sits in the middle of the frame, with
   Skip and Next under it (`LineActions`). The bowl still centres itself, and from
-  `md` up the time, bell and sound questions sit in the middle of the page,
-  each question level with the middle of its control (`middle` on `Screen`),
-  so the three read as one run into the bowl.
+  `md` up the time, bell and sound questions leave the baseline and sit in the
+  middle of the page, each question level with the middle of its control
+  (`middle` on `Screen`), so the three read as one run into the bowl.
 - **One bar across the top of every question** (`RailBar`). Back on the
   left, the marks in the middle of the window, the dawn or dusk toggle and
   the menu on the right: one 44px row on the page gutter, the same on every
