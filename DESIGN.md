@@ -618,7 +618,9 @@ Comfortaa 700 1.1875rem titles over a Nunito 600 line, an arrow on the
 right that travels 2px on hover. Stacked on a phone and beside the heading
 from `md`; side by side from `xl`, 19rem each.
 - **Sit with everyone is lit**: flame fill, dusk type, the line in dusk at 80% (75% was 4.48:1, under the gate)
-  — *Everyone finishes together at 12:55* — brightening on hover. Flame, not
+  — *Everyone finishes together at 12:55*, or *Your own length, with
+  everyone* when a private length will survive the door (`togetherLine`) —
+  brightening on hover. Flame, not
   ember: on the dark ground the action is the candle's colour. At dawn it is ember with white type and a line in ember-soft (5.0:1).
 - **Sit on your own is outlined**: dusk at 55% with a light blur over the map,
   a 1.5px `room-edge` outline (the same edge as `QUIET_ROOM`) that turns to the action colour on hover, *Your own
@@ -666,11 +668,12 @@ none under reduced motion. *Menu* and the round close button, then the menu
 as rows: Comfortaa 600 at 1.125rem, 56px tall, `room-edge` hairlines between,
 action colour on hover — *Account*, *Settings*, *Your practice*, *Sign out*.
 *Settings* is a disclosure with a chevron that turns over; it opens in place
-(grid rows 0fr to 1fr, 300ms) to four sections headed in Comfortaa 600 at 1rem, each with an optional ink-2 aside
-on the right: *How long* (the answer large in the action colour, the slider),
+(grid rows 0fr to 1fr, 300ms) to three sections headed in Comfortaa 600 at 1rem, each with an optional ink-2 aside
+on the right: *How long* (the answer large in the action colour, the slider,
+its last stop always *Until the bell*),
 *The bell* (the three cards from the rail, smaller; *Tap to hear*),
 *Underneath* (the same six tiles, faders and *Volume* as the rail's sound
-question; *Heard in the sitting*), *Starting* (the switch). Chosen tiles are the
+question; *Heard in the sitting*). The skip switch is on Home's bar alone. Chosen tiles are the
 rail's: `room-action` border on `room-action` at 15%. The body scrolls
 inside the drawer when the window is short. The three lines open it on the
 menu; *Change* on Home's bar opens it with Settings already open.

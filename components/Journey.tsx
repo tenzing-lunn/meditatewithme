@@ -5,8 +5,10 @@ import { serverNow } from '@/lib/clock';
 import { localTime } from '@/lib/format';
 import { composeLabel } from '@/lib/label';
 import {
+  doorPatch,
   screensFor,
   step,
+  togetherLine,
   type Screen as ScreenName,
 } from '@/lib/journey';
 import type { PracticeEntry } from '@/lib/practice';
@@ -21,7 +23,7 @@ import Account from './Account';
 import Afterwards, { COOLDOWN_MS } from './Afterwards';
 import BellScreen from './BellScreen';
 import BowlScreen from './BowlScreen';
-import ModeScreen, { doorPatch } from './ModeScreen';
+import ModeScreen from './ModeScreen';
 import NameScreen from './NameScreen';
 import OriginScreen from './OriginScreen';
 import Rail from './Rail';
@@ -153,7 +155,7 @@ export default function Journey({
     userId: auth.status === 'signed-in' ? auth.user.id : null,
     name: auth.status === 'signed-in' ? displayName(auth.user) : undefined,
   });
-  const { usual, setUsual, answered, markAnswered } = useUsual(prefs);
+  const { usual, setUsual, answered, markAnswered, afterFirstSitting } = useUsual(prefs);
   const origin = useOrigin();
   const fullscreen = useFullscreen();
   const wakeLock = useWakeLock();
@@ -382,6 +384,13 @@ export default function Journey({
     });
   }, [stage, mono, record, mix, wakeLock]);
 
+  // The first completed sitting turns the skip on, with what was just sat
+  // (`useUsual`). `finished` is only ever reached from the effect above,
+  // never from End, so it means completed.
+  useEffect(() => {
+    if (stage.kind === 'finished') afterFirstSitting();
+  }, [stage.kind, afterFirstSitting]);
+
   // A bell left sounding into a page nobody is on is the one thing this
   // site promised never to do. Nor a screen held awake for it.
   const releaseWakeLock = wakeLock.release;
@@ -540,12 +549,16 @@ export default function Journey({
                   room={room}
                   step={stepOf('mode')}
                   steps={questions.length}
-                  bellLabel={bellLabel}
+                  togetherLine={togetherLine(prefs, bellLabel)}
                   others={count === null ? null : Math.max(0, count - 1)}
                   points={world.points}
                   you={origin.cell}
                   onChoose={(m) => {
-                    update(doorPatch(m, prefs));
+                    const patch = doorPatch(m, prefs);
+                    update(patch);
+                    // The door is not a changed answer: the skip keeps up
+                    // with it, as it does with the drawer.
+                    if (usual) setUsual(true, { ...prefs, ...patch });
                     next();
                   }}
                   onBack={signedIn || step(screens, 'mode', -1) ? back : undefined}

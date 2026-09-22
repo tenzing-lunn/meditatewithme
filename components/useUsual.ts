@@ -51,6 +51,12 @@ function readAnswered(): boolean {
  * means, and it is why the fingerprint is stored beside the flag rather than
  * the flag alone.
  *
+ * THE SWITCH TURNS ITSELF ON ONCE
+ * A first-timer has no usual to skip to; after the first sitting completes
+ * they do, so `afterFirstSitting` turns the skip on with the preferences it
+ * was just sat with — only if `mwm.usual` has never been written. Off is a
+ * choice and is remembered: a stored `false` is never flipped back.
+ *
  * `answered` is whether this device has struck the bowl before, which is
  * what decides whether a guest is asked their name and origin.
  */
@@ -89,5 +95,14 @@ export function useUsual(prefs: UserPreferences) {
     setAnswered(true);
   }, []);
 
-  return { usual, setUsual, answered, markAnswered };
+  const afterFirstSitting = useCallback(() => {
+    try {
+      if (localStorage.getItem(USUAL_KEY) !== null) return;
+    } catch {
+      return;
+    }
+    setUsual(true);
+  }, [setUsual]);
+
+  return { usual, setUsual, answered, markAnswered, afterFirstSitting };
 }

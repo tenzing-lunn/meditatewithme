@@ -1,7 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { screensFor, step, usualFingerprint } from '../lib/journey.ts';
+import { doorPatch, screensFor, step, togetherLine, usualFingerprint } from '../lib/journey.ts';
 import { DEFAULT_PREFERENCES } from '../lib/preferences.ts';
 
 describe('screensFor', () => {
@@ -72,5 +72,69 @@ describe('usualFingerprint', () => {
     assert.notEqual(usualFingerprint({ ...DEFAULT_PREFERENCES, endBell: 'gong' }), a);
     assert.notEqual(usualFingerprint({ ...DEFAULT_PREFERENCES, showCount: false }), a);
     assert.notEqual(usualFingerprint({ ...DEFAULT_PREFERENCES, soundMix: { rain: 0.5 } }), a);
+  });
+});
+
+describe('doorPatch', () => {
+  const alone = { ...DEFAULT_PREFERENCES, showCount: false, untilBell: false };
+  const ownLength = { ...DEFAULT_PREFERENCES, showCount: true, untilBell: false };
+
+  test('with everyone, from by yourself, proposes the bell', () => {
+    assert.deepEqual(doorPatch('together', alone), { showCount: true, untilBell: true });
+  });
+
+  test('with everyone, already with others, keeps a length of your own', () => {
+    assert.deepEqual(doorPatch('together', ownLength), { showCount: true });
+  });
+
+  test('by yourself drops the bell', () => {
+    assert.deepEqual(doorPatch('alone', { ...DEFAULT_PREFERENCES, untilBell: true }), {
+      showCount: false,
+      untilBell: false,
+    });
+  });
+
+  test('the usual survives a door: re-fingerprinted with the patched answers', () => {
+    // The door changes what the fingerprint compares, which is why the door
+    // handler re-fingerprints with the patch applied rather than letting the
+    // skip turn itself off.
+    const patched = { ...alone, ...doorPatch('together', alone) };
+    assert.notEqual(usualFingerprint(patched), usualFingerprint(alone));
+    assert.equal(
+      usualFingerprint(patched),
+      usualFingerprint({ ...alone, showCount: true, untilBell: true }),
+    );
+    // And a returning with-others sitter's own length is untouched by it.
+    assert.equal(
+      usualFingerprint({ ...ownLength, ...doorPatch('together', ownLength) }),
+      usualFingerprint(ownLength),
+    );
+  });
+});
+
+describe('togetherLine', () => {
+  test('names the bell when the door leads to it', () => {
+    assert.equal(
+      togetherLine({ ...DEFAULT_PREFERENCES, showCount: false, untilBell: false }, '12:55'),
+      'Everyone finishes together at 12:55',
+    );
+    assert.equal(
+      togetherLine({ ...DEFAULT_PREFERENCES, showCount: true, untilBell: true }, '12:55'),
+      'Everyone finishes together at 12:55',
+    );
+  });
+
+  test('says so when a length of your own survives the door', () => {
+    assert.equal(
+      togetherLine({ ...DEFAULT_PREFERENCES, showCount: true, untilBell: false }, '12:55'),
+      'Your own length, with everyone',
+    );
+  });
+
+  test('before the clock knows, no time', () => {
+    assert.equal(
+      togetherLine({ ...DEFAULT_PREFERENCES, showCount: false, untilBell: false }, null),
+      'Everyone finishes together',
+    );
   });
 });

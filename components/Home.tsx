@@ -3,11 +3,12 @@
 import { useEffect, useId, useState, type ReactNode } from 'react';
 import { serverNow, syncClock } from '@/lib/clock';
 import { localTime } from '@/lib/format';
+import { doorPatch, togetherLine, type Mode } from '@/lib/journey';
 import { NAME_MAX, ORIGIN_MAX, composeLabel } from '@/lib/label';
 import { humanMinutes, type PracticeEntry } from '@/lib/practice';
 import { nextSharedBellAt } from '@/lib/timer';
 import type { UserPreferences } from '@/lib/types';
-import { Doors, EarthScene, LiveLine, type Mode } from './ModeScreen';
+import { Doors, EarthScene, LiveLine } from './ModeScreen';
 import Practice from './Practice';
 import RoomToggle from './RoomToggle';
 import SettingsDrawer from './SettingsDrawer';
@@ -118,8 +119,6 @@ export default function Home({
       prefs={prefs}
       onChange={change}
       now={now}
-      usual={usual}
-      onUsual={setUsual}
     />
   );
 
@@ -143,7 +142,15 @@ export default function Home({
                 {name ? `Hello, ${name}.` : 'Welcome back.'}
               </h1>
             </div>
-            <Doors bellLabel={bellLabel} onChoose={onDoor} />
+            <Doors
+              togetherLine={togetherLine(prefs, bellLabel)}
+              onChoose={(m) => {
+                // Written before the door's patch lands, so the journey
+                // it opens reads a skip that matches the patched answers.
+                if (usual) setUsual(true, { ...prefs, ...doorPatch(m, prefs) });
+                onDoor(m);
+              }}
+            />
           </div>
 
           {/* One bar, on its own ground so it reads over the map: what the

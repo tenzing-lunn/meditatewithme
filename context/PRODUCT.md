@@ -91,11 +91,14 @@ in `ARCHITECTURE.md`.
 screen, with the doors at the bottom over the dusk veil: *Meditate with me*
 in the rounded face where the mode question would be, one line above it
 saying who else is here right now, and the two doors beside it — *Sit with
-everyone* (everyone finishes together at the next :55) and *Sit on your own*.
+everyone* (everyone finishes together at the next :55 — or, for somebody
+who already sits with others for a length of their own, *Your own length,
+with everyone*) and *Sit on your own*.
 Choosing a door is the first click on the site. A returning guest also sees a
 quiet line at the foot — *Your usual is 10 minutes · singing bowl · in
 silence* — with a switch, *Skip the questions next time*; with it on, a door
-goes straight to the bowl. A first-time guest is asked their name and place
+goes straight to the bowl. The switch turns itself on once, when the first
+sitting completes, with what was just sat; turned off, it stays off. A first-time guest is asked their name and place
 just after choosing. There are no step marks here: it is the way in, not one
 of the questions. The sun-and-moon and the three-line menu (`Create account`,
 `Sign in`) sit at the top right and stay there, still, until the bowl is
@@ -147,8 +150,9 @@ slide left to right. The questions, in order:
    (the count less you; *Nobody else yet. Yours will be the first light.*
    when nobody is), the question, and two doors of the same size: **Sit with
    everyone**, lit in the candle's colour — *Everyone finishes together at
-   12:55* — and **Sit on your own**, outlined — *Your own length, the same
-   sky*. Pressing either answers and advances; neither is shown as chosen
+   12:55*, or *Your own length, with everyone* when a private length chosen
+   under with-others will survive the door — and **Sit on your own**,
+   outlined — *Your own length, the same sky*. Pressing either answers and advances; neither is shown as chosen
    on arrival. Back is in the foot as on every question. Home is the same
    scene under *Hello, Ana.*, with the usual and its switch below the doors.
    **Redrawn 15 September 2026** from a map in a card over a small row, after
@@ -256,14 +260,18 @@ answers as pills — *Until 12:55*, *Singing bowl*, *Rain* — and *Change*, whi
 opens the settings drawer, and beside it the switch *Go straight to the
 bowl*. A door goes to the questions the account has not answered — origin,
 once — then time, bell, sound, the bowl; with the switch on, straight to the
-bowl. The switch turns itself off when an answer changes on the rail or on
-another device, so it never skips a question whose answer moved; a change
-made in the drawer keeps it on, because the drawer is where the answers are
-being chosen. **The drawer, 19 September 2026:** one page sliding in from the
-right over Home with every setting on it — how long (a slider), the bell
-(three cards; tapping one rings it), the sound underneath (silence or any of
-the five beds; not played there, the level is set while sitting), and the
-switch. The three lines open the same drawer as a menu — *Account*,
+bowl. The switch turns itself on once, after the first sitting completes,
+and off when an answer changes on the rail or on another device, so it never
+skips a question whose answer moved; a change made in the drawer keeps it on,
+because the drawer is where the answers are being chosen, and so does a door,
+because choosing how to sit is not a changed answer. **The drawer, 19
+September 2026:** one page sliding in from the right over Home with every
+setting on it — how long (a slider whose last stop is always *Until the
+bell*; choosing it chooses *with everyone* too), the bell (three cards;
+tapping one rings it), and the sound underneath (silence or any of the five
+beds; not played there, the level is set while sitting). The switch is on the
+bar alone since 22 September 2026; the drawer had a second copy of it. The
+three lines open the same drawer as a menu — *Account*,
 *Settings*, *Your practice*, *Sign out* — with Settings opening in place.
 Shown to Jonny by 21 September 2026. When two or more are sitting the count
 is on the *With others* door, the same door as on the rail. The menu: *Account* (email, the name, where you are

@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useState, type ComponentType } from 'react';
 
+import { doorPatch, type Mode } from '@/lib/journey';
 import type { MixPatch } from './Sounds';
 import { unlockAudio } from './audio';
 import Home from './Home';
 import Journey from './Journey';
-import { doorPatch, type Mode } from './ModeScreen';
 import { displayName, useAuth } from './useAuth';
 import { useMix } from './useMix';
 import { usePractice } from './usePractice';

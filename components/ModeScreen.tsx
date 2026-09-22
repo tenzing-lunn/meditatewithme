@@ -3,14 +3,12 @@
 import dynamic from 'next/dynamic';
 import type { ReactNode } from 'react';
 import type { Cell, WorldPoint } from '@/lib/geo';
+import type { Mode } from '@/lib/journey';
 import type { Room } from '@/lib/room';
 import RailBar from './RailBar';
 import Switch from './Switch';
 import Wordmark from './Wordmark';
-import type { UserPreferences } from '@/lib/types';
 import { FOCUS_ROOM } from './controls';
-
-export type Mode = 'together' | 'alone';
 
 /**
  * Loaded only while the earth is drawn, for the reason `World` gives: it
@@ -20,16 +18,6 @@ const WorldMap = dynamic(() => import('./WorldMap'), {
   ssr: false,
   loading: () => null,
 });
-
-/**
- * What a door writes. Together proposes the shared bell, but only on the way
- * in from By yourself: somebody who sits with others for their own fifteen
- * minutes keeps that, and so keeps their usual, every time they press it.
- */
-export function doorPatch(mode: Mode, prefs: UserPreferences): Partial<UserPreferences> {
-  if (mode === 'alone') return { showCount: false, untilBell: false };
-  return prefs.showCount ? { showCount: true } : { showCount: true, untilBell: true };
-}
 
 function Arrow({ className }: { className: string }) {
   return (
@@ -153,16 +141,18 @@ const DOOR =
  * not a push. Nothing is chosen on arrival; the saved mode is what the
  * questions after this remember, not something drawn here.
  *
- * The line under *with everyone* says what the shared bell is before anyone
- * has learned the word. Stacked on a phone, in thumb reach; stacked beside
- * the question from `md`; side by side from `xl`.
+ * The line under *with everyone* says what that door leads to
+ * (`togetherLine` in `lib/journey.ts`): the shared bell, named before anyone
+ * has learned the word, or a length of your own that the door keeps. Stacked
+ * on a phone, in thumb reach; stacked beside the question from `md`; side by
+ * side from `xl`.
  */
 export function Doors({
-  bellLabel,
+  togetherLine,
   onChoose,
 }: {
-  /** "12:55", once the clock knows. */
-  bellLabel: string | null;
+  /** "Everyone finishes together at 12:55", or "Your own length, with everyone". */
+  togetherLine: string;
   onChoose: (mode: Mode) => void;
 }) {
   return (
@@ -177,7 +167,7 @@ export function Doors({
             Sit with everyone
           </span>
           <span className="mt-0.5 text-[0.84375rem] font-semibold text-room-action-ink-2 tabular-nums md:text-[0.90625rem]">
-            Everyone finishes together{bellLabel ? ` at ${bellLabel}` : ''}
+            {togetherLine}
           </span>
         </span>
         <Arrow className="size-[1.375rem] shrink-0 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none" />
@@ -226,7 +216,7 @@ export function Doors({
 export default function ModeScreen({
   current,
   room,
-  bellLabel,
+  togetherLine,
   others,
   step,
   steps,
@@ -241,7 +231,8 @@ export default function ModeScreen({
   /** This question's place on the rail, as on every other question. */
   step?: number;
   steps?: number;
-  bellLabel: string | null;
+  /** The line under *Sit with everyone*; see `Doors`. */
+  togetherLine: string;
   /** People here now besides you. Null when unknown. */
   others: number | null;
   points: WorldPoint[];
@@ -276,7 +267,7 @@ export default function ModeScreen({
               </h2>
             )}
           </div>
-          <Doors bellLabel={bellLabel} onChoose={onChoose} />
+          <Doors togetherLine={togetherLine} onChoose={onChoose} />
         </div>
         {landing?.usualLine && (
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-6">

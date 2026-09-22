@@ -1198,6 +1198,13 @@ yourself. No migration and no new column, and §8 says so. The Time screen
 under with-others offers the bell as its default stop and allows a private
 length, and a door proposes the bell again only when the mode is changing —
 otherwise a chosen length survives, which is what keeps *Your usual* honest.
+That rule is `doorPatch` in `lib/journey.ts`, and the line under *Sit with
+everyone* is `togetherLine` beside it, tested together: it names the bell
+when the door will propose it and says *Your own length, with everyone* when
+a private length will survive, so the door never promises a bell that will
+not ring for that person. The drawer's *How long* always ends at the bell
+stop, and choosing it writes `showCount: true` with `untilBell`, since the
+bell is with everyone.
 
 ### "Your usual"
 
@@ -1208,8 +1215,20 @@ answer changed on the rail, a sync from another device — turns the skip off,
 which is what "when nothing changed" means. The one exception is Home's
 settings drawer (`SettingsDrawer.tsx`): its changes go through Home's
 `change`, which re-fingerprints with `setUsual(true, nextPrefs)` when the
-switch is on, since the drawer is where the answers are being chosen. Guests get the same; `hasAnswers` is
+switch is on, since the drawer is where the answers are being chosen. A door
+is the other: `Journey`'s door handler, and Home's before `Entry` applies the
+patch, re-fingerprint with `doorPatch` applied, because choosing how to sit
+is not a changed answer and the skip used to turn itself off on it. Guests get the same; `hasAnswers` is
 `mwm.flow.answeredAt`, written on the first strike.
+
+**The switch turns itself on once.** `afterFirstSitting`, called by `Journey`
+when the stage reaches `finished` — which only the finishing effect sets, so
+it means completed, never End — writes `{ enabled: true, fingerprint }` with
+the preferences just sat, and only if `mwm.usual` has never been written. A
+stored `false` is a choice and is never flipped back. A first-timer has no
+usual to skip to; after one sitting they do, and the second visit is one
+press. The drawer no longer carries the switch (22 September 2026); Home's
+bar does.
 
 ### The origin, and who sees a name
 

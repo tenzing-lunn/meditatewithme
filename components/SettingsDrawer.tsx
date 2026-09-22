@@ -13,7 +13,6 @@ import type { Room } from '@/lib/room';
 import type { BellKind, UserPreferences } from '@/lib/types';
 import { CHARACTER, Glyph } from './BellScreen';
 import Sounds from './Sounds';
-import Switch from './Switch';
 import { BELLS, previewBell, unlockAudio } from './audio';
 import { FOCUS_ROOM, ICON_ROOM } from './controls';
 
@@ -47,8 +46,6 @@ export default function SettingsDrawer({
   prefs,
   onChange,
   now,
-  usual,
-  onUsual,
 }: {
   /** Closed, open on the menu, or open with Settings already expanded. */
   open: 'menu' | 'settings' | null;
@@ -60,8 +57,6 @@ export default function SettingsDrawer({
   prefs: UserPreferences;
   onChange: (patch: Partial<UserPreferences>) => void;
   now: number | null;
-  usual: boolean;
-  onUsual: (next: boolean) => void;
 }) {
   const titleId = useId();
   const settingsId = useId();
@@ -194,15 +189,6 @@ export default function SettingsDrawer({
                 <Length prefs={prefs} onChange={onChange} now={now} />
                 <Bells endBell={prefs.endBell} onPick={(endBell) => onChange({ endBell })} />
                 <Underneath prefs={prefs} onChange={onChange} />
-                <Section title="Starting">
-                  <Switch
-                    room
-                    checked={usual}
-                    onChange={onUsual}
-                    label="Go straight to the bowl"
-                    description="The doors on Home skip the questions and use these settings."
-                  />
-                </Section>
               </div>
             </div>
           </div>
@@ -242,8 +228,10 @@ const tile = (on: boolean) =>
   }`;
 
 /**
- * The length, on the timer's stops. With everyone, one more stop past the
- * last: until the shared bell. By yourself there is no bell to wait for.
+ * The length, on the timer's stops, and one more past the last: until the
+ * shared bell. The bell is with everyone, so choosing it chooses the door
+ * too; by yourself a stored `untilBell` shows as the length, since no bell
+ * will ring for it.
  */
 function Length({
   prefs,
@@ -254,10 +242,9 @@ function Length({
   onChange: (patch: Partial<UserPreferences>) => void;
   now: number | null;
 }) {
-  const together = prefs.showCount;
   const bellLabel = now === null ? null : localTime(nextSharedBellAt(now));
-  const stops = together ? TIMER_STOPS.length : TIMER_STOPS.length - 1;
-  const untilBell = prefs.untilBell && together;
+  const stops = TIMER_STOPS.length;
+  const untilBell = prefs.untilBell && prefs.showCount;
   const stop = untilBell ? TIMER_STOPS.length : timerStopIndex(prefs.timerMinutes);
   const duration = durationLabel(prefs.timerMinutes);
   const said = untilBell
@@ -286,7 +273,7 @@ function Length({
         onChange={(e) => {
           const i = Number(e.target.value);
           if (i === TIMER_STOPS.length) {
-            onChange({ untilBell: true });
+            onChange({ untilBell: true, showCount: true });
             return;
           }
           onChange({
@@ -299,7 +286,7 @@ function Length({
       />
       <div aria-hidden className="flex justify-between text-[0.75rem] text-room-ink-2 tabular-nums">
         <span>{TIMER_STOPS[0]} min</span>
-        <span>{together ? 'Until the bell' : `${TIMER_STOPS[TIMER_STOPS.length - 1]} min`}</span>
+        <span>Until the bell</span>
       </div>
     </Section>
   );

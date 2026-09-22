@@ -49,6 +49,31 @@ export function screensFor(f: JourneyFacts): Screen[] {
   return out;
 }
 
+export type Mode = 'together' | 'alone';
+
+/**
+ * What a door writes. Together proposes the shared bell, but only on the way
+ * in from By yourself: somebody who sits with others for their own fifteen
+ * minutes keeps that, and so keeps their usual, every time they press it.
+ */
+export function doorPatch(mode: Mode, prefs: UserPreferences): Partial<UserPreferences> {
+  if (mode === 'alone') return { showCount: false, untilBell: false };
+  return prefs.showCount ? { showCount: true } : { showCount: true, untilBell: true };
+}
+
+/**
+ * The line under *Sit with everyone*: what that door leads to, by the rule
+ * above. From by yourself it proposes the bell, so the line names it; already
+ * with others on a length of your own, the length survives the door, and the
+ * line says so rather than promising a bell that will not ring for you.
+ */
+export function togetherLine(prefs: UserPreferences, bellLabel: string | null): string {
+  const next = { ...prefs, ...doorPatch('together', prefs) };
+  return next.untilBell
+    ? `Everyone finishes together${bellLabel ? ` at ${bellLabel}` : ''}`
+    : 'Your own length, with everyone';
+}
+
 /** The screen one step along, or null off either end. */
 export function step(
   screens: readonly Screen[],
