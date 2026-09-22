@@ -155,7 +155,7 @@ export default function Journey({
     userId: auth.status === 'signed-in' ? auth.user.id : null,
     name: auth.status === 'signed-in' ? displayName(auth.user) : undefined,
   });
-  const { usual, setUsual, answered, markAnswered, afterFirstSitting } = useUsual(prefs);
+  const { usual, setUsual, afterFirstSitting } = useUsual(prefs);
   const origin = useOrigin();
   const fullscreen = useFullscreen();
   const wakeLock = useWakeLock();
@@ -163,19 +163,23 @@ export default function Journey({
   const signedIn = Boolean(home);
   const { room, toggle: toggleRoom } = useRoom();
 
+  // A completed sitting in the log, on this device or the account. The
+  // record of having sat, for the rail and for the landing's foot.
+  const hasSat = entries.some((e) => e.completed);
+
   // Decided once, when the journey is mounted. The facts it reads can change
-  // while the rail is walked (the bowl marks the device as answered), and a
-  // rail that re-arranged itself underfoot would be worse than one that
-  // asked a question it could have skipped.
+  // while the rail is walked (the sitting's end writes the log), and a rail
+  // that re-arranged itself underfoot would be worse than one that asked a
+  // question it could have skipped.
   const decide = useCallback(
     (): readonly ScreenName[] =>
       screensFor({
         signedIn,
         usual,
-        hasAnswers: answered,
+        hasSat,
         originAsked: profile.share !== null,
       }),
-    [signedIn, usual, answered, profile.share],
+    [signedIn, usual, hasSat, profile.share],
   );
   const [screens, setScreens] = useState<readonly ScreenName[]>(decide);
 
@@ -253,8 +257,8 @@ export default function Journey({
 
   /**
    * A guest coming back to the doors after a sitting is starting a new
-   * journey, so the list is decided again: the strike marked this device as
-   * answered, and the name and origin are not asked twice.
+   * journey, so the list is decided again: the sitting is in the log now, so
+   * the name and place are asked, once, and never twice.
    */
   const restart = useCallback(() => {
     const next = decide();
@@ -317,7 +321,6 @@ export default function Journey({
     const opening = openingBell(prefs.endBell, seconds);
 
     setStruck((n) => n + 1);
-    markAnswered();
     setStage({
       kind: 'sitting',
       sit: {
@@ -333,7 +336,7 @@ export default function Journey({
     });
     // Presence never delays the ritual.
     void recordBegin();
-  }, [prefs, now, mix, fullscreen, wakeLock, recordBegin, markAnswered]);
+  }, [prefs, now, mix, fullscreen, wakeLock, recordBegin]);
 
   const endEarly = useCallback(() => {
     const s = stageRef.current;
@@ -566,7 +569,7 @@ export default function Journey({
                     signedIn
                       ? undefined
                       : {
-                          usualLine: answered ? settingsLine(prefs, now) : null,
+                          usualLine: hasSat ? settingsLine(prefs, now) : null,
                           usual,
                           onUsual: setUsual,
                         }

@@ -98,9 +98,13 @@ Choosing a door is the first click on the site. A returning guest also sees a
 quiet line at the foot — *Your usual is 10 minutes · singing bowl · in
 silence* — with a switch, *Skip the questions next time*; with it on, a door
 goes straight to the bowl. The switch turns itself on once, when the first
-sitting completes, with what was just sat; turned off, it stays off. A first-time guest is asked their name and place
-just after choosing. There are no step marks here: it is the way in, not one
-of the questions. The sun-and-moon and the three-line menu (`Create account`,
+sitting completes, with what was just sat; turned off, it stays off. A
+first visit asks nothing personal: the questions about the sit, then the
+bowl. The visit after a first completed sitting asks a guest their name and
+place, once, just after the door (**changed 22 September 2026**; until then
+both were the first thing a first-timer met, before any question about the
+sit, for a name and a place that by default nobody sees). There are no step
+marks here: it is the way in, not one of the questions. The sun-and-moon and the three-line menu (`Create account`,
 `Sign in`) sit at the top right and stay there, still, until the bowl is
 struck. **Changed 19 September 2026**: until then a paper title page came
 first — the wordmark, one sentence and *Come and sit*, with the earth pale
@@ -116,9 +120,12 @@ the right, and the question itself is what a screen reader is handed on
 arrival. Escape is *Back*. **Changed 14 September 2026** from a full-width
 slide left to right. The questions, in order:
 
-1. *What should we call you?* — the screen is a line and nothing else: no
-   visible question, no explanation, and the small *Back* at the foot. The
-   line draws itself out as
+1. *What should we call you?* — asked once, on the visit after a first
+   sitting, never on the first. The question, one line under it — *Your
+   first name, if you'd like to be seen.* — and the line, with the small
+   *Back* at the foot. Until 22 September 2026 the question and its reason
+   were for a screen reader only and the line was all a sighted person saw.
+   The line draws itself out as
    *Enter your name* types on it in a pale brown with a caret blinking at the front of the line; the
    prompt goes on the first key, and what you type is in full ink. The line
    is ready for typing the moment the screen arrives, no click. *Skip* is
@@ -126,7 +133,9 @@ slide left to right. The questions, in order:
    something is typed, and Enter does the same. Signed in, never asked: the
    account's name is used. The line always arrives empty, even when a name
    was given on an earlier visit.
-2. *Where are you sitting?* — the same bare line, *Enter your city*; typed,
+2. *Where are you sitting?* — asked once, on the same visit as the name;
+   a member is asked this alone, the name having come with the account. A
+   bare line, *Enter your city*, and nothing else visible; typed,
    then chosen. The letters search about 33,000 towns of 15,000 people or
    more and every country (GeoNames, searched in the browser, so nothing
    typed is sent anywhere), and the matches open under the line — *Lisbon ·
@@ -258,9 +267,10 @@ ground lifts back to paper.
 Ana.*, the two doors, and under them one bar: *Your sitting* with the three
 answers as pills — *Until 12:55*, *Singing bowl*, *Rain* — and *Change*, which
 opens the settings drawer, and beside it the switch *Go straight to the
-bowl*. A door goes to the questions the account has not answered — origin,
-once — then time, bell, sound, the bowl; with the switch on, straight to the
-bowl. The switch turns itself on once, after the first sitting completes,
+bowl*. A door goes to the questions: time, bell, sound, the bowl — and, on
+the visit after a first completed sitting, where you are sitting, once,
+before them; with the switch on, straight to the bowl (still by way of that
+one question, the once it is owed). The switch turns itself on once, after the first sitting completes,
 and off when an answer changes on the rail or on another device, so it never
 skips a question whose answer moved; a change made in the drawer keeps it on,
 because the drawer is where the answers are being chosen, and so does a door,
@@ -338,6 +348,7 @@ imagery (§5), it is one file to replace.
 | `ui-warm`, 14 Sept 2026 | The photographic room, the landing word, the settings panel and the ring replaced by the warm rail: one question per screen, a bowl to strike, the earth with names | `docs/ui-rebuild.md`, `DESIGN.md` |
 | same | Every sitting starts from the bowl; the signed-in auto-start is gone | `ARCHITECTURE.md` §16 |
 | same | A name and an origin, opt-in, shown on the earth for the length of a with-others sitting | `ARCHITECTURE.md` §16, `plans/privacy-data-inventory.md` |
+| 22 Sept 2026 | The name and the place are asked on the visit after a first sitting, not on the first; the skip turns itself on after that sitting | `plans/ui-ux-fixes.md` commits 5 and 6, `plans/audit-2026-09-21.md` M1 and H4 |
 
 ## 4. Commercial — what Jonny holds, and what he has not been told
 

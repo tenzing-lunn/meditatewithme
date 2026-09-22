@@ -27,10 +27,11 @@ import { useSyncPreferences } from './useSyncPreferences';
  * both, handed down. `usePresence` is deliberately NOT here: a heartbeat is
  * a claim to be here, and it belongs to the journey.
  *
- * NOTHING IS SHOWN UNTIL BOTH ARE KNOWN
- * The account and the stored preferences both load in effects. The journey
- * decides its screens from them once, at mount, so it waits for both rather
- * than deciding on defaults and correcting itself a moment later.
+ * NOTHING IS SHOWN UNTIL ALL THREE ARE KNOWN
+ * The account, the stored preferences and the practice log all load in
+ * effects. The journey decides its screens from them once, at mount, so it
+ * waits for all three rather than deciding on defaults and correcting
+ * itself a moment later.
  */
 export default function Entry() {
   const {
@@ -48,7 +49,7 @@ export default function Entry() {
   const sync = useSyncPreferences({ userId, prefs, replace, loaded });
 
   // The log works signed out. Signing in only carries it between devices.
-  const { entries, record } = usePractice(userId);
+  const { entries, record, loaded: logLoaded } = usePractice(userId);
 
   // The ambient mix. Preferences own the levels; this only turns them into
   // sound, which is why it is handed prefs rather than any state of its own.
@@ -109,7 +110,7 @@ export default function Entry() {
 
   if (demo) return <demo.Demo which={demo.which} />;
 
-  if (auth.status === 'loading' || !loaded) {
+  if (auth.status === 'loading' || !loaded || !logLoaded) {
     return <main className="h-dvh bg-paper" aria-busy />;
   }
 

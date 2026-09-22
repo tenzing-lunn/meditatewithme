@@ -370,14 +370,17 @@ family for the candles.
   all and the heading sat under Back and the marks — so stepping from one
   question to the next moves the answer and nothing else; and Next sits
   directly under the control, at its right edge. `Screen`'s plain default,
-  `clamp(1rem, 7vh, 5rem)`, has no caller today: every question is
+  `clamp(1rem, 7vh, 5rem)`, has one caller: the name question, since it
+  stopped being `bare` on 22 September 2026; every other question is
   `middle`, `bare` or centred. Until 17 September 2026 the block was centred
   and the foot pinned to the window's bottom, which put the heading at a
   different height on every step (a two-line lede moved it sixty pixels) and
   left the buttons as much as three hundred pixels below what they answered,
-  one hard left and one mid-column. The name and origin (`bare`) are the
-  exception: they are only a line, so it sits in the middle of the frame, with
-  Skip and Next under it (`LineActions`). The bowl still centres itself, and from
+  one hard left and one mid-column. The origin (`bare`) is the
+  exception: it is only a line, so it sits in the middle of the frame, with
+  Skip and Next under it (`LineActions`). The name hangs from the baseline
+  like any question — title, one line, the line field, `LineActions` under
+  it. The bowl still centres itself, and from
   `md` up the time, bell and sound questions leave the baseline and sit in the
   middle of the page, each question level with the middle of its control
   (`middle` on `Screen`), so the three read as one run into the bowl.

@@ -5,7 +5,6 @@ import { usualFingerprint } from '@/lib/journey';
 import type { UserPreferences } from '@/lib/types';
 
 const USUAL_KEY = 'mwm.usual';
-const FLOW_KEY = 'mwm.flow';
 
 interface Usual {
   enabled: boolean;
@@ -29,17 +28,6 @@ function readUsual(): Usual {
   }
 }
 
-function readAnswered(): boolean {
-  try {
-    const v = JSON.parse(localStorage.getItem(FLOW_KEY) ?? 'null') as
-      | { answeredAt?: unknown }
-      | null;
-    return typeof v?.answeredAt === 'number';
-  } catch {
-    return false;
-  }
-}
-
 /**
  * "Skip the questions and use these."
  *
@@ -57,17 +45,15 @@ function readAnswered(): boolean {
  * was just sat with — only if `mwm.usual` has never been written. Off is a
  * choice and is remembered: a stored `false` is never flipped back.
  *
- * `answered` is whether this device has struck the bowl before, which is
- * what decides whether a guest is asked their name and origin.
+ * Whether this device has sat before is not read here: the practice log is
+ * the one record of that (`Journey`'s `hasSat`). Until 22 September 2026 a
+ * second key, `mwm.flow`, was written on the first strike for the same
+ * question; it is no longer read, and a stale one is harmless.
  */
 export function useUsual(prefs: UserPreferences) {
   const [stored, setStored] = useState<Usual>(() =>
     typeof window === 'undefined' ? OFF : readUsual(),
   );
-  const [answered, setAnswered] = useState(() =>
-    typeof window === 'undefined' ? false : readAnswered(),
-  );
-
   const usual = stored.enabled && stored.fingerprint === usualFingerprint(prefs);
 
   // `forPrefs`: the settings drawer changes a setting and keeps the skip on
@@ -86,15 +72,6 @@ export function useUsual(prefs: UserPreferences) {
     [prefs],
   );
 
-  const markAnswered = useCallback(() => {
-    try {
-      localStorage.setItem(FLOW_KEY, JSON.stringify({ answeredAt: Date.now() }));
-    } catch {
-      // Private mode.
-    }
-    setAnswered(true);
-  }, []);
-
   const afterFirstSitting = useCallback(() => {
     try {
       if (localStorage.getItem(USUAL_KEY) !== null) return;
@@ -104,5 +81,5 @@ export function useUsual(prefs: UserPreferences) {
     setUsual(true);
   }, [setUsual]);
 
-  return { usual, setUsual, answered, markAnswered, afterFirstSitting };
+  return { usual, setUsual, afterFirstSitting };
 }

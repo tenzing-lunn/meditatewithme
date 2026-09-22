@@ -5,37 +5,56 @@ import { doorPatch, screensFor, step, togetherLine, usualFingerprint } from '../
 import { DEFAULT_PREFERENCES } from '../lib/preferences.ts';
 
 describe('screensFor', () => {
-  test('a guest, first time', () => {
+  test('a guest, first time: nothing personal is asked', () => {
     assert.deepEqual(
-      screensFor({ signedIn: false, usual: false, hasAnswers: false, originAsked: false }),
-      ['mode', 'name', 'origin', 'time', 'bell', 'sound', 'bowl'],
-    );
-  });
-
-  test('a guest who has answered before', () => {
-    assert.deepEqual(
-      screensFor({ signedIn: false, usual: false, hasAnswers: true, originAsked: true }),
+      screensFor({ signedIn: false, usual: false, hasSat: false, originAsked: false }),
       ['mode', 'time', 'bell', 'sound', 'bowl'],
     );
   });
 
-  test('a guest who skips the questions', () => {
+  test('a guest who has sat is asked their name and place, once', () => {
     assert.deepEqual(
-      screensFor({ signedIn: false, usual: true, hasAnswers: true, originAsked: true }),
+      screensFor({ signedIn: false, usual: false, hasSat: true, originAsked: false }),
+      ['mode', 'name', 'origin', 'time', 'bell', 'sound', 'bowl'],
+    );
+    assert.deepEqual(
+      screensFor({ signedIn: false, usual: false, hasSat: true, originAsked: true }),
+      ['mode', 'time', 'bell', 'sound', 'bowl'],
+    );
+  });
+
+  test('a guest who skips the questions is still asked, once', () => {
+    assert.deepEqual(
+      screensFor({ signedIn: false, usual: true, hasSat: true, originAsked: false }),
+      ['mode', 'name', 'origin', 'bowl'],
+    );
+    assert.deepEqual(
+      screensFor({ signedIn: false, usual: true, hasSat: true, originAsked: true }),
       ['mode', 'bowl'],
     );
   });
 
-  test('signed in, never asked where they are from', () => {
+  test('signed in, first time: nothing personal is asked either', () => {
     assert.deepEqual(
-      screensFor({ signedIn: true, usual: false, hasAnswers: true, originAsked: false }),
+      screensFor({ signedIn: true, usual: false, hasSat: false, originAsked: false }),
+      ['mode', 'time', 'bell', 'sound', 'bowl'],
+    );
+  });
+
+  test('signed in and has sat: the place, never the name', () => {
+    assert.deepEqual(
+      screensFor({ signedIn: true, usual: false, hasSat: true, originAsked: false }),
       ['mode', 'origin', 'time', 'bell', 'sound', 'bowl'],
+    );
+    assert.deepEqual(
+      screensFor({ signedIn: true, usual: false, hasSat: true, originAsked: true }),
+      ['mode', 'time', 'bell', 'sound', 'bowl'],
     );
   });
 
   test('signed in, usual', () => {
     assert.deepEqual(
-      screensFor({ signedIn: true, usual: true, hasAnswers: true, originAsked: true }),
+      screensFor({ signedIn: true, usual: true, hasSat: true, originAsked: true }),
       ['mode', 'bowl'],
     );
   });
@@ -43,18 +62,21 @@ describe('screensFor', () => {
   test('the bowl is always last and the doors are always first', () => {
     for (const signedIn of [true, false])
       for (const usual of [true, false])
-        for (const hasAnswers of [true, false])
+        for (const hasSat of [true, false])
           for (const originAsked of [true, false]) {
-            const s = screensFor({ signedIn, usual, hasAnswers, originAsked });
+            const s = screensFor({ signedIn, usual, hasSat, originAsked });
             assert.equal(s[s.length - 1], 'bowl');
             assert.equal(s[0], 'mode');
             assert.equal(new Set(s).size, s.length);
+            // The name is never asked of a member, and never without the place.
+            if (signedIn) assert.equal(s.includes('name'), false);
+            if (s.includes('name')) assert.equal(s.includes('origin'), true);
           }
   });
 });
 
 describe('step', () => {
-  const s = screensFor({ signedIn: false, usual: false, hasAnswers: false, originAsked: false });
+  const s = screensFor({ signedIn: false, usual: false, hasSat: true, originAsked: false });
   test('forward, back, and off the ends', () => {
     assert.equal(step(s, 'mode', 1), 'name');
     assert.equal(step(s, 'name', -1), 'mode');

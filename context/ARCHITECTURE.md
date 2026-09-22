@@ -988,15 +988,26 @@ it, which needs no code because nothing is stored.
 ### The rail: one question, one screen
 
 `lib/journey.ts` is pure and tested. `screensFor()` decides which screens a
-visitor sees from four facts — signed in, usual on, has answered before,
-origin asked — and `step()` walks the list:
+visitor sees from four facts — signed in, usual on, has sat (a completed
+sitting in the practice log, `entries.some(e => e.completed)` in `Journey`;
+`Entry` waits for the log to load before mounting anything, as it does for
+the account and the preferences), origin asked — and `step()` walks the
+list:
 
 ```
-guest, first time:   mode name origin time bell sound bowl
-guest, usual on:     mode bowl
-signed in, first:    [origin] time bell sound bowl      (after a door on Home)
-signed in, usual:    bowl
+guest, first time:        mode time bell sound bowl
+guest, has sat, not asked: mode name origin time bell sound bowl
+guest, usual on:          mode bowl                  (plus name origin, the once)
+signed in, first:         time bell sound bowl       (after a door on Home)
+signed in, has sat:       origin time bell sound bowl
+signed in, usual:         bowl
 ```
+
+Nothing personal is asked on a first visit (22 September 2026; until then a
+first-time guest met the name and the place before any question about the
+sit). The visit after a first completed sitting asks once — a guest the name
+then the place, a member the place — and `originAsked` (`profile.share !==
+null`, which a skip also sets) is what stops it being asked twice.
 
 `components/Journey.tsx` owns the stage machine — `rail | sitting | finished`
 — and the sitting's timing (`begin`, `endEarly`, the finishing effect, the
@@ -1218,8 +1229,11 @@ settings drawer (`SettingsDrawer.tsx`): its changes go through Home's
 switch is on, since the drawer is where the answers are being chosen. A door
 is the other: `Journey`'s door handler, and Home's before `Entry` applies the
 patch, re-fingerprint with `doorPatch` applied, because choosing how to sit
-is not a changed answer and the skip used to turn itself off on it. Guests get the same; `hasAnswers` is
-`mwm.flow.answeredAt`, written on the first strike.
+is not a changed answer and the skip used to turn itself off on it. Guests
+get the same. Whether a device has sat is the practice log's to say, not
+this hook's: `mwm.flow.answeredAt`, written on the first strike until 22
+September 2026 to decide whether a guest was asked their name, is no longer
+written or read.
 
 **The switch turns itself on once.** `afterFirstSitting`, called by `Journey`
 when the stage reaches `finished` — which only the finishing effect sets, so
@@ -1273,9 +1287,12 @@ prompt drawn over the empty input by `useTypedOut`, not set as its
 `placeholder`, because a placeholder cannot be animated. The prompt is ink-3
 at 60%, 2.4:1 — under AA for text, deliberately, so it cannot be mistaken
 for a typed answer; it is a hint gone on the first key, the input's label
-names the field, and the contrast script holds the floor. Both screens pass
-`bare` to `Screen`: the question and its line become `sr-only`, still the
-`h2` the rail focuses, and the line is all a sighted person sees. It types once per
+names the field, and the contrast script holds the floor. The origin screen
+passes `bare` to `Screen`: the question and its line become `sr-only`, still
+the `h2` the rail focuses, and the line is all a sighted person sees. The
+name screen did too until 22 September 2026; now its question and one line —
+*Your first name, if you'd like to be seen.* — are visible, because a name
+asked for no visible reason is a toll. It types once per
 arrival, 55ms a character after 200ms, and its drawn caret stands in for the
 real one while the field is empty, focused or not: the input is
 `caret-transparent` until the first key. The foot under every question is `PRIMARY_SM`,
