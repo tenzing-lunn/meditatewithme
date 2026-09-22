@@ -579,6 +579,7 @@ export default function WorldMap({
   waiting = false,
   room = 'dusk',
   paused = false,
+  reduced = false,
   className,
 }: {
   points: WorldPoint[];
@@ -608,11 +609,19 @@ export default function WorldMap({
    * canvas repainting under it is what makes that thing stutter.
    */
   paused?: boolean;
+  /**
+   * The visitor has asked for less motion (`useReducedMotion`, read by
+   * whoever renders the earth): no loop, one still frame, and a redraw on
+   * the minute so the terminator keeps moving.
+   */
+  reduced?: boolean;
   className?: string;
 }) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const pausedRef = useRef(paused);
   pausedRef.current = paused;
+  const reducedRef = useRef(reduced);
+  reducedRef.current = reduced;
   // Read by the scene, which is built once; a render only updates them.
   const fitRef = useRef(fit);
   fitRef.current = fit;
@@ -634,6 +643,7 @@ export default function WorldMap({
     setYou: (you: Cell | null) => void;
     setRoom: (room: Room) => void;
     setPaused: (paused: boolean) => void;
+    setReduced: (reduced: boolean) => void;
     dispose: () => void;
   } | null>(null);
 
@@ -847,26 +857,23 @@ export default function WorldMap({
 
     layout();
 
-    const reducedMotion = window.matchMedia(
-      '(prefers-reduced-motion: reduce)',
-    ).matches;
-
     // Thirty frames a second, not the display's sixty or more. The breath
     // is five seconds long and the fastest ping under a second, so half the
     // frames show nothing the eye can use, and an hour of them on a phone is
-    // heat. Under reduced motion nothing moves at all, so there is no loop:
-    // one frame, and another on the minute for the terminator.
+    // heat. Under reduced motion (`reducedRef`, from the prop) nothing moves
+    // at all, so there is no loop: one frame, and another on the minute for
+    // the terminator.
     const FRAME_MS = 1000 / 30;
     let raf = 0;
     let drawnAt = 0;
     const startedAt = performance.now();
-    const loop = !reducedMotion;
 
     const render = (force = false) => {
       raf = 0;
       if (disposed) return;
-      // Paused, this frame is drawn and it is the last until play resumes.
-      if (loop && !pausedRef.current) raf = requestAnimationFrame(tick);
+      // Paused or still, this frame is drawn and it is the last until play
+      // resumes.
+      if (!reducedRef.current && !pausedRef.current) raf = requestAnimationFrame(tick);
 
       const at = performance.now();
       if (!force && at - drawnAt < FRAME_MS) return;
@@ -874,7 +881,7 @@ export default function WorldMap({
       // display lands on every second frame instead of drifting to a third.
       drawnAt = force ? at : at - ((at - drawnAt) % FRAME_MS);
 
-      const elapsed = reducedMotion ? 0 : (at - startedAt) / 1000;
+      const elapsed = reducedRef.current ? 0 : (at - startedAt) / 1000;
 
       // The sun moves a quarter of a degree a minute, which is under a pixel
       // here, so the night is rebuilt on the minute rather than on the frame.
@@ -988,11 +995,12 @@ export default function WorldMap({
     redraw = () => {
       if (!raf) render(true);
     };
-    const minute = loop
-      ? 0
-      : window.setInterval(() => {
-          if (!pausedRef.current) redraw();
-        }, 60_000);
+    // The still earth's own clock: while the loop runs, `bake()` above
+    // already rebuilds the night on the minute, so this only draws when
+    // there is no loop to do it.
+    const minute = window.setInterval(() => {
+      if (reducedRef.current && !pausedRef.current) redraw();
+    }, 60_000);
 
     const observer = new ResizeObserver(layout);
     observer.observe(host);
@@ -1015,8 +1023,17 @@ export default function WorldMap({
       },
       setPaused: (next) => {
         if (next || disposed) return;
-        if (!loop) redraw();
+        if (reducedRef.current) redraw();
         else if (!raf) raf = requestAnimationFrame(tick);
+      },
+      setReduced: (next) => {
+        if (disposed) return;
+        // Going still: the frame in flight is dropped and one is drawn at
+        // rest, which `render` will not follow with another. Moving again:
+        // one forced frame, which reschedules itself.
+        cancelAnimationFrame(raf);
+        raf = 0;
+        if (next || !pausedRef.current) render(true);
       },
       dispose: () => {
         disposed = true;
@@ -1053,6 +1070,10 @@ export default function WorldMap({
   useEffect(() => {
     sceneRef.current?.setPaused(paused);
   }, [paused]);
+
+  useEffect(() => {
+    sceneRef.current?.setReduced(reduced);
+  }, [reduced]);
 
   return <div ref={hostRef} className={className} aria-hidden />;
 }

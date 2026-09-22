@@ -41,14 +41,16 @@ export default function Afterwards({
         : `${withOthers} ${withOthers === 1 ? 'other' : 'others'}`;
 
   return (
-    <div className="relative flex h-dvh w-full flex-col items-center justify-center bg-room px-6 text-room-ink">
+    // `#main`, like every page's: the skip link has somewhere to land once
+    // the sitting's frame has gone.
+    <main id="main" className="relative flex h-dvh w-full flex-col items-center justify-center bg-room px-6 text-room-ink">
       <div className="flex w-full max-w-md flex-col items-center screen-settle">
-        <p className="font-display text-[3.5rem] font-bold leading-none">
+        <p className="font-display text-minutes font-bold leading-none">
           {minutes} {minutes === 1 ? 'minute' : 'minutes'}.
         </p>
 
         {company && (
-          <dl className="mt-7 w-full max-w-[16rem] text-[0.9375rem]">
+          <dl className="mt-7 w-full max-w-[16rem] text-control">
             <div className="flex items-baseline justify-between gap-6">
               <dt className="text-room-ink-2">With you this hour</dt>
               <dd className="tabular-nums">{company}</dd>
@@ -65,6 +67,6 @@ export default function Afterwards({
           </button>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

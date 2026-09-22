@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 
-import { FlameMark, PAPER } from '@/components/FlameMark';
+import { FlameMark, DUSK } from '@/components/FlameMark';
 
 /**
  * The tab icon. Generated rather than committed as a .ico so it shares a
@@ -24,7 +24,7 @@ export default function Icon() {
           // Opaque, not transparent: the tab strip behind this is light in one
           // browser and dark in the next, and a flame floating on nothing
           // loses its outline against the light one.
-          background: PAPER,
+          background: DUSK,
         }}
       >
         <FlameMark size={26} />

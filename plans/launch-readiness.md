@@ -335,8 +335,9 @@ invoice you weren't expecting" promise forbids.
   Web Interface Guidelines punch list (Part A) and the Impeccable
   audit + critique re-run (Part B). Nothing in it is fixed yet, and the rows
   that referred to the photographic room's components are closed by the
-  rebuild rather than by a fix — `plans/ui-ux-fixes.md` §1 says which.
-- `plans/audit-2026-09-21.md` — the UI/UX audit of the warm rail, 21
-  September: 7 High, 19 Medium, 16 Low, every line verified. Its plan is
-  `plans/ui-ux-fixes.md`: eleven commits in order, four decisions for Tenzing
-  first. Nothing in it is done yet.
+  rebuild rather than by a fix — `docs/ui-ux-fixes.md` §1 says which.
+- `docs/audit-2026-09-21.md` — the UI/UX audit of the warm rail, 21
+  September: 7 High, 19 Medium, 16 Low, every line verified. Its plan,
+  `docs/ui-ux-fixes.md` — eleven commits in order, four decisions for
+  Tenzing first — landed in full on `dev` by 22 September 2026, which is
+  why both are in `docs/`.

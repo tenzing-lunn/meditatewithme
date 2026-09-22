@@ -172,7 +172,7 @@ export default function Sounds({
           >
             <Texture slug="silence" />
             <span
-              className={`font-display text-[0.875rem] font-semibold ${
+              className={`text-control font-semibold ${
                 !anyOn ? 'text-room-action' : 'text-room-ink'
               }`}
             >
@@ -200,7 +200,7 @@ export default function Sounds({
               >
                 <Texture slug={track.slug} />
                 <span
-                  className={`font-display text-[0.875rem] font-semibold ${
+                  className={`text-control font-semibold ${
                     on ? 'text-room-action' : 'text-room-ink'
                   }`}
                 >
@@ -239,7 +239,7 @@ export default function Sounds({
         <div className="flex items-center gap-3">
           <label
             htmlFor={`${prefix}-master`}
-            className="w-16 shrink-0 text-[0.875rem] text-room-ink-2"
+            className="w-16 shrink-0 text-caption text-room-ink-2"
           >
             Volume
           </label>

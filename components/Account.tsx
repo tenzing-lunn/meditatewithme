@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from 'react';
 import { NAME_MAX } from '@/lib/label';
+import { FIELD, MENU_ITEM, PRIMARY, WORD } from './controls';
 import type { AuthState } from './useAuth';
 import type { SyncStatus } from './useSyncPreferences';
 
@@ -47,53 +48,24 @@ import type { SyncStatus } from './useSyncPreferences';
  * it is not, so there is no second form for people who already have an account
  * — only a quieter way into the same one, skipping the name.
  *
- * THE TWO DOORS ARE NOW ON A MENU
+ * THE TWO DOORS ARE ON A MENU
  * Jonny asked (7 September 2026) for the top-right control to be a three-line
  * settings button that offers `Create account` and `Sign in` as two separate
  * choices, rather than one button labelled with the first and carrying the
- * second as a footnote. So with `menu` set the trigger is the icon, pressing it
- * opens a two-item menu, and each item opens the same panel at a different
- * step — name for a new account, address for an existing one. The flow behind
- * the panel is unchanged; only the door into it is.
- */
-
-/**
- * Which way the panel opens.
+ * second as a footnote. So the trigger is the icon, pressing it opens a
+ * two-item menu, and each item opens the same panel at a different step —
+ * name for a new account, address for an existing one. The flow behind the
+ * panel is unchanged; only the door into it is. The panel hangs under the
+ * trigger; the variant that stood it above an offer at the foot of the
+ * ending went with that offer (22 September 2026), as did the labelled
+ * button.
  *
- * `down` hangs it under the control at the top right of the landing. `up`
- * stands it above the offer at the foot of the frame after a sitting, where
- * down would be off the bottom of the window.
+ * The field, the button, the menu item and the word are `controls.ts`'s —
+ * the same as everywhere else, not a second set at 44px and `ring-1`.
  */
-type Drop = 'down' | 'up';
 
 /** name → email → code. Two questions and a confirmation, one at a time. */
 type Step = 'name' | 'email' | 'code';
-
-// `text-base`, not `text-sm`: iOS zooms the page when a field under 16px
-// takes focus, and did, on the name and the email.
-const FIELD =
-  'min-h-11 w-full rounded-control border border-rule bg-paper px-4 text-center text-base text-ink placeholder:text-ink-3 focus-visible:border-ember focus-visible:ring-1 focus-visible:ring-ember focus-visible:outline-none';
-
-const SUBMIT =
-  'min-h-11 w-full rounded-action bg-ember px-6 text-sm font-semibold text-white transition-[filter] duration-200 hover:brightness-90 focus-visible:ring-2 focus-visible:ring-ember focus-visible:ring-offset-2 focus-visible:ring-offset-surface focus-visible:outline-none disabled:opacity-50';
-
-/** One choice on the menu. Full width of it, lit on hover, nothing else. */
-const ITEM =
-  'min-h-11 px-5 text-left text-sm font-semibold text-ink-2 transition-colors hover:bg-ember-soft hover:text-ember focus-visible:bg-ember-soft focus-visible:text-ember focus-visible:outline-none';
-
-/**
- * The quiet word under the button. Bounded by an underline, never bare.
- *
- * `min-h-11` and the padding are not decoration. Set as bare text this was
- * about 16px tall — the underline is the whole of its height — so *I already
- * have one*, *Back* and *Send it again* were 16px targets on a phone, under
- * WCAG 2.5.8's 24px floor and well under the 44px everything else in this
- * project already clears. The type stays `text-xs`: what grew is the thing you
- * hit, not the thing you read. `inline-flex` so the underline still wraps the
- * words rather than the box.
- */
-const FOOT =
-  'inline-flex min-h-11 items-center px-2 text-xs text-ink-3 underline decoration-rule underline-offset-4 transition-colors hover:text-ember hover:decoration-ember focus-visible:ring-1 focus-visible:ring-ember focus-visible:outline-none';
 
 export default function Account({
   state,
@@ -103,8 +75,6 @@ export default function Account({
   linkError,
   signOut,
   className,
-  drop = 'down',
-  menu = false,
 }: {
   state: AuthState;
   sync: SyncStatus;
@@ -124,12 +94,6 @@ export default function Account({
   signOut: () => void;
   /** The trigger's style, handed in by the room. `LIFTED`, in practice. */
   className?: string;
-  drop?: Drop;
-  /**
-   * The three-line trigger and the two-item menu, instead of a labelled
-   * button. Only ever `down`: it lives in the top corner of the landing.
-   */
-  menu?: boolean;
 }) {
   const [open, setOpen] = useState(Boolean(linkError));
   const [menuOpen, setMenuOpen] = useState(false);
@@ -335,45 +299,32 @@ export default function Account({
 
   return (
     <div ref={wrap} className="relative inline-block">
-      {menu ? (
-        <button
-          ref={trigger}
-          type="button"
-          onClick={() => {
-            // Pressing the icon while the panel is up closes it, the way it
-            // closes a menu — the icon is the one control, whichever it shows.
-            if (open) {
-              setOpen(false);
-              return;
-            }
-            setMenuOpen((v) => !v);
-          }}
-          aria-expanded={shown}
-          aria-haspopup="menu"
-          aria-label="Menu"
-          className={className}
-        >
-          <svg viewBox="0 0 24 24" className="size-5" fill="none" aria-hidden>
-            <path
-              d="M4 7h16M4 12h16M4 17h16"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-          </svg>
-        </button>
-      ) : (
-        <button
-          ref={trigger}
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          aria-haspopup="dialog"
-          className={className}
-        >
-          Create account
-        </button>
-      )}
+      <button
+        ref={trigger}
+        type="button"
+        onClick={() => {
+          // Pressing the icon while the panel is up closes it, the way it
+          // closes a menu — the icon is the one control, whichever it shows.
+          if (open) {
+            setOpen(false);
+            return;
+          }
+          setMenuOpen((v) => !v);
+        }}
+        aria-expanded={shown}
+        aria-haspopup="menu"
+        aria-label="Menu"
+        className={className}
+      >
+        <svg viewBox="0 0 24 24" className="size-5" fill="none" aria-hidden>
+          <path
+            d="M4 7h16M4 12h16M4 17h16"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        </svg>
+      </button>
 
       {/* The two doors. Same surface and same entrance as the panel below,
           because the panel is what replaces it when one is chosen.
@@ -429,7 +380,7 @@ export default function Account({
               else if (e.key === 'Home') go(0);
               else if (e.key === 'End') go(items.length - 1);
             }}
-            className={`rounded-control flex min-w-44 flex-col overflow-hidden border border-rule bg-surface shadow-[0_12px_32px_-12px_rgb(59_42_29_/_0.35)] py-1 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none ${
+            className={`rounded-control flex min-w-44 flex-col overflow-hidden border border-rule bg-surface shadow-menu py-1 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none ${
               entered ? 'translate-y-0 opacity-100' : '-translate-y-1.5 opacity-0'
             }`}
           >
@@ -438,7 +389,7 @@ export default function Account({
               type="button"
               role="menuitem"
               onClick={() => openAt('name')}
-              className={ITEM}
+              className={MENU_ITEM}
             >
               Create account
             </button>
@@ -446,7 +397,7 @@ export default function Account({
               type="button"
               role="menuitem"
               onClick={() => openAt('email')}
-              className={ITEM}
+              className={MENU_ITEM}
             >
               Sign in
             </button>
@@ -457,23 +408,13 @@ export default function Account({
       {/*
         THE PANEL, IN TWO LAYERS.
 
-        Placement on the outer, animation on the inner, so that the outer's own
-        `-translate-x-1/2` cannot be clobbered by the transform that moves it.
-
-        `down` hangs off the trigger's right edge, which is what keeps it inside
-        the frame's padding in the top corner. `up` centres on the trigger
-        instead: that one is centred at the foot of the frame, and
-        right-aligning a 320px panel to a 180px button there puts its left edge
-        off the side of a phone.
+        Placement on the outer, animation on the inner, so that the one cannot
+        be clobbered by the transform that moves the other. It hangs off the
+        trigger's right edge, which is what keeps it inside the frame's
+        padding in the top corner.
       */}
       {open && (
-        <div
-          className={`absolute z-20 ${
-            drop === 'down'
-              ? 'top-full right-0 mt-2'
-              : 'bottom-full left-1/2 mb-2 -translate-x-1/2'
-          }`}
-        >
+        <div className="absolute top-full right-0 z-20 mt-2">
           <div
             role="dialog"
             aria-label={step === 'name' ? 'Create account' : 'Sign in'}
@@ -481,14 +422,12 @@ export default function Account({
             // because the panel has not far to come and nothing to explain;
             // anything slower and the press and the arrival stop feeling like
             // one event.
-            className={`rounded-control w-[min(20rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-6rem)] overflow-y-auto overscroll-contain border border-rule bg-surface shadow-[0_12px_32px_-12px_rgb(59_42_29_/_0.35)] p-5 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none ${
-              entered
-                ? 'translate-y-0 opacity-100'
-                : `opacity-0 ${drop === 'down' ? '-translate-y-1.5' : 'translate-y-1.5'}`
+            className={`rounded-control w-[min(20rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-6rem)] overflow-y-auto overscroll-contain border border-rule bg-surface shadow-menu p-5 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none ${
+              entered ? 'translate-y-0 opacity-100' : '-translate-y-1.5 opacity-0'
             }`}
           >
             <form onSubmit={onSubmit} className="flex flex-col gap-3">
-              <h2 className="font-display text-2xl font-bold leading-tight text-ink">
+              <h2 className="font-display text-section font-bold leading-tight text-ink">
                 {heading}
               </h2>
 
@@ -502,7 +441,7 @@ export default function Account({
 
                   `break-words` because an address long enough to overflow a
                   280px line has no space in it to break at. */}
-              <p className="min-h-[3.75rem] text-left text-xs leading-relaxed break-words text-ink-3">
+              <p className="min-h-[3.75rem] text-left text-caption leading-relaxed break-words text-ink-3">
                 {hint}
               </p>
 
@@ -510,7 +449,7 @@ export default function Account({
                 <>
                   <label
                     htmlFor={nameId}
-                    className="text-center text-sm text-ink-2"
+                    className="text-center text-caption text-ink-2"
                   >
                     What should we call you?
                   </label>
@@ -534,7 +473,7 @@ export default function Account({
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Your name"
-                    className={FIELD}
+                    className={`${FIELD} text-center`}
                   />
                 </>
               )}
@@ -543,7 +482,7 @@ export default function Account({
                 <>
                   <label
                     htmlFor={emailId}
-                    className="text-center text-sm text-ink-2"
+                    className="text-center text-caption text-ink-2"
                   >
                     {name.trim()
                       ? `And your email, ${name.trim()}?`
@@ -561,7 +500,7 @@ export default function Account({
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className={FIELD}
+                    className={`${FIELD} text-center`}
                   />
                 </>
               )}
@@ -570,7 +509,7 @@ export default function Account({
                 <>
                   <label
                     htmlFor={codeId}
-                    className="text-center text-sm text-ink-2"
+                    className="text-center text-caption text-ink-2"
                   >
                     The code
                   </label>
@@ -604,14 +543,14 @@ export default function Account({
                     // The indent cancels the trailing letter-space, which
                     // otherwise pushes centred tracked digits off to the left.
                     style={{ textIndent: '0.4em' }}
-                    className={`${FIELD} text-xl tracking-[0.4em] tabular-nums`}
+                    className={`${FIELD} text-center text-clock tracking-[0.4em] tabular-nums`}
                   />
                 </>
               )}
 
               {/* Busy keeps the label and adds the ellipsis, so the button
                   says what it is still doing rather than swapping words. */}
-              <button type="submit" disabled={busy} className={SUBMIT}>
+              <button type="submit" disabled={busy} className={`${PRIMARY} w-full`}>
                 {step === 'name'
                   ? 'Continue'
                   : step === 'email'
@@ -623,7 +562,7 @@ export default function Account({
               {/* Reserved too, for the same reason the hint is. */}
               <p
                 role="alert"
-                className="min-h-4 text-center text-xs text-ember"
+                className="min-h-4 text-center text-caption text-ember"
               >
                 {error ?? (resent ? 'Sent again.' : '')}
               </p>
@@ -636,7 +575,7 @@ export default function Account({
                       setError(null);
                       setStep('email');
                     }}
-                    className={FOOT}
+                    className={WORD}
                   >
                     I already have one
                   </button>
@@ -649,7 +588,7 @@ export default function Account({
                       setError(null);
                       setStep('name');
                     }}
-                    className={FOOT}
+                    className={WORD}
                   >
                     Back
                   </button>
@@ -662,7 +601,7 @@ export default function Account({
                     onClick={async () => {
                       if (await send(name.trim() || undefined)) setResent(true);
                     }}
-                    className={FOOT}
+                    className={WORD}
                   >
                     Send it again
                   </button>

@@ -212,7 +212,7 @@ slide left to right. The questions, in order:
    ways, and the title and the bowl's own label are enough.
 
 **Every question says where it is.** Since 17 September 2026 a short row of
-marks above each question shows which one of them it is, the current one lit,
+marks in the bar across the top of each question shows which one of them it is, the current one lit,
 and a returning guest asked fewer questions is shown the shorter rail rather
 than a fixed count. The last mark is the bowl, and it is read to a screen
 reader as *The bowl*, not as a numbered question (since 22 September 2026;
@@ -363,7 +363,8 @@ imagery (§5), it is one file to replace.
 | `ui-warm`, 14 Sept 2026 | The photographic room, the landing word, the settings panel and the ring replaced by the warm rail: one question per screen, a bowl to strike, the earth with names | `docs/ui-rebuild.md`, `DESIGN.md` |
 | same | Every sitting starts from the bowl; the signed-in auto-start is gone | `ARCHITECTURE.md` §16 |
 | same | A name and an origin, opt-in, shown on the earth for the length of a with-others sitting | `ARCHITECTURE.md` §16, `plans/privacy-data-inventory.md` |
-| 22 Sept 2026 | The name and the place are asked on the visit after a first sitting, not on the first; the skip turns itself on after that sitting | `plans/ui-ux-fixes.md` commits 5 and 6, `plans/audit-2026-09-21.md` M1 and H4 |
+| 22 Sept 2026 | The name and the place are asked on the visit after a first sitting, not on the first; the skip turns itself on after that sitting | `docs/ui-ux-fixes.md` commits 5 and 6, `docs/audit-2026-09-21.md` M1 and H4 |
+| 22 Sept 2026 | Every size is a named role and nothing is under 12px; tile names, the drawer's rows and its headings are Nunito, not the display face; the dawn/dusk toggle is only in the room; the count in the time sentence is plain ink; the drawer's bells are radios like the rail's; one shadow, one curve | `docs/ui-ux-fixes.md` commit 9, `DESIGN.md` |
 
 ## 4. Commercial — what Jonny holds, and what he has not been told
 

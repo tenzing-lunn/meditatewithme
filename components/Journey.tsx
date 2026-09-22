@@ -412,9 +412,7 @@ export default function Journey({
   const bellLabel = now === null ? null : localTime(nextSharedBellAt(now));
 
   const inRoom = stage.kind !== 'rail' || ROOM_SCREENS.includes(stage.at);
-  const roomToggle = (
-    <RoomToggle room={room} onToggle={toggleRoom} variant={inRoom ? 'room' : 'paper'} />
-  );
+  const roomToggle = <RoomToggle room={room} onToggle={toggleRoom} />;
 
   // Where each question sits on this visitor's own rail. A guest's doors are
   // the front page and have no mark; a returning guest whose name and place
@@ -431,7 +429,6 @@ export default function Journey({
       linkError={linkError}
       signOut={signOut}
       className={inRoom ? ICON_ROOM : ICON}
-      menu
     />
   ) : undefined;
 
@@ -504,10 +501,12 @@ export default function Journey({
         <div className="lift-in absolute inset-0">{sitting}</div>
       )}
       {/* Pinned over the rail rather than drawn on a screen, so it stays
-          put while the questions change under it, and gone at the strike. */}
-      {stage.kind === 'rail' && (menu || roomToggle) && (
+          put while the questions change under it, and gone at the strike.
+          The toggle only in the room: on the paper screens, the name and
+          the place, dawn or dusk changes nothing a person can see. */}
+      {stage.kind === 'rail' && (menu || inRoom) && (
         <div className="absolute top-[calc(0.875rem+env(safe-area-inset-top))] right-4 z-20 flex items-center gap-2 sm:right-10 md:right-14 lg:right-20 xl:right-24">
-          {roomToggle}
+          {inRoom && roomToggle}
           {menu}
         </div>
       )}

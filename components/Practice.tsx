@@ -36,7 +36,7 @@ export default function Practice({
 
   if (s.sittings === 0) {
     return (
-      <p className="text-ink-3 max-w-[34ch] text-center text-sm leading-relaxed">
+      <p className="text-ink-3 max-w-[34ch] text-center text-caption leading-relaxed">
         Your first sitting will show up here.
       </p>
     );
@@ -47,16 +47,16 @@ export default function Practice({
   return (
     <div className="flex w-full max-w-sm flex-col items-center gap-5">
       <div className="flex flex-col items-center gap-1">
-        <p className="font-display text-2xl font-bold">
+        <p className="font-display text-section font-bold">
           {s.currentStreak > 0 ? (
             <>
               {s.currentStreak}{' '}
-              <span className="text-ink-3 font-body text-sm font-normal">
+              <span className="text-ink-3 font-body text-caption font-normal">
                 day{s.currentStreak === 1 ? '' : 's'} in a row
               </span>
             </>
           ) : (
-            <span className="text-ink-2 font-body text-base font-normal">
+            <span className="text-ink-2 font-body text-body font-normal">
               Begin again whenever you like
             </span>
           )}
@@ -64,7 +64,7 @@ export default function Practice({
 
         {/* ink-2, not ink-3: this line is a fact, not a caption. It stays
             secondary to the streak above it by being a third of its size. */}
-        <p className="text-ink-2 text-sm tabular-nums">
+        <p className="text-ink-2 text-caption tabular-nums">
           {s.sittings} sitting{s.sittings === 1 ? '' : 's'} ·{' '}
           {humanMinutes(s.totalMinutes)}
         </p>

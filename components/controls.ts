@@ -41,7 +41,7 @@ export const FOCUS_DUSK =
 const BUTTON_SHAPE =
   'inline-flex items-center justify-center gap-2 rounded-action font-semibold transition-[background-color,border-color,color,filter,transform] duration-200 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 motion-reduce:transition-none';
 
-const BUTTON = `${BUTTON_SHAPE} min-h-12 px-7 text-[0.9375rem]`;
+const BUTTON = `${BUTTON_SHAPE} min-h-12 px-7 text-control`;
 
 export const PRIMARY = `${BUTTON} bg-ember text-white hover:brightness-90 ${FOCUS}`;
 
@@ -49,10 +49,11 @@ export const PRIMARY = `${BUTTON} bg-ember text-white hover:brightness-90 ${FOCU
  * The foot of a question — Back, Skip, Next — a size down.
  *
  * The question and its answer are what a screen is for, so the way on is
- * set smaller than both: 38px to look at. The `::after` reaches 3px above
- * and below, so what a finger lands on is still 44px.
+ * set smaller than both: 38px to look at, in the same control type as every
+ * other button. The `::after` reaches 3px above and below, so what a finger
+ * lands on is still 44px.
  */
-const BUTTON_SM = `${BUTTON_SHAPE} relative min-h-[2.375rem] px-5 text-[0.875rem] after:absolute after:inset-x-0 after:inset-y-[-3px] after:content-['']`;
+const BUTTON_SM = `${BUTTON_SHAPE} relative min-h-[2.375rem] px-5 text-control after:absolute after:inset-x-0 after:inset-y-[-3px] after:content-['']`;
 
 export const PRIMARY_SM = `${BUTTON_SM} bg-ember text-white hover:brightness-90 ${FOCUS}`;
 
@@ -61,22 +62,28 @@ export const QUIET_SM = `${BUTTON_SM} border border-rule text-ink-2 hover:border
 export const QUIET = `${BUTTON} border border-rule text-ink-2 hover:border-ember hover:text-ember ${FOCUS}`;
 
 
-export const CHIP = `inline-flex min-h-11 items-center justify-center rounded-control border border-rule bg-surface px-4 text-[0.9375rem] font-semibold text-ink-2 transition-colors duration-200 hover:border-ember hover:text-ember motion-reduce:transition-none ${FOCUS}`;
+export const CHIP = `inline-flex min-h-11 items-center justify-center rounded-control border border-rule bg-surface px-4 text-control font-semibold text-ink-2 transition-colors duration-200 hover:border-ember hover:text-ember motion-reduce:transition-none ${FOCUS}`;
 
 export const CHIP_ON = 'border-ember bg-ember-soft text-ember';
 
-export const FIELD = `min-h-12 w-full rounded-control border border-rule bg-surface px-4 text-base text-ink placeholder:text-ink-3 transition-colors duration-200 hover:border-ember focus-visible:border-ember motion-reduce:transition-none ${FOCUS}`;
+/**
+ * A box you type into. Body size and not smaller: iOS zooms the page when a
+ * field under 16px takes focus, and did, on the name and the email.
+ */
+export const FIELD = `min-h-12 w-full rounded-control border border-rule bg-surface px-4 text-body text-ink placeholder:text-ink-3 transition-colors duration-200 hover:border-ember focus-visible:border-ember motion-reduce:transition-none ${FOCUS}`;
 
 /**
- * A quiet word: Skip, Change, Leave it blank. Bounded by an underline, and
- * 44px tall so the thing you hit is bigger than the thing you read.
+ * A quiet word: Skip, Change, Leave it blank, the foot of the account panel.
+ * Bounded by an underline, and 44px tall so the thing you hit is bigger than
+ * the thing you read.
  */
-const WORD_SHAPE = `inline-flex min-h-11 items-center px-2 font-semibold text-ink-2 underline decoration-rule underline-offset-4 transition-colors duration-200 hover:text-ember hover:decoration-ember motion-reduce:transition-none ${FOCUS}`;
+export const WORD = `inline-flex min-h-11 items-center px-2 text-control font-semibold text-ink-2 underline decoration-rule underline-offset-4 transition-colors duration-200 hover:text-ember hover:decoration-ember motion-reduce:transition-none ${FOCUS}`;
 
-export const WORD = `${WORD_SHAPE} text-[0.9375rem]`;
-
-/** The same word in the foot, beside the small buttons. */
-export const WORD_SM = `${WORD_SHAPE} text-[0.875rem]`;
+/**
+ * One choice on a menu: the guest's two doors under the three lines. Full
+ * width of the menu, lit ember-soft on hover and on focus, nothing else.
+ */
+export const MENU_ITEM = 'min-h-11 px-5 text-left text-control font-semibold text-ink-2 transition-colors duration-200 hover:bg-ember-soft hover:text-ember focus-visible:bg-ember-soft focus-visible:text-ember focus-visible:outline-none motion-reduce:transition-none';
 
 /**
  * Something typed on the rail: a line, not a box.
@@ -89,7 +96,7 @@ export const WORD_SM = `${WORD_SHAPE} text-[0.875rem]`;
  * is drawn round a field that has no box to ring. `line-field` is what the
  * typed-out prompt's caret listens to (`globals.css`).
  */
-export const LINE = 'line-field peer h-14 w-full rounded-none border-b-2 border-transparent bg-transparent px-0 pt-1 pb-2 text-[1.5rem] leading-normal text-ink outline-none sm:text-[1.75rem]';
+export const LINE = 'line-field peer h-14 w-full rounded-none border-b-2 border-transparent bg-transparent px-0 pt-1 pb-2 text-answer leading-normal text-ink outline-none sm:text-answer-sm';
 
 /** The line itself, drawn under a `LINE` as its own element so it can be drawn out. */
 export const LINE_RULE = 'pointer-events-none absolute inset-x-0 bottom-0 h-0.5 origin-left bg-ink-3/80 transition-colors duration-200 peer-hover:bg-ink-2 peer-focus:bg-ember motion-reduce:transition-none';
@@ -118,4 +125,4 @@ export const QUIET_ROOM = `${BUTTON} border border-room-edge text-room-ink hover
 
 export const QUIET_ROOM_SM = `${BUTTON_SM} border border-room-edge text-room-ink hover:border-room-action hover:text-room-action ${FOCUS_ROOM}`;
 
-export const WORD_ROOM = `inline-flex min-h-11 items-center px-2 text-[0.9375rem] font-semibold text-room-ink-2 underline decoration-room-edge underline-offset-4 transition-colors duration-200 hover:text-room-action hover:decoration-room-action motion-reduce:transition-none ${FOCUS_ROOM}`;
+export const WORD_ROOM = `inline-flex min-h-11 items-center px-2 text-control font-semibold text-room-ink-2 underline decoration-room-edge underline-offset-4 transition-colors duration-200 hover:text-room-action hover:decoration-room-action motion-reduce:transition-none ${FOCUS_ROOM}`;

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
-import { PRIMARY_SM, WORD_SM } from './controls';
+import { PRIMARY_SM, WORD } from './controls';
 import { useReducedMotion } from './useReducedMotion';
 import { START_MS, typingMs } from './useTypedOut';
 
@@ -75,7 +75,7 @@ export default function LineActions({
           type="button"
           onClick={onSkip}
           inert={!settled}
-          className={`${active ? 'screen-settle' : ''} -ml-2 ${WORD_SM}`}
+          className={`${active ? 'screen-settle' : ''} -ml-2 ${WORD}`}
           style={active ? ({ animationDelay: `${wait}ms` } as CSSProperties) : undefined}
         >
           Skip

@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import RailBar from './RailBar';
-import { PRIMARY_ROOM_SM, PRIMARY_SM, WORD_SM } from './controls';
+import { PRIMARY_ROOM_SM, PRIMARY_SM, WORD } from './controls';
 
 /**
  * One question, and the way on.
@@ -116,9 +116,9 @@ export default function Screen({
 }) {
   const heading =
     titleClassName ??
-    `font-display text-[1.75rem] font-bold leading-[1.15] ${
+    `font-display text-question font-bold leading-[1.15] ${
       room ? 'text-room-ink' : 'text-ink'
-    } sm:text-[2.25rem] lg:text-[2.5rem]`;
+    } sm:text-question-sm lg:text-question-lg`;
   const centred = align === 'center';
   const foot = onNext || onSkip;
 
@@ -164,7 +164,7 @@ export default function Screen({
                 className={
                   bare
                     ? 'sr-only'
-                    : `mt-3 max-w-[42ch] text-base leading-relaxed ${
+                    : `mt-3 max-w-[42ch] text-body leading-relaxed ${
                         room ? 'text-room-ink-2' : 'text-ink-2'
                       }`
                 }
@@ -183,7 +183,7 @@ export default function Screen({
                 }`}
               >
                 {onSkip && (
-                  <button type="button" onClick={onSkip} className={WORD_SM}>
+                  <button type="button" onClick={onSkip} className={WORD}>
                     {skipLabel}
                   </button>
                 )}

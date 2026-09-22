@@ -35,6 +35,11 @@
   --color-dusk-ink: #f6e9d8;
   --color-dusk-ink-2: #d7bfa6;
   --color-flame: #e0a057;
+  /* The hot core of a flame: the mark's inner shape and the pale centre of
+     a far light by the candle. Decorative, never text. */
+  --color-flame-core: #fbead2;
+  /* The scrim under the settings drawer, over Home. Never text. */
+  --color-scrim: #140c06;
 
   /* The room — from the choice to the ending — in its dusk values. Wherever
      `[data-room="dawn"]` is set (below) the same names take the paper values,
@@ -57,11 +62,58 @@
   --font-numeral: var(--font-body);
   --font-sans: var(--font-body);
 
+  /* THE TYPE, BY ROLE
+     Every size on the site is one of these, and Tailwind's own scale is
+     switched off so that a size that is not a role cannot be written. A
+     role that grows with the window carries its steps as suffixed tokens
+     (`text-question sm:text-question-sm`); nothing steps that the eye has
+     not seen step. The floor is 12px: `tests/type.test.ts` reads this
+     block and fails on anything under 0.75rem, and on any arbitrary or
+     default-scale size in components/ or app/. */
+  --text-*: initial;
+  /* Comfortaa 700, never under 1.25rem. */
+  --text-wordmark: 2.25rem;
+  --text-wordmark-sm: 3.25rem;
+  --text-wordmark-md: 4rem;
+  --text-wordmark-lg: 4.5rem;
+  --text-wordmark-xl: 5rem;
+  /* The question on the earth and the sentence beside an instrument; also
+     the answer, large: the dial's centre and the drawer's *How long*. */
+  --text-sentence: 2.125rem;
+  --text-sentence-sm: 2.75rem;
+  --text-sentence-lg: 3.5rem;
+  /* The question on a rail screen, a document's title, a panel's. */
+  --text-question: 1.75rem;
+  --text-question-sm: 2.25rem;
+  --text-question-lg: 2.5rem;
+  /* The minutes on the ending. */
+  --text-minutes: 3.5rem;
+  /* A section heading: the drawer's *Menu*, a document's sections. */
+  --text-section: 1.5rem;
+  /* The wordmark in a corner, the candle's minutes, a door's title. */
+  --text-masthead: 1.25rem;
+  /* Nunito. */
+  /* A typed answer on the rail: the line. */
+  --text-answer: 1.5rem;
+  --text-answer-sm: 1.75rem;
+  /* The clock in the sitting, and the six-digit code: numerals, 600. */
+  --text-clock: 1.25rem;
+  /* A sentence read: 400. */
+  --text-body: 1rem;
+  /* Anything pressed: 600. Buttons, chips, words, tile names, switches. */
+  --text-control: 0.9375rem;
+  /* A caption, a hint, a label over a field: 400, ink-3 at the lightest. */
+  --text-caption: 0.8125rem;
+
   /* Fields, chips and doors share one soft corner; cards a softer one; the
      buttons are pills, so the rounded type and the rounded controls agree. */
   --radius-control: 1rem;
   --radius-card: 1.5rem;
   --radius-action: 9999px;
+
+  /* The one shadow. The menu and the place list float over the page; nothing
+     else does — a control is flat on its surface (`DESIGN.md`). */
+  --shadow-menu: 0 12px 32px -12px rgb(59 42 29 / 0.35);
 }
 
 /*
@@ -82,8 +134,11 @@
 
 /*
  * Motion, in one place. The rail switches screens with a short vertical move;
- * the camera lift is the one long move in the product. Under reduced motion
- * every transform-driven move becomes a short crossfade.
+ * the camera lift is the one long move in the product. `--ease-rail` is the
+ * house curve for anything that arrives, leaves or draws; `--ease-lift` is
+ * the lift's alone. Under reduced motion every transform-driven move becomes
+ * a short crossfade: the one `@media (prefers-reduced-motion: reduce)` block
+ * is at the end of this file.
  */
 :root {
   color-scheme: light;
@@ -92,14 +147,6 @@
   --settle-ms: 240ms;
   --lift-ms: 1400ms;
   --ease-lift: cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  :root {
-    --rail-ms: 0ms;
-    --settle-ms: 0ms;
-    --lift-ms: 400ms;
-  }
 }
 
 body {
@@ -162,19 +209,11 @@ body {
     color-mix(in srgb, var(--color-ember) 88%, white),
     var(--color-ember)
   );
-  box-shadow:
-    0 1px 3px rgb(59 42 29 / 0.25),
-    inset 0 1px 0 rgb(255 255 255 / 0.25);
-  transition:
-    transform 120ms ease-out,
-    box-shadow 120ms ease-out;
+  transition: transform 120ms ease-out;
 }
 
 .room-range:active::-webkit-slider-thumb {
   transform: scale(1.06);
-  box-shadow:
-    0 2px 8px rgb(59 42 29 / 0.3),
-    inset 0 1px 0 rgb(255 255 255 / 0.3);
 }
 
 .room-range::-moz-range-track {
@@ -201,21 +240,11 @@ body {
     color-mix(in srgb, var(--color-ember) 88%, white),
     var(--color-ember)
   );
-  box-shadow:
-    0 1px 3px rgb(59 42 29 / 0.25),
-    inset 0 1px 0 rgb(255 255 255 / 0.25);
   transition: transform 120ms ease-out;
 }
 
 .room-range:active::-moz-range-thumb {
   transform: scale(1.06);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .room-range::-webkit-slider-thumb,
-  .room-range::-moz-range-thumb {
-    transition: none;
-  }
 }
 
 /*
@@ -246,7 +275,7 @@ body {
 }
 
 .rail-leave {
-  animation: rail-leave calc(var(--rail-ms) * 0.5) ease-in forwards;
+  animation: rail-leave calc(var(--rail-ms) * 0.5) var(--ease-rail) forwards;
   pointer-events: none;
 }
 
@@ -262,13 +291,7 @@ body {
 }
 
 .line-draw {
-  animation: line-draw var(--draw-ms, 0ms) cubic-bezier(0.33, 0, 0.2, 1) var(--draw-delay, 0ms) backwards;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .line-draw {
-    animation: none;
-  }
+  animation: line-draw var(--draw-ms, 0ms) var(--ease-rail) var(--draw-delay, 0ms) backwards;
 }
 
 /*
@@ -307,12 +330,6 @@ body {
   animation: live-breath 4s ease-in-out infinite;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .live-dot {
-    animation: none;
-  }
-}
-
 /*
  * The caret at the front of a field's line while its prompt types itself out. It blinks as
  * a text caret does, so the line reads as somewhere to type, and it stays
@@ -328,12 +345,6 @@ body {
 
 .type-caret {
   animation: type-caret 1.1s steps(1) infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .type-caret {
-    animation: none;
-  }
 }
 
 /*
@@ -376,8 +387,22 @@ body {
   }
 }
 
+/* The flame's glow, and the warmth it throws down the wax: flame at 34%
+   and at 30%, in the token rather than its numbers. */
 .candle-glow {
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--color-flame) 34%, transparent),
+    transparent 62%
+  );
   animation: candle-glow 3.2s ease-in-out infinite;
+}
+
+.candle-warmth {
+  background: linear-gradient(
+    color-mix(in srgb, var(--color-flame) 30%, transparent),
+    transparent
+  );
 }
 
 @keyframes candle-drip {
@@ -409,7 +434,7 @@ body {
 }
 
 .candle-light {
-  background: radial-gradient(circle, #fbead2 0 16%, var(--color-flame) 30%, transparent 70%);
+  background: radial-gradient(circle, var(--color-flame-core) 0 16%, var(--color-flame) 30%, transparent 70%);
   animation: candle-light 5s ease-in-out infinite;
 }
 
@@ -448,23 +473,6 @@ body {
 
 .candle-hint .candle-hint-swipe {
   animation: candle-hint-swipe 1.8s ease-in-out infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .candle-hint .candle-hint-nudge,
-  .candle-hint .candle-hint-swipe {
-    animation: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .candle-flame,
-  .candle-glow,
-  .candle-drip,
-  .candle-light-in,
-  .candle-light {
-    animation: none;
-  }
 }
 
 /*
@@ -574,15 +582,6 @@ body {
   animation: bowl-ripple 1400ms ease-out forwards;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .bowl-struck .bowl-body {
-    animation: bowl-pulse 300ms ease-out;
-  }
-  .bowl-struck .bowl-ripple {
-    animation: none;
-  }
-}
-
 /*
  * The camera lifting away from the bowl. The bowl's screen falls away and
  * shrinks as the sitting settles in over it; the ground goes from paper to
@@ -614,22 +613,6 @@ body {
 
 .lift-in {
   animation: lift-in var(--lift-ms) var(--ease-lift) both;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  @keyframes lift-out {
-    to {
-      opacity: 0;
-    }
-  }
-  @keyframes lift-in {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
 }
 
 /*
@@ -708,12 +691,6 @@ body {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .bell-rang .bell-ring {
-    animation: none;
-  }
-}
-
 /*
  * THE FADER ON A TILE
  * The same 44px row to press, with a smaller grip: the full-width thumb is
@@ -729,4 +706,60 @@ body {
 .range-tile::-moz-range-thumb {
   width: 1.625rem;
   height: 1.125rem;
+}
+
+/*
+ * REDUCED MOTION, IN ONE PLACE
+ * Everything the stylesheet does when the visitor has asked for less motion.
+ * The rail and the settle go to nothing and the lift to a short crossfade;
+ * the loops — the caret, the live dot, the candle, the hint — hold still;
+ * the strike is one pulse with no rings, and a tapped bell simply lights.
+ * The moves decided in JS (the dial's spring, the typed prompt, the earth's
+ * breath) read `useReducedMotion` instead, and are listed there.
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --rail-ms: 0ms;
+    --settle-ms: 0ms;
+    --lift-ms: 400ms;
+  }
+
+  .room-range::-webkit-slider-thumb,
+  .room-range::-moz-range-thumb {
+    transition: none;
+  }
+
+  .line-draw,
+  .live-dot,
+  .type-caret,
+  .candle-hint .candle-hint-nudge,
+  .candle-hint .candle-hint-swipe,
+  .candle-flame,
+  .candle-glow,
+  .candle-drip,
+  .candle-light-in,
+  .candle-light,
+  .bowl-struck .bowl-ripple,
+  .bell-rang .bell-ring {
+    animation: none;
+  }
+
+  .bowl-struck .bowl-body {
+    animation: bowl-pulse 300ms ease-out;
+  }
+
+  @keyframes lift-out {
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes lift-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
 }

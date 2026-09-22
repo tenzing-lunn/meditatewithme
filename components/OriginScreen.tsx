@@ -187,14 +187,14 @@ export default function OriginScreen({
                 id={listId}
                 role="listbox"
                 aria-label="Places"
-                className="absolute inset-x-0 top-full z-20 mt-2 flex flex-col overflow-hidden rounded-control border border-rule bg-surface py-1 shadow-[0_12px_32px_-12px_rgb(59_42_29_/_0.35)]"
+                className="absolute inset-x-0 top-full z-20 mt-2 flex flex-col overflow-hidden rounded-control border border-rule bg-surface py-1 shadow-menu"
               >
                 {typed && loading && (
                   <li
                     role="option"
                     aria-disabled
                     aria-selected={false}
-                    className="flex min-h-11 items-baseline px-4 py-2.5 text-base text-ink-3"
+                    className="flex min-h-11 items-baseline px-4 py-2.5 text-body text-ink-3"
                   >
                     Looking up places…
                   </li>
@@ -209,7 +209,7 @@ export default function OriginScreen({
                     onMouseDown={(e) => e.preventDefault()}
                     onMouseMove={() => setActive(i)}
                     onClick={() => choose(o)}
-                    className={`flex min-h-11 cursor-pointer flex-wrap items-baseline gap-x-2 px-4 py-2.5 text-base ${
+                    className={`flex min-h-11 cursor-pointer flex-wrap items-baseline gap-x-2 px-4 py-2.5 text-body ${
                       i === active ? 'bg-ember-soft text-ember' : 'text-ink'
                     }`}
                   >

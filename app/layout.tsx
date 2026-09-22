@@ -4,13 +4,14 @@ import './globals.css';
 
 /**
  * Two rounded faces. Comfortaa is the wordmark, the question on each screen
- * and the minutes at the end: it needs its 700 to hold a line on its own.
- * Nunito is every sentence and every control; 600 is what a button reads
- * in. Neither is used below 0.8125rem.
+ * and the minutes at the end: it needs its 700 to hold a line on its own,
+ * and 700 is the only weight it is ever set in, so it is the only one
+ * loaded. Nunito is every sentence and every control; 600 is what a button
+ * reads in. Neither is used below 0.8125rem (`--text-caption`).
  */
 const comfortaa = Comfortaa({
   subsets: ['latin'],
-  weight: ['400', '700'],
+  weight: ['700'],
   variable: '--font-comfortaa',
   display: 'swap',
 });
@@ -80,7 +81,7 @@ export default function RootLayout({
         <div className="fixed top-3 left-3 z-50">
           <a
             href="#main"
-            className="sr-only focus:not-sr-only focus:inline-flex focus:min-h-11 focus:items-center focus:rounded-action focus:bg-ember focus:px-5 focus:text-sm focus:font-semibold focus:text-white focus:ring-2 focus:ring-ember focus:ring-offset-2 focus:ring-offset-paper focus:outline-none"
+            className="sr-only focus:not-sr-only focus:inline-flex focus:min-h-11 focus:items-center focus:rounded-action focus:bg-ember focus:px-5 focus:text-control focus:font-semibold focus:text-white focus:ring-2 focus:ring-ember focus:ring-offset-2 focus:ring-offset-paper focus:outline-none"
           >
             Skip to content
           </a>

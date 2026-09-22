@@ -140,7 +140,7 @@ export default function Home({
             <div className="flex flex-col gap-2.5 md:gap-3.5">
               {/* useCount reads without beating, so nobody it counts is you. */}
               <LiveLine others={count} lit={world.points.length > 0} />
-              <h1 className="font-display text-[2.125rem] leading-[1.08] font-bold tracking-[-0.015em] text-balance text-room-ink sm:text-[2.75rem] lg:text-[3.5rem]">
+              <h1 className="font-display text-sentence leading-[1.08] font-bold tracking-[-0.015em] text-balance text-room-ink sm:text-sentence-sm lg:text-sentence-lg">
                 {name ? `Hello, ${name}.` : 'Welcome back.'}
               </h1>
             </div>
@@ -164,20 +164,20 @@ export default function Home({
               aria-label={`Your sitting: ${summary.join(', ')}. Change`}
               className={`group flex min-h-11 flex-wrap items-center gap-x-3 gap-y-2 rounded-control text-left ${FOCUS_ROOM}`}
             >
-              <span className="text-[0.875rem] text-room-ink-2">
+              <span className="text-control text-room-ink-2">
                 Your sitting
               </span>
               <span className="flex flex-wrap gap-1.5">
                 {summary.map((part) => (
                   <span
                     key={part}
-                    className="rounded-full border border-room-edge px-3 py-1 text-[0.875rem] font-semibold text-room-ink transition-colors duration-200 group-hover:border-room-action motion-reduce:transition-none"
+                    className="rounded-full border border-room-edge px-3 py-1 text-control font-semibold text-room-ink transition-colors duration-200 group-hover:border-room-action motion-reduce:transition-none"
                   >
                     {part}
                   </span>
                 ))}
               </span>
-              <span className="text-[0.875rem] font-semibold text-room-action underline decoration-room-action/40 underline-offset-4 group-hover:decoration-room-action">
+              <span className="text-control font-semibold text-room-action underline decoration-room-action/40 underline-offset-4 group-hover:decoration-room-action">
                 Change
               </span>
             </button>
@@ -267,7 +267,7 @@ function Panel({
   return (
     <section className="flex flex-1 flex-col gap-6 py-8">
       <div className="flex items-center justify-between gap-4">
-        <h1 className="font-display text-[1.75rem] font-bold leading-[1.15]">{title}</h1>
+        <h1 className="font-display text-question font-bold leading-[1.15]">{title}</h1>
         <button type="button" onClick={onClose} className={QUIET}>
           Back
         </button>
@@ -320,7 +320,7 @@ function AccountPanel({
 
   return (
     <div className="flex flex-col gap-8">
-      <p className="text-[0.9375rem] break-words text-ink-3">{email ?? 'Signed in.'}</p>
+      <p className="text-control break-words text-ink-3">{email ?? 'Signed in.'}</p>
 
       <form
         className="flex flex-col gap-4"
@@ -335,7 +335,7 @@ function AccountPanel({
         }}
       >
         <div>
-          <label htmlFor={nameId} className="mb-1.5 block text-[0.8125rem] text-ink-3">
+          <label htmlFor={nameId} className="mb-1.5 block text-caption text-ink-3">
             What we call you
           </label>
           <input
@@ -350,7 +350,7 @@ function AccountPanel({
           />
         </div>
         <div>
-          <label htmlFor={originId} className="mb-1.5 block text-[0.8125rem] text-ink-3">
+          <label htmlFor={originId} className="mb-1.5 block text-caption text-ink-3">
             Where you are from
           </label>
           <input
@@ -379,7 +379,7 @@ function AccountPanel({
           <button type="submit" disabled={saving} className={PRIMARY}>
             {saving ? 'Save…' : 'Save'}
           </button>
-          <p role="status" className="text-[0.8125rem] text-ink-3">
+          <p role="status" className="text-caption text-ink-3">
             {note ?? ''}
           </p>
         </div>
@@ -399,12 +399,12 @@ function AccountPanel({
           </button>
         ) : (
           <div className="rounded-card border border-rule bg-surface p-4">
-            <p className="text-[0.9375rem] leading-relaxed">
+            <p className="text-control leading-relaxed">
               This removes your account and everything it holds: your email address,
               your name, where you are from, your settings, and the sittings
               synced to it. It cannot be undone.
             </p>
-            <p className="mt-3 text-[0.8125rem] leading-relaxed text-ink-3">
+            <p className="mt-3 text-caption leading-relaxed text-ink-3">
               Your practice log stays on this device. Closing the account only removes
               the copy we hold.
             </p>
@@ -440,7 +440,7 @@ function AccountPanel({
               </button>
             </div>
             {error && (
-              <p role="alert" className="mt-3 text-[0.8125rem] leading-relaxed text-ink-2">
+              <p role="alert" className="mt-3 text-caption leading-relaxed text-ink-2">
                 {error}
               </p>
             )}
@@ -459,7 +459,7 @@ function AccountPanel({
 function RecentSittings({ entries }: { entries: PracticeEntry[] }) {
   if (entries.length === 0) {
     return (
-      <p className="text-[0.9375rem] text-ink-3">
+      <p className="text-control text-ink-3">
         Nothing here yet. Your first sitting will be at the top.
       </p>
     );
@@ -467,24 +467,24 @@ function RecentSittings({ entries }: { entries: PracticeEntry[] }) {
   const recent = entries.slice(0, 8);
   return (
     <div>
-      <h2 className="mb-3 text-[0.8125rem] text-ink-3">Recent sittings</h2>
+      <h2 className="mb-3 text-caption text-ink-3">Recent sittings</h2>
       <ul className="flex flex-col">
         {recent.map((entry) => (
           <li
             key={entry.id}
             className="flex items-baseline justify-between gap-4 border-b border-rule py-2.5 last:border-b-0"
           >
-            <span className="text-[0.9375rem] text-ink-2">
+            <span className="text-control text-ink-2">
               {dayLabel(entry.startedAt)}
               <span className="text-ink-3 tabular-nums">
                 {' · '}
                 {localTime(entry.startedAt)}
               </span>
             </span>
-            <span className="shrink-0 text-[0.9375rem] tabular-nums">
+            <span className="shrink-0 text-control tabular-nums">
               {humanMinutes(entry.minutes)}
               {!entry.completed && (
-                <span className="text-[0.8125rem] text-ink-3"> · ended early</span>
+                <span className="text-caption text-ink-3"> · ended early</span>
               )}
             </span>
           </li>

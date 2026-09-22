@@ -16,6 +16,7 @@ import { mmss, remainingMs } from '@/lib/timer';
 import Bowl from './Bowl';
 import { QUIET_ROOM } from './controls';
 import Sounds, { type MixPatch } from './Sounds';
+import { useReducedMotion } from './useReducedMotion';
 
 /**
  * The earth, loaded only here and only when somebody sits with others.
@@ -119,6 +120,7 @@ export default function Sitting({
   const [soundOpen, setSoundOpen] = useState(false);
   const [awake, setAwake] = useState(true);
   const [focusInside, setFocusInside] = useState(false);
+  const reduced = useReducedMotion();
   const rest = useRef(0);
   const wake = useCallback(() => {
     setAwake(true);
@@ -203,7 +205,7 @@ export default function Sitting({
         <p
           role="timer"
           aria-label="Time left"
-          className={`absolute top-[calc(1rem+env(safe-area-inset-top))] right-5 z-10 text-xl tabular-nums text-room-ink-2 ${controls}`}
+          className={`absolute top-[calc(1rem+env(safe-area-inset-top))] right-5 z-10 text-clock tabular-nums text-room-ink-2 ${controls}`}
         >
           {mmss(remaining)}
         </p>
@@ -214,7 +216,7 @@ export default function Sitting({
           role="status"
           aria-label="Coming back"
         >
-          <p className="font-display text-[2.25rem] font-bold leading-none sm:text-[3rem]">
+          <p className="font-display text-sentence font-bold leading-none sm:text-sentence-sm">
             Come back.
           </p>
         </div>
@@ -236,6 +238,7 @@ export default function Sitting({
                 you={you}
                 room={room}
                 paused={soundOpen}
+                reduced={reduced}
                 className="absolute inset-0"
               />
             </div>
@@ -245,7 +248,7 @@ export default function Sitting({
               // region: the names turn every twenty seconds for the whole
               // sitting, and a screen reader that announced each turn would
               // never let the person sit.
-              className="min-h-6 max-w-md shrink-0 text-center text-[0.9375rem] text-balance text-room-ink-2"
+              className="min-h-6 max-w-md shrink-0 text-center text-control text-balance text-room-ink-2"
             >
               {line ?? ''}
             </p>

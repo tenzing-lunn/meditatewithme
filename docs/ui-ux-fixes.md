@@ -1,6 +1,6 @@
 # UI/UX fixes — the plan from the 21 September audit
 
-Acts on `plans/audit-2026-09-21.md`. Finding numbers (H1, M4, L13…) are that
+Acts on `docs/audit-2026-09-21.md`. Finding numbers (H1, M4, L13…) are that
 document's. Everything below is on `dev`; nothing goes to `main` without
 Tenzing's word, as always.
 

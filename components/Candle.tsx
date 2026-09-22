@@ -205,7 +205,7 @@ export default function Candle({
 
           <div className="absolute inset-x-0 bottom-0" style={{ height: `${height * 100}%`, transition: motion }}>
             <div className="absolute bottom-full left-1/2 flex -translate-x-1/2 flex-col items-center">
-              <span className="candle-glow absolute top-1/3 left-1/2 size-44 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgb(224_160_87/0.34),transparent_62%)]" />
+              <span className="candle-glow absolute top-1/3 left-1/2 size-44 -translate-x-1/2 -translate-y-1/2 rounded-full" />
               <span className="candle-flame relative block origin-bottom">
                 <FlameMark size={44} />
               </span>
@@ -213,22 +213,22 @@ export default function Candle({
             </div>
 
             <div className="absolute inset-0 overflow-hidden rounded-t-[0.625rem] rounded-b-md ring-1 ring-room-ink-2/20 bg-[linear-gradient(90deg,var(--color-dusk-ink-2),var(--color-dusk-ink)_42%,var(--color-dusk-ink-2))]">
-              <span className="absolute inset-x-0 top-0 h-16 bg-[linear-gradient(rgb(224_160_87/0.3),transparent)]" />
+              <span className="candle-warmth absolute inset-x-0 top-0 h-16" />
               <span className="absolute inset-x-1.5 top-1 h-2 rounded-[50%] bg-dusk-ink-2/80" />
             </div>
             <span className="candle-drip absolute top-2 -left-px h-9 w-2 origin-top rounded-b-full bg-dusk-ink" />
             <span className="candle-drip absolute top-2 right-2 h-5 w-1.5 origin-top rounded-b-full bg-dusk-ink [animation-delay:-3.5s]" />
 
             <div className="absolute top-0 left-full ml-6 -translate-y-1/2 whitespace-nowrap">
-              <span className="font-display text-xl font-bold text-room-action tabular-nums">{minutes}</span>
-              <span className="ml-1 text-[0.8125rem] text-room-ink-2">min</span>
+              <span className="font-display text-masthead font-bold text-room-action tabular-nums">{minutes}</span>
+              <span className="ml-1 text-caption text-room-ink-2">min</span>
             </div>
           </div>
         </div>
       </div>
       <p
         aria-hidden
-        className={`mt-3 flex items-center gap-2 text-[0.8125rem] text-room-ink-2 ${
+        className={`mt-3 flex items-center gap-2 text-caption text-room-ink-2 ${
           touched ? '' : 'candle-hint'
         }`}
       >

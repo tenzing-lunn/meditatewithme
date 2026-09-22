@@ -81,7 +81,7 @@ export default function LineField({
       {value === '' && (
         <span
           aria-hidden
-          className="line-prompt pointer-events-none absolute inset-x-0 top-0 bottom-[2px] flex items-center pt-1 pb-2 text-[1.5rem] leading-normal text-ink-3/60 sm:text-[1.75rem]"
+          className="line-prompt pointer-events-none absolute inset-x-0 top-0 bottom-[2px] flex items-center pt-1 pb-2 text-answer leading-normal text-ink-3/60 sm:text-answer-sm"
         >
           {/* At the front, where the first letter will land, the way a real
               caret sits in an empty field; pulled into the margin by its own

@@ -168,13 +168,13 @@ export default function BellScreen({
                 />
               </span>
               <span
-                className={`font-display text-[0.875rem] leading-tight font-semibold sm:text-[0.9375rem] ${
+                className={`text-control leading-tight font-semibold ${
                   chosen ? 'text-room-action' : 'text-room-ink'
                 }`}
               >
                 {BELLS[kind].label}
               </span>
-              <span className="text-[0.75rem] leading-snug text-room-ink-2">{CHARACTER[kind]}</span>
+              <span className="text-caption leading-snug text-room-ink-2">{CHARACTER[kind]}</span>
             </button>
           );
         })}

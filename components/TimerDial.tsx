@@ -288,7 +288,7 @@ export default function TimerDial({
                 cy={p.y}
                 r={isMark ? 5 : 2.25}
                 fill="currentColor"
-                className={isMark ? 'text-glow' : a < angle - 1 ? 'text-room/70' : 'text-room-ink-2/50'}
+                className={isMark ? 'text-room-action' : a < angle - 1 ? 'text-room/70' : 'text-room-ink-2/50'}
               />
             );
           })}
@@ -308,7 +308,7 @@ export default function TimerDial({
         {markAt && (
           <span
             aria-hidden
-            className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 text-[0.8125rem] text-room-ink-2"
+            className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 text-caption text-room-ink-2"
             style={{ left: `${(markAt.x / SIZE) * 100}%`, top: `${(markAt.y / SIZE) * 100}%` }}
           >
             {markLabel}
@@ -320,7 +320,7 @@ export default function TimerDial({
       </div>
       <p
         aria-hidden
-        className={`mt-3 text-[0.8125rem] text-room-ink-2 transition-opacity duration-200 motion-reduce:transition-none ${
+        className={`mt-3 text-caption text-room-ink-2 transition-opacity duration-200 motion-reduce:transition-none ${
           touched ? 'opacity-0' : ''
         }`}
       >

@@ -9,6 +9,7 @@ import RailBar from './RailBar';
 import Switch from './Switch';
 import Wordmark from './Wordmark';
 import { FOCUS_ROOM } from './controls';
+import { useReducedMotion } from './useReducedMotion';
 
 /**
  * Loaded only while the earth is drawn, for the reason `World` gives: it
@@ -67,6 +68,7 @@ export function EarthScene({
   className?: string;
   children: ReactNode;
 }) {
+  const reduced = useReducedMotion();
   return (
     <div
       data-room={room}
@@ -81,6 +83,7 @@ export function EarthScene({
             fit="cover"
             waiting
             paused={paused}
+            reduced={reduced}
             className="absolute inset-0"
           />
         )}
@@ -107,14 +110,14 @@ export function LiveLine({ others, lit }: { others: number | null; lit: boolean 
   const none = others < 1;
   return (
     <p
-      className={`flex items-center gap-2.5 text-[0.9375rem] font-semibold tabular-nums ${
+      className={`flex items-center gap-2.5 text-control font-semibold tabular-nums ${
         none ? 'text-room-ink-2' : 'text-room-action'
       }`}
     >
       <span
         aria-hidden
         className={`size-2 shrink-0 rounded-full ${
-          none ? 'border-[1.5px] border-room-ink-2/70' : 'live-dot bg-room-action'
+          none ? 'border border-room-ink-2/70' : 'live-dot bg-room-action'
         }`}
       />
       {others >= 2
@@ -129,7 +132,7 @@ export function LiveLine({ others, lit }: { others: number | null; lit: boolean 
 }
 
 const DOOR =
-  'group flex min-h-[4.875rem] w-full items-center justify-between gap-3 rounded-[1.25rem] pr-5 pl-[1.375rem] text-left transition-[background-color,border-color,filter] duration-200 active:scale-[0.99] motion-reduce:transition-none md:min-h-24 md:w-[19rem] md:pr-6 md:pl-[1.625rem]';
+  'group flex min-h-[4.875rem] w-full items-center justify-between gap-3 rounded-card pr-5 pl-[1.375rem] text-left transition-[background-color,border-color,filter] duration-200 active:scale-[0.99] motion-reduce:transition-none md:min-h-24 md:w-[19rem] md:pr-6 md:pl-[1.625rem]';
 
 /**
  * The two doors: with everyone, or on your own.
@@ -163,10 +166,10 @@ export function Doors({
         className={`${DOOR} bg-room-action text-room-action-ink hover:brightness-110 ${FOCUS_ROOM}`}
       >
         <span className="flex min-w-0 flex-col">
-          <span className="font-display text-[1.1875rem] font-bold tracking-[-0.01em] md:text-[1.3125rem]">
+          <span className="font-display text-masthead font-bold tracking-[-0.01em]">
             Sit with everyone
           </span>
-          <span className="mt-0.5 text-[0.84375rem] font-semibold text-room-action-ink-2 tabular-nums md:text-[0.90625rem]">
+          <span className="mt-0.5 text-control font-semibold text-room-action-ink-2 tabular-nums">
             {togetherLine}
           </span>
         </span>
@@ -176,13 +179,13 @@ export function Doors({
       <button
         type="button"
         onClick={() => onChoose('alone')}
-        className={`${DOOR} border-[1.5px] border-room-edge bg-room/55 text-room-ink backdrop-blur-sm hover:border-room-action ${FOCUS_ROOM}`}
+        className={`${DOOR} border border-room-edge bg-room/55 text-room-ink backdrop-blur-sm hover:border-room-action ${FOCUS_ROOM}`}
       >
         <span className="flex min-w-0 flex-col">
-          <span className="font-display text-[1.1875rem] font-bold tracking-[-0.01em] md:text-[1.3125rem]">
+          <span className="font-display text-masthead font-bold tracking-[-0.01em]">
             Sit on your own
           </span>
-          <span className="mt-0.5 text-[0.84375rem] font-semibold text-room-ink-2 md:text-[0.90625rem]">
+          <span className="mt-0.5 text-control font-semibold text-room-ink-2">
             Your own length, the same sky
           </span>
         </span>
@@ -261,7 +264,7 @@ export default function ModeScreen({
             ) : (
               <h2
                 tabIndex={-1}
-                className="font-display text-[2.125rem] leading-[1.08] font-bold tracking-[-0.015em] text-balance text-room-ink outline-none sm:text-[2.75rem] lg:text-[3.5rem]"
+                className="font-display text-sentence leading-[1.08] font-bold tracking-[-0.015em] text-balance text-room-ink outline-none sm:text-sentence-sm lg:text-sentence-lg"
               >
                 How would you like to sit?
               </h2>
@@ -271,7 +274,7 @@ export default function ModeScreen({
         </div>
         {landing?.usualLine && (
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-6">
-            <p className="text-[0.875rem] text-room-ink-2">
+            <p className="text-caption text-room-ink-2">
               Your usual is{' '}
               <span className="font-semibold text-room-ink">{landing.usualLine}</span>
             </p>

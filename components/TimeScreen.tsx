@@ -20,7 +20,7 @@ interface TimeProps {
 }
 
 const SENTENCE =
-  'font-display text-[2.25rem] font-bold leading-[1.1] text-balance text-room-ink sm:text-[3rem] lg:text-[3.75rem]';
+  'font-display text-sentence font-bold leading-[1.1] text-balance text-room-ink sm:text-sentence-sm lg:text-sentence-lg';
 
 /**
  * "How long will you sit?"
@@ -177,7 +177,7 @@ function JoinTime({
         others >= 1 ? (
           <>
             You’re sitting {time} with{' '}
-            <span className="text-room-action tabular-nums">
+            <span className="tabular-nums">
               {others} {others === 1 ? 'person' : 'people'}
             </span>
             .
@@ -219,17 +219,17 @@ function JoinTime({
           centre={
             prefs.untilBell ? (
               <>
-                <span className="font-display text-2xl font-bold text-room-ink tabular-nums">
+                <span className="font-display text-section font-bold text-room-ink tabular-nums">
                   {bellLabel ?? 'Bell'}
                 </span>
-                <span className="text-[0.8125rem] text-room-ink-2">the bell</span>
+                <span className="text-caption text-room-ink-2">the bell</span>
               </>
             ) : (
               <>
-                <span className="font-display text-[2.5rem] leading-none font-bold text-room-ink tabular-nums">
+                <span className="font-display text-sentence leading-none font-bold text-room-ink tabular-nums">
                   {duration.value}
                 </span>
-                <span className="mt-1 text-[0.8125rem] text-room-ink-2">{duration.unit}</span>
+                <span className="mt-1 text-caption text-room-ink-2">{duration.unit}</span>
               </>
             )
           }

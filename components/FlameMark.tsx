@@ -13,14 +13,15 @@
  */
 
 /**
- * The flame's warmth and its hot core, and the ground the tab and the home
- * screen put it on: `dusk`, the sitting's brown, so the icon is a candle in
- * the room rather than a candle on a black tile. Lifted from `@theme` in
- * app/globals.css; satori cannot read a custom property, so they are copied.
+ * `flame`, `flame-core` and `dusk`: the flame, its hot core, and the ground
+ * the tab and the home screen put it on — the sitting's brown, so the icon
+ * is a candle in the room rather than a candle on a black tile. Lifted from
+ * `@theme` in app/globals.css under the same names; satori cannot read a
+ * custom property, so they are copied.
  */
-export const EMBER = '#e0a057';
-export const EMBER_CORE = '#fbead2';
-export const PAPER = '#2b1a10';
+export const FLAME = '#e0a057';
+export const FLAME_CORE = '#fbead2';
+export const DUSK = '#2b1a10';
 
 export function FlameMark({ size }: { size: number }) {
   return (
@@ -45,14 +46,14 @@ export function FlameMark({ size }: { size: number }) {
         d="M12 1.8 C 11.2 5.4 9.8 7.6 9.5 10 C 9.2 12.4 6.8 13.4 6.6 16.4
            C 6.4 19.8 8.8 22.2 12 22.2 C 15.2 22.2 17.6 19.8 17.4 16.4
            C 17.2 13.4 14.8 12.4 14.5 10 C 14.2 7.6 12.8 5.4 12 1.8 Z"
-        fill={EMBER}
+        fill={FLAME}
       />
       {/* The core, the part actually burning: the same shape, sat low in it. */}
       <path
         d="M12 10.8 C 11.5 13 10.8 13.8 10.7 15.2 C 10.6 16.6 9.3 17.2 9.2 18.8
            C 9.1 20.6 10.4 21.6 12 21.6 C 13.6 21.6 14.9 20.6 14.8 18.8
            C 14.7 17.2 13.4 16.6 13.3 15.2 C 13.2 13.8 12.5 13 12 10.8 Z"
-        fill={EMBER_CORE}
+        fill={FLAME_CORE}
       />
     </svg>
   );

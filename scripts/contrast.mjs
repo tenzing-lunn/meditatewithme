@@ -21,7 +21,8 @@
  * decorative hairline that never carries a control's state on its own, and
  * `glow` is the bowl's rim and the flames' tint, never text and never a
  * control's edge. `glow` on dusk is listed at 3.0 because the flames sit
- * there.
+ * there. `flame-core` is the hot centre of a flame, listed on dusk for the
+ * same reason; `scrim` is the overlay under the drawer and is on nothing.
  */
 
 import { readFileSync } from 'node:fs';
@@ -79,6 +80,7 @@ const PAIRS = [
   ['dusk-ink-2', 'dusk', 4.5],
   ['flame', 'dusk', 4.5],
   ['glow', 'dusk', 3.0],
+  ['flame-core', 'dusk', 3.0],
   // The lit door on the earth: dusk type on flame.
   ['dusk', 'flame', 4.5],
   // The room at dusk: its edge, and the lit door's line (dusk at 80% on flame).

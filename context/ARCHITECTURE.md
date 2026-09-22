@@ -1152,9 +1152,11 @@ itself changed; stepping into the room on the rail transitions it over half that
 holds both mounted for the duration (1400ms, 400ms under reduced motion) and
 then the rail unmounts. First-party CSS throughout — no `motion` package and
 no `<ViewTransition>`, which only fires inside `startTransition` and differs
-in Safari. Reduced motion is honoured in one `@media` block that zeroes the
-rail and settle and shortens the lift, plus `useReducedMotion()` for the
-earth's breath.
+in Safari. Reduced motion is honoured in one `@media` block at the end of
+`globals.css` — the rail and settle zeroed, the lift shortened, every loop
+stilled — plus `useReducedMotion()` for the moves decided in JS. `WorldMap`
+does not read `matchMedia` itself: `Sitting` and `EarthScene` read the hook
+and pass `reduced`, and the earth stops or starts its loop on the prop.
 
 ### The sitting
 
