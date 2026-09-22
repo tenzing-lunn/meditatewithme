@@ -1,5 +1,5 @@
 /**
- * Equal Earth: the map at `/world`, as two functions.
+ * Equal Earth: the map under Home and the sitting, as two functions.
  *
  * Pure — no React, no canvas, no I/O — so it can be tested, which matters more
  * here than it looks. A projection fails in a way that looks plausible: a map
@@ -20,7 +20,7 @@
  * of a picture whose only job is to say where the world actually is tonight.
  * Equal Earth (Šavrič, Patterson & Jenny, 2018) is equal-area — a square
  * kilometre is a square kilometre wherever it falls — and it is a curve rather
- * than a grid, which keeps `/world` an object to look at rather than a chart.
+ * than a grid, which keeps the earth an object to look at rather than a chart.
  *
  * The constants are the paper's. Do not tune them; they are what make it
  * equal-area.

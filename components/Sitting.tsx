@@ -245,7 +245,7 @@ export default function Sitting({
               // region: the names turn every twenty seconds for the whole
               // sitting, and a screen reader that announced each turn would
               // never let the person sit.
-              className="min-h-6 max-w-md shrink-0 text-center text-[0.9375rem] text-room-ink-2"
+              className="min-h-6 max-w-md shrink-0 text-center text-[0.9375rem] text-balance text-room-ink-2"
             >
               {line ?? ''}
             </p>

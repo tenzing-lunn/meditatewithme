@@ -1,6 +1,6 @@
 'use client';
 
-import type { CSSProperties, ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { PRIMARY_SM, WORD_SM } from './controls';
 import { useReducedMotion } from './useReducedMotion';
 import { START_MS, typingMs } from './useTypedOut';
@@ -23,21 +23,26 @@ const AFTER_MS = 120;
  * the skip settles in only once that has finished. A way out that is there
  * before the question has finished being asked answers it for you. Under
  * reduced motion there is no typing to wait for and it is simply there.
+ * Until it is there it is `inert`: the animation holds it invisible through
+ * its delay, and a button that can be tabbed to while invisible is a way out
+ * nobody was shown.
  *
  * It hangs below the line out of the flow, with whatever else belongs under
  * the answer (the origin's share switch) below it, so the line stays where
  * the screen put it and nothing moves when Next arrives: the row is already
  * the skip's height before there is a Next beside it.
  *
- * Next is a submit button, so it goes through the form's own submit, the
- * same as Enter.
+ * Next is always in the row, out of sight and `inert` until something is
+ * typed, and comes up as a transition rather than a mount: a letter typed
+ * and deleted moves it, where remounting it restarted its arrival on every
+ * flip. It is a submit button, so it goes through the form's own submit,
+ * the same as Enter.
  */
 export default function LineActions({
   typed,
   active,
   prompt,
   onSkip,
-  skipLabel = 'Skip',
   children,
 }: {
   /** Something is on the line: show Next. */
@@ -47,12 +52,21 @@ export default function LineActions({
   /** The line's prompt, whose typing the skip waits for. */
   prompt: string;
   onSkip: () => void;
-  skipLabel?: string;
   /** Under the row. */
   children?: ReactNode;
 }) {
   const reduced = useReducedMotion();
   const wait = reduced ? 0 : START_MS + typingMs(prompt) + AFTER_MS;
+  const [settled, setSettled] = useState(false);
+
+  useEffect(() => {
+    if (!active) {
+      setSettled(false);
+      return;
+    }
+    const t = window.setTimeout(() => setSettled(true), wait);
+    return () => window.clearTimeout(t);
+  }, [active, wait]);
 
   return (
     <div className="absolute inset-x-0 top-full mt-5">
@@ -60,16 +74,22 @@ export default function LineActions({
         <button
           type="button"
           onClick={onSkip}
+          inert={!settled}
           className={`${active ? 'screen-settle' : ''} -ml-2 ${WORD_SM}`}
           style={active ? ({ animationDelay: `${wait}ms` } as CSSProperties) : undefined}
         >
-          {skipLabel}
+          Skip
         </button>
-        {typed && (
-          <button type="submit" className={`screen-settle ${PRIMARY_SM}`}>
+        <div
+          inert={!typed}
+          className={`transition-[opacity,translate] duration-[var(--settle-ms)] ease-[var(--ease-rail)] motion-reduce:transition-none ${
+            typed ? '' : 'translate-y-3 opacity-0'
+          }`}
+        >
+          <button type="submit" className={PRIMARY_SM}>
             Next
           </button>
-        )}
+        </div>
       </div>
       {children && <div className="mt-6">{children}</div>}
     </div>

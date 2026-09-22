@@ -77,7 +77,7 @@ function CandleTime({
       title={
         <>
           You’re sitting for{' '}
-          <span className="text-room-action tabular-nums">
+          <span className="tabular-nums">
             {duration.value} {duration.unit}
           </span>
           .

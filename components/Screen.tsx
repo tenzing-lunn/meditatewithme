@@ -156,7 +156,7 @@ export default function Screen({
           }`}
         >
           <div>
-            <h2 tabIndex={-1} className={`outline-none ${bare ? 'sr-only' : heading}`}>
+            <h2 tabIndex={-1} className={`outline-none ${bare ? 'sr-only' : `${heading} text-balance`}`}>
               {title}
             </h2>
             {lede && (

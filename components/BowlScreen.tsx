@@ -63,7 +63,6 @@ export default function BowlScreen({
         >
           <Bowl struck={struck} className="w-full" />
         </button>
-        <p className="text-base text-room-ink-2">Strike the bowl to begin.</p>
         <p className="flex flex-wrap items-center justify-center gap-x-2 text-[0.9375rem] text-room-ink-2">
           <span>{line}</span>
           <button type="button" onClick={onChange} className={WORD_ROOM}>

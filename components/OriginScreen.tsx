@@ -33,7 +33,7 @@ interface Option {
  * line stays a place to type and nobody's answer is a guess they did not
  * look at.
  *
- * Back is at the foot; Next and *Leave it out* are under the line, in the
+ * Back is at the foot; Next and Skip are under the line, in the
  * same places as on the name (`LineActions`), and Next appears once
  * something is typed. So does the one switch that decides whether anyone
  * else ever sees it, under them: off by default, explained in a line. Before
@@ -140,7 +140,7 @@ export default function OriginScreen({
       current={current}
       bare
       title="Where are you sitting?"
-      lede="Type a city or a country, then choose it. Or leave it out."
+      lede="Type a city or a country, then choose it. Or skip it."
       onBack={onBack}
       step={step}
       steps={steps}
@@ -222,7 +222,6 @@ export default function OriginScreen({
             onChange('', false);
             onSkip();
           }}
-          skipLabel="Leave it out"
         >
           {typed && (
             <Switch

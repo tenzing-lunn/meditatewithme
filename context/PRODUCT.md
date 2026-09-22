@@ -143,8 +143,9 @@ slide left to right. The questions, in order:
    the list is still an answer: the last choice is always *Keep "…" as you
    typed it*. Clicking the empty line offers the town and country the server
    sees from the connection as the one choice — *Lisbon, Portugal · near
-   you*. *Back*, *Next* and *Leave it out* are where *Back*, *Next* and
-   *Skip* are on the name: *Leave it out* under the line once the prompt has typed,
+   you*. *Back*, *Next* and *Skip* are where they are on the name (one word
+   for skipping on both, since 22 September 2026; the origin's said *Leave it
+   out*): *Skip* under the line once the prompt has typed,
    *Next* appearing to the right of it once something is typed. With it, a
    switch appears below them, off by default: *Let others
    see Ana from Lisbon while you sit with them*, and one line saying it is
@@ -192,7 +193,8 @@ slide left to right. The questions, in order:
 5. *How will it end?* — the singing bowl, the gong and the struck bell as
    three drawn cards, each with what it sounds like under its name; tapping
    one rings it and sends two rings out of the drawing.
-6. *Anything underneath?* — six tiles: silence and the five beds, silence
+6. *Any sound while you sit?* (*Anything underneath?* until 22 September
+   2026, which meant nothing without the room's vocabulary) — six tiles: silence and the five beds, silence
    chosen to begin with. Tapping a bed plays it, and its level is a bar on
    its own tile; a *Volume* row appears under them once anything is on.
    **Rebuilt 17 September 2026** from a lone switch that revealed a card of
@@ -201,15 +203,18 @@ slide left to right. The questions, in order:
    *Underneath* in the settings drawer, and in the sheet during a sitting —
    where before, the drawer's tiles had no level on them at all and the
    sitting had a different mixer again.
-7. *When you are ready.* — a drawn singing bowl over *Strike the bowl to
-   begin.* and the line of what the sitting will be (*Until 12:55 · singing
-   bowl · rain*) with *Change* beside it. On a Mac, a *Full screen* switch,
-   remembered.
+7. *When you are ready.* — a drawn singing bowl over the line of what the
+   sitting will be (*Until 12:55 · singing bowl · rain*) with *Change* beside
+   it. On a Mac, a *Full screen* switch, remembered. The caption *Strike the
+   bowl to begin.* went on 22 September 2026: the screen said "begin" four
+   ways, and the title and the bowl's own label are enough.
 
 **Every question says where it is.** Since 17 September 2026 a short row of
 marks above each question shows which one of them it is, the current one lit,
 and a returning guest asked fewer questions is shown the shorter rail rather
-than a fixed count. On a laptop each question now sets its control beside it
+than a fixed count. The last mark is the bowl, and it is read to a screen
+reader as *The bowl*, not as a numbered question (since 22 September 2026;
+it was *Question 6 of 6*). On a laptop each question now sets its control beside it
 rather than under it, and Back and Next sit with the control instead of at
 the bottom of the window.
 

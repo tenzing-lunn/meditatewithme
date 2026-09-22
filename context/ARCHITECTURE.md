@@ -1048,7 +1048,9 @@ downward; before 17 September 2026 it was centred with the foot pinned to the
 bottom inset, which moved the heading with the length of the lede and left
 the buttons stranded below the control. `Steps.tsx` draws the marks from
 `step`/`steps`, which `Journey` computes from the screens this visitor is
-actually being shown. Nothing inside it animates; the rail does the arrival. `NameScreen` and `OriginScreen` pass only `onBack`, which goes to the
+actually being shown; its words count the questions without the bowl —
+*Question 2 of 5* — and read the last mark as *The bowl*, since `screensFor`
+always ends there and the bowl is not a question. Nothing inside it animates; the rail does the arrival. `NameScreen` and `OriginScreen` pass only `onBack`, which goes to the
 bar; their Skip and Next are `LineActions`, under the line. `ModeScreen`
 is not a `Screen` at all: it is the earth scene below, with its question and
 doors at the bottom and the same `RailBar` at the top. `Screen`'s `split`, from `md` up, turns
@@ -1277,7 +1279,7 @@ prevented Escape — `stopPropagation` cannot do it, because the App Router's
 React listens on the document too. The connection's guess is no longer put in the field: focusing the empty
 line opens the list with the guess as its one option, so nobody's origin is a
 guess they did not look at. The share switch renders only once something is
-typed, as `LineActions`' child, under the *Leave it out* and Next row. To rebuild the list, download `cities15000.zip` from
+typed, as `LineActions`' child, under the Skip and Next row. To rebuild the list, download `cities15000.zip` from
 download.geonames.org and run `node scripts/places.mjs cities15000.txt`; the
 licence is CC BY 4.0 and the credit is on the privacy page and in the file's
 first line.
@@ -1422,7 +1424,7 @@ The answer lives in one file, and **the ground picks which applies**:
 | `QUIET` | Paper | A `rule` outline, `ink-2`, ember on hover. Back, Delete account. |
 
 | `*_ROOM` | The room, dawn or dusk | The same shapes in the `room-*` tokens: ember and white at dawn, flame and dusk at dusk. Doors, Next and Back from the mode question on, Sound, End, Done or Finish (primary) and Sit again (quiet), the menu trigger and the toggle. |
-| `WORD` | Paper, beside a Next | Underlined in `rule`, ember on hover. Skip, Change, Leave it out. |
+| `WORD` | Paper, beside a Next | Underlined in `rule`, ember on hover. Skip, Change. |
 | `CHIP` / `CHIP_ON` | Paper | Surface on `rule`; chosen is `ember-soft` with an ember edge. |
 | `ICON` | Paper | A 44px round surface. The two menus. |
 

@@ -350,7 +350,7 @@ family for the candles.
   focus to it on arrival, so it is also the announcement — except on the
   name, where focus goes straight to the field so typing needs no click. On a typed answer
   the `h2` is read and not seen; the prompt on the line says it instead.
-- **Copy is a sentence.** *Strike the bowl to begin.* *Everyone finishes
+- **Copy is a sentence.** *Silence is the usual answer.* *Everyone finishes
   together at 12:55.* Not a label with a colon, not a fragment.
 
 ## Layout
@@ -393,10 +393,11 @@ family for the candles.
   margins.
 - **A question says where it is.** `Steps`: one 3px mark per question, the
   one you are on twice as long and in the action colour, in the bar —
-  and *Question 5 of 7* for anyone not looking at it. It counts the screens
+  and *Question 5 of 6* for anyone not looking at it. It counts the screens
   this visitor will actually see, so a returning guest's shorter rail is
-  described honestly. A guest's front page (the doors) has none: it is the
-  way in, not a question.
+  described honestly; the words count the questions without the bowl, and
+  the bowl's own mark, the last, is read as *The bowl*. A guest's front page
+  (the doors) has none: it is the way in, not a question.
 - **Two columns from `md` on every question that has an instrument.** The
   question left, the control right (`split`), both hanging from that
   baseline: the bell, the sound, and both time screens. A phone is unchanged.
@@ -417,8 +418,9 @@ family for the candles.
   and a foot row on the safe-area inset: Back on the left, Skip (a quiet
   word) and Next on the right. **On the name and origin screens the foot
   is Back alone**, and the rest is `LineActions`, in the same places on both:
-  Skip (*Leave it out* on the origin) under the left end of the line, arriving
-  last once the prompt has typed itself out, and Next under its right end once something is typed — right,
+  Skip under the left end of the line, arriving
+  last once the prompt has typed itself out and not in the tab order until
+  then, and Next under its right end once something is typed — right,
   as on every foot, and in a right thumb's reach. The origin's share switch
   hangs under that row.
 - **The doors sit low on a phone** (`Screen`'s `low`): under `sm` the question
@@ -504,7 +506,7 @@ over anything.
   Next and Back on time, bell, sound and the bowl, Done and *Sit again* are
   all these, and so are the tiles' own outlines and fills.
 - **Word** (`WORD`): ink-2 600 text, underlined in rule, ember on hover.
-  Skip, Leave it out, Change on the bowl screen, the foot of the account
+  Skip, Change on the bowl screen, the foot of the account
   panel.
 - **Icon trigger** (`ICON`): 44px round surface with a rule hairline. The
   menu's three lines and the account's.
@@ -523,9 +525,11 @@ it is chosen. Two screens use them, and the shape is the same on both.
 **The bells** (`BellScreen`) are three 11rem cards across the answer column:
 a drawn bowl, gong and cast bell over the name and the instrument's character
 in three words — *Warm, with a warble*, *Low, slowest to fade*, *Bright, with
-a minor edge*. Tapping one sounds it and sends two rings out of the drawing,
+a hard edge*. Tapping one sounds it and sends two rings out of the drawing,
 the second 170ms behind the first (`bell-ring`), which is the only visible
-receipt for a tap whose whole effect is a noise. Until 17 September 2026
+receipt for a tap whose whole effect is a noise. The three are one
+`radiogroup` of `radio`s, not three toggles: one tab stop, and the arrows
+move the choice and ring the bell they land on. Until 17 September 2026
 these were three full-width chips with centred labels: a 700px target
 carrying 15px of type, and nothing to choose between.
 
@@ -693,7 +697,8 @@ Create account, Sign in.
 
 ### The bowl
 A 12rem drawn bowl inside a button labelled *Strike the bowl and begin*,
-with *Strike the bowl to begin.* under it and the settings line under that.
+with the settings line under it. (A caption, *Strike the bowl to begin.*,
+sat between them until 22 September 2026: the screen said "begin" four ways.)
 Struck: a 600ms rim wobble and three 1400ms ripple rings 180ms apart, then the
 lift. Under reduced motion, one opacity pulse.
 

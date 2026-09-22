@@ -10,7 +10,10 @@
  * already known is told the truth about their own shorter rail.
  *
  * Decorative in the page and spoken in words to anyone who is not looking at
- * it, which is the one thing a row of dashes cannot do on its own.
+ * it, which is the one thing a row of dashes cannot do on its own. The last
+ * mark is the bowl — `screensFor` always ends there — and the bowl is not a
+ * question, so the words count the questions before it and name the bowl as
+ * itself rather than as "Question 6 of 6".
  */
 export default function Steps({
   step,
@@ -26,7 +29,7 @@ export default function Steps({
   return (
     <div className="flex items-center gap-1.5">
       <span className="sr-only">
-        Question {step} of {steps}
+        {step === steps ? 'The bowl' : `Question ${step} of ${steps - 1}`}
       </span>
       {Array.from({ length: steps }, (_, i) => (
         <span

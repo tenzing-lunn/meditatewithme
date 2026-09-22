@@ -5,7 +5,7 @@ import Screen from './Screen';
 import Sounds, { type MixPatch } from './Sounds';
 
 /**
- * "Anything underneath?"
+ * "Any sound while you sit?"
  *
  * The question, and under it the six tiles and their Volume — the same
  * control as *Underneath* in the settings and the sheet during a sitting,
@@ -40,8 +40,8 @@ export default function SoundScreen({
   return (
     <Screen
       current={current}
-      title="Anything underneath?"
-      lede="Silence is the usual answer. Tap a sound to hear it, and drag its bar to set how much."
+      title="Any sound while you sit?"
+      lede="Silence is the usual answer. Tap a sound to hear it."
       onBack={onBack}
       onNext={onNext}
       nextLabel={nextLabel}
