@@ -227,9 +227,7 @@ visitor's own day — dawn from six in the morning, dusk from six in the
 evening — and a sun or moon beside the menu switches it until the day next
 turns. Dusk is dark because candles are lights and a light needs a dark to
 be seen in; dawn is the same room with the paper's values, for someone who
-would rather not sit in the dark at noon. Home is the room too, and the map
-at `/world` stays a dusk panel set on the paper, because it is a thing to be
-read rather than a place to sit.
+would rather not sit in the dark at noon. Home is the room too.
 
 One face for what is said to you and one for what you say back. Comfortaa,
 rounded and bold, is the wordmark, the question, and the minutes afterwards —
@@ -311,7 +309,7 @@ family for the candles.
   `room-action-ink-2`), which hold the dusk values in `@theme` and the paper
   values under `[data-room="dawn"]`. So at dusk the one lit control is flame
   with dusk type; at dawn it is ember with white, exactly the paper controls.
-  The settings drawer follows the room like Home under it. The map at `/world` is still a dusk panel on paper.
+  The settings drawer follows the room like Home under it.
 - **The room follows the day.** `lib/room.ts`: dawn from 06:00 to 18:00 local,
   dusk otherwise. The toggle (`RoomToggle`, `ICON_ROOM`, beside the menu from
   the mode question through the sitting, and on Home) shows where it would
@@ -477,8 +475,7 @@ over anything.
 
 - **Control radius 1rem** on fields, chips, the menu, the number field.
 - **Card radius 1.5rem** on Home's settings bar, the delete confirmation,
-  the candle's stage, the dusk panel around the earth at `/world`. The two
-  doors on the earth are 1.25rem.
+  the candle's stage. The two doors on the earth are 1.25rem.
 - **Pill** on every button and the icon trigger.
 - **The bowl is a drawn SVG**: a body in glow-to-ember with a flame rim, and
   it wobbles and ripples when struck.
@@ -703,7 +700,9 @@ lift. Under reduced motion, one opacity pulse.
 ### The earth
 `WorldMap` on dusk: filled land a hair above the ocean, one coastline, no
 borders, no labels, the real terminator. Each live cell is a candle sprite
-with its own tint, rate and phase; your own is 1.5× with a flame ring. Under
+with its own tint, rate and phase; your own is 1.5× with a 1.5px flame ring
+at 85% (ember at dawn) — the same strength as the dashed *You* ring before the
+strike; at 1px and 45% it was lost under the candle's own glow. Under
 it, one line in dusk-ink: who is with you, from the labels the world route
 hands back, rotating every 20s when there are several.
 

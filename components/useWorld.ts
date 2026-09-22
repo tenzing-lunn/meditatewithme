@@ -38,7 +38,7 @@ export function useWorld(enabled = true): World {
 
   useEffect(() => {
     if (!enabled) return;
-    // `/world?demo=1`, in `next dev` only — see `worldDemo.ts` for why this
+    // `/?demo=…`, in `next dev` only — see `worldDemo.ts` for why this
     // exists and why it must not reach production.
     //
     // THE IMPORT IS DYNAMIC AND THAT IS THE POINT, NOT A STYLE CHOICE.
@@ -71,14 +71,30 @@ export function useWorld(enabled = true): World {
     let stopped = false;
     let timer: number | undefined;
 
+    // One missed poll keeps the last earth: the lights stop changing, the
+    // world does not empty. Two in a row (thirty seconds) and they go out,
+    // the same rule as the count in `usePresence`, so nobody looks at a
+    // candle that was lit forty minutes ago. No error is shown either way.
+    let misses = 0;
+    const missed = () => {
+      misses += 1;
+      if (stopped) return;
+      if (misses >= 2) setWorld({ points: [], placed: null, loaded: true });
+      else setWorld((w) => ({ ...w, loaded: true }));
+    };
+
     const poll = async () => {
       try {
         const res = await fetch('/api/world');
-        if (!res.ok) return;
+        if (!res.ok) {
+          missed();
+          return;
+        }
         const body = (await res.json()) as {
           points?: WorldPoint[];
           placed?: number | null;
         };
+        misses = 0;
         if (stopped) return;
         setWorld({
           points: Array.isArray(body.points) ? body.points : [],
@@ -86,10 +102,7 @@ export function useWorld(enabled = true): World {
           loaded: true,
         });
       } catch {
-        // Leave the last earth on screen. An unreachable endpoint means the
-        // lights stop changing, not that the world empties — and this page
-        // shows no errors, like every other page here.
-        if (!stopped) setWorld((w) => ({ ...w, loaded: true }));
+        missed();
       }
     };
 

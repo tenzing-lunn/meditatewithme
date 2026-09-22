@@ -589,7 +589,7 @@ export default function WorldMap({
    */
   you?: Cell | null;
   /**
-   * `contain`, the whole earth fitted, for the sitting and `/world`. `cover`
+   * `contain`, the whole earth fitted, for the sitting. `cover`
    * fills the frame for the doors: the whole width on a wide screen, and on a
    * tall one cropped to the longitudes around `you` — or, before the edge has
    * said where that is, around the device's time zone. See `lib/earthView.ts`.
@@ -779,8 +779,8 @@ export default function WorldMap({
       canvas.height = Math.round(h * dpr);
 
       // Fitted to whichever dimension runs out first, never cropped, for the
-      // sitting and `/world`: a world map that does not show the whole world
-      // is answering a different question from the one those pages ask. The
+      // sitting: a world map that does not show the whole world is
+      // answering a different question from the one the sitting asks. The
       // doors ask another — where am I, among these people — and cover the
       // frame instead.
       const fitted =
@@ -968,8 +968,11 @@ export default function WorldMap({
         ctx.globalAlpha = 1;
         ctx.drawImage(sprites[0]!, mineX - s / 2, mineY - s / 2, s, s);
         ctx.globalCompositeOperation = 'source-over';
-        ctx.strokeStyle = dawn ? 'rgba(156, 61, 18, 0.5)' : 'rgba(224, 160, 87, 0.45)';
-        ctx.lineWidth = 1;
+        // Ember at dawn, flame at dusk — the same two as the waiting ring,
+        // at the same strength. At 1px and 45% it was under the candle's own
+        // glow, and "which one is me" is the one thing this ring is for.
+        ctx.strokeStyle = dawn ? 'rgba(156, 61, 18, 0.85)' : 'rgba(224, 160, 87, 0.85)';
+        ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.arc(mineX, mineY, s * 0.42, 0, Math.PI * 2);
         ctx.stroke();

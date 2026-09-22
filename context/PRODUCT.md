@@ -293,12 +293,16 @@ practice* (the streak, the totals, the recent sittings), *Sign out*.
 in local time and not sitting today does not break it. With an account it
 syncs across devices. Not in the proposal — see §4.
 
-**This hour, on the earth.** `/world`: the same earth as the sitting, in a
-dusk panel on the paper, with the count under it and — said on the page rather
-than only in a privacy notice — that each light is placed to within about a
-hundred kilometres and nobody is asked for their location. The projection is
-Equal Earth; the night side is real. On localhost the map is correctly empty:
-the edge headers it places people from do not exist in `next dev`.
+**This hour, on the earth.** The earth is seen in two places: as the ground
+of Home and of the *How would you like to sit?* question, and as the sitting's
+view with others, where your own candle wears a flame ring. The projection is
+Equal Earth; the night side is real. It had a page of its own, `/world`, with
+the count under it and the hundred-kilometre precision said on the page; that
+route was deleted on 22 September 2026 as an unlinked third copy, so the
+precision is now stated in the privacy notice alone. On localhost the map is
+correctly empty: the edge headers it places people from do not exist in
+`next dev`. A count or an earth that cannot be read for two polls in a row
+goes quiet rather than staying old.
 
 **Accounts.** Optional. The menu opens `Create account` and `Sign in`; both
 open the same panel under the trigger, asking one thing at a time — your

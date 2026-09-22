@@ -188,4 +188,4 @@ with is answers, not a design.
 - **"X people live"** is a different number from today's, which counts candles
   lit this hour, not people sitting now.
 - **Priced before it's built.** Option 2 is new work outside the proposal;
-  option 1 extends `/world` and the room, and is new work too.
+  option 1 extends the earth and the room, and is new work too.

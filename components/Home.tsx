@@ -307,6 +307,10 @@ function AccountPanel({
   const originId = useId();
   const [nameDraft, setNameDraft] = useState(name ?? '');
   const [originDraft, setOriginDraft] = useState(origin ?? '');
+  // A draft like the two fields, committed by Save, as the origin question
+  // on the rail does it. Until 22 September 2026 the switch saved at once,
+  // and took the unsaved origin with it.
+  const [shareDraft, setShareDraft] = useState(share);
   const [saving, setSaving] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
@@ -326,7 +330,7 @@ function AccountPanel({
           setSaving(true);
           setNote(null);
           const message = nameDraft.trim() !== (name ?? '') ? await onName(nameDraft) : null;
-          onProfile(originDraft, share);
+          onProfile(originDraft, shareDraft);
           setSaving(false);
           setNote(message ?? 'Saved.');
         }}
@@ -362,8 +366,8 @@ function AccountPanel({
           />
         </div>
         <Switch
-          checked={share}
-          onChange={(next) => onProfile(originDraft, next)}
+          checked={shareDraft}
+          onChange={setShareDraft}
           label={
             <>
               Let others see <em className="not-italic text-ink">{label}</em> while you

@@ -190,7 +190,7 @@ must not stop when someone glances at another tab.
 So, for any run that opened the site:
 
 - **Tear the audio graph down as the last action.** Unmounting `Entry` calls
-  `handle.stop()`, so navigate to `/world` or `about:blank`, or close the tab.
+  `handle.stop()`, so navigate to `/terms` or `about:blank`, or close the tab.
   Closing the tab is the surest. Do not just take a final screenshot and stop.
 - Never leave the pane parked on the Sound screen with the switch on, or on
   a live sitting.

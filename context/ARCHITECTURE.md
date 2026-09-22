@@ -228,6 +228,12 @@ of meditation, not a forgotten tab. The wake lock in
 happens anyway, the sitter stays in the count and their candle stays lit. A
 sitting that ends while the tab is still hidden stops the beats then.
 
+**A count that cannot be read goes quiet.** One missed poll keeps the last
+number, since a blink of network is not worth a line vanishing; two in a row
+(thirty seconds) and `usePresence` sets it null, and `useWorld` empties the
+earth on the same rule. `companyLine` says nothing for a null count rather
+than something forty minutes old, and no error is shown either way.
+
 ### The general lesson
 
 Realtime transport is for data that is **personalised, high-value, and latency-sensitive**. This number is none of those. Polling a cached endpoint is not the primitive solution here — it is the correct one, and it scales roughly a hundred times further on the same free tier.
@@ -654,7 +660,6 @@ The heartbeat table is the first thing to break, and it is a contained problem w
 meditatewithme/
 ├── app/
 │   ├── page.tsx                 # renders <Entry> — the rail, or Home
-│   ├── world/page.tsx           # the map, its own route
 │   ├── privacy/, terms/         # the documents (unlinked until filled)
 │   ├── layout.tsx               # Comfortaa + Nunito, light colour scheme
 │   └── api/
@@ -673,8 +678,7 @@ meditatewithme/
 │   ├── Sitting.tsx              # the dusk frame with the earth
 │   ├── Afterwards.tsx           # the ending
 │   ├── Home.tsx, SettingsDrawer.tsx # the signed-in page and its drawer
-│   ├── WorldMap.tsx             # canvas earth; the sitting and /world
-│   ├── World.tsx                # the map's page chrome
+│   ├── WorldMap.tsx             # canvas earth; the sitting, Home and the mode question
 │   ├── Sounds.tsx               # the six tiles and Volume; the rail, the
 │   │                            #   drawer and the sitting all render this
 │   ├── Account.tsx, Practice.tsx, Switch.tsx, Wordmark.tsx
@@ -750,8 +754,8 @@ wrong would have.
    on two devices counts twice. Acceptable, and the alternative is worse.
 4. **~~Do we record any analytics at all?~~ Settled, and the answer is no longer
    "none".** No third-party analytics, and nothing that identifies anybody — that
-   part holds, and the cookie banner question stays closed. But the map at
-   `/world` needs to know roughly where a candle was lit, so `heartbeats` now
+   part holds, and the cookie banner question stays closed. But the earth
+   needs to know roughly where a candle was lit, so `heartbeats` now
    carries `cell_lat` / `cell_lon`.
 
    What was chosen, and why each part of it:
@@ -808,11 +812,11 @@ wrong would have.
    `plans/privacy-data-inventory.md` — the complete inventory of everything the
    site stores, with drafted plain-language copy for each category. It is not
    the notice, because the notice needs a named controller and that is still
-   with Jonny; it is everything about the notice that does not. `/world` also
-   says the substance of it under the map, on the page, because somebody
-   looking at a map of where people are should not have to open a legal document
-   to find out how precisely they are on it. **Keep those two in agreement**, and
-   keep both in agreement with `GRID_DEGREES`.
+   with Jonny; it is everything about the notice that does not. Until 22
+   September 2026 `/world` also said the substance of it under the map, on the
+   page; that route went with the rebuild's earth on Home and in the sitting,
+   so the notice is now the one place the precision is stated. **Keep it in
+   agreement with `GRID_DEGREES`.**
 
 ---
 
@@ -1353,7 +1357,6 @@ Which screen you get at `/` is decided by one fact: whether you are signed in.
 | `/` | The rail: the doors, the questions, the bowl, the sitting, the ending, the account offer. | Home: the two doors. |
 | `/` after a door | — | The rail from the first unanswered question, or the bowl; the ending returns to Home. |
 | `/`, *Settings* | — | In the menu drawer over Home: length, bell, sound, the skip. |
-| `/world` | The map. | The map. |
 
 ### `Entry` owns every shared hook, and that is not tidiness
 
@@ -1431,12 +1434,16 @@ different".
 
 ### The map
 
-`/world` is its own route because it is somewhere else, with its own subject,
-that should be linkable. Sitting is not — it stays under `/` as state, because
-the lift from the bowl to the earth is one frame changing, and a route change
-would remount it. Since 14 September 2026 the same `WorldMap` is the sitting's
-own view under with-others, with the viewer's cell marked; `/world` is the
-earth on its own, in a dusk panel on the paper page.
+`WorldMap` is drawn in three places, all under `/` as state: the sitting's own
+view under with-others, with the viewer's cell marked by a flame ring at 85%
+(ember at dawn); and, covering the frame, the ground of Home and of the mode
+question, with the viewer's place as a dashed ring marked *You*. It had a
+route of its own, `/world`, a dusk panel on the paper page with the count
+under it, from 6 September 2026 until 22 September 2026, when it was deleted:
+nothing linked to it once the earth was Home's background and the sitting's
+view, and a third copy was a surface to maintain. `useWorld` stays; the
+sitting stays under `/` because the lift from the bowl to the earth is one
+frame changing, and a route change would remount it.
 
 **It was a three.js globe until 6 September 2026**, when Jonny asked for a flat
 map. The trade goes both ways and is worth having written down: a sphere shows

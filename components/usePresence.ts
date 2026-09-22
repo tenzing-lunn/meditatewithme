@@ -143,20 +143,36 @@ export function usePresence({
       }
     };
 
+    // One missed poll keeps the last number: a blink of network is not worth
+    // a line vanishing. Two in a row (thirty seconds) and it goes null, so
+    // the company line says nothing rather than something old.
+    let misses = 0;
+    const missed = () => {
+      misses += 1;
+      if (misses >= 2 && !stopped) {
+        setCount(null);
+        setLitCount(null);
+      }
+    };
+
     const poll = async () => {
       try {
         const res = await fetch('/api/count');
-        if (!res.ok) return;
+        if (!res.ok) {
+          missed();
+          return;
+        }
         const body = (await res.json()) as {
           count: number | null;
           litCount: number | null;
         };
+        misses = 0;
         if (!stopped) {
           setCount(body.count);
           setLitCount(body.litCount);
         }
       } catch {
-        // Leave the last known number on screen rather than blanking it.
+        missed();
       }
     };
 

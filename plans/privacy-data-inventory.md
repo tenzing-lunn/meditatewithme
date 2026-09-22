@@ -183,8 +183,9 @@ a data-processing agreement has said something about itself.
   select jobname, schedule, active from cron.job;
   select max(now() - hour_start) from public.heartbeats;
   ```
-- **`/world` already says the substance of this on the page**, under the globe.
-  That was deliberate — somebody looking at a map of where people are should not
-  have to open a legal document to find out how precisely they are on it. Keep
-  the two in agreement.
+- **`/world` used to say the substance of this on the page**, under the map,
+  so that somebody looking at where people are did not have to open a legal
+  document to find out how precisely they are on it. That route was deleted on
+  22 September 2026, so the notice is now the only place the precision is
+  stated; keep it in agreement with `GRID_DEGREES`.
 - The age policy and terms are a separate question and are not covered here.
