@@ -326,28 +326,10 @@ export default function Account({
         </svg>
       </button>
 
-      {/* The two doors. Same surface and same entrance as the panel below,
-          because the panel is what replaces it when one is chosen.
-
-          UNDER THE WORD ON A PHONE, NOT ON IT
-          Hung straight off the trigger this sat across `Let’s begin.`, and
-          at 95% the word showed through it. Measured at 390×844: the word is
-          a 213px button centred in the frame, so it spans x 88–302, and the
-          trigger is 44px wide against the right edge, so anything hung from
-          it ends at x 378. To clear the word from there the menu would have
-          to be under 76px wide, and `Sign in` alone, with its padding, is
-          82 — no width does it, so the fix is vertical. The band is 39% of a
-          portrait frame, its copy is centred in it, and the word is the
-          first thing in that copy, so the word's bottom sits at about
-          0.195×frame − 30px on every phone: 135px at 844, 156px at 956.
-          `20dvh` from the trigger's box moves at the same rate, and lands
-          the menu about 50px under the word whatever the height, where a
-          pixel value clears the tallest phones or the smallest, not both.
-          What it covers instead is the tagline, and the fill is opaque now
-          for the same reason: a panel over small copy is a menu, a panel
-          that display type shows through is two things in one place. From
-          `sm` up there is room beside the word — at 640 wide the menu clears
-          it by 7px — so there it hangs from the trigger as it did. */}
+      {/* The two ways in. Same surface and same entrance as the panel below,
+          because the panel is what replaces it when one is chosen. Hung
+          from the trigger: since the warm rail (14 September 2026) there is
+          no display word under the corner for it to sit across. */}
       {menuOpen && (
         <div className="absolute top-full right-0 z-20 mt-2">
           {/* `role="menu"` is a promise about the keyboard, and it was made

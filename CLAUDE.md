@@ -176,8 +176,10 @@ since 14 September 2026). What each step does to the audio:
   opening bell, presence, and a real entry in the practice log at the end.
   **Never press the bowl.** The sitting and the ending are seen through the
   dev-only demo instead: `/?demo=sitting`, `/?demo=sitting&alone`,
-  `/?demo=finished` mount them with fixture points, a frozen clock, no
-  presence and no audio (`components/Demo.tsx`, stripped from production).
+  `/?demo=finished` (the held beat after the bell, the earth still there)
+  and `/?demo=finished&settled` (the minutes and the two buttons) mount
+  them with fixture points, a frozen clock, no presence and no audio
+  (`components/Demo.tsx`, stripped from production).
 - **Sound during the demo sitting** opens the mixer sheet; the sheet's switch
   would call `mix.unmute()` if there were a graph, and in the demo there is
   none. Still, leave it.
@@ -211,9 +213,13 @@ a different origin with its own localStorage, so it is signed out without
 signing anybody out. `allowedDevOrigins` in `next.config.ts` exists for exactly
 this — without it Next serves that origin a black page and 403s. Never sign the
 pane out to get there; the session is Tenzing's. That origin is not
-necessarily *empty*: it holds the stored mix above and, since 14 September
-2026, a guest profile in `mwm.profile` (`{"name":"Ana"}`), so read
-localStorage there before assuming a first visit.
+necessarily *empty*: it holds the stored mix above, a guest profile in
+`mwm.profile` (read 22 September 2026: name and origin `null`, `share`
+`false`, which counts as *origin asked*, so that origin is never shown the
+name and origin screens) and three completed one-minute sittings in
+`mwm.practice`, so read localStorage there before assuming a first visit.
+Walking a door there writes the two door flags (`showCount`, `untilBell`);
+take *Sit on your own* last to leave them as found, both `false`.
 
 ## Time
 
