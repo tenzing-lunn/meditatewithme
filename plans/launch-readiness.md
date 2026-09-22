@@ -250,7 +250,10 @@ invoice you weren't expecting" promise forbids.
   measured moved to `ink-2` in `a52b454`, and the only `ink-3` left on that
   screen is the back arrow at the top, in the strips that passed; with the
   levels open at 390×844 the copy scales to 0.957 and fits. Still not
-  reviewed: anything that needs a phone in hand.
+  reviewed: anything that needs a phone in hand. First on that list, since
+  the wake lock landed on 22 September 2026 (`components/useWakeLock.ts`):
+  the phone locks during a sitting — the bell on time, and still in the
+  count.
 - [x] ~~Configure Auth URL allow-list and production SMTP.~~ URL allow-list
   done earlier on 7 September 2026; SMTP through Resend that evening (item 4).
   What remains of it is the domain, below.

@@ -36,6 +36,7 @@ import { settingsLine } from './settingsLine';
 import { displayName, type AuthState } from './useAuth';
 import { useClock } from './useClock';
 import { useFullscreen } from './useFullscreen';
+import { useWakeLock } from './useWakeLock';
 import type { Mix } from './useMix';
 import { useOrigin } from './useOrigin';
 import { usePresence } from './usePresence';
@@ -155,6 +156,7 @@ export default function Journey({
   const { usual, setUsual, answered, markAnswered } = useUsual(prefs);
   const origin = useOrigin();
   const fullscreen = useFullscreen();
+  const wakeLock = useWakeLock();
   const reduced = useReducedMotion();
   const signedIn = Boolean(home);
   const { room, toggle: toggleRoom } = useRoom();
@@ -207,6 +209,7 @@ export default function Journey({
   // Seen by name only while sitting with others, and only if they said so.
   const { count, litCount, begin: recordBegin } = usePresence({
     label: withOthersNow ? ownLabel : null,
+    sitting: stage.kind === 'sitting',
   });
 
   // Read in cleanup and at the bell, where a stale closure would otherwise
@@ -288,6 +291,9 @@ export default function Journey({
     mix.ensure();
     mix.restore();
     if (fullscreen.supported && fullscreen.wanted) fullscreen.enter();
+    // And the screen stays on: a phone that locks mid-sitting suspends the
+    // audio graph, and the bell is late.
+    wakeLock.request();
 
     const startedAt = performance.now();
     const sessionNow = now ?? serverNow();
@@ -320,7 +326,7 @@ export default function Journey({
     });
     // Presence never delays the ritual.
     void recordBegin();
-  }, [prefs, now, mix, fullscreen, recordBegin, markAnswered]);
+  }, [prefs, now, mix, fullscreen, wakeLock, recordBegin, markAnswered]);
 
   const endEarly = useCallback(() => {
     const s = stageRef.current;
@@ -341,9 +347,10 @@ export default function Journey({
       });
     }
     fullscreen.exit();
+    wakeLock.release();
     if (home) home();
     else restart();
-  }, [mix, record, fullscreen, home, restart]);
+  }, [mix, record, fullscreen, wakeLock, home, restart]);
 
   // The bell rings itself, on the audio clock. This only moves the UI on.
   useEffect(() => {
@@ -358,6 +365,7 @@ export default function Journey({
     });
     // Across the whole return, not inside it.
     mix.fadeOut(14);
+    wakeLock.release();
     setStage({
       kind: 'finished',
       endedAt: performance.now(),
@@ -367,10 +375,11 @@ export default function Journey({
       withOthers: litRef.current === null ? null : Math.max(0, litRef.current - 1),
       withOthersShown: sit.withOthers,
     });
-  }, [stage, mono, record, mix]);
+  }, [stage, mono, record, mix, wakeLock]);
 
   // A bell left sounding into a page nobody is on is the one thing this
-  // site promised never to do.
+  // site promised never to do. Nor a screen held awake for it.
+  const releaseWakeLock = wakeLock.release;
   useEffect(() => {
     return () => {
       const s = stageRef.current;
@@ -378,8 +387,9 @@ export default function Journey({
         s.bell?.cancel();
         s.opening?.cancel();
       }
+      releaseWakeLock();
     };
-  }, []);
+  }, [releaseWakeLock]);
 
   const bellLabel = now === null ? null : localTime(nextSharedBellAt(now));
 

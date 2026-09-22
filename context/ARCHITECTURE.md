@@ -215,6 +215,19 @@ Which dot is yours is decided client-side (it is always the one at twelve), so
 the only personalised part of the room does not make the shared response
 uncacheable.
 
+**Who counts, and the hidden tab.** Everyone with the page open, not only
+those who pressed Begin (§14, item 2). The client stops heartbeating the
+moment the tab is hidden, and the count query ignores rows older than 90
+seconds, so a tab forgotten on the landing drops out about a minute and a
+half after it stops being looked at. Since 22 September 2026 that rule
+depends on whether a sitting is in progress: `usePresence` takes `sitting`,
+and a hidden tab that is sitting keeps beating (the fetch has `keepalive`),
+because a phone that locked with its owner's eyes shut is the normal posture
+of meditation, not a forgotten tab. The wake lock in
+`components/useWakeLock.ts` exists to stop that lock happening (§7); when it
+happens anyway, the sitter stays in the count and their candle stays lit. A
+sitting that ends while the tab is still hidden stops the beats then.
+
 ### The general lesson
 
 Realtime transport is for data that is **personalised, high-value, and latency-sensitive**. This number is none of those. Polling a cached endpoint is not the primitive solution here — it is the correct one, and it scales roughly a hundred times further on the same free tier.
@@ -315,7 +328,7 @@ All tracks start immediately at zero gain and stay running. Fading is cheaper an
 ### Constraints worth knowing before you write it
 
 - **An `AudioContext` cannot start without a user gesture.** Autoplay policy. Turn this into the design rather than fighting it: one deliberate **Begin** button that lights the candle and starts the audio together. The constraint becomes the ritual.
-- **iOS suspends the context when the screen locks.** Not solvable in a web app. Accept it, and note it for whenever the mobile app conversation happens.
+- **iOS suspends the context when the screen locks.** Not solvable in a web app: a lock that happens suspends the graph, and the bell is late until the screen wakes. Accept it, and note it for whenever the mobile app conversation happens. What *is* solvable is the lock itself: since 22 September 2026 `components/useWakeLock.ts` asks for a screen wake lock inside the click that strikes the bowl and holds it for the sitting, asking again each time the tab comes back, so where the browser grants it the screen stays on and the context never suspends. Unsupported is a silent no-op. Both statements stand side by side; the second is why the first is rarely met.
 - **Decode all buffers up front**, behind the Begin button, so no track arrives late.
 - Loops need to be **seamless at the sample level**. This is an asset-quality problem, not a code problem — a loop with a click at the seam will be audible on repeat and no amount of crossfading fully hides it.
 
@@ -668,7 +681,7 @@ meditatewithme/
 │   ├── controls.ts              # the six control styles
 │   ├── use*.ts                  # every hook: auth, prefs, practice, mix, presence,
 │   │                            #   world, count, session, clock, profile, origin,
-│   │                            #   usual, fullscreen, reduced motion
+│   │                            #   usual, fullscreen, wake lock, reduced motion
 │   └── Demo.tsx                 # dev-only: /?demo=sitting, /?demo=finished
 ├── scripts/
 │   └── contrast.mjs             # every palette pair against its threshold
