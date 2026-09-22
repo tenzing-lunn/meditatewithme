@@ -10,7 +10,14 @@ import { buildNoiseLoop, type NoiseKind } from '@/lib/noise';
 import { unlockAudio } from './audio';
 
 /**
- * The ambient mix. Five loops, independent volumes, one master.
+ * The ambient mix. Five loops, one of them on at a time, one master.
+ *
+ * The graph is unchanged by the beds becoming an exclusive choice on 22
+ * September 2026: all five still run from the first moment and all five still
+ * have a gain of their own, because that is what makes switching between them
+ * a fade rather than a stop and a start. What changed is what is ever written
+ * into those gains — one bed at 1 and the rest at 0 — and that rule lives
+ * with the preferences, in lib/preferences.ts, not here.
  *
  * Lives beside audio.ts rather than in lib/ for the same reason it does:
  * this is browser I/O, and lib/ stays pure.
@@ -50,8 +57,8 @@ interface TrackDef {
   /** The end of this track's chain, ready to connect to its own gain node. */
   createNode: (ctx: AudioContext) => AudioNode;
   /**
-   * Fixed gain putting this bed at the same loudness as the other four, so a
-   * fader at half means the same amount of sound whichever one it is under.
+   * Fixed gain putting this bed at the same loudness as the other four, so
+   * one Volume means the same amount of sound whichever bed is under it.
    * See LOUDNESS below for where the number comes from.
    */
   trim: number;
@@ -72,11 +79,14 @@ interface TrackDef {
  *     night       -20.22    0.560
  *     waterfall   -20.33    0.373
  *
- * Two separate faults. The spread is 12.5 dB, so rain at half fader was about
- * four times the loudness of waterfall at half fader — the thing CLAUDE.md
- * warns testers about, which is a sign it should have been fixed rather than
- * documented. And rain's peak was above full scale: at the top of its fader it
- * was not loud, it was distorting.
+ * Two separate faults. The spread is 12.5 dB, so rain at half volume was
+ * about four times the loudness of waterfall at half volume — the thing
+ * CLAUDE.md warns testers about, which is a sign it should have been fixed
+ * rather than documented. It matters more since the beds became one choice:
+ * with a single Volume over whichever is on, an unmatched set would move that
+ * Volume on its own every time somebody changed which sound they sat under.
+ * And rain's peak was above full scale: at the top of its own gain it was not
+ * loud, it was distorting.
  *
  * K-weighted rather than plain RMS because these differ enormously in spectrum
  * — `hum` is a 110 Hz drone, `night` has a 4.6 kHz band — and equal RMS at

@@ -141,7 +141,7 @@ export function usePractice(userId: string | null) {
 
     (async () => {
       try {
-        const supabase = browserClient();
+        const supabase = await browserClient();
 
         // Pull first, so a device signing in for the first time gains the
         // history rather than only contributing to it.
@@ -197,7 +197,7 @@ export function usePractice(userId: string | null) {
 
     (async () => {
       try {
-        const { error } = await browserClient()
+        const { error } = await (await browserClient())
           .from('sittings')
           .upsert(
             unsent.map((e) => toRow(userId, e)),

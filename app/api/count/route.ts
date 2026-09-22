@@ -28,7 +28,7 @@ export async function GET() {
   const start = hourStart(Date.now());
 
   try {
-    const supabase = serviceClient();
+    const supabase = await serviceClient();
     const cutoff = new Date(Date.now() - LIVENESS_WINDOW_SECONDS * 1000);
 
     const [live, lit] = await Promise.all([

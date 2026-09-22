@@ -56,7 +56,7 @@ export async function DELETE(request: Request) {
 
   let supabase;
   try {
-    supabase = serviceClient();
+    supabase = await serviceClient();
   } catch {
     // No service key configured. Nothing can be deleted, and saying so as a 500
     // is honest — this is not a request the caller got wrong.

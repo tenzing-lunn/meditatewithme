@@ -1,13 +1,22 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useState, type ComponentType } from 'react';
 
 import { doorPatch, type Mode } from '@/lib/journey';
 import type { MixPatch } from './Sounds';
 import { unlockAudio } from './audio';
-import Home from './Home';
 import Journey from './Journey';
-import { displayName, useAuth } from './useAuth';
+
+/**
+ * Home is the signed-in half of the site and no guest ever sees it — nor the
+ * settings drawer, the practice log or the account panel it carries. It was
+ * in the first chunk of the landing page all the same. Warmed below while the
+ * account question is being answered, so somebody who does have one is not
+ * made to wait for it twice over.
+ */
+const Home = dynamic(() => import('./Home'), { loading: () => null });
+import { displayName, hasStoredSession, useAuth } from './useAuth';
 import { useMix } from './useMix';
 import { usePractice } from './usePractice';
 import { usePreferences } from './usePreferences';
@@ -71,6 +80,15 @@ export default function Entry() {
     }
   }, []);
 
+  /** See the gate below: whether this browser has an account to wait for. */
+  const [waitForAuth] = useState(hasStoredSession);
+
+  // A browser with a session stored is going to land on Home; start fetching
+  // it now rather than after Supabase has finished confirming that.
+  useEffect(() => {
+    if (waitForAuth) void import('./Home');
+  }, [waitForAuth]);
+
   /** Signed in: at home, or through a door. Settings is a drawer on Home. */
   const [view, setView] = useState<'home' | 'journey'>('home');
   const goHome = useCallback(() => setView('home'), []);
@@ -110,8 +128,31 @@ export default function Entry() {
 
   if (demo) return <demo.Demo which={demo.which} />;
 
-  if (auth.status === 'loading' || !loaded || !logLoaded) {
-    return <main className="h-dvh bg-paper" aria-busy />;
+  /**
+   * The wait, and who is made to do it.
+   *
+   * The preferences and the log are localStorage, read in an effect: one tick
+   * after hydration, always. The account was the odd one out — a network
+   * library, loaded and asked, before anything at all was drawn — and this
+   * component waited on all three equally. A guest therefore paid for a
+   * question about an account they do not have, on the site's front page.
+   *
+   * So the account is waited for only by a browser that has a session stored,
+   * or one arriving from a magic link (`hasStoredSession`). Everybody else is
+   * shown the doors as soon as storage has been read, and if the guess turns
+   * out to be wrong the screen changes when the real answer lands — the same
+   * change it makes when somebody signs in on any other path.
+   *
+   * Read once, at the first render: a probe that changed its mind mid-visit
+   * would put the placeholder back over a page somebody was already reading.
+   *
+   * The ground is the room, not paper: it is the ground of the screen that
+   * follows, so the wait is a dark window rather than a pale one that turns
+   * dark. `bg-room` reads the `data-room` the layout's inline script has
+   * already put on `<html>` before the first pixel.
+   */
+  if ((waitForAuth && auth.status === 'loading') || !loaded || !logLoaded) {
+    return <main className="h-dvh bg-room" aria-busy />;
   }
 
   const journey = (

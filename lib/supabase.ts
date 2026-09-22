@@ -1,4 +1,20 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
+
+/**
+ * `createClient` is reached through `import()` rather than a static import, and
+ * both clients below are `async` for that one reason.
+ *
+ * Statically imported, `@supabase/supabase-js` sat in the first chunk of the
+ * landing page — around 30KB gzipped that a guest downloaded, parsed and never
+ * used, on the critical path of a page whose job is to show two doors. Nothing
+ * here is wanted synchronously: every call site is already inside an effect, a
+ * route handler or an event, so awaiting the library costs nothing that was not
+ * already awaited.
+ *
+ * A type-only import stays: it is erased and carries no code.
+ */
+const createClient = async () =>
+  (await import('@supabase/supabase-js')).createClient;
 
 /**
  * Two clients, two very different trust levels. Keeping them in one file makes
@@ -30,27 +46,51 @@ const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
  * the server. If a server component ever needs to know who is watching, this
  * becomes @supabase/ssr and a callback route.
  */
-let browser: SupabaseClient | null = null;
+/**
+ * The PROMISE is what is cached, not the client.
+ *
+ * With a synchronous factory, `if (browser) return browser` was enough. It is
+ * not enough once there is an `await` between the check and the assignment:
+ * four hooks call this in the same tick on mount, all four would find the cache
+ * empty, and all four would build a client — which is the exact race the note
+ * above is about. Holding the in-flight promise means the second caller waits
+ * for the first one's client instead of starting another.
+ *
+ * Cleared on failure so a client that could not be built is retried rather
+ * than remembered as broken for the life of the page.
+ */
+let browser: Promise<SupabaseClient> | null = null;
 
-export function browserClient(): SupabaseClient {
+export function browserClient(): Promise<SupabaseClient> {
   if (browser) return browser;
 
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) {
-    throw new Error(
-      'Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY. Copy .env.example to .env.local.',
+    return Promise.reject(
+      new Error(
+        'Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY. Copy .env.example to .env.local.',
+      ),
     );
   }
 
-  browser = createClient(url, key, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      flowType: 'implicit',
-      // The magic link lands back on the site with the token in the URL
-      // fragment; this is what picks it up. There is no callback route.
-      detectSessionInUrl: true,
-    },
+  browser = (async () =>
+    // `detectSessionInUrl` reads the address bar once, as the client is built.
+    // Building it after an `import()` rather than at module scope does not
+    // move that: nothing has navigated in between, so the fragment is still
+    // there to be read.
+    (await createClient())(url, key, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        flowType: 'implicit',
+        // The magic link lands back on the site with the token in the URL
+        // fragment; this is what picks it up. There is no callback route.
+        detectSessionInUrl: true,
+      },
+    }))();
+
+  browser.catch(() => {
+    browser = null;
   });
 
   return browser;
@@ -68,14 +108,14 @@ export function browserClient(): SupabaseClient {
  * If you ever find yourself wanting this in a component, the answer is a route
  * handler, not an exception.
  */
-export function serviceClient(): SupabaseClient {
+export async function serviceClient(): Promise<SupabaseClient> {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {
     throw new Error(
       'Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.',
     );
   }
-  return createClient(url, key, {
+  return (await createClient())(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }

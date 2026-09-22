@@ -149,8 +149,21 @@
   --ease-lift: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/*
+ * The ground under everything, and the only ground there is until React has
+ * mounted and `<main>` states its own.
+ *
+ * `--color-room`, not `--color-paper`, since 22 September 2026: the first
+ * screen of the site is always the room — `screensFor` opens on `mode`, and
+ * somebody signed in gets Home, which is the same earth — so paper here meant
+ * the window flipped colour the moment the rail appeared. The inline script in
+ * `app/layout.tsx` puts `data-room` on `<html>` before the first paint, which
+ * is what makes this the right ground rather than a guess. The paper screens,
+ * name and origin, are reached by a click and get their ground from `<main>`
+ * as they always have.
+ */
 body {
-  background: var(--color-paper);
+  background: var(--color-room);
   color: var(--color-ink);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;

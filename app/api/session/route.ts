@@ -42,7 +42,7 @@ export async function GET() {
   const now = Date.now();
 
   try {
-    const supabase = serviceClient();
+    const supabase = await serviceClient();
 
     const session = await resolveSession(now, async (start) => {
       const { data, error } = await supabase

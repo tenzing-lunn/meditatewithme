@@ -869,8 +869,12 @@ add the three variables for that branch too, or upgrade the CLI and set them for
 all preview branches at once.
 
 `SUPABASE_SERVICE_ROLE_KEY` is server-only and must stay that way. Verified
-against the live bundle: the key appears in none of the seven client chunks nor
-in the HTML. Re-run that check if `serviceClient()` ever gains a new caller.
+against the live bundle: the key appears in none of the client chunks nor in
+the HTML. Re-run that check if `serviceClient()` ever gains a new caller — or
+changes shape, as it did on 22 September 2026 when both clients moved behind
+an `import()` and became `async` (see §16). Re-verified then: 0 hits for the
+service key across `.next/static` and the built HTML, 1 for the publishable
+key, which is the control that proves the grep was working.
 
 Re-verified after `lib/supabase.ts` gained the auth configuration. The check is
 only meaningful if you also confirm the search *would* have found something —
@@ -961,6 +965,90 @@ type over lit wax. That room is deleted (`docs/ui-rebuild.md`; the last
 commit that carried it is `86454e6` on `dev`). What stands from it is the
 premise — a candle is lit at the top of every hour, nothing is gated, you sit
 whenever you like — and the reasoning below is kept where it still applies.
+
+### What the first second costs — 22 September 2026
+
+The landing page is a client tree, so the server sends one empty element and
+the browser builds the rest. That is fine; what was not fine is what the
+browser had to have in hand first. Everything arrived in sequence, one thing
+at a time, and the sequence was long enough to watch.
+
+Four things were pure latency and are gone:
+
+* **The ground was a guess.** `body` painted paper while the first screen of
+  the site — a guest's doors, a member's Home — is always the room. After dark
+  the whole window turned over the moment React mounted. An inline script at
+  the top of `<body>` now runs `lib/room.ts`'s rule and sets `data-room`
+  before the first paint, so the ground is right in the first frame. `<body>`
+  rather than `<html>` because `suppressHydrationWarning` does not reach the
+  element Next owns, and the script sits in the body because that is where the
+  body exists; an inline script still runs as it is parsed. `next/script`
+  with `beforeInteractive` is **not** usable here: it queues the source
+  through Next's own runtime, which lands after the bundle and restores the
+  flash it was meant to prevent.
+* **The earth was asked for last.** `land.json` and `relief.jpg` are 273KB and
+  nothing requested them until the `WorldMap` chunk had loaded, which is after
+  hydration. `ReactDOM.preload` in the layout now asks with the document; the
+  relief carries `fetchPriority: 'low'` because the coastlines are what make
+  it read as the earth and the terrain is detail.
+* **The first screen animated itself in.** `rail-enter` waits out the leaving
+  screen's fade — 120ms, then 300ms of rising. On arrival nothing is leaving.
+  `Rail` now applies it only once a question has been answered.
+* **A guest waited for an account.** See below.
+
+### Supabase is not on the path to the doors
+
+Two changes, and they are separate.
+
+`lib/supabase.ts` reaches `createClient` through `import()`, so both clients
+are `async`. Statically imported it sat in the landing's first chunk — a
+network library a guest downloads, parses and never uses, on a page whose job
+is to show two doors. Every call site was already inside an effect, a route
+handler or an event, so nothing waits that was not waiting anyway. The cached
+value is now **the promise, not the client**: with an `await` between the
+check and the assignment, four hooks calling in one tick would each build a
+client, which is precisely the token-refresh race the file warns about.
+
+`Entry` used to render nothing until `getSession()` replied. Preferences and
+the practice log are localStorage read in an effect — one tick — and the
+account was the odd one out, so a guest paid for a question about an account
+they do not have. `hasStoredSession()` in `useAuth` answers it synchronously
+from localStorage instead, matching `sb-*-auth-token` by shape rather than
+composing the project ref a second time, and counting an `access_token` in the
+URL fragment as a maybe so a magic-link arrival is still waited for. **False
+means "do not wait", never "signed out"** — `useAuth` remains the only thing
+that decides, and a late signed-in answer changes the screen the same way
+signing in does on any other path.
+
+One consequence worth knowing: a guest's menu can now be opened in the first
+moments, while auth is still `loading`, and `Account` renders `null` for that
+state. The panel fills in a fraction of a second later. Not worth a spinner.
+
+### The rail is split, and warmed
+
+`Rail` mounts every screen it will ever show. That is what makes the switch a
+cross-fade rather than a page load, and it is kept — but it meant the timer
+dial, the bell cards, the six sound tiles, the bowl and the whole sitting were
+downloaded and rendered before anybody had chosen a door. `Journey` now loads
+all of them, plus `Account`, through `next/dynamic`, and `Entry` does the same
+for `Home`.
+
+Splitting only helps if a chunk is off the *critical path*; it does not have
+to be late. `warm()` fetches all of them on the first idle callback after the
+doors are painted, so in practice the next screen is in memory long before it
+is asked for and `loading: () => null` is never seen.
+
+**`ModeScreen` stays a static import** — it is the landing and must wait for
+nothing. So does `Afterwards`, which is 72 lines and exports a constant the
+render reads. And so, permanently, does anything that must be reached
+synchronously from the gesture that starts it: `unlockAudio()` and
+`mix.ensure()` have to run inside the click or the browser will not start an
+AudioContext, so `audio.ts` and `mix.ts` are not candidates however large they
+get. That is the line: **an `await` before a user gesture's side effect is a
+bug, not a saving.**
+
+Measured on the production build, gzipped, on the landing's critical path:
+**270,510 bytes across 9 chunks before, 195,222 across 10 after.**
 
 ### The candle, and why nothing is gated
 

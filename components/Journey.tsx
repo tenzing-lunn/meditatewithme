@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { serverNow } from '@/lib/clock';
 import { localTime } from '@/lib/format';
@@ -19,19 +20,12 @@ import {
   nextSharedBellAt,
 } from '@/lib/timer';
 import type { UserPreferences } from '@/lib/types';
-import Account from './Account';
 import Afterwards, { COOLDOWN_MS } from './Afterwards';
-import BellScreen from './BellScreen';
-import BowlScreen from './BowlScreen';
 import ModeScreen from './ModeScreen';
-import NameScreen from './NameScreen';
-import OriginScreen from './OriginScreen';
 import Rail from './Rail';
 import RoomToggle from './RoomToggle';
-import Sitting, { type Sit } from './Sitting';
-import SoundScreen from './SoundScreen';
+import type { Sit } from './Sitting';
 import type { MixPatch } from './Sounds';
-import TimeScreen from './TimeScreen';
 import { openingBell, scheduleBell, unlockAudio, type ScheduledBell } from './audio';
 import { ICON, ICON_ROOM } from './controls';
 import { settingsLine } from './settingsLine';
@@ -74,6 +68,74 @@ import { useWorld } from './useWorld';
  * screen's switch unmutes the beds. The bowl restores the stored mix and
  * rings the opening bell. Nothing else does.
  */
+
+
+/**
+ * Everything past the doors, in its own chunk.
+ *
+ * The rail mounts every screen it will ever show, all at once, so the timer
+ * dial, the bell cards, the six sound tiles, the bowl and the whole sitting
+ * used to be downloaded, parsed and rendered before a visitor had chosen a
+ * door — on the one page where nothing but the doors is on screen. `Account`
+ * is the same argument behind a menu, and `Sitting` behind the strike.
+ *
+ * Deliberately NOT here: `ModeScreen`, which is the landing and must never
+ * wait for anything; `Afterwards`, which is 72 lines and holds a constant the
+ * render reads; and anything that has to run inside the gesture that starts
+ * it — `unlockAudio` and `mix.ensure` must be reached synchronously from a
+ * click or the browser will not start an AudioContext, so `audio.ts` and
+ * `mix.ts` stay where they are however large they get.
+ *
+ * `loading: () => null` because there is nothing to show: every screen but
+ * the current one is `visibility: hidden` and `inert` anyway, and `warm()`
+ * below means the current one is never the one waiting.
+ */
+const CHUNKS = {
+  account: () => import('./Account'),
+  name: () => import('./NameScreen'),
+  origin: () => import('./OriginScreen'),
+  time: () => import('./TimeScreen'),
+  bell: () => import('./BellScreen'),
+  sound: () => import('./SoundScreen'),
+  bowl: () => import('./BowlScreen'),
+  sitting: () => import('./Sitting'),
+} as const;
+
+const nothing = () => null;
+const Account = dynamic(CHUNKS.account, { loading: nothing });
+const NameScreen = dynamic(CHUNKS.name, { loading: nothing });
+const OriginScreen = dynamic(CHUNKS.origin, { loading: nothing });
+const TimeScreen = dynamic(CHUNKS.time, { loading: nothing });
+const BellScreen = dynamic(CHUNKS.bell, { loading: nothing });
+const SoundScreen = dynamic(CHUNKS.sound, { loading: nothing });
+const BowlScreen = dynamic(CHUNKS.bowl, { loading: nothing });
+const Sitting = dynamic(CHUNKS.sitting, { loading: nothing });
+
+/**
+ * Fetch all of them, once the doors are on screen and the browser is idle.
+ *
+ * Splitting a chunk off only helps if it is off the *critical path*; it does
+ * not have to be late. A visitor has to read two doors and choose one, which
+ * is seconds, and these are fetched within a frame or two of the first paint
+ * — so in practice the screen after the doors is already in memory when it is
+ * asked for, and `loading: () => null` never shows. The bundler hands back the
+ * same promise for a second `import()` of the same module, so this costs one
+ * request apiece whether or not anything has asked yet.
+ *
+ * Idle rather than immediately: the earth, the clock and the first count are
+ * all in flight at that moment and they are what the visitor is looking at.
+ */
+function warm(): () => void {
+  const run = () => {
+    for (const load of Object.values(CHUNKS)) void load();
+  };
+  if (typeof window.requestIdleCallback === 'function') {
+    const id = window.requestIdleCallback(run, { timeout: 2000 });
+    return () => window.cancelIdleCallback(id);
+  }
+  const t = window.setTimeout(run, 300);
+  return () => window.clearTimeout(t);
+}
 
 /**
  * The screens drawn in the room, dawn or dusk, rather than on paper: from
@@ -163,6 +225,9 @@ export default function Journey({
   const reduced = useReducedMotion();
   const signedIn = Boolean(home);
   const { room, toggle: toggleRoom } = useRoom();
+
+  // The chunks for everything past the doors. See `warm` above.
+  useEffect(warm, []);
 
   // A completed sitting in the log, on this device or the account. The
   // record of having sat, for the rail and for the landing's foot.

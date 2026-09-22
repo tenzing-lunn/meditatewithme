@@ -197,8 +197,14 @@ slide left to right. The questions, in order:
    one rings it and sends two rings out of the drawing.
 6. *Any sound while you sit?* (*Anything underneath?* until 22 September
    2026, which meant nothing without the room's vocabulary) — six tiles: silence and the five beds, silence
-   chosen to begin with. Tapping a bed plays it, and its level is a bar on
-   its own tile; a *Volume* row appears under them once anything is on.
+   chosen to begin with. Tapping a bed plays it; a *Volume* row appears under
+   them once one is on. **One at a time since 22 September 2026**, on the
+   client's instruction that the sounds are individual: the six are an
+   exclusive choice like the three bells, choosing one silences the rest, and
+   the single *Volume* is how loud whichever is on plays. Until then each
+   tile was a toggle with a fader of its own and the beds stacked, with
+   *Volume* a master over the lot; a mix stored from those days keeps its
+   loudest bed, at full, and drops the others.
    **Rebuilt 17 September 2026** from a lone switch that revealed a card of
    pills and a second page called *Adjust levels*. Since **20 September
    2026** it is the same control in all three places it appears — here, in
@@ -285,8 +291,8 @@ because choosing how to sit is not a changed answer. **The drawer, 19
 September 2026:** one page sliding in from the right over Home with every
 setting on it — how long (a slider whose last stop is always *Until the
 bell*; choosing it chooses *with everyone* too), the bell (three cards;
-tapping one rings it), and the sound underneath (silence or any of the five
-beds; not played there, the level is set while sitting). The switch is on the
+tapping one rings it), and the sound underneath (silence or one of the five
+beds, with its *Volume*; not played there). The switch is on the
 bar alone since 22 September 2026; the drawer had a second copy of it. The
 three lines open the same drawer as a menu — *Account*,
 *Settings*, *Your practice*, *Sign out* — with Settings opening in place.
@@ -365,6 +371,7 @@ imagery (§5), it is one file to replace.
 | same | A name and an origin, opt-in, shown on the earth for the length of a with-others sitting | `ARCHITECTURE.md` §16, `plans/privacy-data-inventory.md` |
 | 22 Sept 2026 | The name and the place are asked on the visit after a first sitting, not on the first; the skip turns itself on after that sitting | `docs/ui-ux-fixes.md` commits 5 and 6, `docs/audit-2026-09-21.md` M1 and H4 |
 | 22 Sept 2026 | Every size is a named role and nothing is under 12px; tile names, the drawer's rows and its headings are Nunito, not the display face; the dawn/dusk toggle is only in the room; the count in the time sentence is plain ink; the drawer's bells are radios like the rail's; one shadow, one curve | `docs/ui-ux-fixes.md` commit 9, `DESIGN.md` |
+| 22 Sept 2026 | The landing arrives at once instead of in pieces: the ground is right in the first frame rather than turning over after dark, the earth is asked for with the document, the first screen does not animate itself in, a guest no longer waits for an account they do not have, and everything past the doors is a separate chunk fetched while the doors are read | `ARCHITECTURE.md` §16, `DESIGN.md` |
 
 ## 4. Commercial — what Jonny holds, and what he has not been told
 

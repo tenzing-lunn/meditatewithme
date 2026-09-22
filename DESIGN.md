@@ -328,6 +328,11 @@ family for the candles.
   everywhere else on the rail, from the doors until Done. `Journey` sets
   `data-room` on the frame and transitions its background — over half the lift
   when the rail steps into or out of the room, over the lift at the strike.
+  The room is also settled on `<body>` before the first pixel, by an inline
+  script at the top of the body in `app/layout.tsx` running the same rule, and
+  `body` paints `--color-room`: the first screen of the site is always the
+  room, and until 22 September 2026 the window paid for that by painting paper
+  and then turning dark the moment React arrived.
   Everything in the room is drawn in the `room-*` tokens (`room`, `room-ink`,
   `room-ink-2`, `room-edge`, `room-action`, `room-action-ink`,
   `room-action-ink-2`), which hold the dusk values in `@theme` and the paper
@@ -452,7 +457,11 @@ sizes for nine declared roles, three of them under 12px.
   baseline: the bell, the sound, and both time screens. A phone is unchanged.
 - **The rail is a stack of panels in one frame.** `Rail` sets every panel
   `absolute inset-0`; the current one rises in (`rail-enter`) as the last
-  lifts out (`rail-leave`), downward instead going back. Each panel is `h-dvh`
+  lifts out (`rail-leave`), downward instead going back. The **first** panel
+  does neither: `rail-enter` waits out the leaving panel's fade before it
+  starts, and on arrival at the site there is nothing leaving, so the wait
+  was 420ms of an empty window after everything had already loaded. A
+  question answered is an arrival; the front door is not. Each panel is `h-dvh`
   and scrolls itself if it must; the page never does. Non-current panels are
   `inert`, `aria-hidden`, and `visibility: hidden` once the leaving one has
   faded. **A guest's menu is not on a panel**: `Journey` pins it top right
@@ -597,13 +606,22 @@ with centred labels: a 700px target carrying 15px of type, and nothing to
 choose between.
 
 **The sounds** (`Sounds`) are six tiles — silence and the five beds —
-two across on a phone and three from `sm`. Each carries a drawn texture, and
-a chosen bed carries its own fader (`.room-range .range-room .range-tile`,
-the tile's smaller grip on the same 44px row). Silence is a tile among them
-and the one that starts chosen. Under the grid, once anything is on, one
-*Volume* row: not a sixth sound but how loud the others are. It replaced a
-lone switch that revealed a pale card of pills and an *Adjust levels* button
-— the same question asked twice, the second time on a page of its own.
+two across on a phone and three from `sm`, each carrying a drawn texture.
+Silence is a tile among them and the one that starts chosen. Under the grid,
+once a bed is on, one *Volume* row: not a sixth sound but how loud that bed
+is. It replaced a lone switch that revealed a pale card of pills and an
+*Adjust levels* button — the same question asked twice, the second time on a
+page of its own.
+
+Since 22 September 2026 the six are **one exclusive choice**, drawn like the
+bells next door: a `radiogroup` of `radio`s, one tab stop, the arrows moving
+the choice. Before that each tile was a toggle carrying its own fader and the
+beds stacked, so *Volume* was a master over however many were on at once. The
+client's instruction is that the sounds are individual — one at a time, one
+volume over whichever it is — so choosing a bed silences the rest and the way
+to hear nothing is the Silence tile. The per-tile faders went with the
+stacking, and with them the `h-11` spacer that kept a tile with no fader the
+same height as one with: the six are the height of a texture and a word.
 
 This is **one control in three places**, and since 20 September 2026 it is
 one component: the rail's Sound question, *Underneath* in the settings
@@ -754,7 +772,7 @@ body size, each with an optional caption aside on the right: *How long* (the
 answer at the sentence size in the action colour, the slider, its last stop
 always *Until the bell*), *The bell* (the three cards from the rail, smaller,
 the same `radiogroup`; *Tap to hear*),
-*Underneath* (the same six tiles, faders and *Volume* as the rail's sound
+*Underneath* (the same six tiles and *Volume* as the rail's sound
 question; *Heard in the sitting*). The skip switch is on Home's bar alone. Chosen tiles are the
 rail's: `room-action` border on `room-action` at 15%. The body scrolls
 inside the drawer when the window is short. The three lines open it on the

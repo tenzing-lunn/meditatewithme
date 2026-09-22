@@ -69,6 +69,41 @@ function readLinkError(hash: string, search: string): string | null {
   return description ?? 'That link did not work. Send yourself a fresh one.';
 }
 
+/**
+ * Whether this browser might already be signed in — answered synchronously,
+ * without Supabase.
+ *
+ * `Entry` used to render nothing at all until `getSession()` had replied, so
+ * a visitor who has never had an account waited for an auth library to load
+ * and answer a question whose answer was always "no" before they were shown
+ * the doors. This is that question, asked of localStorage directly, in the
+ * same tick as the first render.
+ *
+ * Supabase keeps its session under `sb-<project ref>-auth-token`. The key is
+ * matched by shape rather than composed from the project ref, so it survives
+ * the URL changing and does not need the ref written down in a second place.
+ *
+ * FALSE IS A GUESS, NOT A VERDICT. It means "do not wait", never "signed
+ * out": `useAuth` is still the only thing that decides, and if it comes back
+ * signed-in a moment later the screen changes as it would have anyway. The
+ * one case where the guess would be visibly wrong is arriving from a magic
+ * link — the session is in the URL fragment, not in storage yet — so an
+ * access token in the fragment counts as a maybe too.
+ */
+export function hasStoredSession(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    if (window.location.hash.includes('access_token')) return true;
+    for (let i = 0; i < window.localStorage.length; i += 1) {
+      const key = window.localStorage.key(i);
+      if (key?.startsWith('sb-') && key.endsWith('-auth-token')) return true;
+    }
+  } catch {
+    // Storage blocked outright. Nothing is stored, so nothing is waited for.
+  }
+  return false;
+}
+
 export function useAuth() {
   const [state, setState] = useState<AuthState>({ status: 'loading' });
 
@@ -92,120 +127,139 @@ export function useAuth() {
   }, [linkError]);
 
   useEffect(() => {
-    let client;
-    try {
-      client = browserClient();
-    } catch {
-      // No configuration. Not an error worth surfacing — just no accounts.
-      setState({ status: 'unavailable' });
-      return;
-    }
-
     let cancelled = false;
-
-    // getSession resolves after detectSessionInUrl has consumed a magic-link
-    // fragment, so arriving from an email lands here already signed in.
-    client.auth
-      .getSession()
-      .then(({ data }) => {
-        if (cancelled) return;
-        setState(
-          data.session?.user
-            ? { status: 'signed-in', user: data.session.user }
-            : { status: 'signed-out' },
-        );
-      })
-      .catch(() => {
-        if (!cancelled) setState({ status: 'signed-out' });
-      });
-
-    const { data: sub } = client.auth.onAuthStateChange((_event, session) => {
-      if (cancelled) return;
-      setState(
-        session?.user
-          ? { status: 'signed-in', user: session.user }
-          : { status: 'signed-out' },
-      );
-    });
-
     /**
-     * The same token, arriving without a page load.
-     *
-     * THIS IS THE BUG THAT LOOKED LIKE "LOGGING IN DOESN'T WORK"
-     * `detectSessionInUrl` reads the URL exactly once, when the client is
-     * constructed — which is on page load. That covers the case it was written
-     * for: the link opens a new tab, the document loads, the fragment is there.
-     *
-     * It does not cover the link landing in a tab that is *already* open on the
-     * page it redirects to. The email is requested from the site, so the tab is
-     * sitting on `/`; the link's `redirect_to` is that same `/`. A URL that
-     * differs from the current one only by its fragment is a **same-document**
-     * navigation — the browser fires `hashchange` and does not reload. So the
-     * client is never rebuilt, nothing re-reads the URL, and a perfectly good
-     * access token sits in the address bar being ignored. The visitor is shown
-     * `Let's begin.` and told nothing, because there is no error to tell them
-     * about: Supabase verified the link and logged the login server-side.
-     *
-     * Reproduced by pasting a link into an open tab, or by any mail client that
-     * reuses the tab rather than opening a new one.
-     *
-     * `setSession` rather than a reload: the token is right here, already
-     * parsed, and reloading would throw away the room's mounted scene for no
-     * reason — see the note on the switch in `Entry`. It is public API, and it
-     * fires `onAuthStateChange` above, so the screen changes the same way it
-     * does on every other path.
+     * Set once the client exists, so the cleanup can undo whatever the
+     * asynchronous setup below managed to do before it ran. The client is
+     * behind an `import()` now (see `lib/supabase.ts`), so unmounting between
+     * mount and the library landing is a real ordering, not a theoretical one
+     * — `cancelled` is checked after every await for the same reason.
      */
-    const onHashChange = () => {
-      if (cancelled) return;
+    let teardown: (() => void) | undefined;
 
-      const hash = window.location.hash;
-      const params = new URLSearchParams(
-        hash.startsWith('#') ? hash.slice(1) : hash,
-      );
-      const accessToken = params.get('access_token');
-      const refreshToken = params.get('refresh_token');
-      const error = readLinkError(hash, '');
-
-      // Somebody navigating the page's own anchors, not arriving from an email.
-      if (!accessToken && !error) return;
-
-      // Read, so take it out of the address bar — same reason as on load: a
-      // reload should be a clean arrival, not a second attempt at a spent
-      // token. Safe before `setSession`, which reads the values, not the URL.
-      window.history.replaceState(null, '', window.location.pathname);
-
-      if (error) {
-        setLinkError(error);
+    void (async () => {
+      let client;
+      try {
+        client = await browserClient();
+      } catch {
+        // No configuration, or the library could not be fetched. Not an error
+        // worth surfacing — just no accounts.
+        if (!cancelled) setState({ status: 'unavailable' });
         return;
       }
+      if (cancelled) return;
 
-      // An implicit-flow fragment always carries both. If it somehow does not,
-      // there is nothing to set and nothing worth saying.
-      if (!accessToken || !refreshToken) return;
-
+      // getSession resolves after detectSessionInUrl has consumed a magic-link
+      // fragment, so arriving from an email lands here already signed in.
       client.auth
-        .setSession({ access_token: accessToken, refresh_token: refreshToken })
-        .then(({ error: setError }) => {
-          if (cancelled || !setError) return;
-          setLinkError(
-            'That link could not be used. Send yourself a fresh one.',
+        .getSession()
+        .then(({ data }) => {
+          if (cancelled) return;
+          setState(
+            data.session?.user
+              ? { status: 'signed-in', user: data.session.user }
+              : { status: 'signed-out' },
           );
         })
         .catch(() => {
-          if (!cancelled) {
-            setLinkError(
-              'Could not reach the sign-in service. Please try again.',
-            );
-          }
+          if (!cancelled) setState({ status: 'signed-out' });
         });
-    };
 
-    window.addEventListener('hashchange', onHashChange);
+      const { data: sub } = client.auth.onAuthStateChange((_event, session) => {
+        if (cancelled) return;
+        setState(
+          session?.user
+            ? { status: 'signed-in', user: session.user }
+            : { status: 'signed-out' },
+        );
+      });
+
+      /**
+       * The same token, arriving without a page load.
+       *
+       * THIS IS THE BUG THAT LOOKED LIKE "LOGGING IN DOESN'T WORK"
+       * `detectSessionInUrl` reads the URL exactly once, when the client is
+       * constructed — which is on page load. That covers the case it was written
+       * for: the link opens a new tab, the document loads, the fragment is there.
+       *
+       * It does not cover the link landing in a tab that is *already* open on the
+       * page it redirects to. The email is requested from the site, so the tab is
+       * sitting on `/`; the link's `redirect_to` is that same `/`. A URL that
+       * differs from the current one only by its fragment is a **same-document**
+       * navigation — the browser fires `hashchange` and does not reload. So the
+       * client is never rebuilt, nothing re-reads the URL, and a perfectly good
+       * access token sits in the address bar being ignored. The visitor is shown
+       * `Let's begin.` and told nothing, because there is no error to tell them
+       * about: Supabase verified the link and logged the login server-side.
+       *
+       * Reproduced by pasting a link into an open tab, or by any mail client that
+       * reuses the tab rather than opening a new one.
+       *
+       * `setSession` rather than a reload: the token is right here, already
+       * parsed, and reloading would throw away the room's mounted scene for no
+       * reason — see the note on the switch in `Entry`. It is public API, and it
+       * fires `onAuthStateChange` above, so the screen changes the same way it
+       * does on every other path.
+       */
+      const onHashChange = () => {
+        if (cancelled) return;
+
+        const hash = window.location.hash;
+        const params = new URLSearchParams(
+          hash.startsWith('#') ? hash.slice(1) : hash,
+        );
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
+        const error = readLinkError(hash, '');
+
+        // Somebody navigating the page's own anchors, not arriving from an email.
+        if (!accessToken && !error) return;
+
+        // Read, so take it out of the address bar — same reason as on load: a
+        // reload should be a clean arrival, not a second attempt at a spent
+        // token. Safe before `setSession`, which reads the values, not the URL.
+        window.history.replaceState(null, '', window.location.pathname);
+
+        if (error) {
+          setLinkError(error);
+          return;
+        }
+
+        // An implicit-flow fragment always carries both. If it somehow does not,
+        // there is nothing to set and nothing worth saying.
+        if (!accessToken || !refreshToken) return;
+
+        client.auth
+          .setSession({ access_token: accessToken, refresh_token: refreshToken })
+          .then(({ error: setError }) => {
+            if (cancelled || !setError) return;
+            setLinkError(
+              'That link could not be used. Send yourself a fresh one.',
+            );
+          })
+          .catch(() => {
+            if (!cancelled) {
+              setLinkError(
+                'Could not reach the sign-in service. Please try again.',
+              );
+            }
+          });
+      };
+
+      window.addEventListener('hashchange', onHashChange);
+
+      teardown = () => {
+        sub.subscription.unsubscribe();
+        window.removeEventListener('hashchange', onHashChange);
+      };
+      // Unmounted while the library was in flight: nothing above ran until
+      // now, so tear it straight back down.
+      if (cancelled) teardown();
+    })();
 
     return () => {
       cancelled = true;
-      sub.subscription.unsubscribe();
-      window.removeEventListener('hashchange', onHashChange);
+      teardown?.();
     };
   }, []);
 
@@ -233,7 +287,7 @@ export function useAuth() {
   const signIn = useCallback(
     async (email: string, name?: string): Promise<string | null> => {
       try {
-        const { error } = await browserClient().auth.signInWithOtp({
+        const { error } = await (await browserClient()).auth.signInWithOtp({
           email,
           options: {
             // Straight back to the room. The client picks the token out of the
@@ -276,7 +330,7 @@ export function useAuth() {
   const verify = useCallback(
     async (email: string, token: string): Promise<string | null> => {
       try {
-        const { error } = await browserClient().auth.verifyOtp({
+        const { error } = await (await browserClient()).auth.verifyOtp({
           email,
           token,
           type: 'email',
@@ -306,7 +360,7 @@ export function useAuth() {
    */
   const signOut = useCallback(async () => {
     try {
-      await browserClient().auth.signOut({ scope: 'local' });
+      await (await browserClient()).auth.signOut({ scope: 'local' });
     } catch {
       // onAuthStateChange still fires locally; and a failed sign-out on a
       // preferences-only account is not worth an error message.
@@ -334,7 +388,7 @@ export function useAuth() {
    */
   const deleteAccount = useCallback(async (): Promise<string | null> => {
     try {
-      const client = browserClient();
+      const client = await browserClient();
       const { data } = await client.auth.getSession();
       const token = data.session?.access_token;
 
@@ -367,7 +421,7 @@ export function useAuth() {
    */
   const updateName = useCallback(async (name: string): Promise<string | null> => {
     try {
-      const { error } = await browserClient().auth.updateUser({
+      const { error } = await (await browserClient()).auth.updateUser({
         data: { name: name.trim() || null },
       });
       return error ? 'The name could not be saved just now. Please try again.' : null;

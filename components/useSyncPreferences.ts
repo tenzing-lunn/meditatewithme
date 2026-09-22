@@ -69,7 +69,7 @@ export function useSyncPreferences({
 
     (async () => {
       try {
-        const supabase = browserClient();
+        const supabase = await browserClient();
 
         const { data, error } = await supabase
           .from('preferences')
@@ -119,7 +119,7 @@ export function useSyncPreferences({
     const timer = window.setTimeout(async () => {
       try {
         setStatus('syncing');
-        const { error } = await browserClient()
+        const { error } = await (await browserClient())
           .from('preferences')
           .upsert(toRow(userId, prefs), { onConflict: 'user_id' });
         if (error) throw error;

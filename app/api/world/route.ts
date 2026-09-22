@@ -60,7 +60,7 @@ export async function GET() {
   const start = hourStart(Date.now());
 
   try {
-    const supabase = serviceClient();
+    const supabase = await serviceClient();
     const cutoff = Date.now() - LIVENESS_WINDOW_SECONDS * 1000;
 
     // One read, grouped here rather than in SQL. At the scale §11 describes

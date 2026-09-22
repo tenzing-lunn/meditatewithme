@@ -132,11 +132,6 @@ export default function Sitting({
     return () => window.clearTimeout(rest.current);
   }, [wake]);
 
-  // Where each bed was when it was last silenced. Held here rather than in
-  // `Sounds` because the sheet unmounts when it closes, and with it went the
-  // memory: Silence, close, reopen, and Rain came back at the audition level
-  // instead of where it had been.
-  const remembered = useRef<Record<string, number>>({});
   const foot = useRef<HTMLDivElement | null>(null);
   const sheet = useRef<HTMLDivElement | null>(null);
   const soundButton = useRef<HTMLButtonElement | null>(null);
@@ -273,7 +268,7 @@ export default function Sitting({
                 Sound step, so it is drawn the same way and read the same way.
                 At 90% so the earth it covers is still there behind it. */}
             <div className="rounded-card border border-room-edge bg-room/90 p-4">
-              <Sounds mix={soundMix} onSound={onSound} remembered={remembered} tight />
+              <Sounds mix={soundMix} onSound={onSound} tight />
             </div>
           </div>
         )}
