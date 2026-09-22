@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useRef, type CSSProperties } from 'react';
+import { useId, useRef, type CSSProperties, type RefObject } from 'react';
 import { FOCUS_ROOM } from './controls';
 import { DEFAULT_MASTER, MASTER_KEY, TRACKS, type TrackSlug } from './mix';
 
@@ -86,6 +86,7 @@ export default function Sounds({
   mix,
   onSound,
   onFirst,
+  remembered: held,
   tight = false,
 }: {
   mix: Record<string, number>;
@@ -98,6 +99,13 @@ export default function Sounds({
   onSound: (patch: MixPatch) => void;
   /** The first bed of the session is going on. The rail raises the master. */
   onFirst?: () => void;
+  /**
+   * Where each bed was when it was last silenced, when the caller wants to
+   * keep that longer than this component lives. The sitting's sheet unmounts
+   * on close, so it holds the ref itself; the rail and the drawer stay
+   * mounted and let this component keep its own.
+   */
+  remembered?: RefObject<Record<string, number>>;
   /**
    * Three across at every width, for the sheet during a sitting. The same six
    * tiles, wrapped differently because they are not alone on the screen:
@@ -113,8 +121,9 @@ export default function Sounds({
   // Where each bed was when it was last silenced, so pressing it again puts
   // it back rather than starting from a guess. A ref: nothing renders from
   // it, and writing it must not cost a frame inside the gesture that is also
-  // starting an AudioContext.
-  const remembered = useRef<Record<string, number>>({});
+  // starting an AudioContext. The caller's, if it passed one.
+  const own = useRef<Record<string, number>>({});
+  const remembered = held ?? own;
 
   const level = (slug: TrackSlug) => mix[slug] ?? 0;
   const anyOn = TRACKS.some((t) => level(t.slug) > 0);

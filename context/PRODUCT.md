@@ -223,11 +223,12 @@ the first here this hour*, or nothing when the count could not be read — never
 a guess. Names are only the ones people chose to share, at most three per
 place and sixty in all, and when there are several they take turns every
 twenty seconds. The clock is small in the top right. At the foot, *Sound*
-(opens the same six tiles and *Volume* as the sound question, as a sheet) and
+(opens the same six tiles and *Volume* as the sound question, as a sheet
+laid over the foot of the earth; Escape or a tap outside closes it) and
 *End*. *By yourself:* the same room, no
 earth, no line, the bowl faintly centred, the same clock and the same two
-controls. Sound, End and the dawn or dusk switch fade after four seconds and
-come back at a tap anywhere, so the sitting is the earth and the clock.
+controls. Sound, End, the dawn or dusk switch and the clock fade after four
+seconds and come back at a tap anywhere, so the sitting is the earth.
 
 **Until the bell.** Everyone who chooses *with others* hears the same bell at
 the same second, at :55. Arriving with under five minutes to go rolls forward

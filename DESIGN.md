@@ -434,11 +434,15 @@ family for the candles.
   right, the earth centred at its own 2.055 aspect and capped so the company
   line under it always fits, Sound and End on the safe-area inset. By
   yourself, the bowl stays faintly centred where the earth would be.
-- **The controls rest.** Sound, End and the dawn or dusk toggle (top left
-  during the sitting) are there when it begins and fade over 500ms after 4s
-  without a tap or a key; any tap or key brings them back. Resting they take
-  no pointer, so the waking tap never presses End. They stay while the sound
-  card is open or focus is inside them.
+- **The controls rest.** Sound, End, the dawn or dusk toggle (top left
+  during the sitting) and the clock are there when it begins and fade over
+  500ms after 4s without a tap or a key; any tap or key brings them back.
+  Resting they take no pointer, so the waking tap never presses End. They
+  stay while the sound sheet is open or focus is inside them.
+- **The Sound sheet lies over the earth.** `room` at 90% with a `room-edge`
+  hairline, card radius, absolute above Sound and End at `max-w-md`. It is
+  never in the layout, so the earth does not move when it opens; the earth
+  holds its frame behind it. Escape and a tap outside close it.
 - **Home and the documents scroll.** Home is still a centred 28rem column —
   a page with a header, like the map's, rather than a panel on the rail:
   wordmark and menu in the header, greeting, the two doors, and the bar
@@ -457,8 +461,9 @@ rule hairline: that is the whole depth model for fields, chips, cards and
 doors. **The menu** is the one thing that floats, with a 12px soft brown
 shadow, because it is the one thing that is over something else. The bowl's
 ripples are opacity, not shadow. On dusk there is no elevation at all: the
-Sound sheet mid-sitting is a light card on the dusk, which is contrast rather
-than depth.
+Sound sheet mid-sitting is `room` at 90% with a hairline, laid over the foot
+of the earth, and the earth showing faintly through is the only sign it is
+over anything.
 
 ### Named rules
 - **No shadow on a control.** A chip, a door, a button is flat on its
@@ -540,7 +545,8 @@ the drawer had the tiles with no level on them and the sitting had five
 play-and-fader rows in the paper palette, so the mix you learned on the rail
 was a different instrument at both of the other doors. The only thing that
 varies is the wrap: in the sitting it is three across at every width
-(`tight`), because there it shares the screen with the earth.
+(`tight`), because there it shares the screen with the earth, and it lies
+over the earth's foot rather than beside it, so the earth keeps its size.
 
 ### Timer dial
 `TimerDial`, the with-others time question. A 14px ring in rule on a 280-unit
@@ -692,7 +698,8 @@ hands back, rotating every 20s when there are several.
 
 ### The clock
 Nunito 600, 1.25rem, `tabular-nums`, dusk-ink, top right, `role="timer"`.
-It is not the subject; it is never larger than this.
+It is not the subject; it is never larger than this, and it rests with the
+controls — a tap shows it.
 
 ## Motion
 

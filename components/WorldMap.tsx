@@ -603,9 +603,9 @@ export default function WorldMap({
   /** Dawn or dusk: which palette the ground, the night and the lights are drawn in. */
   room?: Room;
   /**
-   * Hold the last frame and stop the loop: something covers the earth, and
-   * a full-screen canvas repainting sixty times a second under it is what
-   * makes that thing stutter.
+   * Hold the last frame and stop the loop: something covers the earth —
+   * Home's settings drawer, the sitting's Sound sheet — and a full-screen
+   * canvas repainting under it is what makes that thing stutter.
    */
   paused?: boolean;
   className?: string;
@@ -851,16 +851,30 @@ export default function WorldMap({
       '(prefers-reduced-motion: reduce)',
     ).matches;
 
+    // Thirty frames a second, not the display's sixty or more. The breath
+    // is five seconds long and the fastest ping under a second, so half the
+    // frames show nothing the eye can use, and an hour of them on a phone is
+    // heat. Under reduced motion nothing moves at all, so there is no loop:
+    // one frame, and another on the minute for the terminator.
+    const FRAME_MS = 1000 / 30;
     let raf = 0;
+    let drawnAt = 0;
     const startedAt = performance.now();
+    const loop = !reducedMotion;
 
-    const render = () => {
+    const render = (force = false) => {
       raf = 0;
       if (disposed) return;
       // Paused, this frame is drawn and it is the last until play resumes.
-      if (!pausedRef.current) raf = requestAnimationFrame(render);
+      if (loop && !pausedRef.current) raf = requestAnimationFrame(tick);
 
-      const elapsed = reducedMotion ? 0 : (performance.now() - startedAt) / 1000;
+      const at = performance.now();
+      if (!force && at - drawnAt < FRAME_MS) return;
+      // Kept in phase with the cap rather than reset to now, so a 60Hz
+      // display lands on every second frame instead of drifting to a third.
+      drawnAt = force ? at : at - ((at - drawnAt) % FRAME_MS);
+
+      const elapsed = reducedMotion ? 0 : (at - startedAt) / 1000;
 
       // The sun moves a quarter of a degree a minute, which is under a pixel
       // here, so the night is rebuilt on the minute rather than on the frame.
@@ -964,10 +978,18 @@ export default function WorldMap({
       ctx.globalCompositeOperation = 'source-over';
     };
 
-    render();
+    // The frame loop's own callback: `render` takes `force`, and a frame
+    // timestamp in that seat would count as one.
+    const tick = () => render();
+    render(true);
     redraw = () => {
-      if (!raf) render();
+      if (!raf) render(true);
     };
+    const minute = loop
+      ? 0
+      : window.setInterval(() => {
+          if (!pausedRef.current) redraw();
+        }, 60_000);
 
     const observer = new ResizeObserver(layout);
     observer.observe(host);
@@ -989,11 +1011,14 @@ export default function WorldMap({
         if (next !== builtRoom) layout();
       },
       setPaused: (next) => {
-        if (!next && !raf && !disposed) raf = requestAnimationFrame(render);
+        if (next || disposed) return;
+        if (!loop) redraw();
+        else if (!raf) raf = requestAnimationFrame(tick);
       },
       dispose: () => {
         disposed = true;
         cancelAnimationFrame(raf);
+        window.clearInterval(minute);
         observer.disconnect();
         abort.abort();
         image.onload = null;

@@ -1142,9 +1142,16 @@ earth's breath.
 
 `Sitting.tsx` takes a `Sit` — id, `startedAt` on the monotonic clock,
 `startedAtWall`, `endsAt`, `together`, `withOthers` — plus the `room` and the
-toggle, and renders the frame in the room. Sound, End and the toggle rest
+toggle, and renders the frame in the room. Sound, End, the toggle and the clock rest
 (opacity 0, no pointer events) after 4s without a pointer-down or key on the
-frame, and not while the sound card is open or focus is inside them. **With others:** `WorldMap` with a `you` prop, the viewer's own cell
+frame, and not while the sound sheet is open or focus is inside them. The
+sheet is absolute against the Sound/End row, `bottom-full`, over the foot of
+the earth: opening it changes nothing in the layout, and `WorldMap` holds
+its last frame (`paused`) while it is open. It focuses its first tile on
+open; Escape closes it and returns focus to *Sound*; a pointer-down outside
+the row closes it and leaves focus where the tap put it. The audition levels
+the tiles remember (`remembered`) live in a ref in `Sitting`, not in
+`Sounds`, because the sheet unmounts on close. **With others:** `WorldMap` with a `you` prop, the viewer's own cell
 from `useOrigin()`, drawn at 1.5× with a ring. The client marks itself; the
 server never does (`app/api/world/route.ts`). Under the earth, one line from
 `companyLine()` in `lib/company.ts`, built from the labels `/api/world` hands
@@ -1160,8 +1167,10 @@ back and the count from `/api/count`:
 
 The two come from two caches up to thirty seconds apart, so the line omits
 rather than contradicts. Labels rotate every `LABEL_TURN_MS` (20s) when
-several, picked from the wall clock so two devices agree. The clock is small,
-top right, `tabular-nums`, `role="timer"`. **By yourself:** same ground, no
+several, picked from the wall clock so two devices agree. The line is not a
+live region: it turns every 20s for the whole sitting. The clock is small,
+top right, `tabular-nums`, `role="timer"`, and rests with the controls; a tap
+shows it. **By yourself:** same ground, no
 earth, no line, the bowl faintly centred.
 
 `usePresence({ label })` sends the label on every beat while the person sits
@@ -1437,8 +1446,11 @@ they can be seen next to the code:
    stepped rim, so it is bled past the earth's edge and clipped to the vector
    outline — once, when it is baked over the ground into a single
    device-resolution image. The frame loop is one `drawImage` and the lights,
-   and it stops altogether (`paused`) while Home's settings drawer covers the
-   earth.
+   capped at 30fps (the breath is five seconds long; a display's sixty shows
+   nothing the eye can use), and it stops altogether (`paused`) while Home's
+   settings drawer or the sitting's Sound sheet covers the earth. Under
+   reduced motion there is no loop: one frame, and a redraw on the minute so
+   the terminator keeps moving.
 2. **The terrain pass is per-pixel and runs at half resolution**, which is
    invisible because the terrain has no edges of its own — every edge on this
    earth belongs to the coastline, and that is stroked over the top at full
