@@ -554,12 +554,17 @@ face, filled in ember clockwise from just past twelve o'clock to the hand; the
 hand a small ember knob, 28 units across with a 3.5-unit paper ring, flat,
 that swells to 115% while held. A small dot at every stop
 (paper on the filled arc, ink-3 at 60% beyond it) and the shared bell's stop a
-larger glow dot with *bell* outside the ring. The centre is the value — the
-minutes in Comfortaa 2.5rem, or the bell's time — over its unit in ink-3, and
-is not pressable. A gap at the top keeps the two ends from meeting. 15rem wide
-on a phone, 16rem to 19rem in its column beside the sentence. Beside it, the
-sentence is the screen's `h2`: Comfortaa 2.25rem to 3.75rem, the length and
-the count in ember.
+larger glow dot with *bell* outside the ring — HTML laid over the drawing at
+0.8125rem in room-ink-2, since 22 September 2026; as SVG text it scaled with
+the face to under 10px on a phone. The centre is the value — the minutes in
+Comfortaa 2.5rem, or the bell's time — over its unit in ink-3, and is not
+pressable. A gap at the top keeps the two ends from meeting. 15rem wide on a
+phone, 16rem to 19rem in its column beside the sentence. Under it, centred, a
+0.8125rem hint in room-ink-2, *Turn the dial*, that fades out over 200ms at
+the first drag or key and keeps its line, so Next does not move. Beside it,
+the sentence is the screen's `h2`: Comfortaa 2.25rem to 3.75rem, the count in
+ember and the length in room-ink — the dial changes the length, and in ember
+it read as something to press.
 
 ### Candle
 `Candle`, the by-yourself time question. A stage with no fill of its own, on

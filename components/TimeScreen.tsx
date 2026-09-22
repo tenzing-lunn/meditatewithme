@@ -49,8 +49,8 @@ export default function TimeScreen({
 /**
  * By yourself: your length, and the feeling that you are not the only one.
  *
- * *You're sitting for 10 minutes.* over *11 others are sitting somewhere
- * right now. They'll come and go; your time is your own.* — and beside it on
+ * *You're sitting for 10 minutes.* over *11 others are here right now.
+ * They'll come and go; your time is your own.* — and beside it on
  * a laptop, under it on a phone, the candle that sets the length. Nobody
  * joins anybody here, so the length is chosen freely and the people are
  * only company: a count and a light each, no names and no places. The count
@@ -91,7 +91,7 @@ function CandleTime({
               className="live-dot mr-2 mb-0.5 inline-block size-2 rounded-full bg-glow align-middle"
             />
             <span className="tabular-nums">{others}</span>{' '}
-            {others === 1 ? 'other person is' : 'others are'} sitting somewhere right now.
+            {others === 1 ? 'other person is' : 'others are'} here right now.
             They’ll come and go; your time is your own.
           </>
         ) : (
@@ -159,12 +159,12 @@ function JoinTime({
 
   const time = prefs.untilBell ? (
     <>
-      until <span className="text-room-action tabular-nums">{bellLabel ?? 'the bell'}</span>
+      until <span className="tabular-nums">{bellLabel ?? 'the bell'}</span>
     </>
   ) : (
     <>
       for{' '}
-      <span className="text-room-action tabular-nums">
+      <span className="tabular-nums">
         {duration.value} {duration.unit}
       </span>
     </>

@@ -155,7 +155,7 @@ slide left to right. The questions, in order:
    a mockup Tenzing approved (*Under one sky*).
 4. *How long will you sit?* — two different screens, by door. **By
    yourself**, since 15 September 2026, one large sentence, *You're sitting
-   for 10 minutes.*, over *11 others are sitting somewhere right now.
+   for 10 minutes.*, over *11 others are here right now.
    They'll come and go; your time is your own.* (with nobody else there,
    *Others will come and go while you sit; your time is your own.*), and a
    lit candle on a dark stage whose height is the length: dragging it up or

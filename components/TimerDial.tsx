@@ -43,7 +43,10 @@ function at(angle: number, radius = R) {
  * or a pointer drags along the ring. Pressing anywhere on the ring moves the
  * hand there. The centre says the value, large, and is not itself a control.
  * `marked` is one stop drawn larger and in glow, with a word beside it
- * outside the ring — the shared bell.
+ * outside the ring — the shared bell. The word is HTML laid over the drawing,
+ * not SVG text: SVG text scales with the face, and on a phone that put it
+ * under 10px. Under the face, one line says to turn the dial, until it is
+ * first turned or stepped by a key.
  *
  * HOW IT MOVES
  * Held, the knob is drawn exactly under the finger, on every move, and the
@@ -99,6 +102,8 @@ export default function TimerDial({
 
   const [held, setHeld] = useState(false);
   const heldRef = useRef(false);
+  // Once the dial has been turned, the hint has done its job and goes.
+  const [touched, setTouched] = useState(false);
 
   // The spring. Its state is in refs and stepped in a frame loop; only the
   // angle it has reached is state, because only that is drawn.
@@ -210,6 +215,7 @@ export default function TimerDial({
     else if (e.key === 'End') next = count - 1;
     else return;
     e.preventDefault();
+    setTouched(true);
     next = Math.min(count - 1, Math.max(0, next));
     if (next !== index) onChange(next);
   };
@@ -220,98 +226,106 @@ export default function TimerDial({
   const markAt = marked >= 0 ? at(stopAngle(marked, count), R + 26) : null;
 
   return (
-    <div
-      role="slider"
-      tabIndex={0}
-      aria-label={label}
-      aria-valuemin={0}
-      aria-valuemax={count - 1}
-      aria-valuenow={index}
-      aria-valuetext={valueText}
-      onKeyDown={onKeyDown}
-      className={`relative aspect-square w-full rounded-full ${FOCUS_ROOM}`}
-    >
-      <svg
-        ref={svgRef}
-        viewBox={`0 0 ${SIZE} ${SIZE}`}
-        className="block size-full cursor-pointer touch-none select-none"
-        aria-hidden
-        onPointerDown={(e) => {
-          const o = offset(e);
-          if (!o || Math.hypot(o.dx, o.dy) < INNER) return;
-          e.currentTarget.setPointerCapture(e.pointerId);
-          heldRef.current = true;
-          setHeld(true);
-          follow(e);
-        }}
-        onPointerMove={(e) => {
-          if (heldRef.current) follow(e);
-        }}
-        onPointerUp={release}
-        onPointerCancel={release}
-        onLostPointerCapture={release}
+    <div className="flex flex-col items-center">
+      <div
+        role="slider"
+        tabIndex={0}
+        aria-label={label}
+        aria-valuemin={0}
+        aria-valuemax={count - 1}
+        aria-valuenow={index}
+        aria-valuetext={valueText}
+        onKeyDown={onKeyDown}
+        className={`relative aspect-square w-full rounded-full ${FOCUS_ROOM}`}
       >
-        <path
-          d={`M ${start.x} ${start.y} A ${R} ${R} 0 1 1 ${end.x} ${end.y}`}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={14}
-          strokeLinecap="round"
-          className="text-room-ink-2/25"
-        />
-        {angle - DIAL_START > 0.5 && (
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${SIZE} ${SIZE}`}
+          className="block size-full cursor-pointer touch-none select-none"
+          aria-hidden
+          onPointerDown={(e) => {
+            const o = offset(e);
+            if (!o || Math.hypot(o.dx, o.dy) < INNER) return;
+            e.currentTarget.setPointerCapture(e.pointerId);
+            heldRef.current = true;
+            setHeld(true);
+            setTouched(true);
+            follow(e);
+          }}
+          onPointerMove={(e) => {
+            if (heldRef.current) follow(e);
+          }}
+          onPointerUp={release}
+          onPointerCancel={release}
+          onLostPointerCapture={release}
+        >
           <path
-            d={`M ${start.x} ${start.y} A ${R} ${R} 0 ${angle - DIAL_START > 180 ? 1 : 0} 1 ${hand.x} ${hand.y}`}
+            d={`M ${start.x} ${start.y} A ${R} ${R} 0 1 1 ${end.x} ${end.y}`}
             fill="none"
             stroke="currentColor"
             strokeWidth={14}
             strokeLinecap="round"
-            className="text-room-action"
+            className="text-room-ink-2/25"
           />
-        )}
-        {Array.from({ length: count }, (_, i) => {
-          const a = stopAngle(i, count);
-          const p = at(a);
-          const isMark = i === marked;
-          return (
-            <circle
-              key={i}
-              cx={p.x}
-              cy={p.y}
-              r={isMark ? 5 : 2.25}
-              fill="currentColor"
-              className={isMark ? 'text-glow' : a < angle - 1 ? 'text-room/70' : 'text-room-ink-2/50'}
+          {angle - DIAL_START > 0.5 && (
+            <path
+              d={`M ${start.x} ${start.y} A ${R} ${R} 0 ${angle - DIAL_START > 180 ? 1 : 0} 1 ${hand.x} ${hand.y}`}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={14}
+              strokeLinecap="round"
+              className="text-room-action"
             />
-          );
-        })}
+          )}
+          {Array.from({ length: count }, (_, i) => {
+            const a = stopAngle(i, count);
+            const p = at(a);
+            const isMark = i === marked;
+            return (
+              <circle
+                key={i}
+                cx={p.x}
+                cy={p.y}
+                r={isMark ? 5 : 2.25}
+                fill="currentColor"
+                className={isMark ? 'text-glow' : a < angle - 1 ? 'text-room/70' : 'text-room-ink-2/50'}
+              />
+            );
+          })}
+          <g
+            transform={`translate(${hand.x} ${hand.y})`}
+          >
+            <g
+              className={`transition-transform duration-200 ease-out motion-reduce:transition-none ${
+                held ? 'scale-[1.15]' : 'scale-100'
+              }`}
+            >
+              <circle r={14} fill="currentColor" className="text-room-action" />
+              <circle r={14} fill="none" stroke="currentColor" strokeWidth={3.5} className="text-room" />
+            </g>
+          </g>
+        </svg>
         {markAt && (
-          <text
-            x={markAt.x}
-            y={markAt.y}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fill="currentColor"
-            className="text-[11px] font-semibold text-room-ink-2"
+          <span
+            aria-hidden
+            className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 text-[0.8125rem] text-room-ink-2"
+            style={{ left: `${(markAt.x / SIZE) * 100}%`, top: `${(markAt.y / SIZE) * 100}%` }}
           >
             {markLabel}
-          </text>
+          </span>
         )}
-        <g
-          transform={`translate(${hand.x} ${hand.y})`}
-        >
-          <g
-            className={`transition-transform duration-200 ease-out motion-reduce:transition-none ${
-              held ? 'scale-[1.15]' : 'scale-100'
-            }`}
-          >
-            <circle r={14} fill="currentColor" className="text-room-action" />
-            <circle r={14} fill="none" stroke="currentColor" strokeWidth={3.5} className="text-room" />
-          </g>
-        </g>
-      </svg>
-      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-        {centre}
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+          {centre}
+        </div>
       </div>
+      <p
+        aria-hidden
+        className={`mt-3 text-[0.8125rem] text-room-ink-2 transition-opacity duration-200 motion-reduce:transition-none ${
+          touched ? 'opacity-0' : ''
+        }`}
+      >
+        Turn the dial
+      </p>
     </div>
   );
 }
