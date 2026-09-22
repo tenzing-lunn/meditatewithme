@@ -90,7 +90,7 @@ in `ARCHITECTURE.md`.
 **The front page is the doors.** A guest lands on this hour's earth, full
 screen, with the doors at the bottom over the dusk veil: *Meditate with me*
 in the rounded face where the mode question would be, one line above it
-saying who else is sitting right now, and the two doors beside it — *Sit with
+saying who else is here right now, and the two doors beside it — *Sit with
 everyone* (everyone finishes together at the next :55) and *Sit on your own*.
 Choosing a door is the first click on the site. A returning guest also sees a
 quiet line at the foot — *Your usual is 10 minutes · singing bowl · in
@@ -135,14 +135,15 @@ slide left to right. The questions, in order:
    *Skip* are on the name: *Leave it out* under the line once the prompt has typed,
    *Next* appearing to the right of it once something is typed. With it, a
    switch appears below them, off by default: *Let others
-   see Ana from Lisbon while you sit with them*, and one line saying nothing
-   is kept on our side until you say yes. Asked once; changeable from the
+   see Ana from Lisbon while you sit with them*, and one line saying it is
+   saved on this device and to your account if you're signed in, and shown to
+   others only while the switch is on. Asked once; changeable from the
    account.
 3. *How would you like to sit?* — the whole screen is this hour's earth at
    night, the same map and candles as the sitting, with a light for everyone
    sitting this hour and a dashed ring marked *You* where you are (the edge's
    guess, never kept). On a phone it shows the part of the earth around you;
-   on a laptop, all of it. At the bottom, *● 43 others are sitting right now*
+   on a laptop, all of it. At the bottom, *● 43 others are here right now*
    (the count less you; *Nobody else yet. Yours will be the first light.*
    when nobody is), the question, and two doors of the same size: **Sit with
    everyone**, lit in the candle's colour — *Everyone finishes together at
@@ -298,9 +299,11 @@ motion is honoured: the rail jumps, the strike is one pulse, the lift is a
 crossfade, the earth holds still.
 
 **Before a visitor arrives.** A shared link unfurls into a card — the flame
-mark, *Meditate with me* in the rounded face on the warm paper, and *A candle
-is lit at the top of every hour. Everyone is looking at the same one.* The
-tab and the iPhone home screen carry the same flame on dusk. The mark is
+mark, *Meditate With Me* in the rounded face on the warm paper, and *Everyone
+sitting this hour is a candle on the earth, and one bell at five to the hour
+ends it for all of them* — the one sentence the page description and the terms
+also use. The tab and the iPhone home screen carry the same flame on dusk,
+and the browser's theme colour is dusk to match. The mark is
 drawn (`components/FlameMark.tsx`) and provisional: if Jonny licenses his own
 imagery (§5), it is one file to replace.
 

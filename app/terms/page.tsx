@@ -40,7 +40,7 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <Document title="Terms" changed="8 September 2026">
+    <Document title="Terms" changed="22 September 2026">
       <p className="mt-6">
         The short version: this is a free place to sit for a while. Use it
         kindly, look after yourself, and know that it comes with no promises.
@@ -49,9 +49,10 @@ export default function TermsPage() {
 
       <Section title="What this is">
         <p>
-          A candle is lit at the top of every hour, and everyone on the site is
-          looking at the same one. You choose how long to sit, or you sit until
-          the bell and finish with everyone else who did. It costs nothing.
+          Everyone sitting this hour is a candle on the earth, and one bell at
+          five to the hour ends it for all of them. You choose how long to sit,
+          or you sit until the bell and finish with everyone else who did. It
+          costs nothing.
         </p>
         <p>
           We hope it is always there and cannot promise that it will be. It may
@@ -91,8 +92,8 @@ export default function TermsPage() {
           that inbox. What is done from your sign-in is yours.
         </p>
         <p>
-          You can delete your account at any time — <em>Your account</em>, at
-          the foot of your home page — and it goes at once. We may delete an
+          You can delete your account at any time — <em>Account</em>, in the
+          menu on your home page — and it goes at once. We may delete an
           account that is being used to harm the site or the people on it.
         </p>
       </Section>

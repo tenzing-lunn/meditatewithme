@@ -234,7 +234,7 @@ export default function OriginScreen({
                   you sit with them
                 </>
               }
-              description="Only while you sit with others, and only while this is on. Nothing is kept on our side until you say yes."
+              description="Saved on this device, and to your account if you're signed in. Shown to others only while this is on."
             />
           )}
         </LineActions>

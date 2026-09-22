@@ -33,7 +33,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <Document title="What this site stores" changed="14 September 2026">
+    <Document title="What this site stores" changed="22 September 2026">
       <p className="mt-6">
         Eight things are stored anywhere, and five of them only exist if you
         make an account. This page says what each one is, where it goes, how
@@ -41,7 +41,8 @@ export default function PrivacyPage() {
       </p>
       <p className="mt-4">
         There is no third-party analytics, no advertising, no tracking pixel,
-        and no cookie beyond the one your own sign-in uses.
+        and no cookies: even your sign-in is kept in your browser's own
+        storage on this device, not in a cookie.
       </p>
 
       <Section title="Where you are">

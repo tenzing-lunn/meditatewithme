@@ -33,7 +33,7 @@ const siteUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
   : 'http://localhost:3000';
 
 const description =
-  'A new session begins at the top of every hour. Everyone worldwide sits in the same one.';
+  'Everyone sitting this hour is a candle on the earth, and one bell at five to the hour ends it for all of them.';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -54,7 +54,9 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   colorScheme: 'light',
-  themeColor: '#f6e9d8',
+  // Dusk, not paper: Home and the sitting are full-bleed dusk, and the rail
+  // of questions is the only paper a visitor sees.
+  themeColor: '#2b1a10',
   // Without this, `env(safe-area-inset-bottom)` is always zero on iOS and the
   // controls at the foot of a screen sit inside the home-indicator zone. The
   // frame does not scroll and draws under the insets; only the padding at the

@@ -130,11 +130,11 @@ export function LiveLine({ others, lit }: { others: number | null; lit: boolean 
         }`}
       />
       {others >= 2
-        ? `${others} others are sitting right now`
+        ? `${others} others are here right now`
         : others === 1
-          ? '1 other person is sitting right now'
+          ? '1 other person is here right now'
           : lit
-            ? 'Nobody else is sitting right now'
+            ? 'Nobody else is here right now'
             : 'Nobody else yet. Yours will be the first light.'}
     </p>
   );

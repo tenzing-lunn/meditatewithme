@@ -98,7 +98,7 @@ export default async function OpengraphImage() {
             ...(fonts ? { fontFamily: 'Comfortaa' } : {}),
           }}
         >
-          Meditate with me
+          Meditate With Me
         </div>
 
         <div
@@ -110,8 +110,8 @@ export default async function OpengraphImage() {
             maxWidth: 760,
           }}
         >
-          A candle is lit at the top of every hour. Everyone is looking at the
-          same one.
+          Everyone sitting this hour is a candle on the earth, and one bell at
+          five to the hour ends it for all of them.
         </div>
 
         <div
