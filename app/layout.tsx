@@ -71,7 +71,22 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${comfortaa.variable} ${nunito.variable}`}>
-      <body className="font-body antialiased">{children}</body>
+      <body className="font-body antialiased">
+        {/* Every page's `<main>` is `#main`. Unseen until it has the keyboard;
+            then a primary button at the top left, over whatever page it is,
+            since ember on white reads on paper and on dusk alike. The fixed
+            wrapper is what positions it: `not-sr-only` sets `position` too,
+            and putting `fixed` on the link itself would race it. */}
+        <div className="fixed top-3 left-3 z-50">
+          <a
+            href="#main"
+            className="sr-only focus:not-sr-only focus:inline-flex focus:min-h-11 focus:items-center focus:rounded-action focus:bg-ember focus:px-5 focus:text-sm focus:font-semibold focus:text-white focus:ring-2 focus:ring-ember focus:ring-offset-2 focus:ring-offset-paper focus:outline-none"
+          >
+            Skip to content
+          </a>
+        </div>
+        {children}
+      </body>
     </html>
   );
 }

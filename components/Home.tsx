@@ -125,7 +125,9 @@ export default function Home({
   if (panel === null) {
     return (
       <EarthScene points={world.points} you={origin.cell} room={room} earth paused={drawer !== null} className="min-h-dvh">
-        <main className="flex min-h-dvh flex-col px-6 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:px-10 md:px-14 lg:px-20 xl:px-24">
+        {/* The foot grows at `lg` with the side gutters: at 1.5rem against
+            5rem sides the settings bar sat on the bottom edge of a laptop. */}
+        <main id="main" className="flex min-h-dvh flex-col px-6 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:px-10 md:px-14 lg:px-20 lg:pb-[calc(3.5rem+env(safe-area-inset-bottom))] xl:px-24">
           <header className="flex items-center justify-between gap-4">
             <Wordmark size="sm" room />
             <div className="flex items-center gap-2">
@@ -189,7 +191,7 @@ export default function Home({
   }
 
   return (
-    <main className="min-h-dvh bg-paper text-ink">
+    <main id="main" className="min-h-dvh bg-paper text-ink">
       <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
         <header className="flex items-center justify-between gap-4">
           <Wordmark size="sm" />
@@ -203,7 +205,6 @@ export default function Home({
               name={name}
               origin={profile.origin}
               share={profile.share === true}
-              sittings={entries.length}
               onName={updateName}
               onProfile={(origin, share) => setProfile({ origin, share })}
               deleteAccount={deleteAccount}
@@ -289,7 +290,6 @@ function AccountPanel({
   name,
   origin,
   share,
-  sittings,
   onName,
   onProfile,
   deleteAccount,
@@ -298,7 +298,6 @@ function AccountPanel({
   name: string | undefined;
   origin: string | null;
   share: boolean;
-  sittings: number;
   onName: (name: string) => Promise<string | null>;
   onProfile: (origin: string, share: boolean) => void;
   deleteAccount: () => Promise<string | null>;
@@ -378,7 +377,7 @@ function AccountPanel({
         />
         <div className="flex items-center gap-3">
           <button type="submit" disabled={saving} className={PRIMARY}>
-            {saving ? 'Saving' : 'Save'}
+            {saving ? 'Save…' : 'Save'}
           </button>
           <p role="status" className="text-[0.8125rem] text-ink-3">
             {note ?? ''}
@@ -402,8 +401,7 @@ function AccountPanel({
           <div className="rounded-card border border-rule bg-surface p-4">
             <p className="text-[0.9375rem] leading-relaxed">
               This removes your account and everything it holds: your email address,
-              your name, where you are from, your settings, and
-              {sittings === 1 ? ' the one sitting ' : ` the ${sittings} sittings `}
+              your name, where you are from, your settings, and the sittings
               synced to it. It cannot be undone.
             </p>
             <p className="mt-3 text-[0.8125rem] leading-relaxed text-ink-3">
@@ -438,7 +436,7 @@ function AccountPanel({
                 }}
                 className={`${CHIP} flex-1`}
               >
-                {busy ? 'Deleting' : 'Delete my account'}
+                {busy ? 'Delete my account…' : 'Delete my account'}
               </button>
             </div>
             {error && (
@@ -492,11 +490,6 @@ function RecentSittings({ entries }: { entries: PracticeEntry[] }) {
           </li>
         ))}
       </ul>
-      {entries.length > recent.length && (
-        <p className="mt-4 text-[0.8125rem] text-ink-3 tabular-nums">
-          and {entries.length - recent.length} more
-        </p>
-      )}
     </div>
   );
 }

@@ -17,9 +17,9 @@ import {
  * that a bad week must look like a quiet grid, never like a warning.
  *
  * That is also why the streak is phrased as days rather than shown as a number
- * with a flame next to it, and why the longest streak appears only once it is
- * genuinely longer than the current one — dangling a personal best over
- * somebody on day two is discouraging rather than motivating.
+ * with a flame next to it, and why there is no longest streak: a personal
+ * best is a scoreboard whoever it is shown to. `summarise` still computes it;
+ * nothing here reads it.
  */
 
 /** Thirteen weeks. Long enough to show a habit, short enough to fit a phone. */
@@ -68,14 +68,6 @@ export default function Practice({
           {s.sittings} sitting{s.sittings === 1 ? '' : 's'} ·{' '}
           {humanMinutes(s.totalMinutes)}
         </p>
-
-        {/* Only once it means something. A personal best of 2 shown to
-            somebody on day 2 is just noise. */}
-        {s.longestStreak > s.currentStreak && s.longestStreak > 2 && (
-          <p className="text-ink-3 text-sm tabular-nums">
-            Longest {s.longestStreak} days
-          </p>
-        )}
       </div>
 
       <Grid days={days} />

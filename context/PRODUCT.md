@@ -313,7 +313,7 @@ session renews itself. `Sign out` ends it on that device only.
 
 **Closing an account.** *Delete account*, in the account panel, opens a
 confirmation naming what goes — the email address, the name, where you are
-from, the settings and the sittings, counted — and saying the practice log on
+from, the settings and the sittings synced to it — and saying the practice log on
 this device stays. `Keep it` carries the chosen treatment and the destructive
 control does not. Deletion is immediate and total.
 

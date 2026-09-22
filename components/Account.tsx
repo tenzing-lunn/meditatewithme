@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
+import { NAME_MAX } from '@/lib/label';
 import type { AuthState } from './useAuth';
 import type { SyncStatus } from './useSyncPreferences';
 
@@ -68,8 +69,10 @@ type Drop = 'down' | 'up';
 /** name → email → code. Two questions and a confirmation, one at a time. */
 type Step = 'name' | 'email' | 'code';
 
+// `text-base`, not `text-sm`: iOS zooms the page when a field under 16px
+// takes focus, and did, on the name and the email.
 const FIELD =
-  'min-h-11 w-full rounded-control border border-rule bg-paper px-4 text-center text-sm text-ink placeholder:text-ink-3 focus-visible:border-ember focus-visible:ring-1 focus-visible:ring-ember focus-visible:outline-none';
+  'min-h-11 w-full rounded-control border border-rule bg-paper px-4 text-center text-base text-ink placeholder:text-ink-3 focus-visible:border-ember focus-visible:ring-1 focus-visible:ring-ember focus-visible:outline-none';
 
 const SUBMIT =
   'min-h-11 w-full rounded-action bg-ember px-6 text-sm font-semibold text-white transition-[filter] duration-200 hover:brightness-90 focus-visible:ring-2 focus-visible:ring-ember focus-visible:ring-offset-2 focus-visible:ring-offset-surface focus-visible:outline-none disabled:opacity-50';
@@ -263,6 +266,9 @@ export default function Account({
     setBusy(false);
     if (message) {
       setError(message);
+      // The submit was disabled while busy and dropped the keyboard; the
+      // thing to correct is the field.
+      firstField.current?.focus();
       return false;
     }
     return true;
@@ -293,7 +299,10 @@ export default function Account({
     setBusy(false);
     // No success branch: `onAuthStateChange` fires and the app changes screen
     // out from underneath this form.
-    if (message) setError(message);
+    if (message) {
+      setError(message);
+      firstField.current?.focus();
+    }
   };
 
   /**
@@ -472,7 +481,7 @@ export default function Account({
             // because the panel has not far to come and nothing to explain;
             // anything slower and the press and the arrival stop feeling like
             // one event.
-            className={`rounded-control w-[min(20rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-6rem)] overflow-y-auto border border-rule bg-surface shadow-[0_12px_32px_-12px_rgb(59_42_29_/_0.35)] p-5 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none ${
+            className={`rounded-control w-[min(20rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-6rem)] overflow-y-auto overscroll-contain border border-rule bg-surface shadow-[0_12px_32px_-12px_rgb(59_42_29_/_0.35)] p-5 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none ${
               entered
                 ? 'translate-y-0 opacity-100'
                 : `opacity-0 ${drop === 'down' ? '-translate-y-1.5' : 'translate-y-1.5'}`
@@ -508,8 +517,10 @@ export default function Account({
                   <input
                     id={nameId}
                     ref={firstField}
+                    name="name"
                     type="text"
                     required
+                    maxLength={NAME_MAX}
                     /* NOT `given-name`, WHICH IS WHAT SUMMONED THE DROPDOWN.
                        That attribute tells the browser this is a field on an
                        address form, so Chrome offered the saved profile — a
@@ -541,9 +552,12 @@ export default function Account({
                   <input
                     id={emailId}
                     ref={firstField}
+                    name="email"
                     type="email"
                     required
                     autoComplete="email"
+                    spellCheck={false}
+                    autoCapitalize="none"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
@@ -563,11 +577,14 @@ export default function Account({
                   <input
                     id={codeId}
                     ref={firstField}
+                    name="code"
                     // `one-time-code` is what lets a phone offer the digits
                     // from the notification instead of making somebody switch
                     // apps to read them.
                     autoComplete="one-time-code"
                     inputMode="numeric"
+                    spellCheck={false}
+                    autoCapitalize="none"
                     pattern="[0-9]{6}"
                     maxLength={6}
                     required
@@ -592,16 +609,15 @@ export default function Account({
                 </>
               )}
 
+              {/* Busy keeps the label and adds the ellipsis, so the button
+                  says what it is still doing rather than swapping words. */}
               <button type="submit" disabled={busy} className={SUBMIT}>
                 {step === 'name'
                   ? 'Continue'
                   : step === 'email'
-                    ? busy
-                      ? 'Sending'
-                      : 'Send me a code'
-                    : busy
-                      ? 'Checking'
-                      : 'Confirm and enter'}
+                    ? 'Send me a code'
+                    : 'Confirm and enter'}
+                {busy && '…'}
               </button>
 
               {/* Reserved too, for the same reason the hint is. */}

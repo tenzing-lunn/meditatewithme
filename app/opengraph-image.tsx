@@ -17,6 +17,9 @@ import { FlameMark } from '@/components/FlameMark';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
+// Next emits `og:image:alt` only from this export.
+export const alt =
+  'A flame over the words Meditate With Me: everyone sitting this hour is a candle on the earth, and one bell at five to the hour ends it for all of them.';
 
 /** The warm palette from `@theme` in app/globals.css; satori cannot read it. */
 const PAPER = '#f6e9d8';

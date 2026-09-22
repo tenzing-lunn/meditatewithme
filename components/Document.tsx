@@ -26,7 +26,7 @@ export function Document({
   children: ReactNode;
 }) {
   return (
-    <main className="min-h-dvh bg-paper px-5 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-16 text-ink-2 sm:px-8">
+    <main id="main" className="min-h-dvh bg-paper px-5 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-16 text-ink-2 sm:px-8">
       <header className="mx-auto flex max-w-[62ch] items-center justify-between gap-4">
         <Link href="/" className={QUIET}>
           <svg viewBox="0 0 24 24" className="size-4" fill="none" aria-hidden>
