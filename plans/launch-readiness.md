@@ -330,4 +330,10 @@ invoice you weren't expecting" promise forbids.
 - `plans/room-polish.md` — §4 only.
 - `plans/audit-2026-09-13.md` — the whole-site audit of 13 September: a
   Web Interface Guidelines punch list (Part A) and the Impeccable
-  audit + critique re-run (Part B). Nothing in it is fixed yet.
+  audit + critique re-run (Part B). Nothing in it is fixed yet, and the rows
+  that referred to the photographic room's components are closed by the
+  rebuild rather than by a fix — `plans/ui-ux-fixes.md` §1 says which.
+- `plans/audit-2026-09-21.md` — the UI/UX audit of the warm rail, 21
+  September: 7 High, 19 Medium, 16 Low, every line verified. Its plan is
+  `plans/ui-ux-fixes.md`: eleven commits in order, four decisions for Tenzing
+  first. Nothing in it is done yet.
