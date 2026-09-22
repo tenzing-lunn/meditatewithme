@@ -70,6 +70,13 @@ export interface Sit {
  * sound sheet is open and while focus is inside them, so a keyboard never
  * tabs onto something it cannot see; resting, they cannot be pressed, and
  * the tap that wakes them lands on the sitting instead.
+ *
+ * ENDED
+ * With `ended` the bell has rung and this is the held beat before the
+ * minutes: the clock is gone, the controls are rested for good and cannot
+ * be woken or reached, the sound sheet is closed, and *Come back.* sits
+ * over the earth — or the bowl — while the tail rings out. The company
+ * line stays: whoever was here at the bell is who you finished with.
  */
 export default function Sitting({
   sit,
@@ -87,6 +94,7 @@ export default function Sitting({
   onEnd,
   room,
   toggle,
+  ended = false,
 }: {
   sit: Sit;
   now: number | null;
@@ -105,6 +113,8 @@ export default function Sitting({
   room: Room;
   /** The dawn or dusk button, drawn and rested with the other controls. */
   toggle: ReactNode;
+  /** The bell has rung: the held beat, before the minutes. */
+  ended?: boolean;
 }) {
   const [soundOpen, setSoundOpen] = useState(false);
   const [awake, setAwake] = useState(true);
@@ -154,7 +164,12 @@ export default function Sitting({
     };
   }, [soundOpen]);
 
-  const shown = awake || soundOpen || focusInside;
+  // The bell may ring with the sheet open; it goes with the controls.
+  useEffect(() => {
+    if (ended) setSoundOpen(false);
+  }, [ended]);
+
+  const shown = !ended && (awake || soundOpen || focusInside);
   const controls = `transition-opacity duration-500 motion-reduce:transition-none ${
     shown ? 'opacity-100' : 'pointer-events-none opacity-0'
   }`;
@@ -178,18 +193,32 @@ export default function Sitting({
       {toggle && (
         <div
           className={`absolute top-[calc(0.875rem+env(safe-area-inset-top))] left-4 z-10 ${controls}`}
+          inert={ended}
           {...holdWhileFocused}
         >
           {toggle}
         </div>
       )}
-      <p
-        role="timer"
-        aria-label="Time left"
-        className={`absolute top-[calc(1rem+env(safe-area-inset-top))] right-5 z-10 text-xl tabular-nums text-room-ink-2 ${controls}`}
-      >
-        {mmss(remaining)}
-      </p>
+      {!ended && (
+        <p
+          role="timer"
+          aria-label="Time left"
+          className={`absolute top-[calc(1rem+env(safe-area-inset-top))] right-5 z-10 text-xl tabular-nums text-room-ink-2 ${controls}`}
+        >
+          {mmss(remaining)}
+        </p>
+      )}
+      {ended && (
+        <div
+          className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
+          role="status"
+          aria-label="Coming back"
+        >
+          <p className="font-display text-[2.25rem] font-bold leading-none sm:text-[3rem]">
+            Come back.
+          </p>
+        </div>
+      )}
 
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 px-4 pt-14 pb-4">
         {sit.withOthers ? (
@@ -229,6 +258,7 @@ export default function Sitting({
       <div
         ref={foot}
         className={`relative flex justify-center gap-3 px-6 pb-[calc(1.25rem+env(safe-area-inset-bottom))] ${controls}`}
+        inert={ended}
         {...holdWhileFocused}
       >
         {soundOpen && (

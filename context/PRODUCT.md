@@ -235,13 +235,20 @@ the same second, at :55. Arriving with under five minutes to go rolls forward
 to the next hour's bell. Nobody is refused. The bell you chose sounds at the
 start as well as the end, the opening strike with a shorter tail.
 
-**Afterwards.** Ten seconds of *Come back.* with the bowl still ringing and
-the mix receding; then the minutes sat at display size; then the rows that
-say something — days in a row, *With you this hour · 3 others* for a
-with-others sitting, altogether — and *Sit again* with *Done* (signed in,
-back to Home) or *Finish* (a guest, back to the doors). A guest's ending
-carries the account offer at the foot. Full screen is left on the way out,
-and the ground lifts back to paper.
+**Afterwards.** At the bell the earth stays: the clock goes, the controls
+rest for good, and *Come back.* sits over the candles for ten seconds while
+the bowl is still ringing and the mix recedes — someone who sat until the
+bell finishes in sight of everyone they sat with. Then the minutes sat at
+display size, one row — *With you this hour · 3 others*, for a with-others
+sitting, when it is known — and *Done* (signed in, back to Home) or *Finish*
+(a guest, back to the doors) as the lit button, with *Sit again* quiet
+beside it. No streak and no total here; those stay on Home. **Changed 22
+September 2026**: until then the earth vanished at the bell, a number
+counted the ten seconds down, *Days in a row* and *Altogether* were rows,
+*Sit again* was the lit button, and a guest's ending carried the account
+offer at its foot. The guest's offer is the three-line menu on the doors,
+where Finish returns them. Full screen is left on the way out, and the
+ground lifts back to paper.
 
 **Home, signed in.** *Meditate with me* small, the three-line menu, *Hello,
 Ana.*, the two doors, and under them one bar: *Your sitting* with the three

@@ -10,9 +10,13 @@ import { DEMO_POINTS } from './worldDemo';
  *
  * `/?demo=sitting` and `/?demo=finished`, in `next dev` only. A real sitting
  * rings a bell out of the speakers and writes to the practice log; this
- * mounts the two screens with an invented earth, a frozen clock, no
- * presence, no audio graph and no log, so they can be seen without any of
- * that happening. It is reached only through a dynamic import inside
+ * mounts the screens with an invented earth, a frozen clock, no presence,
+ * no audio graph and no log, so they can be seen without any of that
+ * happening. `finished` is the held beat — the sitting, ended, with *Come
+ * back.* over the earth — and stays there rather than moving on after ten
+ * seconds; `finished&settled` is what comes after it, the minutes and the
+ * ways on. `&alone` on either is the by-yourself sitting.
+ * It is reached only through a dynamic import inside
  * `Entry`'s `NODE_ENV === 'development'` branch, which is dead in a
  * production build, so this module and the fixture it imports are never
  * bundled. See `worldDemo.ts` for why that protection matters here.
@@ -33,16 +37,12 @@ export default function Demo({ which }: { which: string }) {
   // `&dawn` for the room in daylight.
   const room = params.has('dawn') ? 'dawn' : 'dusk';
 
-  if (which === 'finished') {
+  if (which === 'finished' && params.has('settled')) {
     return (
       <div data-room={room} className="contents">
       <Afterwards
         minutes={10}
         withOthers={alone ? null : 3}
-        endedAt={-20_000}
-        mono={mono}
-        entries={[]}
-        now={Date.now()}
         onAgain={() => {}}
         onFinish={() => {}}
       />
@@ -75,6 +75,7 @@ export default function Demo({ which }: { which: string }) {
       onEnd={() => {}}
       room={room}
       toggle={null}
+      ended={which === 'finished'}
     />
     </div>
   );

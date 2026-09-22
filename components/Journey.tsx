@@ -18,7 +18,7 @@ import {
 } from '@/lib/timer';
 import type { UserPreferences } from '@/lib/types';
 import Account from './Account';
-import Afterwards from './Afterwards';
+import Afterwards, { COOLDOWN_MS } from './Afterwards';
 import BellScreen from './BellScreen';
 import BowlScreen from './BowlScreen';
 import ModeScreen, { doorPatch } from './ModeScreen';
@@ -31,7 +31,7 @@ import SoundScreen from './SoundScreen';
 import type { MixPatch } from './Sounds';
 import TimeScreen from './TimeScreen';
 import { openingBell, scheduleBell, unlockAudio, type ScheduledBell } from './audio';
-import { ICON, ICON_ROOM, QUIET_ROOM } from './controls';
+import { ICON, ICON_ROOM } from './controls';
 import { settingsLine } from './settingsLine';
 import { displayName, type AuthState } from './useAuth';
 import { useClock } from './useClock';
@@ -84,12 +84,13 @@ type Stage =
   | { kind: 'sitting'; sit: Sit; bell: ScheduledBell | null; opening: ScheduledBell | null }
   | {
       kind: 'finished';
+      /** Kept for the held beat: the earth stays until the bell's tail has gone. */
+      sit: Sit;
       minutes: number;
       /** Monotonic, at the bell. */
       endedAt: number;
       /** Everyone who lit this hour minus you, read once at the bell. */
       withOthers: number | null;
-      withOthersShown: boolean;
     };
 
 function newSittingId(): string {
@@ -136,7 +137,6 @@ export default function Journey({
   update,
   onSound,
   mix,
-  entries,
   record,
   auth,
   sync,
@@ -199,8 +199,13 @@ export default function Journey({
     return () => window.clearTimeout(t);
   }, [stage.kind, reduced]);
 
-  // The earth, only while sitting with others.
-  const withOthersNow = stage.kind === 'sitting' && stage.sit.withOthers;
+  // The bell has rung and its tail has not gone: the sitting stays on screen,
+  // ended, before the minutes are said.
+  const held = stage.kind === 'finished' && mono - stage.endedAt < COOLDOWN_MS;
+  const sit = stage.kind === 'sitting' || held ? stage.sit : null;
+
+  // The earth, only while sitting with others, and through the held beat.
+  const withOthersNow = sit !== null && sit.withOthers;
   // And on the doors, which open on the earth.
   const world = useWorld(withOthersNow || (stage.kind === 'rail' && stage.at === 'mode'));
   const labels = world.points.flatMap((p) => p.labels ?? []);
@@ -209,7 +214,7 @@ export default function Journey({
   // Seen by name only while sitting with others, and only if they said so.
   const { count, litCount, begin: recordBegin } = usePresence({
     label: withOthersNow ? ownLabel : null,
-    sitting: stage.kind === 'sitting',
+    sitting: sit !== null,
   });
 
   // Read in cleanup and at the bell, where a stale closure would otherwise
@@ -368,12 +373,12 @@ export default function Journey({
     wakeLock.release();
     setStage({
       kind: 'finished',
+      sit,
       endedAt: performance.now(),
       minutes: Math.max(1, Math.round((sit.endsAt - sit.startedAt) / 60_000)),
       // Everyone who lit this hour, minus you. Somebody who sat the first
       // ten minutes and left was still in it with you.
       withOthers: litRef.current === null ? null : Math.max(0, litRef.current - 1),
-      withOthersShown: sit.withOthers,
     });
   }, [stage, mono, record, mix, wakeLock]);
 
@@ -418,9 +423,9 @@ export default function Journey({
   ) : undefined;
 
   const sitting =
-    stage.kind === 'sitting' ? (
+    sit !== null ? (
       <Sitting
-        sit={stage.sit}
+        sit={sit}
         now={now}
         mono={mono}
         count={count}
@@ -435,19 +440,18 @@ export default function Journey({
         onEnd={endEarly}
         room={room}
         toggle={roomToggle}
+        ended={stage.kind === 'finished'}
       />
     ) : null;
 
-  if (stage.kind === 'finished') {
+  // Past the held beat. Until then the finished stage is drawn below, in the
+  // frame the sitting was in, so the earth does not leave at the bell.
+  if (stage.kind === 'finished' && !held) {
     return (
       <div data-room={room} className="contents">
       <Afterwards
         minutes={stage.minutes}
-        withOthers={stage.withOthersShown ? stage.withOthers : null}
-        endedAt={stage.endedAt}
-        mono={mono}
-        entries={entries}
-        now={now ?? Date.now()}
+        withOthers={stage.sit.withOthers ? stage.withOthers : null}
         onAgain={begin}
         onDone={
           home
@@ -461,19 +465,6 @@ export default function Journey({
           fullscreen.exit();
           restart();
         }}
-        offer={
-          !signedIn ? (
-            <Account
-              state={auth}
-              sync={sync}
-              signIn={signIn}
-              verify={verify}
-              signOut={signOut}
-              className={QUIET_ROOM}
-              drop="up"
-            />
-          ) : undefined
-        }
       />
       </div>
     );

@@ -278,7 +278,7 @@ family for the candles.
   under 0.8125rem may use anything lighter.
 - **Rule** (`#e6d5c1`): the hairline around a control, the divider in a list,
   a switch's off track. Decorative; never measured as text.
-- **Ember** (`#9c3d12`): the action. Fills Next, Save, Sit again, Strike; outlines
+- **Ember** (`#9c3d12`): the action. Fills Next, Save, Done, Strike; outlines
   the chosen chip, the chosen door, the switch's on track; the focus ring.
   5.7:1 on paper, and white on it is 6.8:1.
 - **Ember-soft** (`#f8d7b8`): the chosen chip's fill and the hover of a menu
@@ -293,7 +293,7 @@ family for the candles.
   earth reads as an object on the dusk and not as a hole in it.
 - **Dusk-ink** (`#f6e9d8`): the same value as paper, used as type on dusk.
   The company line, the clock, the minutes afterwards. 14:1.
-- **Dusk-ink-2** (`#d7bfa6`): secondary on dusk — the ending's rows, the
+- **Dusk-ink-2** (`#d7bfa6`): secondary on dusk — the ending's row, the
   settings line. 9.5:1. At 55% it is the quiet control's border on dusk,
   3.8:1, which is the non-text floor.
 - **Flame** (`#e0a057`): the candle family. The sprites on the earth are
@@ -486,7 +486,7 @@ over anything.
 
 ### Buttons
 - **Primary** (`PRIMARY`): ember fill, white 600 text, pill, 44px,
-  `hover:brightness-90`. One per screen: Next, Done, Save, Sit again,
+  `hover:brightness-90`. One per screen: Next, Done (or Finish), Save,
   Confirm and enter.
 - **The foot, small** (`PRIMARY_SM`, `QUIET_SM`, `WORD_SM`): Back, Skip and
   Next under every question, 38px to look at with 0.875rem type, and an
@@ -501,7 +501,7 @@ over anything.
   `room-edge` — dusk-ink-2 at 55% over dusk (3.8:1), ink-3 at 80% over paper
   at dawn (3.4:1), both precomputed so the gate reads them. `Screen` takes
   `room` for its heading, lede, marks and foot; `Switch` takes `room`. The
-  Next and Back on time, bell, sound and the bowl, *Sit again* and Done are
+  Next and Back on time, bell, sound and the bowl, Done and *Sit again* are
   all these, and so are the tiles' own outlines and fills.
 - **Word** (`WORD`): ink-2 600 text, underlined in rule, ember on hover.
   Skip, Leave it out, Change on the bowl screen, the foot of the account
@@ -676,7 +676,7 @@ inside the drawer when the window is short. The three lines open it on the
 menu; *Change* on Home's bar opens it with Settings already open.
 
 ### Cards
-Surface on rule, card radius, 20px padding. The delete confirmation; the ending's fact rows are a list on dusk, not a card. The
+Surface on rule, card radius, 20px padding. The delete confirmation; the ending's one row is a list on dusk, not a card. The
 usual on the front page is deliberately **not** a card — a bordered box made
 last time's settings the second-loudest thing on the page the site opens
 with, so it is a line of type and the switch beside it.
@@ -740,8 +740,9 @@ controls — a tap shows it.
 - **Lift**: `--lift-ms: 1400ms`; `.lift-out` on the rail (scale to 0.55,
   down 28vh, fade), `.lift-in` on the sitting (from 1.06 / 0 to 1 / 1), the
   frame's background, already the room, on the same clock.
-- **Ending**: 10s hold on *Come back.* with the bell's tail, then 600ms
-  fades.
+- **Ending**: 10s hold on *Come back.* over the ended sitting — the earth
+  stays, the clock goes, the controls rest — with the bell's tail, then
+  the minutes settle in.
 - **Earth**: the shared breath and each candle's own flicker, from the cell's
   coordinates rather than `Math.random()`.
 - **Reduced motion**: one `@media` block sets rail and settle to 0ms and the
@@ -777,5 +778,6 @@ controls — a tap shows it.
 - **Don't** let a question or the sitting scroll. Home, the account panel,
   the practice panel and the documents are the screens that may.
 - **Don't** let a dashboard's vocabulary (stats, badges, progress) into the
-  sitting or the ending. The facts afterwards are rows in a sentence's
-  register, shown only when they say something.
+  sitting or the ending. The one fact afterwards — who was with you — is a
+  row in a sentence's register, shown only when it is known. No streak, no
+  total, no countdown: the ending is not a scoreboard.

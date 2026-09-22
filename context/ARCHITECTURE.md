@@ -682,7 +682,7 @@ meditatewithme/
 │   ├── use*.ts                  # every hook: auth, prefs, practice, mix, presence,
 │   │                            #   world, count, session, clock, profile, origin,
 │   │                            #   usual, fullscreen, wake lock, reduced motion
-│   └── Demo.tsx                 # dev-only: /?demo=sitting, /?demo=finished
+│   └── Demo.tsx                 # dev-only: /?demo=sitting, /?demo=finished[&settled]
 ├── scripts/
 │   └── contrast.mjs             # every palette pair against its threshold
 ├── lib/
@@ -1179,12 +1179,17 @@ with others with the switch on, beats immediately when it changes, and sends
 
 ### The ending
 
-`Afterwards.tsx`: a ten-second hold on *Come back.* with the bell's tail
-(`COOLDOWN_MS`), then the minutes at 3.5rem and the rows that say something
-(`summarise` in `lib/practice.ts` decides), *With you this hour* only for a
-with-others sitting and only when `withOthers !== null`. *Sit again* calls
-`begin()` inside the click; *Done* goes home, *Finish* goes back to the doors.
-Fullscreen is exited on the way out.
+The `finished` stage keeps its `sit`. For `COOLDOWN_MS` (ten seconds, in
+`Afterwards.tsx`) after `endedAt`, `Journey` goes on drawing `Sitting` in the
+same frame with `ended` set — no clock, the controls rested and `inert`, the
+sound sheet closed, the company line held, *Come back.* over the earth — so
+the earth and its candles do not leave at the bell; `useWorld` and
+`usePresence` stay on through the beat. Then `Afterwards.tsx`: the minutes at
+3.5rem, *With you this hour* only for a with-others sitting and only when
+`withOthers !== null`, and the two ways on. *Done* (home) or *Finish* (back
+to the doors) is the primary; *Sit again* is quiet and calls `begin()` inside
+the click. No streak or total: `currentStreak` and `summarise` are Home's
+(`Practice.tsx`). Fullscreen is exited on the way out.
 
 ### The doors are a preference
 
@@ -1292,8 +1297,10 @@ gone with it.
 
 ### A dev-only preview of the sitting
 
-`/?demo=sitting`, `/?demo=sitting&alone` and `/?demo=finished` mount the
-sitting and the ending with fixture points from `worldDemo.ts`, a frozen
+`/?demo=sitting`, `/?demo=sitting&alone`, `/?demo=finished` (the held beat,
+*Come back.* over the ended sitting) and `/?demo=finished&settled` (the
+minutes and the ways on) mount the sitting and the ending with fixture
+points from `worldDemo.ts`, a frozen
 clock, no presence and no audio graph (`components/Demo.tsx`, dynamically
 imported only under `NODE_ENV === 'development'`, so it is not in the
 production bundle). It is how the dusk screens are checked without striking
@@ -1334,8 +1341,8 @@ switch on and cleared otherwise.
 ### Journey takes two props that carry the whole difference
 
 `home?: () => void` present means signed in: the ending says *Done* and
-comes back here, Back on the first screen comes back here, and the account
-offer at the foot is not rendered. `afterMode` means the rail begins just
+comes back here, Back on the first screen comes back here, and the menu
+with the account offer is not pinned over the rail. `afterMode` means the rail begins just
 past the mode screen, because a door on Home already answered it. (Until 19
 September 2026 a third, `settings`, walked time, bell and sound and ended at
 Home; Settings is now a drawer on Home, `SettingsDrawer.tsx`.)
@@ -1372,10 +1379,10 @@ The answer lives in one file, and **the ground picks which applies**:
 
 | | Where | What it is |
 |---|---|---|
-| `PRIMARY` | One per screen, on paper | Ember fill, white type. Next, Save, Sit again. |
-| `QUIET` | Paper | A `rule` outline, `ink-2`, ember on hover. Back, Finish, Delete account. |
+| `PRIMARY` | One per screen, on paper | Ember fill, white type. Next, Save. |
+| `QUIET` | Paper | A `rule` outline, `ink-2`, ember on hover. Back, Delete account. |
 
-| `*_ROOM` | The room, dawn or dusk | The same shapes in the `room-*` tokens: ember and white at dawn, flame and dusk at dusk. Doors, Next and Back from the mode question on, Sound, End, Sit again, Done, the menu trigger and the toggle. |
+| `*_ROOM` | The room, dawn or dusk | The same shapes in the `room-*` tokens: ember and white at dawn, flame and dusk at dusk. Doors, Next and Back from the mode question on, Sound, End, Done or Finish (primary) and Sit again (quiet), the menu trigger and the toggle. |
 | `WORD` | Paper, beside a Next | Underlined in `rule`, ember on hover. Skip, Change, Leave it out. |
 | `CHIP` / `CHIP_ON` | Paper | Surface on `rule`; chosen is `ember-soft` with an ember edge. |
 | `ICON` | Paper | A 44px round surface. The two menus. |
