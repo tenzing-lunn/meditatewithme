@@ -1,89 +1,89 @@
 ---
 name: Meditate With Me
-description: A warm, light room of one question at a time, in a rounded face, that leads to a bowl; strike it and the light goes down to dusk, where the earth shows who is sitting with you. Ember is spent on the one thing that goes forward. Nothing is in the background until the sitting.
+description: Pale water. A dull, very light grey-blue pond where everyone sitting this hour is a small stone with slow rings spreading from it. One sentence and Begin; your stone skims in and settles; the bell is one wide ring. Newsreader for what the site says, the system sans for what you press, slate for the one thing that goes forward.
 colors:
-  paper: "#f6e9d8"
-  surface: "#fdf6ec"
-  ink: "#3b2a1d"
-  ink-2: "#6a5342"
-  ink-3: "#76604f"
-  rule: "#e6d5c1"
-  ember: "#9c3d12"
-  ember-soft: "#f8d7b8"
-  glow: "#d9661f"
-  dusk: "#2b1a10"
-  dusk-ink: "#f6e9d8"
-  dusk-ink-2: "#d7bfa6"
-  flame: "#e0a057"
-  flame-core: "#fbead2"
-  scrim: "#140c06"
+  paper: "#e5e9ec"
+  surface: "#eef1f3"
+  ink: "#2a3136"
+  ink-2: "#4f5a61"
+  ink-3: "#5a656c"
+  rule: "#cdd4d9"
+  ember: "#3e4c55"
+  ember-soft: "#d5dde2"
+  glow: "#6f7b82"
+  dusk: "#e5e9ec"
+  dusk-ink: "#2a3136"
+  dusk-ink-2: "#4f5a61"
+  flame: "#3e4c55"
+  flame-core: "#5f6a71"
+  scrim: "#1b2226"
   white: "#ffffff"
 typography:
   # Each role is a `--text-*` token in `@theme`; a role that grows with the
   # window carries its steps as `-sm`, `-md`, `-lg`, `-xl` tokens. Tailwind's
   # own scale is off. Floor 0.75rem, held by tests/type.test.ts.
   wordmark:
-    fontFamily: "Comfortaa, ui-rounded, system-ui, sans-serif"
+    fontFamily: "Newsreader, Georgia, serif"
     fontSize: "2.25rem / 3.25rem at sm / 4rem at md / 4.5rem at lg / 5rem at xl"
     fontWeight: 700
     lineHeight: 1.06
     letterSpacing: "-0.01em"
   sentence:
-    fontFamily: "Comfortaa, ui-rounded, system-ui, sans-serif"
+    fontFamily: "Newsreader, Georgia, serif"
     fontSize: "2.125rem / 2.75rem at sm / 3.5rem at lg"
     fontWeight: 700
     lineHeight: "1.08 to 1.1"
     letterSpacing: "-0.015em on the earth, normal beside an instrument"
   question:
-    fontFamily: "Comfortaa, ui-rounded, system-ui, sans-serif"
+    fontFamily: "Newsreader, Georgia, serif"
     fontSize: "1.75rem / 2.25rem at sm / 2.5rem at lg"
     fontWeight: 700
     lineHeight: 1.15
     letterSpacing: "normal"
   minutes:
-    fontFamily: "Comfortaa, ui-rounded, system-ui, sans-serif"
+    fontFamily: "Newsreader, Georgia, serif"
     fontSize: "3.5rem"
     fontWeight: 700
     lineHeight: 1
     letterSpacing: "normal"
   section:
-    fontFamily: "Comfortaa, ui-rounded, system-ui, sans-serif"
+    fontFamily: "Newsreader, Georgia, serif"
     fontSize: "1.5rem"
     fontWeight: 700
     lineHeight: 1.25
     letterSpacing: "normal"
   masthead:
-    fontFamily: "Comfortaa, ui-rounded, system-ui, sans-serif"
+    fontFamily: "Newsreader, Georgia, serif"
     fontSize: "1.25rem"
     fontWeight: 700
     lineHeight: 1
     letterSpacing: "-0.01em"
   answer:
-    fontFamily: "Nunito, ui-rounded, system-ui, sans-serif"
+    fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
     fontSize: "1.5rem / 1.75rem at sm"
     fontWeight: 400
     lineHeight: 1.5
     letterSpacing: "normal"
   clock:
-    fontFamily: "Nunito, ui-rounded, system-ui, sans-serif"
+    fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
     fontSize: "1.25rem"
     fontWeight: 400
     lineHeight: "normal"
     letterSpacing: "normal"
   body:
-    fontFamily: "Nunito, ui-rounded, system-ui, sans-serif"
+    fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
     fontSize: "1rem"
     fontWeight: 400
     lineHeight: 1.625
     letterSpacing: "normal"
   control:
-    fontFamily: "Nunito, ui-rounded, system-ui, sans-serif"
+    fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
     fontSize: "0.9375rem"
     fontWeight: 600
     lineHeight: "normal"
     letterSpacing: "normal"
   caption:
-    fontFamily: "Nunito, ui-rounded, system-ui, sans-serif"
+    fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
     fontSize: "0.8125rem"
     fontWeight: 400
     lineHeight: 1.5
@@ -221,6 +221,19 @@ components:
 ---
 
 # Meditate With Me — Design System
+
+> **Pale water, 22 September 2026, on `dev`.** The tokens above are the new
+> values; the palette, the type and the three screens a visitor sees (the
+> arrival, the sitting, the ending) were replaced to match the Pale water
+> wireframes on the redesign canvas. Where the prose below still speaks of
+> warm paper, ember, dusk, candles, the earth, Comfortaa or Nunito, it
+> describes the look being replaced and has not been rewritten yet. What is
+> built: `components/Pond.tsx` (one canvas, every frame: stones, rings, the
+> skim, the bell ring), `components/Arrive.tsx` (the sentence and Begin),
+> `components/Brand.tsx` (the stone-in-rings mark and the serif name), and
+> `Sitting` and `Afterwards` redrawn over the pond. Home, Settings, Account
+> and the documents only took the new tokens.
+
 
 Extracted from the code on 14 September 2026, the day the warm rail replaced
 the photographic room, and corrected against it on 22 September 2026, when

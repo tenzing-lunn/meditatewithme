@@ -958,6 +958,21 @@ writes to production metadata and that is a decision, not a side effect.
 
 ## 16. The screens
 
+**Pale water, 22 September 2026, on `dev`.** `Journey` now draws one `Pond`
+(a single canvas, redrawn every animation frame) under every stage and keeps
+it mounted from the arrival to the ending, so stones hold their places and
+your rings carry on while the words above change. The arrival (`Arrive`)
+replaces the doors and the time, bell, sound and bowl screens; `screensFor`
+returns `arrive`, then `name` and `origin` when due. Begin calls `begin()`
+inside the click exactly as the bowl did, and passes the button's position
+so the stone is thrown from it (`lib/pond.ts`: `skimAt`, pure and tested).
+`Sitting` fades in after the throw (`THROW_MS`); the bell's wide ring is the
+`finished` stage's `endedAt`. `ModeScreen`, `TimeScreen`, `BellScreen`,
+`SoundScreen`, `BowlScreen`, `Bowl` and the sitting's `WorldMap` are no
+longer reached from the journey; `ModeScreen`'s doors and `WorldMap` are
+still used by Home. What follows describes the rail and the earth as they
+were, and stands where it still applies.
+
 **Rewritten 14 September 2026.** Until then this section was the photographic
 room: a picture of a candle with one word on it, a ring for the sitting, a
 camera that racked between phases, and a page of measurements for setting

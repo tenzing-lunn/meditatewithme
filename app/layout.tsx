@@ -1,26 +1,19 @@
 import type { Metadata, Viewport } from 'next';
 import { preload } from 'react-dom';
-import { Comfortaa, Nunito } from 'next/font/google';
+import { Newsreader } from 'next/font/google';
 import './globals.css';
 
 /**
- * Two rounded faces. Comfortaa is the wordmark, the question on each screen
- * and the minutes at the end: it needs its 700 to hold a line on its own,
- * and 700 is the only weight it is ever set in, so it is the only one
- * loaded. Nunito is every sentence and every control; 600 is what a button
- * reads in. Neither is used below 0.8125rem (`--text-caption`).
+ * One face, Newsreader, a book serif: the wordmark, the sentence on the
+ * arrival and the minutes at the end — what the site says. Everything you
+ * press is the system's own sans (`--font-body` in globals.css), so nothing
+ * else is downloaded. Pale water, 22 September 2026.
  */
-const comfortaa = Comfortaa({
+const newsreader = Newsreader({
   subsets: ['latin'],
-  weight: ['700'],
-  variable: '--font-comfortaa',
-  display: 'swap',
-});
-
-const nunito = Nunito({
-  subsets: ['latin'],
-  weight: ['400', '600'],
-  variable: '--font-nunito',
+  axes: ['opsz'],
+  style: ['normal', 'italic'],
+  variable: '--font-newsreader',
   display: 'swap',
 });
 
@@ -58,7 +51,7 @@ export const viewport: Viewport = {
   colorScheme: 'light',
   // Dusk, not paper: Home and the sitting are full-bleed dusk, and the rail
   // of questions is the only paper a visitor sees.
-  themeColor: '#2b1a10',
+  themeColor: '#e5e9ec',
   // Without this, `env(safe-area-inset-bottom)` is always zero on iOS and the
   // controls at the foot of a screen sit inside the home-indicator zone. The
   // frame does not scroll and draws under the insets; only the padding at the
@@ -121,7 +114,7 @@ export default function RootLayout({
   preload('/earth/relief.jpg', { as: 'image', fetchPriority: 'low' });
 
   return (
-    <html lang="en" className={`${comfortaa.variable} ${nunito.variable}`}>
+    <html lang="en" className={newsreader.variable}>
       {/* `data-room` is written here by the script above, before the first
           paint, and `suppressHydrationWarning` is why React does not object to
           finding an attribute the server never rendered. It covers this

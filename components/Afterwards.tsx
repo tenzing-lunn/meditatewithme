@@ -1,8 +1,9 @@
 'use client';
 
-import { PRIMARY_ROOM, QUIET_ROOM } from './controls';
+import Brand from './Brand';
+import { WORD } from './controls';
 
-/** The held beat after the bell, on the earth, before this is shown. */
+/** The held beat after the bell, on the water, before this is shown. */
 export const COOLDOWN_MS = 10_000;
 
 /**
@@ -11,62 +12,46 @@ export const COOLDOWN_MS = 10_000;
  * The first ten seconds are not here. The bell is still ringing (the tails
  * are 18 to 22 seconds) and the mix is still receding, so the sitting stays
  * on screen with *Come back.* over it (`Sitting`, `ended`) and nothing is
- * said until the tail has gone. Then the minutes at display size, the one
- * fact that says something — who was with you this hour, only for a
- * with-others sitting and only when it is known — and the two ways on. No
+ * said until the tail has gone. Then, over the pond — which `Journey` keeps
+ * drawing underneath, the others gone and one wide ring still leaving your
+ * stone — the minutes in the serif, one line, and the two ways on. No
  * streak and no total: those are the practice log's, on Home, and the
- * ending is not a scoreboard. Done, or Finish, is the lit one: the sitting
- * is over.
+ * ending is not a scoreboard.
+ *
+ * Pale water, 22 September 2026: "who was with you this hour" is dropped
+ * from here, as the wireframe has it; the sitting's own line said it.
  */
 export default function Afterwards({
   minutes,
-  withOthers,
   onAgain,
   onDone,
   onFinish,
 }: {
   minutes: number;
-  /** Everyone who lit this hour, minus you. Null when unknown. */
-  withOthers: number | null;
   onAgain: () => void;
-  /** Signed in: back home. Absent for a guest, who gets Finish. */
+  /** Signed in: back home. Absent for a guest, who starts over. */
   onDone?: () => void;
   onFinish: () => void;
 }) {
-  const company =
-    withOthers === null
-      ? null
-      : withOthers === 0
-        ? 'Nobody else'
-        : `${withOthers} ${withOthers === 1 ? 'other' : 'others'}`;
-
   return (
-    // `#main`, like every page's: the skip link has somewhere to land once
-    // the sitting's frame has gone.
-    <main id="main" className="relative flex h-dvh w-full flex-col items-center justify-center bg-room px-6 text-room-ink">
-      <div className="flex w-full max-w-md flex-col items-center screen-settle">
-        <p className="font-display text-minutes font-bold leading-none">
+    <div id="main" className="relative flex h-dvh w-full flex-col px-6 text-ink sm:px-14 lg:px-24">
+      <header className="pt-[calc(1rem+env(safe-area-inset-top))]">
+        <Brand />
+      </header>
+      <div className="mx-auto mt-[58dvh] flex w-full max-w-md flex-col items-center text-center screen-settle">
+        <p className="font-display text-minutes leading-none">
           {minutes} {minutes === 1 ? 'minute' : 'minutes'}.
         </p>
-
-        {company && (
-          <dl className="mt-7 w-full max-w-[16rem] text-control">
-            <div className="flex items-baseline justify-between gap-6">
-              <dt className="text-room-ink-2">With you this hour</dt>
-              <dd className="tabular-nums">{company}</dd>
-            </div>
-          </dl>
-        )}
-
-        <div className="mt-9 flex gap-3">
-          <button type="button" onClick={onDone ?? onFinish} className={PRIMARY_ROOM}>
-            {onDone ? 'Done' : 'Finish'}
+        <p className="mt-4 text-body text-ink-2">The water is still again.</p>
+        <div className="mt-8 flex gap-8">
+          <button type="button" onClick={onAgain} className={`${WORD} text-ink`}>
+            Again
           </button>
-          <button type="button" onClick={onAgain} className={QUIET_ROOM}>
-            Sit again
+          <button type="button" onClick={onDone ?? onFinish} className={WORD}>
+            Done
           </button>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

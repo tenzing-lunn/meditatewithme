@@ -80,6 +80,33 @@ release, `7026657`.
 
 ## 2. What a visitor gets
 
+**On `dev` since 22 September 2026: Pale water.** Not on `main`, not shown
+to Jonny. The warm rail described below is replaced for the visit itself.
+A guest lands on a pale grey-blue pond: one small stone for each person lit
+this hour (up to 60, placed by a hash of their cell, not by geography), each
+with slow rings spreading from it, and a name beside a stone for those who
+chose to be seen. Over it, the name in Newsreader with the stone-in-rings
+mark, the time, the menu, and one sentence: *Sit for [15 minutes], end with
+[a singing bowl], in [silence].* Each bracket opens a short list: the
+length (the twelve stops, or *until the bell at :55, with everyone*), the
+three bells (picking one plays it), and silence or one of the five beds
+(picking one is silent until Begin). **Begin** starts the sitting in that
+click, as the bowl did, and throws your stone from the button: it skims
+across the water, slowing, and sinks at the centre, leaving its shadow and
+its rings. The sitting's words fade in once it has settled: the faint mark
+and the time left above, the company line and *Sound* and *End* below. At
+the bell the other stones go and one wide ring leaves yours; *Come back.*
+is held for ten seconds, then *N minutes. The water is still again.* with
+*Again* and *Done*. The name and place, when due after a first sitting, are
+asked after Begin, and the last question's Next begins.
+
+Gone from the visit on `dev`: the doors (with others, or on your own), the
+time/bell/sound/bowl screens, the dawn and dusk toggle, the full-screen
+switch on the bowl, the earth and its candles in the sitting, and *With
+you this hour* on the ending. A guest can no longer choose *on your own*;
+a member still can, from the doors on Home, which kept its old layout and
+only took the new colours and type.
+
 **Rebuilt on 14 September 2026** (`docs/ui-rebuild.md`, on `ui-warm`). The
 photographic room, the landing word, the settings panel and the ring are gone;
 what follows is the site as it is now. The functionality underneath — the

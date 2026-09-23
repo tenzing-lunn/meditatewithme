@@ -5,84 +5,48 @@ import { doorPatch, screensFor, step, togetherLine, usualFingerprint } from '../
 import { DEFAULT_PREFERENCES } from '../lib/preferences.ts';
 
 describe('screensFor', () => {
-  test('a guest, first time: nothing personal is asked', () => {
-    assert.deepEqual(
-      screensFor({ signedIn: false, usual: false, hasSat: false, originAsked: false }),
-      ['mode', 'time', 'bell', 'sound', 'bowl'],
-    );
+  test('a guest, first time: only the arrival', () => {
+    assert.deepEqual(screensFor({ signedIn: false, hasSat: false, originAsked: false }), ['arrive']);
   });
 
-  test('a guest who has sat is asked their name and place, once', () => {
+  test('a guest who has sat is asked their name and place, once, after Begin', () => {
     assert.deepEqual(
-      screensFor({ signedIn: false, usual: false, hasSat: true, originAsked: false }),
-      ['mode', 'name', 'origin', 'time', 'bell', 'sound', 'bowl'],
+      screensFor({ signedIn: false, hasSat: true, originAsked: false }),
+      ['arrive', 'name', 'origin'],
     );
-    assert.deepEqual(
-      screensFor({ signedIn: false, usual: false, hasSat: true, originAsked: true }),
-      ['mode', 'time', 'bell', 'sound', 'bowl'],
-    );
-  });
-
-  test('a guest who skips the questions is still asked, once', () => {
-    assert.deepEqual(
-      screensFor({ signedIn: false, usual: true, hasSat: true, originAsked: false }),
-      ['mode', 'name', 'origin', 'bowl'],
-    );
-    assert.deepEqual(
-      screensFor({ signedIn: false, usual: true, hasSat: true, originAsked: true }),
-      ['mode', 'bowl'],
-    );
-  });
-
-  test('signed in, first time: nothing personal is asked either', () => {
-    assert.deepEqual(
-      screensFor({ signedIn: true, usual: false, hasSat: false, originAsked: false }),
-      ['mode', 'time', 'bell', 'sound', 'bowl'],
-    );
+    assert.deepEqual(screensFor({ signedIn: false, hasSat: true, originAsked: true }), ['arrive']);
   });
 
   test('signed in and has sat: the place, never the name', () => {
     assert.deepEqual(
-      screensFor({ signedIn: true, usual: false, hasSat: true, originAsked: false }),
-      ['mode', 'origin', 'time', 'bell', 'sound', 'bowl'],
+      screensFor({ signedIn: true, hasSat: true, originAsked: false }),
+      ['arrive', 'origin'],
     );
-    assert.deepEqual(
-      screensFor({ signedIn: true, usual: false, hasSat: true, originAsked: true }),
-      ['mode', 'time', 'bell', 'sound', 'bowl'],
-    );
+    assert.deepEqual(screensFor({ signedIn: true, hasSat: true, originAsked: true }), ['arrive']);
   });
 
-  test('signed in, usual', () => {
-    assert.deepEqual(
-      screensFor({ signedIn: true, usual: true, hasSat: true, originAsked: true }),
-      ['mode', 'bowl'],
-    );
-  });
-
-  test('the bowl is always last and the doors are always first', () => {
+  test('the arrival is always first', () => {
     for (const signedIn of [true, false])
-      for (const usual of [true, false])
-        for (const hasSat of [true, false])
-          for (const originAsked of [true, false]) {
-            const s = screensFor({ signedIn, usual, hasSat, originAsked });
-            assert.equal(s[s.length - 1], 'bowl');
-            assert.equal(s[0], 'mode');
-            assert.equal(new Set(s).size, s.length);
-            // The name is never asked of a member, and never without the place.
-            if (signedIn) assert.equal(s.includes('name'), false);
-            if (s.includes('name')) assert.equal(s.includes('origin'), true);
-          }
+      for (const hasSat of [true, false])
+        for (const originAsked of [true, false]) {
+          const s = screensFor({ signedIn, hasSat, originAsked });
+          assert.equal(s[0], 'arrive');
+          assert.equal(new Set(s).size, s.length);
+          // The name is never asked of a member, and never without the place.
+          if (signedIn) assert.equal(s.includes('name'), false);
+          if (s.includes('name')) assert.equal(s.includes('origin'), true);
+        }
   });
 });
 
 describe('step', () => {
-  const s = screensFor({ signedIn: false, usual: false, hasSat: true, originAsked: false });
+  const s = screensFor({ signedIn: false, hasSat: true, originAsked: false });
   test('forward, back, and off the ends', () => {
-    assert.equal(step(s, 'mode', 1), 'name');
-    assert.equal(step(s, 'name', -1), 'mode');
-    assert.equal(step(s, 'mode', -1), null);
-    assert.equal(step(s, 'bowl', 1), null);
-    assert.equal(step(s, 'sound', 1), 'bowl');
+    assert.equal(step(s, 'arrive', 1), 'name');
+    assert.equal(step(s, 'name', -1), 'arrive');
+    assert.equal(step(s, 'arrive', -1), null);
+    assert.equal(step(s, 'origin', 1), null);
+    assert.equal(step(s, 'name', 1), 'origin');
   });
 });
 

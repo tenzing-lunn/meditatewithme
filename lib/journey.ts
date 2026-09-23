@@ -4,28 +4,19 @@ import type { UserPreferences } from './types';
  * Which screens a person walks, in which order.
  *
  * Pure: the hooks know the facts (signed in, has sat, asked once about their
- * origin, chose to skip the questions), this turns them into the rail. One
- * question per screen, and the bowl is always last, because the bowl is
- * where a sitting begins and nothing begins one from anywhere else.
+ * origin), this turns them into the rail. Since Pale water (22 September
+ * 2026) there is one screen where a sitting begins, the arrival: the pond,
+ * one sentence holding the length, the bell and the sound, and Begin. The
+ * rail's time, bell, sound and bowl screens folded into that sentence.
  */
 
-export const SCREENS = [
-  'mode',
-  'name',
-  'origin',
-  'time',
-  'bell',
-  'sound',
-  'bowl',
-] as const;
+export const SCREENS = ['arrive', 'name', 'origin'] as const;
 
 export type Screen = (typeof SCREENS)[number];
 
 export interface JourneyFacts {
   /** Their name comes from the account, so the name screen is skipped. */
   signedIn: boolean;
-  /** "Skip the questions and use these" is on and nothing has changed. */
-  usual: boolean;
   /** A completed sitting is in the practice log, on this device or account. */
   hasSat: boolean;
   /** They have been asked where they are from, whatever they answered. */
@@ -33,26 +24,22 @@ export interface JourneyFacts {
 }
 
 /**
- * Everybody starts at the doors: with everyone, or on your own, on this
- * hour's earth. For a guest that screen is the front page — there is no
- * title page before it. Somebody signed in arrives through a door on their
- * home, so their rail begins just past it.
+ * Everybody starts at the arrival. For a guest that is the front page;
+ * somebody signed in reaches it through a door on their home.
  *
  * A first visit asks nothing personal: by default nobody sees a name or a
  * place, so they would be an entrance fee with no payoff. The visit after a
- * first completed sitting asks once — a guest their name and then their
- * place, a member their place, since the name came with the account — and
- * whatever they answer, including nothing, is the answer from then on.
- * "Usual" drops the three questions and keeps the door and the bowl.
+ * first completed sitting asks once, after Begin — a guest their name and
+ * then their place, a member their place, since the name came with the
+ * account — and whatever they answer, including nothing, is the answer from
+ * then on. The last question's Next begins the sitting.
  */
 export function screensFor(f: JourneyFacts): Screen[] {
-  const out: Screen[] = ['mode'];
+  const out: Screen[] = ['arrive'];
   if (f.hasSat && !f.originAsked) {
     if (!f.signedIn) out.push('name');
     out.push('origin');
   }
-  if (!f.usual) out.push('time', 'bell', 'sound');
-  out.push('bowl');
   return out;
 }
 

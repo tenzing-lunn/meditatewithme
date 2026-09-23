@@ -1,13 +1,14 @@
 @import "tailwindcss";
 
 /*
- * The warm palette, since 14 September 2026.
+ * Pale water, since 22 September 2026 (on `dev`).
  *
- * The screen is a soft brown, lit from within: paper is the ground, surface
- * is a field or a door resting on it, and ember is the one colour that means
- * "press this". Everything before and after the sitting is light. The
- * sitting itself is dusk, a deep warm brown, because the flames on the earth
- * are additive light and only read against a dark ground.
+ * One ground for the whole visit: a dull, very light grey-blue, like still
+ * water under a white sky. Everyone sitting is a small stone on it with
+ * rings spreading slowly outward (`components/Pond.tsx`). `ember` keeps its
+ * name but is now slate, the one colour that means "press this" and the
+ * colour of your own stone. The `dusk` and `room` names are kept so the
+ * screens that use them need no edit; both rooms are the same pale ground.
  *
  * CONTRAST IS A CONSTRAINT, NOT A PREFERENCE
  * WCAG AA is not optional here. Every ink and ember value clears 4.5:1
@@ -20,45 +21,45 @@
  * Check with `npm run contrast` before changing any of these.
  */
 @theme {
-  --color-paper: #f6e9d8;
-  --color-surface: #fdf6ec;
-  --color-ink: #3b2a1d;
-  --color-ink-2: #6a5342;
-  --color-ink-3: #76604f;
-  --color-rule: #e6d5c1;
-  --color-ember: #9c3d12;
-  --color-ember-soft: #f8d7b8;
-  --color-glow: #d9661f;
+  --color-paper: #e5e9ec;
+  --color-surface: #eef1f3;
+  --color-ink: #2a3136;
+  --color-ink-2: #4f5a61;
+  --color-ink-3: #5a656c;
+  --color-rule: #cdd4d9;
+  --color-ember: #3e4c55;
+  --color-ember-soft: #d5dde2;
+  --color-glow: #6f7b82;
 
   /* The sitting's ground and the type that sits on it. */
-  --color-dusk: #2b1a10;
-  --color-dusk-ink: #f6e9d8;
-  --color-dusk-ink-2: #d7bfa6;
-  --color-flame: #e0a057;
+  --color-dusk: #e5e9ec;
+  --color-dusk-ink: #2a3136;
+  --color-dusk-ink-2: #4f5a61;
+  --color-flame: #3e4c55;
   /* The hot core of a flame: the mark's inner shape and the pale centre of
      a far light by the candle. Decorative, never text. */
-  --color-flame-core: #fbead2;
+  --color-flame-core: #5f6a71;
   /* The scrim under the settings drawer, over Home. Never text. */
-  --color-scrim: #140c06;
+  --color-scrim: #1b2226;
 
   /* The room — from the choice to the ending — in its dusk values. Wherever
      `[data-room="dawn"]` is set (below) the same names take the paper values,
      so Settings, which is always dawn, looks as the questions always have.
      `room-edge` is dusk-ink-2 at 55% over dusk, precomputed so the contrast
      gate can read it; `room-action-ink-2` is dusk at 80% over flame. */
-  --color-room: #2b1a10;
-  --color-room-ink: #f6e9d8;
-  --color-room-ink-2: #d7bfa6;
-  --color-room-edge: #8a7563;
-  --color-room-action: #e0a057;
-  --color-room-action-ink: #2b1a10;
-  --color-room-action-ink-2: #4f351e;
+  --color-room: #e5e9ec;
+  --color-room-ink: #2a3136;
+  --color-room-ink-2: #4f5a61;
+  --color-room-edge: #737e85;
+  --color-room-action: #3e4c55;
+  --color-room-action-ink: #ffffff;
+  --color-room-action-ink-2: #d5dde2;
 
-  /* Two rounded faces: Comfortaa is the wordmark and the questions,
-     Nunito is every sentence and every control. Numerals are Nunito with
-     tabular figures so the clock does not jitter. */
-  --font-display: var(--font-comfortaa), ui-rounded, system-ui, sans-serif;
-  --font-body: var(--font-nunito), ui-rounded, system-ui, sans-serif;
+  /* Newsreader is what the site says (the wordmark, the sentence, the
+     minutes); the system sans is every control. Numerals take tabular
+     figures so the clock does not jitter. */
+  --font-display: var(--font-newsreader), Georgia, serif;
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   --font-numeral: var(--font-body);
   --font-sans: var(--font-body);
 
@@ -71,7 +72,7 @@
      block and fails on anything under 0.75rem, and on any arbitrary or
      default-scale size in components/ or app/. */
   --text-*: initial;
-  /* Comfortaa 700, never under 1.25rem. */
+  /* Newsreader, never under 1.25rem. */
   --text-wordmark: 2.25rem;
   --text-wordmark-sm: 3.25rem;
   --text-wordmark-md: 4rem;
@@ -92,7 +93,7 @@
   --text-section: 1.5rem;
   /* The wordmark in a corner, the candle's minutes, a door's title. */
   --text-masthead: 1.25rem;
-  /* Nunito. */
+  /* The system sans. */
   /* A typed answer on the rail: the line. */
   --text-answer: 1.5rem;
   --text-answer-sm: 1.75rem;
@@ -113,7 +114,7 @@
 
   /* The one shadow. The menu and the place list float over the page; nothing
      else does — a control is flat on its surface (`DESIGN.md`). */
-  --shadow-menu: 0 12px 32px -12px rgb(59 42 29 / 0.35);
+  --shadow-menu: 0 12px 32px -12px rgb(42 49 54 / 0.3);
 }
 
 /*
@@ -123,13 +124,13 @@
  * from the hour and the toggle; `Journey`, `Home` and `EarthScene` set it.
  */
 [data-room="dawn"] {
-  --color-room: #f6e9d8;
-  --color-room-ink: #3b2a1d;
-  --color-room-ink-2: #6a5342;
-  --color-room-edge: #907b6a;
-  --color-room-action: #9c3d12;
+  --color-room: #e5e9ec;
+  --color-room-ink: #2a3136;
+  --color-room-ink-2: #4f5a61;
+  --color-room-edge: #737e85;
+  --color-room-action: #3e4c55;
   --color-room-action-ink: #ffffff;
-  --color-room-action-ink-2: #f8d7b8;
+  --color-room-action-ink-2: #d5dde2;
 }
 
 /*

@@ -172,7 +172,6 @@ export default function Entry() {
         linkError={linkError}
         signOut={signOut}
         home={auth.status === 'signed-in' ? goHome : undefined}
-        afterMode={auth.status === 'signed-in' && view === 'journey'}
       />
     </>
   );

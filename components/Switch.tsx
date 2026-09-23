@@ -53,7 +53,7 @@ export default function Switch({
               : room
                 ? 'border-room-edge group-hover:border-room-action'
                 : dusk
-                  ? 'border-dusk-ink-2/55 group-hover:border-flame'
+                  ? 'border-dusk-ink-2/75 group-hover:border-flame'
                   : 'border-rule bg-surface group-hover:border-ember'
           }`}
         >
