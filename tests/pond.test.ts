@@ -1,7 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { ringsAt, skimAt, skimConfig, spotFor, touchRings } from '../lib/pond.ts';
+import { flickConfig, ringsAt, skimAt, skimConfig, spotFor, touchRings } from '../lib/pond.ts';
 
 describe('skimAt', () => {
   const c = skimConfig({ x: 100, y: 800 }, { x: 720, y: 400 }, 1440, 900);
@@ -49,5 +49,17 @@ describe('spotFor', () => {
     const avoid = (p: { x: number; y: number }) => p.y > 0.6;
     assert.deepEqual(spotFor('51,0#0', avoid), spotFor('51,0#0', avoid));
     for (let i = 0; i < 50; i++) assert.ok(spotFor(`k${i}`, avoid).y <= 0.6);
+  });
+});
+
+describe('flickConfig', () => {
+  test('lands where the water was touched in 1.9 seconds, near or far', () => {
+    for (const to of [{ x: 200, y: 700 }, { x: 300, y: 80 }]) {
+      const c = flickConfig({ x: 150, y: 870 }, to, -1);
+      assert.equal(c.T, 1.9);
+      const end = skimAt(1.9, c).stone;
+      assert.ok(Math.abs(end.x - to.x) < 1e-6 && Math.abs(end.y - to.y) < 1e-6);
+      assert.ok(c.n >= 3 && c.n <= 9);
+    }
   });
 });

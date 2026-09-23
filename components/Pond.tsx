@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useImperativeHandle, useRef, type Ref } from 'react';
 
 import {
+  flickConfig,
   reachFor,
   ringsAt,
   skimAt,
@@ -11,6 +12,7 @@ import {
   touchRings,
   type Point,
   type Ring,
+  type SkimConfig,
   type Source,
 } from '@/lib/pond';
 
@@ -34,6 +36,21 @@ export interface Stone {
   label?: string;
 }
 
+/** What the page can do to the water from outside. */
+export interface PondHandle {
+  /** Flick a pale pebble from the shore to this point (client pixels). */
+  flick: (at: Point) => void;
+}
+
+/** A pebble in the air or just sunk: its throw, and when it left the hand (ms). */
+interface Flick {
+  cfg: SkimConfig;
+  t0: number;
+}
+
+/** A flicked pebble's own rings once it has sunk: a few, soon gone. */
+const SETTLE = { rings: 3, period: 1.1, life: 4.5, reach: 70 };
+
 /** Where your stone lands, as a fraction of the pond. */
 export const YOU: Point = { x: 0.5, y: 0.44 };
 
@@ -42,6 +59,8 @@ const STONE = '#9ba6ac';
 const ACCENT = '#3e4c55';
 const SHADOW = '47,59,66';
 const LABEL = '#5a656c';
+/** The flicked pebble: pale, so it is yours to play with and not a person. */
+const PALE = '#f6f8f9';
 
 export default function Pond({
   stones,
@@ -50,6 +69,7 @@ export default function Pond({
   bellAt,
   reduced,
   className = '',
+  ref,
 }: {
   stones: readonly Stone[];
   /** Whether your stone is on the water (or on its way). */
@@ -64,6 +84,7 @@ export default function Pond({
   bellAt: number | null;
   reduced: boolean;
   className?: string;
+  ref?: Ref<PondHandle>;
 }) {
   const canvas = useRef<HTMLCanvasElement | null>(null);
   const props = useRef({ stones, you, throwFrom, bellAt, reduced });
@@ -71,6 +92,34 @@ export default function Pond({
 
   /** When each stone was first seen, so a newcomer fades in rather than appears. */
   const seen = useRef(new Map<string, number>());
+
+  /**
+   * Touch the water and a pebble skims to that spot from the shore below,
+   * in 1.9 seconds whatever the distance. Off under reduced motion: it is
+   * play, and the motion is all it is.
+   */
+  const flicks = useRef<Flick[]>([]);
+  useImperativeHandle(
+    ref,
+    () => ({
+      flick(at) {
+        const el = canvas.current;
+        if (!el || props.current.reduced) return;
+        const r = el.getBoundingClientRect();
+        const to = { x: at.x - r.left, y: at.y - r.top };
+        const side: 1 | -1 = Math.random() < 0.5 ? 1 : -1;
+        // From just below the bottom edge, a little to one side, as if
+        // thrown from the near bank.
+        const from = {
+          x: Math.max(-20, Math.min(r.width + 20, to.x - side * Math.min(180, r.width * 0.3))),
+          y: r.height + 24,
+        };
+        flicks.current.push({ cfg: flickConfig(from, to, side), t0: performance.now() });
+        if (flicks.current.length > 12) flicks.current.shift();
+      },
+    }),
+    [],
+  );
 
   useEffect(() => {
     const el = canvas.current;
@@ -116,7 +165,10 @@ export default function Pond({
       ctx.globalAlpha = 1;
     };
 
-    const pebble = (x: number, y: number, pw: number, ph: number, rot: number, fill: string, alpha: number) => {
+    const pebble = (
+      x: number, y: number, pw: number, ph: number, rot: number, fill: string, alpha: number,
+      edge?: string,
+    ) => {
       if (alpha <= 0) return;
       ctx.save();
       ctx.translate(x, y);
@@ -127,6 +179,10 @@ export default function Pond({
       // A little lopsided, like the CSS pebble in the wireframes.
       ctx.ellipse(0, 0, pw / 2, ph / 2, 0.08, 0, Math.PI * 2);
       ctx.fill();
+      if (edge) {
+        ctx.strokeStyle = edge;
+        ctx.stroke();
+      }
       ctx.restore();
     };
 
@@ -240,7 +296,37 @@ export default function Pond({
         }
       }
 
+      // Flicked pebbles: their touches, and once sunk, a few rings of their own.
+      const flying: { x: number; y: number; h: number; sunk: number; spin: number }[] = [];
+      flicks.current = flicks.current.filter((f) => {
+        const since = (nowMs - f.t0) / 1000;
+        const end = f.cfg.T + (SETTLE.rings - 1) * SETTLE.period + SETTLE.life;
+        if (since > end) return false;
+        const frame = skimAt(since, f.cfg);
+        rings.push(...touchRings(frame.touches));
+        for (let j = 0; j < SETTLE.rings; j++) {
+          const age = since - f.cfg.T - j * SETTLE.period;
+          if (age < 0 || age > SETTLE.life) continue;
+          const u = age / SETTLE.life;
+          rings.push({
+            x: f.cfg.to.x, y: f.cfg.to.y, r: 2 + u ** 0.75 * SETTLE.reach,
+            o: Math.min(1, age / 0.3) * (1 - u) ** 1.7 * 0.7, yours: false,
+          });
+        }
+        if (frame.stone.sunk < 1) flying.push(frame.stone);
+        return true;
+      });
+
       for (const r of rings) ring(r);
+
+      for (const f of flying) {
+        const so = f.sunk > 0 ? 0.2 * (1 - f.sunk) : 0.22 - f.h * 0.03;
+        shadow(f.x, f.y + 1, 11 + f.sunk * 3, 4.5 + f.sunk * 3, so);
+        pebble(
+          f.x, f.y - f.h - 2, 12, 9, (f.spin * 1.6 - 8) * (Math.PI / 180), PALE, 1 - f.sunk,
+          `rgba(${INK},${(0.35 * (1 - f.sunk)).toFixed(3)})`,
+        );
+      }
 
       const phone = w < 640;
       ctx.font = `${phone ? 11 : 12}px system-ui, -apple-system, 'Segoe UI', sans-serif`;

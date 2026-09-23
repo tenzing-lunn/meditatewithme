@@ -54,6 +54,7 @@ export default function Arrive({
   leaving,
   onBegin,
   onPreviewBell,
+  onWater,
 }: {
   prefs: UserPreferences;
   update: (patch: Partial<UserPreferences>) => void;
@@ -70,6 +71,8 @@ export default function Arrive({
   leaving: boolean;
   onBegin: (from: Point) => void;
   onPreviewBell: (kind: BellKind) => void;
+  /** A tap on bare water, in client pixels: somewhere to skim a pebble to. */
+  onWater?: (at: Point) => void;
 }) {
   const together = prefs.showCount && prefs.untilBell;
   const sound: TrackSlug | 'silence' =
@@ -87,6 +90,12 @@ export default function Arrive({
         leaving ? 'pointer-events-none opacity-0' : 'opacity-100'
       }`}
       inert={leaving}
+      onClick={(e) => {
+        // Only bare water: never a phrase, a list, Begin, the menu or a word.
+        const hit = e.target as Element;
+        if (hit.closest('button, a, input, [role="menu"], [role="dialog"], header, p')) return;
+        onWater?.({ x: e.clientX, y: e.clientY });
+      }}
     >
       <header className="flex items-center justify-between">
         <Brand />

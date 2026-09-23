@@ -129,6 +129,28 @@ export interface SkimFrame {
   stopAt: number;
 }
 
+/**
+ * A pebble flicked from the shore to wherever the water was touched: the
+ * same throw, quicker. It always takes `T` seconds however far it goes, so a
+ * long throw skips more times and flies faster; a short one is two or three
+ * soft touches. The bow's side is the caller's (`side`, ±1), so a run of
+ * throws do not all curve the same way.
+ */
+export function flickConfig(from: Point, to: Point, side: 1 | -1, T = 1.9): SkimConfig {
+  const d = Math.hypot(to.x - from.x, to.y - from.y);
+  return {
+    from,
+    to,
+    n: Math.max(3, Math.min(9, Math.round(d / 75))),
+    ratio: 0.78,
+    T,
+    k: 2,
+    H: 2.5,
+    bend: side * Math.min(40, d * 0.1),
+    sink: 0.7,
+  };
+}
+
 export function skimConfig(from: Point, to: Point, width: number, height: number): SkimConfig {
   const phone = width < 640;
   return {

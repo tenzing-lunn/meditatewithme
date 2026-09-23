@@ -17,7 +17,7 @@ import {
 import type { UserPreferences } from '@/lib/types';
 import Afterwards, { COOLDOWN_MS } from './Afterwards';
 import Arrive from './Arrive';
-import Pond, { type Stone } from './Pond';
+import Pond, { type PondHandle, type Stone } from './Pond';
 import Rail from './Rail';
 import type { Sit } from './Sitting';
 import type { MixPatch } from './Sounds';
@@ -278,6 +278,7 @@ export default function Journey({
   // Read in cleanup and at the bell, where a stale closure would otherwise
   // leave a bell scheduled after the component is gone, or read a count
   // from a render ago.
+  const pond = useRef<PondHandle | null>(null);
   const stageRef = useRef(stage);
   stageRef.current = stage;
 
@@ -505,6 +506,7 @@ export default function Journey({
         }`}
       >
         <Pond
+          ref={pond}
           stones={showStones ? stones : []}
           you={stage.kind !== 'rail'}
           throwFrom={thrown}
@@ -583,6 +585,7 @@ export default function Journey({
                           begin({ at, t: performance.now() });
                         } else next();
                       }}
+                      onWater={(at) => pond.current?.flick(at)}
                       onPreviewBell={(kind) => {
                         unlockAudio();
                         previewBell(kind);
