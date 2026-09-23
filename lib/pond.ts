@@ -178,7 +178,9 @@ export function skimAt(t: number, c: SkimConfig): SkimFrame {
   let acc = 0;
   for (let i = 0; i < c.n; i++) {
     acc += w[i]! / sum;
-    fr.push(acc);
+    // The last is exactly 1: summed, it can land a hair over, and a
+    // negative base to a fractional power below is NaN.
+    fr.push(i === c.n - 1 ? 1 : Math.min(1, acc));
   }
   const dx = c.to.x - c.from.x;
   const dy = c.to.y - c.from.y;
@@ -191,7 +193,7 @@ export function skimAt(t: number, c: SkimConfig): SkimFrame {
     };
   };
   // One deceleration across the whole throw; each skip is a moment on it.
-  const when = (f: number) => c.T * (1 - (1 - f) ** (1 / c.k));
+  const when = (f: number) => c.T * (1 - Math.max(0, 1 - f) ** (1 / c.k));
   const u = clamp01(t / c.T);
   const p = at(1 - (1 - u) ** c.k);
 

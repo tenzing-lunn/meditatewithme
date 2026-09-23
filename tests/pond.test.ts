@@ -63,3 +63,15 @@ describe('flickConfig', () => {
     }
   });
 });
+
+describe('no NaN anywhere in a throw', () => {
+  test('the lift, the place and the sink stay finite, every frame', () => {
+    for (let i = 0; i < 300; i++) {
+      const c = flickConfig({ x: (i * 37) % 400, y: 870 }, { x: (i * 53) % 400, y: (i * 71) % 800 }, i % 2 ? 1 : -1);
+      for (let t = -0.05; t < 2.8; t += 0.01) {
+        const s = skimAt(t, c).stone;
+        assert.ok([s.x, s.y, s.h, s.sunk, s.spin].every(Number.isFinite), `throw ${i} at ${t}`);
+      }
+    }
+  });
+});
