@@ -73,8 +73,8 @@ export function Texture({ slug }: { slug: TrackSlug | 'silence' }) {
       {slug === 'chimes' && (
         <path d="M18 3h44M24 3v11M34 3v17M44 3v8M54 3v14" {...line} />
       )}
-      {slug === 'gong' && (
-        <path d="M40 6a7 7 0 1 1 0 14a7 7 0 1 1 0-14M26 5a14 14 0 0 0 0 16M54 5a14 14 0 0 1 0 16M16 3a22 22 0 0 0 0 20M64 3a22 22 0 0 1 0 20" {...line} />
+      {slug === 'bowl' && (
+        <path d="M28 12h24a12 12 0 0 1-24 0M22 7c3-2 6-2 9 0M49 7c3-2 6-2 9 0M14 5c4-3 8-3 12 0M54 5c4-3 8-3 12 0" {...line} />
       )}
       {slug === 'hum' && <path d="M4 13c8-9 14 9 22 0s14 9 22 0 14 9 22 0" {...line} />}
       {slug === 'night' && (

@@ -523,9 +523,11 @@ alien noise" and the sea "like you're on a boat". Replaced: *hum* is now a
 warm, low (about 110 Hz), almost motionless pad (bassimat / Mantice, "Warm
 Pad Essentials Drone"), and the sea is waves breaking softly on sand
 (ralph.whitehead, "Waves On The Beach (Sand Wash)"). A ninth bed was added
-at Tenzing's ask, **a ringing gong** (`gong`, shown as *a ringing gong*): a
-steady rolled stretch of a real 48-minute gong bath (jonsept), 39:47 to
-41:35. All three CC0, chosen by measuring the recordings (steadiness, pitch,
+at Tenzing's ask, **a singing bowl that keeps singing** (`bowl`, shown as
+*a humming bowl*): a bowl played round the rim the whole way (hollandm,
+"Singing Bowl, long without reverb"), the steadiest of five long bowl
+recordings measured. It replaced a ringing gong (a stretch of a real gong
+bath) the same evening, before anyone but Tenzing had heard it. All three CC0, chosen by measuring the recordings (steadiness, pitch,
 no gaps or spikes), not by ear: Tenzing has to listen. The sea recording is
 very quiet at source, so it was raised about 25 dB to meet the others, and
 its hiss came up with it; the Priory Bay recording (richwise, 848039) is

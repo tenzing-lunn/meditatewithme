@@ -106,14 +106,14 @@ export const BED_SOURCES: readonly BedSource[] = [
     loop: 84,
   },
   {
-    // Added 23 September 2026: a gong left ringing, from a real gong bath.
-    // 39:47 to 41:35 is the steadiest sustained stretch of the 48 minutes,
-    // the rolled gong moving about a decibel either way, no strikes.
-    slug: 'gong',
-    freesoundId: 449923,
-    title: 'Gong Bath',
-    author: 'jonsept',
-    start: 2387,
+    // Added 23 September 2026: a singing bowl played round the rim the whole
+    // way, so it sings on without a strike or a decay, the length of the
+    // sitting. The steadiest of five long bowl recordings measured.
+    slug: 'bowl',
+    freesoundId: 573805,
+    title: 'Singing Bowl, long without reverb',
+    author: 'hollandm',
+    start: 7,
     loop: 108,
   },
   {

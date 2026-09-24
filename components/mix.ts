@@ -55,7 +55,7 @@ const LABELS: Record<TrackSlug, string> = {
   fire: 'Fire',
   hum: 'Hum',
   chimes: 'Chimes',
-  gong: 'Gong',
+  bowl: 'Bowl',
   night: 'Night',
 };
 

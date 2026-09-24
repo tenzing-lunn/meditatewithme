@@ -40,7 +40,7 @@ const SOUND_WORDS: Record<TrackSlug | 'silence', string> = {
   fire: 'a fire',
   hum: 'a low hum',
   chimes: 'wind chimes',
-  gong: 'a ringing gong',
+  bowl: 'a humming bowl',
   night: 'night sounds',
 };
 
