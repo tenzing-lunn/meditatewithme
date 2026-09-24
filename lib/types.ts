@@ -58,7 +58,7 @@ export function isBellKind(v: unknown): v is BellKind {
 
 /**
  * The ambient beds: five until 23 September 2026, when ocean, fire and
- * chimes were added.
+ * chimes were added, and then a gong left ringing.
  *
  * Declared here rather than in components/mix.ts for the same reason
  * BELL_KINDS is: the value round-trips through localStorage and through a
@@ -77,6 +77,7 @@ export const TRACK_SLUGS = [
   'fire',
   'hum',
   'chimes',
+  'gong',
   'night',
 ] as const;
 

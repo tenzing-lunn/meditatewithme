@@ -33,8 +33,8 @@ describe('fillNoise', () => {
 });
 
 describe('the track vocabulary', () => {
-  test('is the five the scope table promised, and the three added since', () => {
-    assert.equal(TRACK_SLUGS.length, 8);
+  test('is the five the scope table promised, and the four added since', () => {
+    assert.equal(TRACK_SLUGS.length, 9);
   });
 
   test('every slug is unique', () => {

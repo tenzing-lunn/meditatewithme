@@ -1,4 +1,4 @@
-// Cuts the eight beds in public/sounds/ from their Freesound originals.
+// Cuts the beds in public/sounds/ from their Freesound originals.
 //
 //   node --experimental-strip-types scripts/build-sounds.mjs <dir>
 //
@@ -20,7 +20,7 @@
 // omarchy-ambient settled on for loops cut from some of these recordings.
 
 import { execFileSync } from 'node:child_process';
-import { mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 
 import { BED_SOURCES, CROSSFADE_SECONDS, PAD_SECONDS } from '../lib/beds.ts';
@@ -153,7 +153,14 @@ for (const bed of BED_SOURCES) {
   const fade = Math.round(CROSSFADE_SECONDS * RATE);
   const pad = Math.round(PAD_SECONDS * RATE);
 
-  const src = decode(path.join(dir, `${bed.slug}.mp3`), bed.start, bed.loop + CROSSFADE_SECONDS);
+  // Only the beds whose originals are in <dir> are rebuilt; the rest keep
+  // the files already in public/sounds/.
+  const file = path.join(dir, `${bed.slug}.mp3`);
+  if (!existsSync(file)) {
+    console.log(`${bed.slug.padEnd(10)} skipped: no ${bed.slug}.mp3 in ${dir}`);
+    continue;
+  }
+  const src = decode(file, bed.start, bed.loop + CROSSFADE_SECONDS);
   if (src[0].length < length + fade) {
     throw new Error(`${bed.slug}: the recording is shorter than start + loop + crossfade`);
   }

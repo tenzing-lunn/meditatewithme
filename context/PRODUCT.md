@@ -518,10 +518,23 @@ Baltic shore (pulswelle), a fireplace (martats), a tanpura for *hum*
 (sankalp) and wind chimes (giddster). The files were taken from Freesound's
 public HQ previews (128 kbps MP3), not the originals, which need an account.
 
+**Same day, after listening on the preview:** *hum* sounded like "some
+alien noise" and the sea "like you're on a boat". Replaced: *hum* is now a
+warm, low (about 110 Hz), almost motionless pad (bassimat / Mantice, "Warm
+Pad Essentials Drone"), and the sea is waves breaking softly on sand
+(ralph.whitehead, "Waves On The Beach (Sand Wash)"). A ninth bed was added
+at Tenzing's ask, **a ringing gong** (`gong`, shown as *a ringing gong*): a
+steady rolled stretch of a real 48-minute gong bath (jonsept), 39:47 to
+41:35. All three CC0, chosen by measuring the recordings (steadiness, pitch,
+no gaps or spikes), not by ear: Tenzing has to listen. The sea recording is
+very quiet at source, so it was raised about 25 dB to meet the others, and
+its hiss came up with it; the Priory Bay recording (richwise, 848039) is
+the fallback if that is audible.
+
 `scripts/build-sounds.mjs` cuts each into a seamless loop of 60 to 108
 seconds, matches them to −20 LUFS with a limiter on their rare spikes, and
 writes `public/sounds/` (12 MB in all; a visitor fetches only the bed they
-choose, when they choose it). Ocean sits 1.4 dB under, and **fire 5.4 dB
+choose, when they choose it). **Fire sits 5.4 dB
 under**: its recording is pops over near-silence, so the pops are its
 loudness and limiting them only made it quieter. A steadier fire (a wood
 stove, `wwstudioswastaken`) is the proposed replacement. The beds are

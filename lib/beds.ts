@@ -5,7 +5,7 @@ import type { TrackSlug } from './types.ts';
  *
  * Real recordings since 23 September 2026, replacing the synthesised
  * stand-ins: Tenzing listened to those and they were not good enough. All
- * eight are CC0 on Freesound — public domain, so they can sit on a public,
+ * of them are CC0 on Freesound — public domain, so they can sit on a public,
  * commercial site with no payment and no credit owed. The recordists are
  * credited here anyway, and the list is Jonny's to change: these were
  * chosen by Claude and approved by Tenzing, and Jonny has not heard them.
@@ -70,11 +70,13 @@ export const BED_SOURCES: readonly BedSource[] = [
     loop: 60,
   },
   {
+    // Replaced 23 September 2026: the Baltic recording sounded like being
+    // on a boat. This is waves breaking softly and washing up sand.
     slug: 'ocean',
-    freesoundId: 339517,
-    title: 'Waves at Baltic Sea shore',
-    author: 'pulswelle',
-    start: 60,
+    freesoundId: 470648,
+    title: 'Waves On The Beach (Sand Wash)',
+    author: 'ralph.whitehead',
+    start: 51,
     loop: 108,
   },
   {
@@ -86,11 +88,13 @@ export const BED_SOURCES: readonly BedSource[] = [
     loop: 108,
   },
   {
+    // Replaced 23 September 2026: the tanpura read as "some alien noise".
+    // A warm, low (about 110 Hz), almost motionless pad instead.
     slug: 'hum',
-    freesoundId: 153262,
-    title: 'Tanpura 10',
-    author: 'sankalp',
-    start: 2,
+    freesoundId: 854842,
+    title: 'Warm Pad Essentials Drone',
+    author: 'bassimat (Mantice)',
+    start: 72,
     loop: 108,
   },
   {
@@ -100,6 +104,17 @@ export const BED_SOURCES: readonly BedSource[] = [
     author: 'giddster',
     start: 0.5,
     loop: 84,
+  },
+  {
+    // Added 23 September 2026: a gong left ringing, from a real gong bath.
+    // 39:47 to 41:35 is the steadiest sustained stretch of the 48 minutes,
+    // the rolled gong moving about a decibel either way, no strikes.
+    slug: 'gong',
+    freesoundId: 449923,
+    title: 'Gong Bath',
+    author: 'jonsept',
+    start: 2387,
+    loop: 108,
   },
   {
     // Starts at 0:25, as omarchy-ambient's cut does: the first seconds
