@@ -47,15 +47,43 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
  * Unknown keys are dropped rather than carried. A track renamed or removed
  * would otherwise leave its level in everybody's localStorage and in the
  * `sound_mix` column forever, syncing between devices, controlling nothing.
+ *
+ * ONE BED, AT FULL — 22 September 2026
+ * The beds are an exclusive choice now, and `Volume` is the master over
+ * whichever one is on, so a valid mix holds at most one track and that
+ * track's own gain is 1. Everything else is off, and off is absent.
+ *
+ * Which matters because plenty of stored mixes predate the rule: this browser
+ * has one, and so does every account synced from a version that stacked them.
+ * Left alone, those would play two beds at once under a control that can only
+ * silence one of them, and a level of 0.4 on the survivor would be stuck
+ * there forever — the fader that set it no longer exists. So the loudest bed
+ * wins, at full, and the rest go. The master is untouched: it is the one
+ * number in here the visitor can still move.
  */
 function normalizeMix(v: unknown): Record<string, number> {
   if (!v || typeof v !== 'object' || Array.isArray(v)) return {};
+
   const out: Record<string, number> = {};
+  let loudest: { slug: string; gain: number } | null = null;
+
   for (const [slug, gain] of Object.entries(v as Record<string, unknown>)) {
-    if (!isTrackSlug(slug) && slug !== MASTER_KEY) continue;
     const n = Number(gain);
-    if (Number.isFinite(n)) out[slug] = Math.min(1, Math.max(0, n));
+    if (!Number.isFinite(n)) continue;
+    const level = Math.min(1, Math.max(0, n));
+
+    if (slug === MASTER_KEY) {
+      out[slug] = level;
+      continue;
+    }
+    // Ties keep the first seen, so a mix that has been through here already
+    // comes out of it unchanged rather than shuffling between two beds.
+    if (isTrackSlug(slug) && level > 0 && (!loudest || level > loudest.gain)) {
+      loudest = { slug, gain: level };
+    }
   }
+
+  if (loudest) out[loudest.slug] = 1;
   return out;
 }
 

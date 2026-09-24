@@ -26,7 +26,7 @@ export function Document({
   children: ReactNode;
 }) {
   return (
-    <main className="min-h-dvh bg-paper px-5 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-16 text-ink-2 sm:px-8">
+    <main id="main" className="min-h-dvh bg-paper px-5 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-16 text-ink-2 sm:px-8">
       <header className="mx-auto flex max-w-[62ch] items-center justify-between gap-4">
         <Link href="/" className={QUIET}>
           <svg viewBox="0 0 24 24" className="size-4" fill="none" aria-hidden>
@@ -42,10 +42,10 @@ export function Document({
         </Link>
       </header>
 
-      <article className="mx-auto mt-12 max-w-[62ch] text-base leading-relaxed">
-        <h1 className="font-display text-[1.75rem] font-bold leading-[1.15] text-ink sm:text-[2.25rem]">{title}</h1>
+      <article className="mx-auto mt-12 max-w-[62ch] text-body leading-relaxed">
+        <h1 className="font-display text-question font-bold leading-[1.15] text-ink sm:text-question-sm">{title}</h1>
         {children}
-        <p className="text-ink-3 mt-12 text-sm">Last changed {changed}.</p>
+        <p className="text-ink-3 mt-12 text-caption">Last changed {changed}.</p>
       </article>
     </main>
   );
@@ -60,7 +60,7 @@ export function Section({
 }) {
   return (
     <section className="mt-10 space-y-4">
-      <h2 className="font-display text-2xl font-bold leading-tight text-ink">{title}</h2>
+      <h2 className="font-display text-section font-bold leading-tight text-ink">{title}</h2>
       {children}
     </section>
   );
@@ -73,7 +73,7 @@ export function Section({
  */
 export function Unfilled({ children }: { children: string }) {
   return (
-    <span className="border-ember text-ember rounded-control border border-dashed px-1.5 py-0.5 text-sm">
+    <span className="border-ember text-ember rounded-control border border-dashed px-1.5 py-0.5 text-caption">
       {children}
     </span>
   );

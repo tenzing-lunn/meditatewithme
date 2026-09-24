@@ -53,17 +53,19 @@ lives only in `auth.users`. If anything server-side ever needs it, that column i
 where it goes, and this table gains a row.
 
 There is **no third-party analytics, no advertising, no tracking pixel and no
-cookie beyond the one your own sign-in uses.** That is what keeps the cookie
-banner question closed, and it is worth saying plainly in the notice rather than
+cookies at all** — the sign-in session lives in localStorage (`persistSession`
+in `lib/supabase.ts`), not in a cookie. That is what keeps the cookie banner
+question closed, and it is worth saying plainly in the notice rather than
 leaving somebody to infer it.
 
 ---
 
 ## Draft copy
 
-**Rendered as `app/privacy/page.tsx` on 8 September 2026**, and brought up to
-date with the name and origin on 14 September — unlinked and `noindex` until
-the two placeholders are filled. The page and this draft must say the same
+**Rendered as `app/privacy/page.tsx` on 8 September 2026**, brought up to
+date with the name and origin on 14 September, and corrected on 22 September
+to say there are no cookies at all — unlinked and `noindex` until the two
+placeholders are filled. The page and this draft must say the same
 thing; change both. Two lines were corrected the day the page
 was built: an account now also holds the optional name, and sign-in is a code
 or a link, not only a link.
@@ -181,8 +183,9 @@ a data-processing agreement has said something about itself.
   select jobname, schedule, active from cron.job;
   select max(now() - hour_start) from public.heartbeats;
   ```
-- **`/world` already says the substance of this on the page**, under the globe.
-  That was deliberate — somebody looking at a map of where people are should not
-  have to open a legal document to find out how precisely they are on it. Keep
-  the two in agreement.
+- **`/world` used to say the substance of this on the page**, under the map,
+  so that somebody looking at where people are did not have to open a legal
+  document to find out how precisely they are on it. That route was deleted on
+  22 September 2026, so the notice is now the only place the precision is
+  stated; keep it in agreement with `GRID_DEGREES`.
 - The age policy and terms are a separate question and are not covered here.

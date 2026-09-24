@@ -46,7 +46,7 @@ export default function BowlScreen({
     <Screen
       current={current}
       title="When you are ready."
-      titleClassName="font-display text-[1.75rem] font-bold leading-[1.15] text-room-ink text-center sm:text-[2.25rem] lg:text-[2.5rem]"
+      titleClassName="font-display text-question font-bold leading-[1.15] text-room-ink text-center sm:text-question-sm lg:text-question-lg"
       align="center"
       onBack={onBack}
       step={step}
@@ -63,8 +63,7 @@ export default function BowlScreen({
         >
           <Bowl struck={struck} className="w-full" />
         </button>
-        <p className="text-base text-room-ink-2">Strike the bowl to begin.</p>
-        <p className="flex flex-wrap items-center justify-center gap-x-2 text-[0.9375rem] text-room-ink-2">
+        <p className="flex flex-wrap items-center justify-center gap-x-2 text-control text-room-ink-2">
           <span>{line}</span>
           <button type="button" onClick={onChange} className={WORD_ROOM}>
             Change

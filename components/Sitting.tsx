@@ -1,35 +1,19 @@
 'use client';
 
-import dynamic from 'next/dynamic';
 import {
   useCallback,
   useEffect,
   useRef,
   useState,
-  type CSSProperties,
   type FocusEvent,
-  type ReactNode,
 } from 'react';
 import { companyLine } from '@/lib/company';
-import type { Cell, WorldPoint } from '@/lib/geo';
-import type { Room } from '@/lib/room';
 import { mmss, remainingMs } from '@/lib/timer';
-import Bowl from './Bowl';
-import { QUIET_ROOM } from './controls';
+import Brand from './Brand';
+import { WORD } from './controls';
 import Sounds, { type MixPatch } from './Sounds';
 
-/**
- * The earth, loaded only here and only when somebody sits with others.
- * `ssr: false` because the map touches `document` while building its
- * sprites, and because none of the geography belongs on the path to the
- * questions.
- */
-const WorldMap = dynamic(() => import('./WorldMap'), {
-  ssr: false,
-  loading: () => null,
-});
-
-/** Stillness, in ms, before Sound, End and the room's toggle rest. */
+/** Stillness, in ms, before Sound and End rest. */
 const CONTROLS_REST_MS = 4000;
 
 export interface Sit {
@@ -44,29 +28,38 @@ export interface Sit {
   endsAt: number;
   /** Ends on the shared bell, with everyone else who chose it. */
   together: boolean;
-  /** Chose the door marked With others: the earth is shown. */
+  /** Chose the door marked With others: the other stones are shown. */
   withOthers: boolean;
 }
 
 /**
  * The sitting.
  *
- * The room, dawn or dusk. With others: the earth across the frame, every person a candle on
- * it and yours marked, and under it the one sentence about who is here.
- * The clock is small and in the corner, because the earth is the thing.
- * By yourself: the bowl that was struck, faint, and the clock.
+ * Pale water (22 September 2026): the pond is drawn underneath by
+ * `Journey`, so this is only what lies on it. With others, their stones and
+ * one sentence about who is here; by yourself, your own rings alone. The mark
+ * is faint in the corner and the clock small beside it, because the water is
+ * the thing.
  *
- * Sound opens the six tiles and their Volume in a card at the foot — the
- * same control as the rail's Sound step; the caller raises the master when it
- * opens, since a first-timer's graph was built silent.
+ * Sound opens the six tiles and their Volume in a sheet above the foot; the
+ * caller raises the master when it opens, since a first-timer's graph was
+ * built silent. Escape closes it and puts the keyboard back on *Sound*; a tap
+ * anywhere outside it closes it and leaves the tap where it landed.
  *
  * THE CONTROLS REST
- * Sound, End and the dawn or dusk toggle are there when the sitting begins
- * and fade after a few seconds of stillness, leaving the earth, or the bowl,
- * and the time. Any tap or key brings them back. They stay while the sound
- * card is open and while focus is inside them, so a keyboard never tabs onto
- * something it cannot see; resting, they cannot be pressed, and the tap that
- * wakes them lands on the sitting instead.
+ * Sound, End, the mark and the clock are there when the
+ * sitting begins and fade after a few seconds of stillness, leaving the
+ * water. Any tap or key brings them back. They stay while the
+ * sound sheet is open and while focus is inside them, so a keyboard never
+ * tabs onto something it cannot see; resting, they cannot be pressed, and
+ * the tap that wakes them lands on the sitting instead.
+ *
+ * ENDED
+ * With `ended` the bell has rung and this is the held beat before the
+ * minutes: the clock is gone, the controls are rested for good and cannot
+ * be woken or reached, the sound sheet is closed, and *Come back.* sits
+ * over the water while the tail rings out. The company
+ * line stays: whoever was here at the bell is who you finished with.
  */
 export default function Sitting({
   sit,
@@ -74,34 +67,28 @@ export default function Sitting({
   mono,
   count,
   litCount,
-  points,
-  you,
   labels,
   ownLabel,
   soundMix,
   onSound,
   onSoundOpen,
   onEnd,
-  room,
-  toggle,
+  ended = false,
 }: {
   sit: Sit;
   now: number | null;
   mono: number;
   count: number | null;
   litCount: number | null;
-  points: WorldPoint[];
-  you: Cell | null;
-  /** Names on the earth right now, from `/api/world`. */
+  /** Names on the water right now, from `/api/world`. */
   labels: readonly string[];
   ownLabel: string | null;
   soundMix: Record<string, number>;
   onSound: (patch: MixPatch) => void;
   onSoundOpen: () => void;
   onEnd: () => void;
-  room: Room;
-  /** The dawn or dusk button, drawn and rested with the other controls. */
-  toggle: ReactNode;
+  /** The bell has rung: the held beat, before the minutes. */
+  ended?: boolean;
 }) {
   const [soundOpen, setSoundOpen] = useState(false);
   const [awake, setAwake] = useState(true);
@@ -116,7 +103,42 @@ export default function Sitting({
     wake();
     return () => window.clearTimeout(rest.current);
   }, [wake]);
-  const shown = awake || soundOpen || focusInside;
+
+  const foot = useRef<HTMLDivElement | null>(null);
+  const sheet = useRef<HTMLDivElement | null>(null);
+  const soundButton = useRef<HTMLButtonElement | null>(null);
+
+  // Open: the keyboard goes to the first tile. Escape closes and puts it
+  // back on *Sound*, since the tile it was on is about to unmount and
+  // without this the next Tab would start the page over. A press outside
+  // closes too, without moving focus: whoever tapped elsewhere has already
+  // put their attention there.
+  useEffect(() => {
+    if (!soundOpen) return;
+    sheet.current?.querySelector('button')?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.preventDefault();
+      soundButton.current?.focus();
+      setSoundOpen(false);
+    };
+    const onDown = (e: PointerEvent) => {
+      if (!foot.current?.contains(e.target as Node)) setSoundOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('pointerdown', onDown);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointerdown', onDown);
+    };
+  }, [soundOpen]);
+
+  // The bell may ring with the sheet open; it goes with the controls.
+  useEffect(() => {
+    if (ended) setSoundOpen(false);
+  }, [ended]);
+
+  const shown = !ended && (awake || soundOpen || focusInside);
   const controls = `transition-opacity duration-500 motion-reduce:transition-none ${
     shown ? 'opacity-100' : 'pointer-events-none opacity-0'
   }`;
@@ -131,92 +153,71 @@ export default function Sitting({
     ? companyLine(labels, count, litCount, ownLabel, now ?? Date.now())
     : null;
 
+  // Over the pond, which `Journey` draws underneath: nothing here has a
+  // ground of its own, so the water shows through everywhere.
   return (
     <div
-      className="relative flex h-dvh w-full flex-col bg-room text-room-ink"
+      className="relative flex h-dvh w-full flex-col text-ink"
       onPointerDown={wake}
       onKeyDown={wake}
     >
-      {toggle && (
-        <div
-          className={`absolute top-[calc(0.875rem+env(safe-area-inset-top))] left-4 z-10 ${controls}`}
-          {...holdWhileFocused}
-        >
-          {toggle}
-        </div>
-      )}
-      <p
-        role="timer"
-        aria-label="Time left"
-        className="absolute top-[calc(1rem+env(safe-area-inset-top))] right-5 z-10 text-xl tabular-nums text-room-ink-2"
-      >
-        {mmss(remaining)}
-      </p>
-
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 px-4 pt-14 pb-4">
-        {sit.withOthers ? (
-          <>
-            {/* The earth has an aspect of its own, a shade over 2:1, so it is
-                fitted to whichever runs out first: the frame's width, or the
-                height left once the caption and the foot have theirs.
-
-                That allowance is a variable because the sound sheet is part
-                of the foot while it is open. Its width is set, so the aspect
-                fixes its height and `max-h-full` cannot claw anything back:
-                if nothing gave here, a 375×667 phone with the sheet open ran
-                about twelve pixels over and the caption's second line went
-                under the card. The earth is what gives — it comes straight
-                back when the sheet closes. */}
-            <div
-              style={{ '--earth-foot': soundOpen ? '36rem' : '14rem' } as CSSProperties}
-              className="relative aspect-[2.055] max-h-full w-full max-w-[min(100%,calc((100dvh-var(--earth-foot))*2.055))]"
-            >
-              <WorldMap points={points} you={you} room={room} className="absolute inset-0" />
-            </div>
-            <p
-              // `shrink-0`: the line is two on a phone, and without this it
-              // keeps its 24px box and spills the second one.
-              className="min-h-6 max-w-md shrink-0 text-center text-[0.9375rem] text-room-ink-2"
-              aria-live="polite"
-            >
-              {line ?? ''}
-            </p>
-          </>
-        ) : (
-          <Bowl dim className="w-full max-w-[14rem]" />
+      <div className={`flex items-center justify-between px-6 pt-[calc(1rem+env(safe-area-inset-top))] sm:px-14 lg:px-24 ${controls}`}>
+        <Brand word={false} />
+        {!ended && (
+          <p role="timer" aria-label="Time left" className="text-caption tabular-nums text-ink-3">
+            {mmss(remaining)}
+          </p>
         )}
       </div>
-
-      {soundOpen && (
-        <div className="mx-auto w-full max-w-md px-4 pb-3">
-          {/* In the room's own colours rather than the pale card this was
-              until 20 September 2026: it is the same control as the rail's
-              Sound step, so it is drawn the same way and read the same way. */}
-          <div className="rounded-card border border-room-edge bg-room p-4">
-            <Sounds mix={soundMix} onSound={onSound} tight />
-          </div>
+      {ended && (
+        <div
+          className="pointer-events-none absolute inset-0 z-10 flex items-end justify-center pb-[22dvh]"
+          role="status"
+          aria-label="Coming back"
+        >
+          <p className="font-display text-question leading-none text-ink sm:text-question-lg">
+            Come back.
+          </p>
         </div>
       )}
-
+      <div className="flex-1" />
       <div
-        className={`flex justify-center gap-3 px-6 pb-[calc(1.25rem+env(safe-area-inset-bottom))] ${controls}`}
-        {...holdWhileFocused}
+        ref={foot}
+        className="relative flex flex-col items-center gap-2 px-6 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:flex-row sm:items-end sm:px-14 lg:px-24"
       >
-        <button
-          type="button"
-          onClick={() => {
-            if (!soundOpen) onSoundOpen();
-            setSoundOpen((v) => !v);
-          }}
-          aria-expanded={soundOpen}
-          className={QUIET_ROOM}
+        {soundOpen && (
+          <div ref={sheet} className="absolute inset-x-0 bottom-full mx-auto w-full max-w-md px-4 pb-3 sm:right-10 sm:left-auto">
+            <div className="rounded-card border border-rule bg-surface/90 p-4 shadow-menu">
+              <Sounds mix={soundMix} onSound={onSound} tight />
+            </div>
+          </div>
+        )}
+        <p className="min-h-6 max-w-md text-center text-body text-balance text-ink-2 sm:flex-1 sm:max-w-none">
+          {line ?? ''}
+        </p>
+        <div
+          className={`flex gap-6 sm:absolute sm:right-14 sm:bottom-[calc(0.75rem+env(safe-area-inset-bottom))] lg:right-24 ${controls}`}
+          inert={ended}
+          {...holdWhileFocused}
         >
-          Sound
-        </button>
-        <button type="button" onClick={onEnd} className={QUIET_ROOM}>
-          End
-        </button>
+          <button
+            ref={soundButton}
+            type="button"
+            onClick={() => {
+              if (!soundOpen) onSoundOpen();
+              setSoundOpen((v) => !v);
+            }}
+            aria-expanded={soundOpen}
+            className={WORD}
+          >
+            Sound
+          </button>
+          <button type="button" onClick={onEnd} className={WORD}>
+            End
+          </button>
+        </div>
       </div>
     </div>
   );
+
 }

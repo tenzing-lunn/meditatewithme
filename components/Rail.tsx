@@ -44,9 +44,21 @@ export default function Rail({
   // which it has already vanished.
   const [shown, setShown] = useState(index);
   const [leaving, setLeaving] = useState<number | null>(null);
+  /**
+   * Whether a question has been answered yet.
+   *
+   * `rail-enter` is a *switch*, and it waits out the leaving screen's fade
+   * before it starts — 120ms of held nothing, then 300ms of rising. On the
+   * first screen there is no leaving screen to wait for, so that was 420ms
+   * of the site arriving after it had already loaded, on top of the bundle
+   * and the three hooks the entry waits on. The first screen is not an
+   * arrival; it is simply where you are. It animates from the second onward.
+   */
+  const [switched, setSwitched] = useState(false);
   if (shown !== index) {
     setShown(index);
     setLeaving(shown);
+    setSwitched(true);
   }
 
   useEffect(() => {
@@ -76,7 +88,9 @@ export default function Rail({
           <div
             key={screen}
             data-screen={screen}
-            className={`absolute inset-0 ${current ? 'rail-enter' : out ? 'rail-leave' : ''}`}
+            className={`absolute inset-0 ${
+              current ? (switched ? 'rail-enter' : '') : out ? 'rail-leave' : ''
+            }`}
             inert={!current}
             aria-hidden={!current}
             style={{ visibility: current || out ? 'visible' : 'hidden' }}

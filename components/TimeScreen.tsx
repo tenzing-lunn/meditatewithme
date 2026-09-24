@@ -20,7 +20,7 @@ interface TimeProps {
 }
 
 const SENTENCE =
-  'font-display text-[2.25rem] font-bold leading-[1.1] text-balance text-room-ink sm:text-[3rem] lg:text-[3.75rem]';
+  'font-display text-sentence font-bold leading-[1.1] text-balance text-room-ink sm:text-sentence-sm lg:text-sentence-lg';
 
 /**
  * "How long will you sit?"
@@ -49,8 +49,8 @@ export default function TimeScreen({
 /**
  * By yourself: your length, and the feeling that you are not the only one.
  *
- * *You're sitting for 10 minutes.* over *11 others are sitting somewhere
- * right now. They'll come and go; your time is your own.* — and beside it on
+ * *You're sitting for 10 minutes.* over *11 others are here right now.
+ * They'll come and go; your time is your own.* — and beside it on
  * a laptop, under it on a phone, the candle that sets the length. Nobody
  * joins anybody here, so the length is chosen freely and the people are
  * only company: a count and a light each, no names and no places. The count
@@ -77,7 +77,7 @@ function CandleTime({
       title={
         <>
           You’re sitting for{' '}
-          <span className="text-room-action tabular-nums">
+          <span className="tabular-nums">
             {duration.value} {duration.unit}
           </span>
           .
@@ -91,7 +91,7 @@ function CandleTime({
               className="live-dot mr-2 mb-0.5 inline-block size-2 rounded-full bg-glow align-middle"
             />
             <span className="tabular-nums">{others}</span>{' '}
-            {others === 1 ? 'other person is' : 'others are'} sitting somewhere right now.
+            {others === 1 ? 'other person is' : 'others are'} here right now.
             They’ll come and go; your time is your own.
           </>
         ) : (
@@ -159,12 +159,12 @@ function JoinTime({
 
   const time = prefs.untilBell ? (
     <>
-      until <span className="text-room-action tabular-nums">{bellLabel ?? 'the bell'}</span>
+      until <span className="tabular-nums">{bellLabel ?? 'the bell'}</span>
     </>
   ) : (
     <>
       for{' '}
-      <span className="text-room-action tabular-nums">
+      <span className="tabular-nums">
         {duration.value} {duration.unit}
       </span>
     </>
@@ -177,7 +177,7 @@ function JoinTime({
         others >= 1 ? (
           <>
             You’re sitting {time} with{' '}
-            <span className="text-room-action tabular-nums">
+            <span className="tabular-nums">
               {others} {others === 1 ? 'person' : 'people'}
             </span>
             .
@@ -219,17 +219,17 @@ function JoinTime({
           centre={
             prefs.untilBell ? (
               <>
-                <span className="font-display text-2xl font-bold text-room-ink tabular-nums">
+                <span className="font-display text-section font-bold text-room-ink tabular-nums">
                   {bellLabel ?? 'Bell'}
                 </span>
-                <span className="text-[0.8125rem] text-room-ink-2">the bell</span>
+                <span className="text-caption text-room-ink-2">the bell</span>
               </>
             ) : (
               <>
-                <span className="font-display text-[2.5rem] leading-none font-bold text-room-ink tabular-nums">
+                <span className="font-display text-sentence leading-none font-bold text-room-ink tabular-nums">
                   {duration.value}
                 </span>
-                <span className="mt-1 text-[0.8125rem] text-room-ink-2">{duration.unit}</span>
+                <span className="mt-1 text-caption text-room-ink-2">{duration.unit}</span>
               </>
             )
           }

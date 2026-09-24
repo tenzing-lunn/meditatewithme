@@ -250,7 +250,10 @@ invoice you weren't expecting" promise forbids.
   measured moved to `ink-2` in `a52b454`, and the only `ink-3` left on that
   screen is the back arrow at the top, in the strips that passed; with the
   levels open at 390×844 the copy scales to 0.957 and fits. Still not
-  reviewed: anything that needs a phone in hand.
+  reviewed: anything that needs a phone in hand. First on that list, since
+  the wake lock landed on 22 September 2026 (`components/useWakeLock.ts`):
+  the phone locks during a sitting — the bell on time, and still in the
+  count.
 - [x] ~~Configure Auth URL allow-list and production SMTP.~~ URL allow-list
   done earlier on 7 September 2026; SMTP through Resend that evening (item 4).
   What remains of it is the domain, below.
@@ -316,6 +319,13 @@ invoice you weren't expecting" promise forbids.
 
 ## Completed plans
 
+- `docs/ui-ux-fixes.md` with `docs/audit-2026-09-21.md` — the UI/UX audit
+  of the warm rail (7 High, 19 Medium, 16 Low, every line verified) and its
+  plan: eleven commits, landed in full on `dev` on 22 September 2026
+  (`058059b`..`3851003`), not yet released. The four decisions were taken
+  as the plan recommended; each is one commit to reverse. Still owed from
+  it: the wake lock on a real phone (the QA item above), and M9, candles
+  merging on phones, which was inferred and waits for a phone to show it.
 - `docs/ui-rebuild.md` — the warm rail, 14 September 2026, on `dev` and not
   yet released.
 
@@ -330,4 +340,8 @@ invoice you weren't expecting" promise forbids.
 - `plans/room-polish.md` — §4 only.
 - `plans/audit-2026-09-13.md` — the whole-site audit of 13 September: a
   Web Interface Guidelines punch list (Part A) and the Impeccable
-  audit + critique re-run (Part B). Nothing in it is fixed yet.
+  audit + critique re-run (Part B). Part A rows 1–7, 9, 10 and 16 landed
+  on 22 September 2026 with the UI/UX plan (`5ac7c4d`); rows 8, 11–13, 15,
+  17 and 18 are moot since the rebuild deleted the components they named;
+  its own header says which. Part B's open rows are the ones its B10 table
+  does not strike through.

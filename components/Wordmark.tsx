@@ -21,8 +21,8 @@ export default function Wordmark({
     <span
       className={`font-display font-bold tracking-[-0.01em] ${room ? 'text-room-ink' : 'text-ink'} ${
         size === 'lg'
-          ? 'block text-[2.25rem] leading-[1.06] sm:text-[3.25rem] md:text-[4rem] lg:text-[4.5rem] xl:text-[5rem]'
-          : 'text-xl leading-none'
+          ? 'block text-wordmark leading-[1.06] sm:text-wordmark-sm md:text-wordmark-md lg:text-wordmark-lg xl:text-wordmark-xl'
+          : 'text-masthead leading-none'
       }`}
     >
       Meditate with me

@@ -18,7 +18,7 @@ describe('normalize', () => {
       untilBell: false,
       endBell: 'gong',
       focusSlug: 'water',
-      soundMix: { rain: 0.4 },
+      soundMix: { rain: 1 },
       showCount: false,
     };
     assert.deepEqual(normalize(p), p);
@@ -48,17 +48,34 @@ describe('normalize', () => {
   test('drops levels for tracks that do not exist', () => {
     // 'sea' was never a track. Without this it would sit in localStorage and
     // in the sound_mix column forever, syncing between devices, controlling
-    // nothing — and the same would happen to any track we ever rename.
+    // nothing — and the same would happen to any track we ever rename. It is
+    // the louder of the two here and still loses, because it is not a bed.
     const mix = normalize({ soundMix: { rain: 0.4, sea: 0.9 } }).soundMix;
-    assert.deepEqual(mix, { rain: 0.4 });
+    assert.deepEqual(mix, { rain: 1 });
   });
 
-  test('clamps sound gains into 0..1', () => {
-    // These are applied straight to an AudioNode; 40 would be deafening.
+  test('clamps the master into 0..1', () => {
+    // This is applied straight to an AudioNode; 40 would be deafening.
+    const mix = normalize({ soundMix: { master: 40 } }).soundMix;
+    assert.deepEqual(mix, { master: 1 });
+  });
+
+  test('keeps one bed, at full, however many were stored', () => {
+    // Mixes written before 22 September 2026 stacked beds, each with its own
+    // fader. Under a single Volume that is a state nobody could undo — and
+    // the survivor's old level could never be moved again, because the fader
+    // that set it is gone. The loudest wins, at full.
     const mix = normalize({
-      soundMix: { rain: 40, wind: -3, master: 0.5 },
+      soundMix: { rain: 0.5, hum: 0.8, master: 0.4 },
     }).soundMix;
-    assert.deepEqual(mix, { rain: 1, wind: 0, master: 0.5 });
+    assert.deepEqual(mix, { hum: 1, master: 0.4 });
+  });
+
+  test('a silenced bed is absent, not zero', () => {
+    // Choosing another bed writes zeros over the rest, and those zeros ride
+    // into storage. Off is off; they should not come back out.
+    const mix = normalize({ soundMix: { rain: 0, wind: 0, master: 0.4 } }).soundMix;
+    assert.deepEqual(mix, { master: 0.4 });
   });
 
   test('drops non-numeric gains rather than passing NaN to the mixer', () => {

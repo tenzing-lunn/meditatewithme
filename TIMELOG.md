@@ -123,6 +123,47 @@ adding to this table by hand.
 
 ---
 
+## Inventory — 2 to 20 September 2026
+
+Written down on 20 September 2026 because **the capture cannot carry these
+days.** `npm run timelog` on that date offered 41 unconfirmed rows and listed 18
+more that never closed at all, and the damage falls on exactly the days that
+held the most work:
+
+- **Six rows are broken clocks** — sessions whose end stamp landed on a later
+  day. 7 Sep reads 28.07h, 9 Sep 94.07h, 13 Sep 25.68h, 14 Sep 16.42h and
+  40.32h, 16 Sep 58.42h. None of those ceilings mean anything.
+- **18 sessions never closed**, four of them on 3 September and three on
+  13 September — days with commits, so work plainly happened.
+- **5 September has no session at all**, and no Cowork or Codex time is captured
+  on any day.
+
+So this table is an inventory of what landed, not a measurement. It exists so
+the recall is about days rather than the script's 41 rows — a day is a thing
+Tenzing can remember being at the desk for; a session is not. **Every `Engaged`
+cell is unfilled and stays that way until Tenzing fills it.** Confirming the
+pending rows with `-` and writing day totals here by hand is the honest route:
+the per-session flow cannot express "three hours across four sessions".
+
+| Date | Engaged | What landed | Commits |
+|---|---|---|---|
+| 2 Sep | — | No commits; 8 sessions captured, 2 overlapping | — |
+| 3 Sep | — | Signed-in home and bells struck, candles on a globe at `/world`, coarse candle location, `context/` split from plans, capture hardened, `db push` warning written down | `397171a` `33a0c12` `9c8f341` `6edaa37` `aa4bbb3` `02d283f` `0d9bd8e` |
+| 5 Sep | — | Dark earth and the candles redrawn; stopped deploying the old earth. **No session captured** | `06c5b08` `b131f8d` |
+| 6 Sep | — | Earth laid flat and three.js removed, portability made a test, sitting's arc turned clockwise, iPhone recorded as a possibility, beds renamed ambiance | `97e0d2e` `23c6652` `434de34` `8878e5b` `8ffe5fd` |
+| 7 Sep | — | The big day: sound asked before loudness, contrast gate taught four pairs, three-line menu and both account doors, keyboard pass, reduced motion reaching the camera, room PNG cut from 2.3 MB, domain named and the messages to Jonny drafted, Resend sender recorded, release documented — 39 commits | `7e553fb`…`124f18f` |
+| 8 Sep | — | Terms with the age policy, privacy notice, second keyboard pass, one focus ring, `search_path` migration pinned, chord out of the gong | `91499ad` `af8e1e4` `8927dd4` `0544bdf` `c5ef800` `4df504b` `0ee7171` `8cceb40` `d200e55` `06bf11e` `b28ef08` |
+| 9 Sep | — | Flow audited as a visitor walks it and its eight findings fixed, one Settings for both surfaces, guest's Finish and Sit again made to work, bell named on Home and the ending | `3ff819b` `2f094c5` `f085b68` `d035427` `9f688ba` `456fcac` `646f363` `70fae01` `e026a04` `158ce75` `2a2bded` `63ddb59` |
+| 13 Sep | — | Meeting with Jonny and its notes, room audited, DESIGN.md written, three P1s fixed | `8765ecd` `86454e6` |
+| 14 Sep | — | The warm rail: palette laid down, rail built, the sitting on dusk with the camera lift, signed-in home, second-order surfaces, ui-warm merged, typed answers left as a line | `4c29025` `a0d9a0f` `e15510c` `1ad1c9c` `791f680` `cca03e6` `6cba53b` `4fed5d1` `28abbf8` `a5a48f5` `9140911` `bd4797e` `74294eb` |
+| 16 Sep | — | No commits; one session, clock broken | — |
+| 18 Sep | — | No commits; 3 sessions, 2 never closed | — |
+| 19 Sep | — | No commits; 3 sessions, 2 overlapping | — |
+| 20 Sep | — | Time, bell, sound and bowl screens reformatted to the artifact with the step tracker top-left; the earth made the landing page and `WelcomeScreen` deleted; `context/`, DESIGN.md and CLAUDE.md brought in line. **Uncommitted** | — |
+| | **— / 55** | | |
+
+---
+
 ## Running total
 
 Fill the total only when every row above has a number. A partial total that gets

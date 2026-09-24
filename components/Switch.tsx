@@ -53,7 +53,7 @@ export default function Switch({
               : room
                 ? 'border-room-edge group-hover:border-room-action'
                 : dusk
-                  ? 'border-dusk-ink-2/55 group-hover:border-flame'
+                  ? 'border-dusk-ink-2/75 group-hover:border-flame'
                   : 'border-rule bg-surface group-hover:border-ember'
           }`}
         >
@@ -66,7 +66,7 @@ export default function Switch({
           />
         </span>
         <span
-          className={`text-[0.9375rem] font-semibold ${
+          className={`text-control font-semibold ${
             room ? 'text-room-ink' : dusk ? 'text-dusk-ink' : checked ? 'text-ember' : 'text-ink-2'
           }`}
         >
@@ -76,7 +76,7 @@ export default function Switch({
       {description && (
         <p
           id={id}
-          className={`pl-[4.25rem] text-[0.8125rem] leading-relaxed ${
+          className={`pl-[4.25rem] text-caption leading-relaxed ${
             room ? 'text-room-ink-2' : dusk ? 'text-dusk-ink-2' : 'text-ink-3'
           }`}
         >

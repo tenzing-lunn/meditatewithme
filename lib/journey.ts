@@ -3,50 +3,69 @@ import type { UserPreferences } from './types';
 /**
  * Which screens a person walks, in which order.
  *
- * Pure: the hooks know the facts (signed in, answered before, asked once
- * about their origin, chose to skip the questions), this turns them into the
- * rail. One question per screen, and the bowl is always last, because the
- * bowl is where a sitting begins and nothing begins one from anywhere else.
+ * Pure: the hooks know the facts (signed in, has sat, asked once about their
+ * origin), this turns them into the rail. Since Pale water (22 September
+ * 2026) there is one screen where a sitting begins, the arrival: the pond,
+ * one sentence holding the length, the bell and the sound, and Begin. The
+ * rail's time, bell, sound and bowl screens folded into that sentence.
  */
 
-export const SCREENS = [
-  'mode',
-  'name',
-  'origin',
-  'time',
-  'bell',
-  'sound',
-  'bowl',
-] as const;
+export const SCREENS = ['arrive', 'name', 'origin'] as const;
 
 export type Screen = (typeof SCREENS)[number];
 
 export interface JourneyFacts {
   /** Their name comes from the account, so the name screen is skipped. */
   signedIn: boolean;
-  /** "Skip the questions and use these" is on and nothing has changed. */
-  usual: boolean;
-  /** This device has struck the bowl before. */
-  hasAnswers: boolean;
+  /** A completed sitting is in the practice log, on this device or account. */
+  hasSat: boolean;
   /** They have been asked where they are from, whatever they answered. */
   originAsked: boolean;
 }
 
 /**
- * Everybody starts at the doors: with everyone, or on your own, on this
- * hour's earth. For a guest that screen is the front page — there is no
- * title page before it — and a first-time guest is asked their name and
- * place just after choosing. Somebody signed in arrives through a door on
- * their home, so their rail begins just past it and asks their origin once.
- * "Usual" drops the three questions and keeps the door and the bowl.
+ * Everybody starts at the arrival. For a guest that is the front page;
+ * somebody signed in reaches it through a door on their home.
+ *
+ * A first visit asks nothing personal: by default nobody sees a name or a
+ * place, so they would be an entrance fee with no payoff. The visit after a
+ * first completed sitting asks once, after Begin — a guest their name and
+ * then their place, a member their place, since the name came with the
+ * account — and whatever they answer, including nothing, is the answer from
+ * then on. The last question's Next begins the sitting.
  */
 export function screensFor(f: JourneyFacts): Screen[] {
-  const out: Screen[] = ['mode'];
-  if (!f.signedIn && !f.hasAnswers) out.push('name', 'origin');
-  if (f.signedIn && !f.originAsked) out.push('origin');
-  if (!f.usual) out.push('time', 'bell', 'sound');
-  out.push('bowl');
+  const out: Screen[] = ['arrive'];
+  if (f.hasSat && !f.originAsked) {
+    if (!f.signedIn) out.push('name');
+    out.push('origin');
+  }
   return out;
+}
+
+export type Mode = 'together' | 'alone';
+
+/**
+ * What a door writes. Together proposes the shared bell, but only on the way
+ * in from By yourself: somebody who sits with others for their own fifteen
+ * minutes keeps that, and so keeps their usual, every time they press it.
+ */
+export function doorPatch(mode: Mode, prefs: UserPreferences): Partial<UserPreferences> {
+  if (mode === 'alone') return { showCount: false, untilBell: false };
+  return prefs.showCount ? { showCount: true } : { showCount: true, untilBell: true };
+}
+
+/**
+ * The line under *Sit with everyone*: what that door leads to, by the rule
+ * above. From by yourself it proposes the bell, so the line names it; already
+ * with others on a length of your own, the length survives the door, and the
+ * line says so rather than promising a bell that will not ring for you.
+ */
+export function togetherLine(prefs: UserPreferences, bellLabel: string | null): string {
+  const next = { ...prefs, ...doorPatch('together', prefs) };
+  return next.untilBell
+    ? `Everyone finishes together${bellLabel ? ` at ${bellLabel}` : ''}`
+    : 'Your own length, with everyone';
 }
 
 /** The screen one step along, or null off either end. */

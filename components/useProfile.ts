@@ -66,7 +66,7 @@ export function useProfile({
     let cancelled = false;
     (async () => {
       try {
-        const { data, error } = await browserClient()
+        const { data, error } = await (await browserClient())
           .from('profiles')
           .select('origin, share_label')
           .eq('id', userId)
@@ -98,7 +98,7 @@ export function useProfile({
     if (remote.current.origin === local.origin && remote.current.share === local.share) return;
     const timer = window.setTimeout(async () => {
       try {
-        const { error } = await browserClient()
+        const { error } = await (await browserClient())
           .from('profiles')
           .upsert(
             { id: userId, origin: local.origin, share_label: local.share },

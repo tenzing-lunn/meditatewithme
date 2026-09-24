@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState, type KeyboardEvent } from 'react';
 import type { BellKind } from '@/lib/types';
 import Screen from './Screen';
 import { BELLS, previewBell } from './audio';
@@ -24,14 +24,20 @@ import { FOCUS_ROOM } from './controls';
  * leave the drawing as it sounds: the receipt for a tap whose whole effect
  * is a noise, which somebody on a muted laptop would otherwise never see.
  * The chosen one keeps the action colour and stays lit.
+ *
+ * One bell is chosen at a time, so the three are a radio group rather than
+ * three toggles: one tab stop, and the arrows move the choice and ring the
+ * bell they land on, the same as a tap, so a keyboard hears what it chose.
  */
 
 /** What each instrument is, in the fewest words that are true of it. */
 export const CHARACTER: Record<BellKind, string> = {
   'singing-bowl': 'Warm, with a warble',
   gong: 'Low, slowest to fade',
-  'struck-bell': 'Bright, with a minor edge',
+  'struck-bell': 'Bright, with a hard edge',
 };
+
+const KINDS = Object.keys(BELLS) as BellKind[];
 
 export function Glyph({ kind }: { kind: BellKind }) {
   if (kind === 'singing-bowl') {
@@ -85,6 +91,30 @@ export default function BellScreen({
   // instead of leaving it wherever the last one got to.
   const [rung, setRung] = useState(0);
   const [lastRung, setLastRung] = useState<BellKind | null>(null);
+  const tiles = useRef<(HTMLButtonElement | null)[]>([]);
+
+  const ring = (kind: BellKind) => {
+    onPick(kind);
+    previewBell(kind);
+    setLastRung(kind);
+    setRung((n) => n + 1);
+  };
+
+  const onKeyDown = (e: KeyboardEvent<HTMLButtonElement>, i: number) => {
+    const by =
+      e.key === 'ArrowRight' || e.key === 'ArrowDown'
+        ? 1
+        : e.key === 'ArrowLeft' || e.key === 'ArrowUp'
+          ? -1
+          : 0;
+    if (!by) return;
+    e.preventDefault();
+    const next = (i + by + KINDS.length) % KINDS.length;
+    const kind = KINDS[next];
+    if (!kind) return;
+    ring(kind);
+    tiles.current[next]?.focus();
+  };
 
   return (
     <Screen
@@ -100,20 +130,21 @@ export default function BellScreen({
       split
       middle
     >
-      <div className="grid grid-cols-3 gap-2.5 sm:gap-3" role="group" aria-label="The bell">
-        {(Object.keys(BELLS) as BellKind[]).map((kind) => {
+      <div className="grid grid-cols-3 gap-2.5 sm:gap-3" role="radiogroup" aria-label="The bell">
+        {KINDS.map((kind, i) => {
           const chosen = endBell === kind;
           return (
             <button
               key={kind}
-              type="button"
-              onClick={() => {
-                onPick(kind);
-                previewBell(kind);
-                setLastRung(kind);
-                setRung((n) => n + 1);
+              ref={(el) => {
+                tiles.current[i] = el;
               }}
-              aria-pressed={chosen}
+              type="button"
+              role="radio"
+              aria-checked={chosen}
+              tabIndex={chosen ? 0 : -1}
+              onClick={() => ring(kind)}
+              onKeyDown={(e) => onKeyDown(e, i)}
               className={`group relative isolate flex min-h-[11rem] flex-col items-start justify-end gap-2 overflow-hidden rounded-card border p-3 text-left transition-colors duration-200 motion-reduce:transition-none sm:p-4 ${FOCUS_ROOM} ${
                 chosen
                   ? 'border-room-action bg-room-action/15'
@@ -137,13 +168,13 @@ export default function BellScreen({
                 />
               </span>
               <span
-                className={`font-display text-[0.875rem] leading-tight font-semibold sm:text-[0.9375rem] ${
+                className={`text-control leading-tight font-semibold ${
                   chosen ? 'text-room-action' : 'text-room-ink'
                 }`}
               >
                 {BELLS[kind].label}
               </span>
-              <span className="text-[0.75rem] leading-snug text-room-ink-2">{CHARACTER[kind]}</span>
+              <span className="text-caption leading-snug text-room-ink-2">{CHARACTER[kind]}</span>
             </button>
           );
         })}

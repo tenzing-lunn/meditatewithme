@@ -1,11 +1,9 @@
 /**
- * Noise generation for the ambient beds.
+ * Noise, for the mallet in a struck bell (components/audio.ts).
  *
- * Pure — no React, no I/O, no Web Audio. It produces samples; turning them
- * into a looping source is components/mix.ts's job. That split is the reason
- * the one genuinely arithmetic part of the sound engine can be unit-tested at
- * all, and a click at a loop seam is exactly the kind of defect that is obvious
- * on the twentieth repeat and inaudible on the first.
+ * It used to generate the ambient beds too, as looping filtered noise; since
+ * 23 September 2026 those are recordings (lib/beds.ts) and this is only the
+ * strike. Pure — no React, no I/O, no Web Audio. It produces samples.
  */
 
 export type NoiseKind = 'white' | 'pink' | 'brown';
@@ -44,44 +42,4 @@ export function fillNoise(out: Float32Array, kind: NoiseKind): void {
     last = (last + 0.02 * w) / 1.02;
     out[i] = last * 3.5;
   }
-}
-
-/**
- * A noise run whose end joins back onto its start.
- *
- * Generated `fade` samples longer than needed, then that extra tail is
- * equal-power crossfaded back over the head. The wrap from the last sample to
- * the first is therefore continuous, so a looping source built from this has no
- * click in it.
- *
- * This is the failure mode §7 of the architecture calls unfixable in a
- * recording — "a loop with a click at the seam will be audible on repeat and no
- * amount of crossfading fully hides it". That is true of a recording, whose
- * ends are fixed. It is not true of noise, where the tail can be generated
- * specifically to be folded back over the head.
- */
-export function buildNoiseLoop(
-  length: number,
-  fade: number,
-  kind: NoiseKind,
-): Float32Array {
-  // A fade longer than the buffer would read past the end of `raw` and fill
-  // the head with undefined. Reachable by shortening the loop, not by input.
-  const span = Math.max(0, Math.min(fade, length));
-
-  const raw = new Float32Array(length + span);
-  fillNoise(raw, kind);
-
-  const out = new Float32Array(length);
-  out.set(raw.subarray(0, length));
-
-  for (let i = 0; i < span; i++) {
-    const t = i / span;
-    // Equal power rather than linear: two uncorrelated noise signals summed
-    // with linear weights dip in loudness across the crossover.
-    out[i] =
-      (out[i] ?? 0) * Math.sqrt(t) + (raw[length + i] ?? 0) * Math.sqrt(1 - t);
-  }
-
-  return out;
 }

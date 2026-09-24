@@ -89,7 +89,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const supabase = serviceClient();
+    const supabase = await serviceClient();
 
     // Upsert on (anon_id, hour_start): one row per person per session,
     // refreshed rather than appended. The table stays small by construction.

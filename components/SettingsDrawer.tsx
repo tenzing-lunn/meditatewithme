@@ -1,6 +1,14 @@
 'use client';
 
-import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
+} from 'react';
 import { localTime } from '@/lib/format';
 import {
   TIMER_STOPS,
@@ -13,9 +21,8 @@ import type { Room } from '@/lib/room';
 import type { BellKind, UserPreferences } from '@/lib/types';
 import { CHARACTER, Glyph } from './BellScreen';
 import Sounds from './Sounds';
-import Switch from './Switch';
 import { BELLS, previewBell, unlockAudio } from './audio';
-import { FOCUS_ROOM, ICON_ROOM } from './controls';
+import { FOCUS_ROOM, ICON_ROOM, PRIMARY_ROOM_SM, QUIET_ROOM_SM } from './controls';
 
 /**
  * The three lines' drawer: from the right over Home, full height, with the
@@ -47,8 +54,6 @@ export default function SettingsDrawer({
   prefs,
   onChange,
   now,
-  usual,
-  onUsual,
 }: {
   /** Closed, open on the menu, or open with Settings already expanded. */
   open: 'menu' | 'settings' | null;
@@ -60,8 +65,6 @@ export default function SettingsDrawer({
   prefs: UserPreferences;
   onChange: (patch: Partial<UserPreferences>) => void;
   now: number | null;
-  usual: boolean;
-  onUsual: (next: boolean) => void;
 }) {
   const titleId = useId();
   const settingsId = useId();
@@ -71,10 +74,15 @@ export default function SettingsDrawer({
   // Mounted for the length of the slide out, then let go.
   const [mounted, setMounted] = useState(open !== null);
   const [entered, setEntered] = useState(false);
+  // Sign out asks once more in its row before it acts, the delete confirm's
+  // pattern: it sits directly under Your practice, and one press that ends
+  // the session on this device is one press too few.
+  const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
     if (open) {
       setSettings(open === 'settings');
+      setLeaving(false);
       setMounted(true);
       const raf = requestAnimationFrame(() => setEntered(true));
       return () => cancelAnimationFrame(raf);
@@ -127,7 +135,7 @@ export default function SettingsDrawer({
       <div
         aria-hidden
         onClick={onClose}
-        className={`absolute inset-0 bg-[rgb(20_12_6_/_0.45)] transition-opacity duration-300 motion-reduce:transition-none ${
+        className={`absolute inset-0 bg-scrim/45 transition-opacity duration-300 motion-reduce:transition-none ${
           entered ? 'opacity-100' : 'opacity-0'
         }`}
       />
@@ -136,12 +144,12 @@ export default function SettingsDrawer({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className={`absolute inset-y-0 right-0 flex w-full max-w-[26rem] flex-col border-l border-room-edge/60 bg-room text-room-ink shadow-[-24px_0_48px_-24px_rgb(20_12_6_/_0.5)] transition-transform duration-300 ease-[var(--ease-lift)] motion-reduce:transition-none ${
+        className={`absolute inset-y-0 right-0 flex w-full max-w-[26rem] flex-col border-l border-room-edge/60 bg-room text-room-ink transition-transform duration-300 ease-[var(--ease-lift)] motion-reduce:transition-none ${
           entered ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         <header className="flex items-center justify-between gap-4 px-6 pt-[calc(0.875rem+env(safe-area-inset-top))] pb-2">
-          <h2 id={titleId} className="font-display text-[1.5rem] font-bold">
+          <h2 id={titleId} className="font-display text-section font-bold">
             Menu
           </h2>
           <button
@@ -194,37 +202,43 @@ export default function SettingsDrawer({
                 <Length prefs={prefs} onChange={onChange} now={now} />
                 <Bells endBell={prefs.endBell} onPick={(endBell) => onChange({ endBell })} />
                 <Underneath prefs={prefs} onChange={onChange} />
-                <Section title="Starting">
-                  <Switch
-                    room
-                    checked={usual}
-                    onChange={onUsual}
-                    label="Go straight to the bowl"
-                    description="The doors on Home skip the questions and use these settings."
-                  />
-                </Section>
               </div>
             </div>
           </div>
           <button type="button" onClick={onPractice} className={ROW}>
             Your practice
           </button>
-          <button type="button" onClick={onSignOut} className={ROW}>
-            Sign out
-          </button>
+          {!leaving ? (
+            <button type="button" onClick={() => setLeaving(true)} className={ROW}>
+              Sign out
+            </button>
+          ) : (
+            <div className="flex min-h-14 flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-room-edge/50 py-3">
+              <p className="text-masthead font-semibold text-room-ink">Sign out?</p>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setLeaving(false)} className={PRIMARY_ROOM_SM}>
+                  Stay
+                </button>
+                <button type="button" onClick={onSignOut} className={QUIET_ROOM_SM}>
+                  Yes, sign out
+                </button>
+              </div>
+            </div>
+          )}
         </nav>
       </div>
     </div>
   );
 }
 
-const ROW = `flex min-h-14 w-full items-center justify-between gap-4 border-b border-room-edge/50 text-left font-display text-[1.125rem] font-semibold text-room-ink transition-colors duration-200 hover:text-room-action motion-reduce:transition-none ${FOCUS_ROOM}`;
+/** A row on the menu is a control, so it is Nunito 600 like every other. */
+const ROW = `flex min-h-14 w-full items-center justify-between gap-4 border-b border-room-edge/50 text-left text-masthead font-semibold text-room-ink transition-colors duration-200 hover:text-room-action motion-reduce:transition-none ${FOCUS_ROOM}`;
 
 function Section({ title, aside, children }: { title: string; aside?: ReactNode; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-3.5">
       <div className="flex items-baseline justify-between gap-4">
-        <h3 className="font-display text-[1rem] font-semibold text-room-ink">
+        <h3 className="text-body font-semibold text-room-ink">
           {title}
         </h3>
         {aside}
@@ -242,8 +256,10 @@ const tile = (on: boolean) =>
   }`;
 
 /**
- * The length, on the timer's stops. With everyone, one more stop past the
- * last: until the shared bell. By yourself there is no bell to wait for.
+ * The length, on the timer's stops, and one more past the last: until the
+ * shared bell. The bell is with everyone, so choosing it chooses the door
+ * too; by yourself a stored `untilBell` shows as the length, since no bell
+ * will ring for it.
  */
 function Length({
   prefs,
@@ -254,10 +270,9 @@ function Length({
   onChange: (patch: Partial<UserPreferences>) => void;
   now: number | null;
 }) {
-  const together = prefs.showCount;
   const bellLabel = now === null ? null : localTime(nextSharedBellAt(now));
-  const stops = together ? TIMER_STOPS.length : TIMER_STOPS.length - 1;
-  const untilBell = prefs.untilBell && together;
+  const stops = TIMER_STOPS.length;
+  const untilBell = prefs.untilBell && prefs.showCount;
   const stop = untilBell ? TIMER_STOPS.length : timerStopIndex(prefs.timerMinutes);
   const duration = durationLabel(prefs.timerMinutes);
   const said = untilBell
@@ -266,12 +281,12 @@ function Length({
 
   return (
     <Section title="How long">
-      <p aria-hidden className="font-display text-[2rem] leading-none font-bold text-room-action tabular-nums">
+      <p aria-hidden className="font-display text-sentence leading-none font-bold text-room-action tabular-nums">
         {untilBell ? (
           <>Until {bellLabel ?? 'the bell'}</>
         ) : (
           <>
-            {duration.value} <span className="text-[1.25rem] text-room-ink-2">{duration.unit}</span>
+            {duration.value} <span className="text-masthead text-room-ink-2">{duration.unit}</span>
           </>
         )}
       </p>
@@ -286,7 +301,7 @@ function Length({
         onChange={(e) => {
           const i = Number(e.target.value);
           if (i === TIMER_STOPS.length) {
-            onChange({ untilBell: true });
+            onChange({ untilBell: true, showCount: true });
             return;
           }
           onChange({
@@ -297,37 +312,69 @@ function Length({
         className="room-range range-room w-full"
         style={{ '--range-fill': `${(stop / stops) * 100}%` } as CSSProperties}
       />
-      <div aria-hidden className="flex justify-between text-[0.75rem] text-room-ink-2 tabular-nums">
+      <div aria-hidden className="flex justify-between text-caption text-room-ink-2 tabular-nums">
         <span>{TIMER_STOPS[0]} min</span>
-        <span>{together ? 'Until the bell' : `${TIMER_STOPS[TIMER_STOPS.length - 1]} min`}</span>
+        <span>Until the bell</span>
       </div>
     </Section>
   );
 }
 
+/**
+ * The three bells, the rail's cards smaller: one `radiogroup` of `radio`s
+ * like `BellScreen`, so there is one tab stop and the arrows move the choice
+ * and ring the bell they land on, as a tap does.
+ */
 function Bells({ endBell, onPick }: { endBell: BellKind; onPick: (kind: BellKind) => void }) {
+  const kinds = Object.keys(BELLS) as BellKind[];
+  const tiles = useRef<(HTMLButtonElement | null)[]>([]);
+
+  const ring = (kind: BellKind) => {
+    onPick(kind);
+    unlockAudio();
+    previewBell(kind);
+  };
+
+  const onKeyDown = (e: ReactKeyboardEvent<HTMLButtonElement>, i: number) => {
+    const by =
+      e.key === 'ArrowRight' || e.key === 'ArrowDown'
+        ? 1
+        : e.key === 'ArrowLeft' || e.key === 'ArrowUp'
+          ? -1
+          : 0;
+    if (!by) return;
+    e.preventDefault();
+    const next = (i + by + kinds.length) % kinds.length;
+    const kind = kinds[next];
+    if (!kind) return;
+    ring(kind);
+    tiles.current[next]?.focus();
+  };
+
   return (
-    <Section title="The bell" aside={<span className="text-[0.75rem] text-room-ink-2">Tap to hear</span>}>
-      <div className="grid grid-cols-3 gap-2" role="group" aria-label="The bell">
-        {(Object.keys(BELLS) as BellKind[]).map((kind) => {
+    <Section title="The bell" aside={<span className="text-caption text-room-ink-2">Tap to hear</span>}>
+      <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="The bell">
+        {kinds.map((kind, i) => {
           const chosen = endBell === kind;
           return (
             <button
               key={kind}
-              type="button"
-              aria-pressed={chosen}
-              onClick={() => {
-                onPick(kind);
-                unlockAudio();
-                previewBell(kind);
+              ref={(el) => {
+                tiles.current[i] = el;
               }}
+              type="button"
+              role="radio"
+              aria-checked={chosen}
+              tabIndex={chosen ? 0 : -1}
+              onClick={() => ring(kind)}
+              onKeyDown={(e) => onKeyDown(e, i)}
               className={tile(chosen)}
             >
               <Glyph kind={kind} />
-              <span className={`font-display text-[0.875rem] leading-tight font-semibold ${chosen ? '' : 'text-room-ink'}`}>
+              <span className={`text-control leading-tight font-semibold ${chosen ? '' : 'text-room-ink'}`}>
                 {BELLS[kind].label}
               </span>
-              <span className="text-[0.6875rem] leading-snug text-room-ink-2">{CHARACTER[kind]}</span>
+              <span className="text-caption leading-snug text-room-ink-2">{CHARACTER[kind]}</span>
             </button>
           );
         })}
@@ -354,7 +401,7 @@ function Underneath({
   onChange: (patch: Partial<UserPreferences>) => void;
 }) {
   return (
-    <Section title="Underneath" aside={<span className="text-[0.75rem] text-room-ink-2">Heard in the sitting</span>}>
+    <Section title="Underneath" aside={<span className="text-caption text-room-ink-2">Heard in the sitting</span>}>
       <Sounds
         mix={prefs.soundMix}
         onSound={(patch) => onChange({ soundMix: { ...prefs.soundMix, ...patch } })}

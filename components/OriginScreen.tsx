@@ -24,7 +24,8 @@ interface Option {
  * the browser (`usePlaces`, `lib/places.ts`) and the matches open under the
  * line; the arrows move through them and Enter takes one, so what is kept is
  * a real place spelled one way. A town too small for the list is still an
- * answer: the last choice is always to keep it as typed.
+ * answer: the last choice is always to keep it as typed. While the list is
+ * still on its way the first row says so, and cannot be chosen.
  *
  * The screen is the line and nothing else until there is an answer; the
  * question is there only for a screen reader. Detected and confirmed, as
@@ -33,7 +34,7 @@ interface Option {
  * line stays a place to type and nobody's answer is a guess they did not
  * look at.
  *
- * Back is at the foot; Next and *Leave it out* are under the line, in the
+ * Back is at the foot; Next and Skip are under the line, in the
  * same places as on the name (`LineActions`), and Next appears once
  * something is typed. So does the one switch that decides whether anyone
  * else ever sees it, under them: off by default, explained in a line. Before
@@ -71,7 +72,7 @@ export default function OriginScreen({
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
   const [shareDraft, setShareDraft] = useState(share);
-  const index = usePlaces(current);
+  const { index, loading } = usePlaces(current);
 
   const typed = draft.trim();
   const options = useMemo<Option[]>(() => {
@@ -140,7 +141,7 @@ export default function OriginScreen({
       current={current}
       bare
       title="Where are you sitting?"
-      lede="Type a city or a country, then choose it. Or leave it out."
+      lede="Type a city or a country, then choose it. Or skip it."
       onBack={onBack}
       step={step}
       steps={steps}
@@ -186,8 +187,18 @@ export default function OriginScreen({
                 id={listId}
                 role="listbox"
                 aria-label="Places"
-                className="absolute inset-x-0 top-full z-20 mt-2 flex flex-col overflow-hidden rounded-control border border-rule bg-surface py-1 shadow-[0_12px_32px_-12px_rgb(59_42_29_/_0.35)]"
+                className="absolute inset-x-0 top-full z-20 mt-2 flex flex-col overflow-hidden rounded-control border border-rule bg-surface py-1 shadow-menu"
               >
+                {typed && loading && (
+                  <li
+                    role="option"
+                    aria-disabled
+                    aria-selected={false}
+                    className="flex min-h-11 items-baseline px-4 py-2.5 text-body text-ink-3"
+                  >
+                    Looking up places…
+                  </li>
+                )}
                 {options.map((o, i) => (
                   <li
                     key={o.key}
@@ -198,7 +209,7 @@ export default function OriginScreen({
                     onMouseDown={(e) => e.preventDefault()}
                     onMouseMove={() => setActive(i)}
                     onClick={() => choose(o)}
-                    className={`flex min-h-11 cursor-pointer flex-wrap items-baseline gap-x-2 px-4 py-2.5 text-base ${
+                    className={`flex min-h-11 cursor-pointer flex-wrap items-baseline gap-x-2 px-4 py-2.5 text-body ${
                       i === active ? 'bg-ember-soft text-ember' : 'text-ink'
                     }`}
                   >
@@ -222,7 +233,6 @@ export default function OriginScreen({
             onChange('', false);
             onSkip();
           }}
-          skipLabel="Leave it out"
         >
           {typed && (
             <Switch
@@ -234,7 +244,7 @@ export default function OriginScreen({
                   you sit with them
                 </>
               }
-              description="Only while you sit with others, and only while this is on. Nothing is kept on our side until you say yes."
+              description="Saved on this device, and to your account if you're signed in. Shown to others only while this is on."
             />
           )}
         </LineActions>

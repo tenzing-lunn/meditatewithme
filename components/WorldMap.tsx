@@ -579,6 +579,7 @@ export default function WorldMap({
   waiting = false,
   room = 'dusk',
   paused = false,
+  reduced = false,
   className,
 }: {
   points: WorldPoint[];
@@ -589,7 +590,7 @@ export default function WorldMap({
    */
   you?: Cell | null;
   /**
-   * `contain`, the whole earth fitted, for the sitting and `/world`. `cover`
+   * `contain`, the whole earth fitted, for the sitting. `cover`
    * fills the frame for the doors: the whole width on a wide screen, and on a
    * tall one cropped to the longitudes around `you` — or, before the edge has
    * said where that is, around the device's time zone. See `lib/earthView.ts`.
@@ -603,16 +604,24 @@ export default function WorldMap({
   /** Dawn or dusk: which palette the ground, the night and the lights are drawn in. */
   room?: Room;
   /**
-   * Hold the last frame and stop the loop: something covers the earth, and
-   * a full-screen canvas repainting sixty times a second under it is what
-   * makes that thing stutter.
+   * Hold the last frame and stop the loop: something covers the earth —
+   * Home's settings drawer, the sitting's Sound sheet — and a full-screen
+   * canvas repainting under it is what makes that thing stutter.
    */
   paused?: boolean;
+  /**
+   * The visitor has asked for less motion (`useReducedMotion`, read by
+   * whoever renders the earth): no loop, one still frame, and a redraw on
+   * the minute so the terminator keeps moving.
+   */
+  reduced?: boolean;
   className?: string;
 }) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const pausedRef = useRef(paused);
   pausedRef.current = paused;
+  const reducedRef = useRef(reduced);
+  reducedRef.current = reduced;
   // Read by the scene, which is built once; a render only updates them.
   const fitRef = useRef(fit);
   fitRef.current = fit;
@@ -634,6 +643,7 @@ export default function WorldMap({
     setYou: (you: Cell | null) => void;
     setRoom: (room: Room) => void;
     setPaused: (paused: boolean) => void;
+    setReduced: (reduced: boolean) => void;
     dispose: () => void;
   } | null>(null);
 
@@ -779,8 +789,8 @@ export default function WorldMap({
       canvas.height = Math.round(h * dpr);
 
       // Fitted to whichever dimension runs out first, never cropped, for the
-      // sitting and `/world`: a world map that does not show the whole world
-      // is answering a different question from the one those pages ask. The
+      // sitting: a world map that does not show the whole world is
+      // answering a different question from the one the sitting asks. The
       // doors ask another — where am I, among these people — and cover the
       // frame instead.
       const fitted =
@@ -847,20 +857,31 @@ export default function WorldMap({
 
     layout();
 
-    const reducedMotion = window.matchMedia(
-      '(prefers-reduced-motion: reduce)',
-    ).matches;
-
+    // Thirty frames a second, not the display's sixty or more. The breath
+    // is five seconds long and the fastest ping under a second, so half the
+    // frames show nothing the eye can use, and an hour of them on a phone is
+    // heat. Under reduced motion (`reducedRef`, from the prop) nothing moves
+    // at all, so there is no loop: one frame, and another on the minute for
+    // the terminator.
+    const FRAME_MS = 1000 / 30;
     let raf = 0;
+    let drawnAt = 0;
     const startedAt = performance.now();
 
-    const render = () => {
+    const render = (force = false) => {
       raf = 0;
       if (disposed) return;
-      // Paused, this frame is drawn and it is the last until play resumes.
-      if (!pausedRef.current) raf = requestAnimationFrame(render);
+      // Paused or still, this frame is drawn and it is the last until play
+      // resumes.
+      if (!reducedRef.current && !pausedRef.current) raf = requestAnimationFrame(tick);
 
-      const elapsed = reducedMotion ? 0 : (performance.now() - startedAt) / 1000;
+      const at = performance.now();
+      if (!force && at - drawnAt < FRAME_MS) return;
+      // Kept in phase with the cap rather than reset to now, so a 60Hz
+      // display lands on every second frame instead of drifting to a third.
+      drawnAt = force ? at : at - ((at - drawnAt) % FRAME_MS);
+
+      const elapsed = reducedRef.current ? 0 : (at - startedAt) / 1000;
 
       // The sun moves a quarter of a degree a minute, which is under a pixel
       // here, so the night is rebuilt on the minute rather than on the frame.
@@ -954,8 +975,11 @@ export default function WorldMap({
         ctx.globalAlpha = 1;
         ctx.drawImage(sprites[0]!, mineX - s / 2, mineY - s / 2, s, s);
         ctx.globalCompositeOperation = 'source-over';
-        ctx.strokeStyle = dawn ? 'rgba(156, 61, 18, 0.5)' : 'rgba(224, 160, 87, 0.45)';
-        ctx.lineWidth = 1;
+        // Ember at dawn, flame at dusk — the same two as the waiting ring,
+        // at the same strength. At 1px and 45% it was under the candle's own
+        // glow, and "which one is me" is the one thing this ring is for.
+        ctx.strokeStyle = dawn ? 'rgba(156, 61, 18, 0.85)' : 'rgba(224, 160, 87, 0.85)';
+        ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.arc(mineX, mineY, s * 0.42, 0, Math.PI * 2);
         ctx.stroke();
@@ -964,10 +988,19 @@ export default function WorldMap({
       ctx.globalCompositeOperation = 'source-over';
     };
 
-    render();
+    // The frame loop's own callback: `render` takes `force`, and a frame
+    // timestamp in that seat would count as one.
+    const tick = () => render();
+    render(true);
     redraw = () => {
-      if (!raf) render();
+      if (!raf) render(true);
     };
+    // The still earth's own clock: while the loop runs, `bake()` above
+    // already rebuilds the night on the minute, so this only draws when
+    // there is no loop to do it.
+    const minute = window.setInterval(() => {
+      if (reducedRef.current && !pausedRef.current) redraw();
+    }, 60_000);
 
     const observer = new ResizeObserver(layout);
     observer.observe(host);
@@ -989,11 +1022,23 @@ export default function WorldMap({
         if (next !== builtRoom) layout();
       },
       setPaused: (next) => {
-        if (!next && !raf && !disposed) raf = requestAnimationFrame(render);
+        if (next || disposed) return;
+        if (reducedRef.current) redraw();
+        else if (!raf) raf = requestAnimationFrame(tick);
+      },
+      setReduced: (next) => {
+        if (disposed) return;
+        // Going still: the frame in flight is dropped and one is drawn at
+        // rest, which `render` will not follow with another. Moving again:
+        // one forced frame, which reschedules itself.
+        cancelAnimationFrame(raf);
+        raf = 0;
+        if (next || !pausedRef.current) render(true);
       },
       dispose: () => {
         disposed = true;
         cancelAnimationFrame(raf);
+        window.clearInterval(minute);
         observer.disconnect();
         abort.abort();
         image.onload = null;
@@ -1025,6 +1070,10 @@ export default function WorldMap({
   useEffect(() => {
     sceneRef.current?.setPaused(paused);
   }, [paused]);
+
+  useEffect(() => {
+    sceneRef.current?.setReduced(reduced);
+  }, [reduced]);
 
   return <div ref={hostRef} className={className} aria-hidden />;
 }

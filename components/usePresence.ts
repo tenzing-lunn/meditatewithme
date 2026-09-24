@@ -21,6 +21,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  * page actually in front of them", which is both what was asked for and true.
  *
  * It also costs less: a backgrounded tab makes no requests at all.
+ *
+ * With one exception. A tab that is *sitting* keeps beating while hidden: a
+ * phone that locked with its owner's eyes shut is the normal posture of
+ * meditation, not a forgotten tab, and the sitter must stay in the count.
+ * The fetch has `keepalive` for exactly this. When the sitting ends while
+ * the tab is still hidden, the beats stop then.
  */
 
 const HEARTBEAT_MS = 30_000;
@@ -78,14 +84,23 @@ export interface Presence {
  * server's copy lasts exactly as long as that; a change beats at once, so
  * a name appears within one poll and disappears the moment the sitting
  * ends.
+ *
+ * `sitting` is true for the length of a sitting. While it is, hiding the tab
+ * does not stop the heartbeat.
  */
-export function usePresence({ label = null }: { label?: string | null } = {}): Presence {
+export function usePresence({
+  label = null,
+  sitting = false,
+}: { label?: string | null; sitting?: boolean } = {}): Presence {
   const [count, setCount] = useState<number | null>(null);
   const [litCount, setLitCount] = useState<number | null>(null);
   const anonIdRef = useRef<string | null>(null);
   const labelRef = useRef(label);
   labelRef.current = label;
+  const sittingRef = useRef(sitting);
+  sittingRef.current = sitting;
   const beatRef = useRef<(() => Promise<void>) | null>(null);
+  const stopRef = useRef<(() => void) | null>(null);
 
   const begin = useCallback(async () => {
     const anonId = anonIdRef.current;
@@ -128,20 +143,36 @@ export function usePresence({ label = null }: { label?: string | null } = {}): P
       }
     };
 
+    // One missed poll keeps the last number: a blink of network is not worth
+    // a line vanishing. Two in a row (thirty seconds) and it goes null, so
+    // the company line says nothing rather than something old.
+    let misses = 0;
+    const missed = () => {
+      misses += 1;
+      if (misses >= 2 && !stopped) {
+        setCount(null);
+        setLitCount(null);
+      }
+    };
+
     const poll = async () => {
       try {
         const res = await fetch('/api/count');
-        if (!res.ok) return;
+        if (!res.ok) {
+          missed();
+          return;
+        }
         const body = (await res.json()) as {
           count: number | null;
           litCount: number | null;
         };
+        misses = 0;
         if (!stopped) {
           setCount(body.count);
           setLitCount(body.litCount);
         }
       } catch {
-        // Leave the last known number on screen rather than blanking it.
+        missed();
       }
     };
 
@@ -161,12 +192,14 @@ export function usePresence({ label = null }: { label?: string | null } = {}): P
       pollTimer = undefined;
     };
 
+    stopRef.current = stop;
+
     const onVisibility = () => {
       if (document.visibilityState === 'visible') {
         // Restart with an immediate beat — coming back to the tab should put
         // you in the count straight away, not up to 30 seconds later.
         if (beatTimer === undefined) start();
-      } else {
+      } else if (!sittingRef.current) {
         stop();
       }
     };
@@ -178,6 +211,7 @@ export function usePresence({ label = null }: { label?: string | null } = {}): P
       stopped = true;
       anonIdRef.current = null;
       beatRef.current = null;
+      stopRef.current = null;
       stop();
       document.removeEventListener('visibilitychange', onVisibility);
     };
@@ -187,6 +221,11 @@ export function usePresence({ label = null }: { label?: string | null } = {}): P
   useEffect(() => {
     void beatRef.current?.();
   }, [label]);
+
+  // A sitting that ends in a hidden tab is a forgotten tab from then on.
+  useEffect(() => {
+    if (!sitting && document.visibilityState !== 'visible') stopRef.current?.();
+  }, [sitting]);
 
   return { count, litCount, begin };
 }

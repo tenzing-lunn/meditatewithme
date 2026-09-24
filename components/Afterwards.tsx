@@ -1,108 +1,57 @@
 'use client';
 
-import type { ReactNode } from 'react';
-import { currentStreak, summarise, type PracticeEntry } from '@/lib/practice';
-import { PRIMARY_ROOM, QUIET_ROOM } from './controls';
+import Brand from './Brand';
+import { WORD } from './controls';
 
-/** The held beat after the bell, before anything is said. */
+/** The held beat after the bell, on the water, before this is shown. */
 export const COOLDOWN_MS = 10_000;
 
 /**
- * After the bell: a pause, then a thing to read, then a thing to choose.
+ * After the bell: a thing to read, then a thing to choose.
  *
- * The bell is still ringing for the first ten seconds (the tails are 18 to
- * 22 seconds) and the mix is still receding, so nothing is said: one word
- * and a number counting down, small, so it reads as a pause rather than as
- * being timed. Then the minutes at display size, the facts that say
- * something as a table with no lines in it, and the two ways on. Only rows
- * that say something: a streak of one is the sitting just finished, and a
- * missing count is left out rather than guessed at.
+ * The first ten seconds are not here. The bell is still ringing (the tails
+ * are 18 to 22 seconds) and the mix is still receding, so the sitting stays
+ * on screen with *Come back.* over it (`Sitting`, `ended`) and nothing is
+ * said until the tail has gone. Then, over the pond — which `Journey` keeps
+ * drawing underneath, the others gone and one wide ring still leaving your
+ * stone — the minutes in the serif, one line, and the two ways on. No
+ * streak and no total: those are the practice log's, on Home, and the
+ * ending is not a scoreboard.
+ *
+ * Pale water, 22 September 2026: "who was with you this hour" is dropped
+ * from here, as the wireframe has it; the sitting's own line said it.
  */
 export default function Afterwards({
   minutes,
-  withOthers,
-  endedAt,
-  mono,
-  entries,
-  now,
   onAgain,
   onDone,
   onFinish,
-  offer,
 }: {
   minutes: number;
-  /** Everyone who lit this hour, minus you. Null when unknown. */
-  withOthers: number | null;
-  /** Monotonic, at the bell. */
-  endedAt: number;
-  mono: number;
-  entries: PracticeEntry[];
-  now: number;
   onAgain: () => void;
-  /** Signed in: back home. Absent for a guest, who gets Finish. */
+  /** Signed in: back home. Absent for a guest, who starts over. */
   onDone?: () => void;
   onFinish: () => void;
-  /** The account offer, for guests. */
-  offer?: ReactNode;
 }) {
-  const left = Math.max(0, Math.ceil((COOLDOWN_MS - (mono - endedAt)) / 1000));
-  const holding = mono - endedAt < COOLDOWN_MS;
-
-  const streak = currentStreak(entries, now);
-  const total = summarise(entries, now);
-  const rows: [string, string][] = [];
-  if (streak > 1) rows.push(['Days in a row', String(streak)]);
-  if (withOthers !== null)
-    rows.push([
-      'With you this hour',
-      withOthers === 0 ? 'Nobody else' : `${withOthers} ${withOthers === 1 ? 'other' : 'others'}`,
-    ]);
-  if (total.sittings > 1) rows.push(['Altogether', `${total.sittings} sittings`]);
-
   return (
-    <div className="relative flex h-dvh w-full flex-col items-center justify-center bg-room px-6 text-room-ink">
-      {holding ? (
-        <div className="flex flex-col items-center" role="status" aria-label="Coming back">
-          <p className="font-display text-[2.25rem] font-bold leading-none sm:text-[3rem]">
-            Come back.
-          </p>
-          <p aria-hidden className="mt-5 text-lg tabular-nums text-room-ink-2">
-            {left}
-          </p>
+    <div id="main" className="relative flex h-dvh w-full flex-col px-6 text-ink sm:px-14 lg:px-24">
+      <header className="pt-[calc(1rem+env(safe-area-inset-top))]">
+        <Brand />
+      </header>
+      <div className="mx-auto mt-[58dvh] flex w-full max-w-md flex-col items-center text-center screen-settle">
+        <p className="font-display text-minutes leading-none">
+          {minutes} {minutes === 1 ? 'minute' : 'minutes'}.
+        </p>
+        <p className="mt-4 text-body text-ink-2">The water is still again.</p>
+        <div className="mt-8 flex gap-8">
+          <button type="button" onClick={onAgain} className={`${WORD} text-ink`}>
+            Again
+          </button>
+          <button type="button" onClick={onDone ?? onFinish} className={WORD}>
+            Done
+          </button>
         </div>
-      ) : (
-        <div className="flex w-full max-w-md flex-col items-center screen-settle">
-          <p className="font-display text-[3.5rem] font-bold leading-none">
-            {minutes} {minutes === 1 ? 'minute' : 'minutes'}.
-          </p>
-
-          {rows.length > 0 && (
-            <dl className="mt-7 w-full max-w-[16rem] space-y-2 text-[0.9375rem]">
-              {rows.map(([label, value]) => (
-                <div key={label} className="flex items-baseline justify-between gap-6">
-                  <dt className="text-room-ink-2">{label}</dt>
-                  <dd className="tabular-nums">{value}</dd>
-                </div>
-              ))}
-            </dl>
-          )}
-
-          <div className="mt-9 flex gap-3">
-            <button type="button" onClick={onAgain} className={PRIMARY_ROOM}>
-              Sit again
-            </button>
-            <button type="button" onClick={onDone ?? onFinish} className={QUIET_ROOM}>
-              {onDone ? 'Done' : 'Finish'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {!holding && offer && (
-        <div className="absolute inset-x-0 bottom-0 flex justify-center px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
-          {offer}
-        </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -9,6 +9,7 @@ import {
   TRACK_SLUGS,
   startMix,
   type MixHandle,
+  type TrackSlug,
 } from './mix';
 
 /**
@@ -85,6 +86,20 @@ export interface Mix {
   fadeOut: (seconds?: number) => void;
   /** Bring it back for the next sitting. */
   restore: () => void;
+  /**
+   * Let the chosen bed be heard for a few seconds, then fall silent by
+   * itself, and hold it there until the sitting's `restore`. The arrival's
+   * sound phrase, so that trying rain is not the same as leaving rain on.
+   */
+  audition: () => void;
+  /**
+   * The same few seconds for a bed that is not chosen yet: the arrival's
+   * play button beside a sound in its wheel. Nothing is written; the stored
+   * beds come back at `hush` or `restore`.
+   */
+  taste: (slug: TrackSlug) => void;
+  /** Stop a taste now, quickly, and put the stored beds back underneath. */
+  hush: () => void;
 }
 
 export function useMix(soundMix: Record<string, number>): Mix {
@@ -142,10 +157,9 @@ export function useMix(soundMix: Record<string, number>): Mix {
     // Without this branch, any change to the mix — a fader dragged, a sync
     // arriving from another device — would push the stored master in and
     // undo the silence by a side door.
-    mix.set(
-      MASTER_KEY,
-      muted.current ? 0 : (soundMix[MASTER_KEY] ?? DEFAULT_MASTER),
-    );
+    // While held, the master is left where it is — at zero, or partway
+    // through an audition's fade, which writing zero here would cut short.
+    if (!muted.current) mix.set(MASTER_KEY, soundMix[MASTER_KEY] ?? DEFAULT_MASTER);
     // soundMix is read through the fingerprint deliberately — see above.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fingerprint]);
@@ -177,8 +191,43 @@ export function useMix(soundMix: Record<string, number>): Mix {
   // and answered, and whatever the beds are set to is now what was asked for.
   const restore = useCallback(() => {
     muted.current = false;
-    handle.current?.restore(latest.current[MASTER_KEY] ?? DEFAULT_MASTER);
+    const mix = handle.current;
+    // A taste may have left another bed up; the sitting gets what was chosen.
+    if (mix) for (const slug of TRACK_SLUGS) mix.set(slug, latest.current[slug] ?? 0);
+    mix?.restore(latest.current[MASTER_KEY] ?? DEFAULT_MASTER);
   }, []);
 
-  return { ensure, unmute, fadeOut, restore };
+  const audition = useCallback(() => {
+    muted.current = true;
+    handle.current?.audition(latest.current[MASTER_KEY] ?? DEFAULT_MASTER);
+  }, []);
+
+  const hushTimer = useRef(0);
+
+  const taste = useCallback((slug: TrackSlug) => {
+    window.clearTimeout(hushTimer.current);
+    muted.current = true;
+    let mix = handle.current;
+    if (!mix) mix = handle.current = startMix({ ...latest.current, [MASTER_KEY]: 0 });
+    else unlockAudio();
+    // No audio in this browser at all: nothing to taste.
+    if (!mix) return;
+    for (const s of TRACK_SLUGS) mix.set(s, s === slug ? 1 : 0);
+    mix.audition(latest.current[MASTER_KEY] ?? DEFAULT_MASTER);
+  }, []);
+
+  const hush = useCallback(() => {
+    const mix = handle.current;
+    if (!mix) return;
+    muted.current = true;
+    mix.fadeOut(0.25);
+    // Once it is quiet, not before: swapping beds under a sounding master
+    // would be heard as a cut.
+    window.clearTimeout(hushTimer.current);
+    hushTimer.current = window.setTimeout(() => {
+      for (const s of TRACK_SLUGS) mix.set(s, latest.current[s] ?? 0);
+    }, 350);
+  }, []);
+
+  return { ensure, unmute, fadeOut, restore, audition, taste, hush };
 }

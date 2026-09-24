@@ -215,6 +215,26 @@ Which dot is yours is decided client-side (it is always the one at twelve), so
 the only personalised part of the room does not make the shared response
 uncacheable.
 
+**Who counts, and the hidden tab.** Everyone with the page open, not only
+those who pressed Begin (§14, item 2). The client stops heartbeating the
+moment the tab is hidden, and the count query ignores rows older than 90
+seconds, so a tab forgotten on the landing drops out about a minute and a
+half after it stops being looked at. Since 22 September 2026 that rule
+depends on whether a sitting is in progress: `usePresence` takes `sitting`,
+and a hidden tab that is sitting keeps beating (the fetch has `keepalive`),
+because a phone that locked with its owner's eyes shut is the normal posture
+of meditation, not a forgotten tab. The wake lock in
+`components/useWakeLock.ts` exists to stop that lock happening (§7); when it
+happens anyway, the sitter stays in the count and their candle stays lit. A
+sitting that ends while the tab is still hidden stops the beats then.
+
+**A count that cannot be read goes quiet.** One missed poll keeps the last
+number, since a blink of network is not worth a line vanishing; two in a row
+(thirty seconds) and `usePresence` sets it null, `useCount` (Home's line)
+does the same, and `useWorld` empties the earth on the same rule.
+`companyLine` says nothing for a null count rather than something forty
+minutes old, and no error is shown either way.
+
 ### The general lesson
 
 Realtime transport is for data that is **personalised, high-value, and latency-sensitive**. This number is none of those. Polling a cached endpoint is not the primitive solution here — it is the correct one, and it scales roughly a hundred times further on the same free tier.
@@ -287,6 +307,17 @@ This is the single most important line in the timer. A meditation app whose bell
 
 ## 7. Subsystem 4 — Audio
 
+> **Since 23 September 2026 the beds are recordings** (CC0, Freesound; the
+> list and the stretch of each in `lib/beds.ts`, the loops built by
+> `scripts/build-sounds.mjs` into `public/sounds/`). Each MP3 holds its loop
+> plus a second of itself at either end, and the source loops between
+> `loopStart`/`loopEnd` inside that padding, so no browser's decoder delay
+> reaches the seam; loop lengths are multiples of 3 s, a whole number of MP3
+> frames at 48 kHz, so both loop points are encoded identically. A bed is
+> fetched the first time its gain is raised, not with the graph. Where what
+> follows describes generated noise, it is history; the gain graph, the
+> ramps and the master are unchanged. The bells are still synthesised.
+
 One `AudioContext`. One gain node per track. Buffers decoded once and looped natively.
 
 ```
@@ -315,7 +346,7 @@ All tracks start immediately at zero gain and stay running. Fading is cheaper an
 ### Constraints worth knowing before you write it
 
 - **An `AudioContext` cannot start without a user gesture.** Autoplay policy. Turn this into the design rather than fighting it: one deliberate **Begin** button that lights the candle and starts the audio together. The constraint becomes the ritual.
-- **iOS suspends the context when the screen locks.** Not solvable in a web app. Accept it, and note it for whenever the mobile app conversation happens.
+- **iOS suspends the context when the screen locks.** Not solvable in a web app: a lock that happens suspends the graph, and the bell is late until the screen wakes. Accept it, and note it for whenever the mobile app conversation happens. What *is* solvable is the lock itself: since 22 September 2026 `components/useWakeLock.ts` asks for a screen wake lock inside the click that strikes the bowl and holds it for the sitting, asking again each time the tab comes back, so where the browser grants it the screen stays on and the context never suspends. Unsupported is a silent no-op. Both statements stand side by side; the second is why the first is rarely met.
 - **Decode all buffers up front**, behind the Begin button, so no track arrives late.
 - Loops need to be **seamless at the sample level**. This is an asset-quality problem, not a code problem — a loop with a click at the seam will be audible on repeat and no amount of crossfading fully hides it.
 
@@ -641,7 +672,6 @@ The heartbeat table is the first thing to break, and it is a contained problem w
 meditatewithme/
 ├── app/
 │   ├── page.tsx                 # renders <Entry> — the rail, or Home
-│   ├── world/page.tsx           # the map, its own route
 │   ├── privacy/, terms/         # the documents (unlinked until filled)
 │   ├── layout.tsx               # Comfortaa + Nunito, light colour scheme
 │   └── api/
@@ -660,16 +690,15 @@ meditatewithme/
 │   ├── Sitting.tsx              # the dusk frame with the earth
 │   ├── Afterwards.tsx           # the ending
 │   ├── Home.tsx, SettingsDrawer.tsx # the signed-in page and its drawer
-│   ├── WorldMap.tsx             # canvas earth; the sitting and /world
-│   ├── World.tsx                # the map's page chrome
-│   ├── Sounds.tsx               # the six tiles and Volume; the rail, the
+│   ├── WorldMap.tsx             # canvas earth; the sitting, Home and the mode question
+│   ├── Sounds.tsx               # the nine tiles and Volume; the rail, the
 │   │                            #   drawer and the sitting all render this
 │   ├── Account.tsx, Practice.tsx, Switch.tsx, Wordmark.tsx
 │   ├── controls.ts              # the six control styles
 │   ├── use*.ts                  # every hook: auth, prefs, practice, mix, presence,
 │   │                            #   world, count, session, clock, profile, origin,
-│   │                            #   usual, fullscreen, reduced motion
-│   └── Demo.tsx                 # dev-only: /?demo=sitting, /?demo=finished
+│   │                            #   usual, fullscreen, wake lock, reduced motion
+│   └── Demo.tsx                 # dev-only: /?demo=sitting, /?demo=finished[&settled]
 ├── scripts/
 │   └── contrast.mjs             # every palette pair against its threshold
 ├── lib/
@@ -682,6 +711,7 @@ meditatewithme/
 │   ├── geo.ts                   # snapToCell, subsolarPoint
 │   ├── projection.ts            # Equal Earth
 │   ├── practice.ts              # the log and its summary
+│   ├── authErrors.ts            # the three sentences said when Supabase says no
 │   └── supabase.ts
 ├── public/earth/                # land.json + relief.jpg — 273KB
 ├── supabase/migrations/
@@ -736,8 +766,8 @@ wrong would have.
    on two devices counts twice. Acceptable, and the alternative is worse.
 4. **~~Do we record any analytics at all?~~ Settled, and the answer is no longer
    "none".** No third-party analytics, and nothing that identifies anybody — that
-   part holds, and the cookie banner question stays closed. But the map at
-   `/world` needs to know roughly where a candle was lit, so `heartbeats` now
+   part holds, and the cookie banner question stays closed. But the earth
+   needs to know roughly where a candle was lit, so `heartbeats` now
    carries `cell_lat` / `cell_lon`.
 
    What was chosen, and why each part of it:
@@ -794,11 +824,11 @@ wrong would have.
    `plans/privacy-data-inventory.md` — the complete inventory of everything the
    site stores, with drafted plain-language copy for each category. It is not
    the notice, because the notice needs a named controller and that is still
-   with Jonny; it is everything about the notice that does not. `/world` also
-   says the substance of it under the map, on the page, because somebody
-   looking at a map of where people are should not have to open a legal document
-   to find out how precisely they are on it. **Keep those two in agreement**, and
-   keep both in agreement with `GRID_DEGREES`.
+   with Jonny; it is everything about the notice that does not. Until 22
+   September 2026 `/world` also said the substance of it under the map, on the
+   page; that route went with the rebuild's earth on Home and in the sitting,
+   so the notice is now the one place the precision is stated. **Keep it in
+   agreement with `GRID_DEGREES`.**
 
 ---
 
@@ -850,8 +880,12 @@ add the three variables for that branch too, or upgrade the CLI and set them for
 all preview branches at once.
 
 `SUPABASE_SERVICE_ROLE_KEY` is server-only and must stay that way. Verified
-against the live bundle: the key appears in none of the seven client chunks nor
-in the HTML. Re-run that check if `serviceClient()` ever gains a new caller.
+against the live bundle: the key appears in none of the client chunks nor in
+the HTML. Re-run that check if `serviceClient()` ever gains a new caller — or
+changes shape, as it did on 22 September 2026 when both clients moved behind
+an `import()` and became `async` (see §16). Re-verified then: 0 hits for the
+service key across `.next/static` and the built HTML, 1 for the publishable
+key, which is the control that proves the grep was working.
 
 Re-verified after `lib/supabase.ts` gained the auth configuration. The check is
 only meaningful if you also confirm the search *would* have found something —
@@ -935,6 +969,21 @@ writes to production metadata and that is a decision, not a side effect.
 
 ## 16. The screens
 
+**Pale water, 22 September 2026, on `dev`.** `Journey` now draws one `Pond`
+(a single canvas, redrawn every animation frame) under every stage and keeps
+it mounted from the arrival to the ending, so stones hold their places and
+your rings carry on while the words above change. The arrival (`Arrive`)
+replaces the doors and the time, bell, sound and bowl screens; `screensFor`
+returns `arrive`, then `name` and `origin` when due. Begin calls `begin()`
+inside the click exactly as the bowl did, and passes the button's position
+so the stone is thrown from it (`lib/pond.ts`: `skimAt`, pure and tested).
+`Sitting` fades in after the throw (`THROW_MS`); the bell's wide ring is the
+`finished` stage's `endedAt`. `ModeScreen`, `TimeScreen`, `BellScreen`,
+`SoundScreen`, `BowlScreen`, `Bowl` and the sitting's `WorldMap` are no
+longer reached from the journey; `ModeScreen`'s doors and `WorldMap` are
+still used by Home. What follows describes the rail and the earth as they
+were, and stands where it still applies.
+
 **Rewritten 14 September 2026.** Until then this section was the photographic
 room: a picture of a candle with one word on it, a ring for the sitting, a
 camera that racked between phases, and a page of measurements for setting
@@ -942,6 +991,90 @@ type over lit wax. That room is deleted (`docs/ui-rebuild.md`; the last
 commit that carried it is `86454e6` on `dev`). What stands from it is the
 premise — a candle is lit at the top of every hour, nothing is gated, you sit
 whenever you like — and the reasoning below is kept where it still applies.
+
+### What the first second costs — 22 September 2026
+
+The landing page is a client tree, so the server sends one empty element and
+the browser builds the rest. That is fine; what was not fine is what the
+browser had to have in hand first. Everything arrived in sequence, one thing
+at a time, and the sequence was long enough to watch.
+
+Four things were pure latency and are gone:
+
+* **The ground was a guess.** `body` painted paper while the first screen of
+  the site — a guest's doors, a member's Home — is always the room. After dark
+  the whole window turned over the moment React mounted. An inline script at
+  the top of `<body>` now runs `lib/room.ts`'s rule and sets `data-room`
+  before the first paint, so the ground is right in the first frame. `<body>`
+  rather than `<html>` because `suppressHydrationWarning` does not reach the
+  element Next owns, and the script sits in the body because that is where the
+  body exists; an inline script still runs as it is parsed. `next/script`
+  with `beforeInteractive` is **not** usable here: it queues the source
+  through Next's own runtime, which lands after the bundle and restores the
+  flash it was meant to prevent.
+* **The earth was asked for last.** `land.json` and `relief.jpg` are 273KB and
+  nothing requested them until the `WorldMap` chunk had loaded, which is after
+  hydration. `ReactDOM.preload` in the layout now asks with the document; the
+  relief carries `fetchPriority: 'low'` because the coastlines are what make
+  it read as the earth and the terrain is detail.
+* **The first screen animated itself in.** `rail-enter` waits out the leaving
+  screen's fade — 120ms, then 300ms of rising. On arrival nothing is leaving.
+  `Rail` now applies it only once a question has been answered.
+* **A guest waited for an account.** See below.
+
+### Supabase is not on the path to the doors
+
+Two changes, and they are separate.
+
+`lib/supabase.ts` reaches `createClient` through `import()`, so both clients
+are `async`. Statically imported it sat in the landing's first chunk — a
+network library a guest downloads, parses and never uses, on a page whose job
+is to show two doors. Every call site was already inside an effect, a route
+handler or an event, so nothing waits that was not waiting anyway. The cached
+value is now **the promise, not the client**: with an `await` between the
+check and the assignment, four hooks calling in one tick would each build a
+client, which is precisely the token-refresh race the file warns about.
+
+`Entry` used to render nothing until `getSession()` replied. Preferences and
+the practice log are localStorage read in an effect — one tick — and the
+account was the odd one out, so a guest paid for a question about an account
+they do not have. `hasStoredSession()` in `useAuth` answers it synchronously
+from localStorage instead, matching `sb-*-auth-token` by shape rather than
+composing the project ref a second time, and counting an `access_token` in the
+URL fragment as a maybe so a magic-link arrival is still waited for. **False
+means "do not wait", never "signed out"** — `useAuth` remains the only thing
+that decides, and a late signed-in answer changes the screen the same way
+signing in does on any other path.
+
+One consequence worth knowing: a guest's menu can now be opened in the first
+moments, while auth is still `loading`, and `Account` renders `null` for that
+state. The panel fills in a fraction of a second later. Not worth a spinner.
+
+### The rail is split, and warmed
+
+`Rail` mounts every screen it will ever show. That is what makes the switch a
+cross-fade rather than a page load, and it is kept — but it meant the timer
+dial, the bell cards, the six sound tiles, the bowl and the whole sitting were
+downloaded and rendered before anybody had chosen a door. `Journey` now loads
+all of them, plus `Account`, through `next/dynamic`, and `Entry` does the same
+for `Home`.
+
+Splitting only helps if a chunk is off the *critical path*; it does not have
+to be late. `warm()` fetches all of them on the first idle callback after the
+doors are painted, so in practice the next screen is in memory long before it
+is asked for and `loading: () => null` is never seen.
+
+**`ModeScreen` stays a static import** — it is the landing and must wait for
+nothing. So does `Afterwards`, which is 72 lines and exports a constant the
+render reads. And so, permanently, does anything that must be reached
+synchronously from the gesture that starts it: `unlockAudio()` and
+`mix.ensure()` have to run inside the click or the browser will not start an
+AudioContext, so `audio.ts` and `mix.ts` are not candidates however large they
+get. That is the line: **an `await` before a user gesture's side effect is a
+bug, not a saving.**
+
+Measured on the production build, gzipped, on the landing's critical path:
+**270,510 bytes across 9 chunks before, 195,222 across 10 after.**
 
 ### The candle, and why nothing is gated
 
@@ -974,15 +1107,26 @@ it, which needs no code because nothing is stored.
 ### The rail: one question, one screen
 
 `lib/journey.ts` is pure and tested. `screensFor()` decides which screens a
-visitor sees from four facts — signed in, usual on, has answered before,
-origin asked — and `step()` walks the list:
+visitor sees from four facts — signed in, usual on, has sat (a completed
+sitting in the practice log, `entries.some(e => e.completed)` in `Journey`;
+`Entry` waits for the log to load before mounting anything, as it does for
+the account and the preferences), origin asked — and `step()` walks the
+list:
 
 ```
-guest, first time:   mode name origin time bell sound bowl
-guest, usual on:     mode bowl
-signed in, first:    [origin] time bell sound bowl      (after a door on Home)
-signed in, usual:    bowl
+guest, first time:        mode time bell sound bowl
+guest, has sat, not asked: mode name origin time bell sound bowl
+guest, usual on:          mode bowl                  (plus name origin, the once)
+signed in, first:         time bell sound bowl       (after a door on Home)
+signed in, has sat:       origin time bell sound bowl
+signed in, usual:         bowl
 ```
+
+Nothing personal is asked on a first visit (22 September 2026; until then a
+first-time guest met the name and the place before any question about the
+sit). The visit after a first completed sitting asks once — a guest the name
+then the place, a member the place — and `originAsked` (`profile.share !==
+null`, which a skip also sets) is what stops it being asked twice.
 
 `components/Journey.tsx` owns the stage machine — `rail | sitting | finished`
 — and the sitting's timing (`begin`, `endEarly`, the finishing effect, the
@@ -1019,7 +1163,9 @@ downward; before 17 September 2026 it was centred with the foot pinned to the
 bottom inset, which moved the heading with the length of the lede and left
 the buttons stranded below the control. `Steps.tsx` draws the marks from
 `step`/`steps`, which `Journey` computes from the screens this visitor is
-actually being shown. Nothing inside it animates; the rail does the arrival. `NameScreen` and `OriginScreen` pass only `onBack`, which goes to the
+actually being shown; its words count the questions without the bowl —
+*Question 2 of 5* — and read the last mark as *The bowl*, since `screensFor`
+always ends there and the bowl is not a question. Nothing inside it animates; the rail does the arrival. `NameScreen` and `OriginScreen` pass only `onBack`, which goes to the
 bar; their Skip and Next are `LineActions`, under the line. `ModeScreen`
 is not a `Screen` at all: it is the earth scene below, with its question and
 doors at the bottom and the same `RailBar` at the top. `Screen`'s `split`, from `md` up, turns
@@ -1120,17 +1266,26 @@ itself changed; stepping into the room on the rail transitions it over half that
 holds both mounted for the duration (1400ms, 400ms under reduced motion) and
 then the rail unmounts. First-party CSS throughout — no `motion` package and
 no `<ViewTransition>`, which only fires inside `startTransition` and differs
-in Safari. Reduced motion is honoured in one `@media` block that zeroes the
-rail and settle and shortens the lift, plus `useReducedMotion()` for the
-earth's breath.
+in Safari. Reduced motion is honoured in one `@media` block at the end of
+`globals.css` — the rail and settle zeroed, the lift shortened, every loop
+stilled — plus `useReducedMotion()` for the moves decided in JS. `WorldMap`
+does not read `matchMedia` itself: `Sitting` and `EarthScene` read the hook
+and pass `reduced`, and the earth stops or starts its loop on the prop.
 
 ### The sitting
 
 `Sitting.tsx` takes a `Sit` — id, `startedAt` on the monotonic clock,
 `startedAtWall`, `endsAt`, `together`, `withOthers` — plus the `room` and the
-toggle, and renders the frame in the room. Sound, End and the toggle rest
+toggle, and renders the frame in the room. Sound, End, the toggle and the clock rest
 (opacity 0, no pointer events) after 4s without a pointer-down or key on the
-frame, and not while the sound card is open or focus is inside them. **With others:** `WorldMap` with a `you` prop, the viewer's own cell
+frame, and not while the sound sheet is open or focus is inside them. The
+sheet is absolute against the Sound/End row, `bottom-full`, over the foot of
+the earth: opening it changes nothing in the layout, and `WorldMap` holds
+its last frame (`paused`) while it is open. It focuses its first tile on
+open; Escape closes it and returns focus to *Sound*; a pointer-down outside
+the row closes it and leaves focus where the tap put it. The audition levels
+the tiles remember (`remembered`) live in a ref in `Sitting`, not in
+`Sounds`, because the sheet unmounts on close. **With others:** `WorldMap` with a `you` prop, the viewer's own cell
 from `useOrigin()`, drawn at 1.5× with a ring. The client marks itself; the
 server never does (`app/api/world/route.ts`). Under the earth, one line from
 `companyLine()` in `lib/company.ts`, built from the labels `/api/world` hands
@@ -1146,8 +1301,10 @@ back and the count from `/api/count`:
 
 The two come from two caches up to thirty seconds apart, so the line omits
 rather than contradicts. Labels rotate every `LABEL_TURN_MS` (20s) when
-several, picked from the wall clock so two devices agree. The clock is small,
-top right, `tabular-nums`, `role="timer"`. **By yourself:** same ground, no
+several, picked from the wall clock so two devices agree. The line is not a
+live region: it turns every 20s for the whole sitting. The clock is small,
+top right, `tabular-nums`, `role="timer"`, and rests with the controls; a tap
+shows it. **By yourself:** same ground, no
 earth, no line, the bowl faintly centred.
 
 `usePresence({ label })` sends the label on every beat while the person sits
@@ -1156,12 +1313,17 @@ with others with the switch on, beats immediately when it changes, and sends
 
 ### The ending
 
-`Afterwards.tsx`: a ten-second hold on *Come back.* with the bell's tail
-(`COOLDOWN_MS`), then the minutes at 3.5rem and the rows that say something
-(`summarise` in `lib/practice.ts` decides), *With you this hour* only for a
-with-others sitting and only when `withOthers !== null`. *Sit again* calls
-`begin()` inside the click; *Done* goes home, *Finish* goes back to the doors.
-Fullscreen is exited on the way out.
+The `finished` stage keeps its `sit`. For `COOLDOWN_MS` (ten seconds, in
+`Afterwards.tsx`) after `endedAt`, `Journey` goes on drawing `Sitting` in the
+same frame with `ended` set — no clock, the controls rested and `inert`, the
+sound sheet closed, the company line held, *Come back.* over the earth — so
+the earth and its candles do not leave at the bell; `useWorld` and
+`usePresence` stay on through the beat. Then `Afterwards.tsx`: the minutes at
+3.5rem, *With you this hour* only for a with-others sitting and only when
+`withOthers !== null`, and the two ways on. *Done* (home) or *Finish* (back
+to the doors) is the primary; *Sit again* is quiet and calls `begin()` inside
+the click. No streak or total: `currentStreak` and `summarise` are Home's
+(`Practice.tsx`). Fullscreen is exited on the way out.
 
 ### The doors are a preference
 
@@ -1170,6 +1332,13 @@ yourself. No migration and no new column, and §8 says so. The Time screen
 under with-others offers the bell as its default stop and allows a private
 length, and a door proposes the bell again only when the mode is changing —
 otherwise a chosen length survives, which is what keeps *Your usual* honest.
+That rule is `doorPatch` in `lib/journey.ts`, and the line under *Sit with
+everyone* is `togetherLine` beside it, tested together: it names the bell
+when the door will propose it and says *Your own length, with everyone* when
+a private length will survive, so the door never promises a bell that will
+not ring for that person. The drawer's *How long* always ends at the bell
+stop, and choosing it writes `showCount: true` with `untilBell`, since the
+bell is with everyone.
 
 ### "Your usual"
 
@@ -1180,8 +1349,23 @@ answer changed on the rail, a sync from another device — turns the skip off,
 which is what "when nothing changed" means. The one exception is Home's
 settings drawer (`SettingsDrawer.tsx`): its changes go through Home's
 `change`, which re-fingerprints with `setUsual(true, nextPrefs)` when the
-switch is on, since the drawer is where the answers are being chosen. Guests get the same; `hasAnswers` is
-`mwm.flow.answeredAt`, written on the first strike.
+switch is on, since the drawer is where the answers are being chosen. A door
+is the other: `Journey`'s door handler, and Home's before `Entry` applies the
+patch, re-fingerprint with `doorPatch` applied, because choosing how to sit
+is not a changed answer and the skip used to turn itself off on it. Guests
+get the same. Whether a device has sat is the practice log's to say, not
+this hook's: `mwm.flow.answeredAt`, written on the first strike until 22
+September 2026 to decide whether a guest was asked their name, is no longer
+written or read.
+
+**The switch turns itself on once.** `afterFirstSitting`, called by `Journey`
+when the stage reaches `finished` — which only the finishing effect sets, so
+it means completed, never End — writes `{ enabled: true, fingerprint }` with
+the preferences just sat, and only if `mwm.usual` has never been written. A
+stored `false` is a choice and is never flipped back. A first-timer has no
+usual to skip to; after one sitting they do, and the second visit is one
+press. The drawer no longer carries the switch (22 September 2026); Home's
+bar does.
 
 ### The origin, and who sees a name
 
@@ -1198,7 +1382,9 @@ is GeoNames' `cities15000` cut down by `scripts/places.mjs` to a name and a
 country code per line, largest first, one per name within a country: 33,090
 lines, 445KB, about 230KB gzipped. `usePlaces` fetches it the first time the
 origin question is on screen — a signed-in person who has answered never
-downloads it — and `lib/places.ts` folds it once (accents off, lower case,
+downloads it — and reports `loading` until it is here or the fetch has
+failed, which the list shows as a first row, *Looking up places…*, that
+cannot be chosen; `lib/places.ts` folds it once (accents off, lower case,
 punctuation to spaces) and searches it on each key: whole name, then start of
 name, then start of a later word, a country before a town at the same rank,
 the larger place otherwise, and anything after a comma narrowing the country.
@@ -1212,7 +1398,7 @@ prevented Escape — `stopPropagation` cannot do it, because the App Router's
 React listens on the document too. The connection's guess is no longer put in the field: focusing the empty
 line opens the list with the guess as its one option, so nobody's origin is a
 guess they did not look at. The share switch renders only once something is
-typed, as `LineActions`' child, under the *Leave it out* and Next row. To rebuild the list, download `cities15000.zip` from
+typed, as `LineActions`' child, under the Skip and Next row. To rebuild the list, download `cities15000.zip` from
 download.geonames.org and run `node scripts/places.mjs cities15000.txt`; the
 licence is CC BY 4.0 and the credit is on the privacy page and in the file's
 first line.
@@ -1226,9 +1412,12 @@ prompt drawn over the empty input by `useTypedOut`, not set as its
 `placeholder`, because a placeholder cannot be animated. The prompt is ink-3
 at 60%, 2.4:1 — under AA for text, deliberately, so it cannot be mistaken
 for a typed answer; it is a hint gone on the first key, the input's label
-names the field, and the contrast script holds the floor. Both screens pass
-`bare` to `Screen`: the question and its line become `sr-only`, still the
-`h2` the rail focuses, and the line is all a sighted person sees. It types once per
+names the field, and the contrast script holds the floor. The origin screen
+passes `bare` to `Screen`: the question and its line become `sr-only`, still
+the `h2` the rail focuses, and the line is all a sighted person sees. The
+name screen did too until 22 September 2026; now its question and one line —
+*Your first name, if you'd like to be seen.* — are visible, because a name
+asked for no visible reason is a toll. It types once per
 arrival, 55ms a character after 200ms, and its drawn caret stands in for the
 real one while the field is empty, focused or not: the input is
 `caret-transparent` until the first key. The foot under every question is `PRIMARY_SM`,
@@ -1269,8 +1458,10 @@ gone with it.
 
 ### A dev-only preview of the sitting
 
-`/?demo=sitting`, `/?demo=sitting&alone` and `/?demo=finished` mount the
-sitting and the ending with fixture points from `worldDemo.ts`, a frozen
+`/?demo=sitting`, `/?demo=sitting&alone`, `/?demo=finished` (the held beat,
+*Come back.* over the ended sitting) and `/?demo=finished&settled` (the
+minutes and the ways on) mount the sitting and the ending with fixture
+points from `worldDemo.ts`, a frozen
 clock, no presence and no audio graph (`components/Demo.tsx`, dynamically
 imported only under `NODE_ENV === 'development'`, so it is not in the
 production bundle). It is how the dusk screens are checked without striking
@@ -1287,7 +1478,6 @@ Which screen you get at `/` is decided by one fact: whether you are signed in.
 | `/` | The rail: the doors, the questions, the bowl, the sitting, the ending, the account offer. | Home: the two doors. |
 | `/` after a door | — | The rail from the first unanswered question, or the bowl; the ending returns to Home. |
 | `/`, *Settings* | — | In the menu drawer over Home: length, bell, sound, the skip. |
-| `/world` | The map. | The map. |
 
 ### `Entry` owns every shared hook, and that is not tidiness
 
@@ -1311,8 +1501,8 @@ switch on and cleared otherwise.
 ### Journey takes two props that carry the whole difference
 
 `home?: () => void` present means signed in: the ending says *Done* and
-comes back here, Back on the first screen comes back here, and the account
-offer at the foot is not rendered. `afterMode` means the rail begins just
+comes back here, Back on the first screen comes back here, and the menu
+with the account offer is not pinned over the rail. `afterMode` means the rail begins just
 past the mode screen, because a door on Home already answered it. (Until 19
 September 2026 a third, `settings`, walked time, bell and sound and ended at
 Home; Settings is now a drawer on Home, `SettingsDrawer.tsx`.)
@@ -1349,11 +1539,11 @@ The answer lives in one file, and **the ground picks which applies**:
 
 | | Where | What it is |
 |---|---|---|
-| `PRIMARY` | One per screen, on paper | Ember fill, white type. Next, Save, Sit again. |
-| `QUIET` | Paper | A `rule` outline, `ink-2`, ember on hover. Back, Finish, Delete account. |
+| `PRIMARY` | One per screen, on paper | Ember fill, white type. Next, Save. |
+| `QUIET` | Paper | A `rule` outline, `ink-2`, ember on hover. Back, Delete account. |
 
-| `*_ROOM` | The room, dawn or dusk | The same shapes in the `room-*` tokens: ember and white at dawn, flame and dusk at dusk. Doors, Next and Back from the mode question on, Sound, End, Sit again, Done, the menu trigger and the toggle. |
-| `WORD` | Paper, beside a Next | Underlined in `rule`, ember on hover. Skip, Change, Leave it out. |
+| `*_ROOM` | The room, dawn or dusk | The same shapes in the `room-*` tokens: ember and white at dawn, flame and dusk at dusk. Doors, Next and Back from the mode question on, Sound, End, Done or Finish (primary) and Sit again (quiet), the menu trigger and the toggle. |
+| `WORD` | Paper, beside a Next | Underlined in `rule`, ember on hover. Skip, Change. |
 | `CHIP` / `CHIP_ON` | Paper | Surface on `rule`; chosen is `ember-soft` with an ember edge. |
 | `ICON` | Paper | A 44px round surface. The two menus. |
 
@@ -1365,12 +1555,16 @@ different".
 
 ### The map
 
-`/world` is its own route because it is somewhere else, with its own subject,
-that should be linkable. Sitting is not — it stays under `/` as state, because
-the lift from the bowl to the earth is one frame changing, and a route change
-would remount it. Since 14 September 2026 the same `WorldMap` is the sitting's
-own view under with-others, with the viewer's cell marked; `/world` is the
-earth on its own, in a dusk panel on the paper page.
+`WorldMap` is drawn in three places, all under `/` as state: the sitting's own
+view under with-others, with the viewer's cell marked by a flame ring at 85%
+(ember at dawn); and, covering the frame, the ground of Home and of the mode
+question, with the viewer's place as a dashed ring marked *You*. It had a
+route of its own, `/world`, a dusk panel on the paper page with the count
+under it, from 6 September 2026 until 22 September 2026, when it was deleted:
+nothing linked to it once the earth was Home's background and the sitting's
+view, and a third copy was a surface to maintain. `useWorld` stays; the
+sitting stays under `/` because the lift from the bowl to the earth is one
+frame changing, and a route change would remount it.
 
 **It was a three.js globe until 6 September 2026**, when Jonny asked for a flat
 map. The trade goes both ways and is worth having written down: a sphere shows
@@ -1423,8 +1617,11 @@ they can be seen next to the code:
    stepped rim, so it is bled past the earth's edge and clipped to the vector
    outline — once, when it is baked over the ground into a single
    device-resolution image. The frame loop is one `drawImage` and the lights,
-   and it stops altogether (`paused`) while Home's settings drawer covers the
-   earth.
+   capped at 30fps (the breath is five seconds long; a display's sixty shows
+   nothing the eye can use), and it stops altogether (`paused`) while Home's
+   settings drawer or the sitting's Sound sheet covers the earth. Under
+   reduced motion there is no loop: one frame, and a redraw on the minute so
+   the terminator keeps moving.
 2. **The terrain pass is per-pixel and runs at half resolution**, which is
    invisible because the terrain has no edges of its own — every edge on this
    earth belongs to the coastline, and that is stroked over the top at full

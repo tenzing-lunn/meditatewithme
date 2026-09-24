@@ -3,11 +3,12 @@
 import { useEffect, useId, useState, type ReactNode } from 'react';
 import { serverNow, syncClock } from '@/lib/clock';
 import { localTime } from '@/lib/format';
+import { doorPatch, togetherLine, type Mode } from '@/lib/journey';
 import { NAME_MAX, ORIGIN_MAX, composeLabel } from '@/lib/label';
 import { humanMinutes, type PracticeEntry } from '@/lib/practice';
 import { nextSharedBellAt } from '@/lib/timer';
 import type { UserPreferences } from '@/lib/types';
-import { Doors, EarthScene, LiveLine, type Mode } from './ModeScreen';
+import { Doors, EarthScene, LiveLine } from './ModeScreen';
 import Practice from './Practice';
 import RoomToggle from './RoomToggle';
 import SettingsDrawer from './SettingsDrawer';
@@ -118,15 +119,15 @@ export default function Home({
       prefs={prefs}
       onChange={change}
       now={now}
-      usual={usual}
-      onUsual={setUsual}
     />
   );
 
   if (panel === null) {
     return (
       <EarthScene points={world.points} you={origin.cell} room={room} earth paused={drawer !== null} className="min-h-dvh">
-        <main className="flex min-h-dvh flex-col px-6 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:px-10 md:px-14 lg:px-20 xl:px-24">
+        {/* The foot grows at `lg` with the side gutters: at 1.5rem against
+            5rem sides the settings bar sat on the bottom edge of a laptop. */}
+        <main id="main" className="flex min-h-dvh flex-col px-6 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:px-10 md:px-14 lg:px-20 lg:pb-[calc(3.5rem+env(safe-area-inset-bottom))] xl:px-24">
           <header className="flex items-center justify-between gap-4">
             <Wordmark size="sm" room />
             <div className="flex items-center gap-2">
@@ -139,11 +140,19 @@ export default function Home({
             <div className="flex flex-col gap-2.5 md:gap-3.5">
               {/* useCount reads without beating, so nobody it counts is you. */}
               <LiveLine others={count} lit={world.points.length > 0} />
-              <h1 className="font-display text-[2.125rem] leading-[1.08] font-bold tracking-[-0.015em] text-balance text-room-ink sm:text-[2.75rem] lg:text-[3.5rem]">
+              <h1 className="font-display text-sentence leading-[1.08] font-bold tracking-[-0.015em] text-balance text-room-ink sm:text-sentence-sm lg:text-sentence-lg">
                 {name ? `Hello, ${name}.` : 'Welcome back.'}
               </h1>
             </div>
-            <Doors bellLabel={bellLabel} onChoose={onDoor} />
+            <Doors
+              togetherLine={togetherLine(prefs, bellLabel)}
+              onChoose={(m) => {
+                // Written before the door's patch lands, so the journey
+                // it opens reads a skip that matches the patched answers.
+                if (usual) setUsual(true, { ...prefs, ...doorPatch(m, prefs) });
+                onDoor(m);
+              }}
+            />
           </div>
 
           {/* One bar, on its own ground so it reads over the map: what the
@@ -155,20 +164,20 @@ export default function Home({
               aria-label={`Your sitting: ${summary.join(', ')}. Change`}
               className={`group flex min-h-11 flex-wrap items-center gap-x-3 gap-y-2 rounded-control text-left ${FOCUS_ROOM}`}
             >
-              <span className="text-[0.875rem] text-room-ink-2">
+              <span className="text-control text-room-ink-2">
                 Your sitting
               </span>
               <span className="flex flex-wrap gap-1.5">
                 {summary.map((part) => (
                   <span
                     key={part}
-                    className="rounded-full border border-room-edge px-3 py-1 text-[0.875rem] font-semibold text-room-ink transition-colors duration-200 group-hover:border-room-action motion-reduce:transition-none"
+                    className="rounded-full border border-room-edge px-3 py-1 text-control font-semibold text-room-ink transition-colors duration-200 group-hover:border-room-action motion-reduce:transition-none"
                   >
                     {part}
                   </span>
                 ))}
               </span>
-              <span className="text-[0.875rem] font-semibold text-room-action underline decoration-room-action/40 underline-offset-4 group-hover:decoration-room-action">
+              <span className="text-control font-semibold text-room-action underline decoration-room-action/40 underline-offset-4 group-hover:decoration-room-action">
                 Change
               </span>
             </button>
@@ -182,7 +191,7 @@ export default function Home({
   }
 
   return (
-    <main className="min-h-dvh bg-paper text-ink">
+    <main id="main" className="min-h-dvh bg-paper text-ink">
       <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
         <header className="flex items-center justify-between gap-4">
           <Wordmark size="sm" />
@@ -196,7 +205,6 @@ export default function Home({
               name={name}
               origin={profile.origin}
               share={profile.share === true}
-              sittings={entries.length}
               onName={updateName}
               onProfile={(origin, share) => setProfile({ origin, share })}
               deleteAccount={deleteAccount}
@@ -259,7 +267,7 @@ function Panel({
   return (
     <section className="flex flex-1 flex-col gap-6 py-8">
       <div className="flex items-center justify-between gap-4">
-        <h1 className="font-display text-[1.75rem] font-bold leading-[1.15]">{title}</h1>
+        <h1 className="font-display text-question font-bold leading-[1.15]">{title}</h1>
         <button type="button" onClick={onClose} className={QUIET}>
           Back
         </button>
@@ -282,7 +290,6 @@ function AccountPanel({
   name,
   origin,
   share,
-  sittings,
   onName,
   onProfile,
   deleteAccount,
@@ -291,7 +298,6 @@ function AccountPanel({
   name: string | undefined;
   origin: string | null;
   share: boolean;
-  sittings: number;
   onName: (name: string) => Promise<string | null>;
   onProfile: (origin: string, share: boolean) => void;
   deleteAccount: () => Promise<string | null>;
@@ -300,6 +306,10 @@ function AccountPanel({
   const originId = useId();
   const [nameDraft, setNameDraft] = useState(name ?? '');
   const [originDraft, setOriginDraft] = useState(origin ?? '');
+  // A draft like the two fields, committed by Save, as the origin question
+  // on the rail does it. Until 22 September 2026 the switch saved at once,
+  // and took the unsaved origin with it.
+  const [shareDraft, setShareDraft] = useState(share);
   const [saving, setSaving] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
@@ -310,7 +320,7 @@ function AccountPanel({
 
   return (
     <div className="flex flex-col gap-8">
-      <p className="text-[0.9375rem] break-words text-ink-3">{email ?? 'Signed in.'}</p>
+      <p className="text-control break-words text-ink-3">{email ?? 'Signed in.'}</p>
 
       <form
         className="flex flex-col gap-4"
@@ -319,13 +329,13 @@ function AccountPanel({
           setSaving(true);
           setNote(null);
           const message = nameDraft.trim() !== (name ?? '') ? await onName(nameDraft) : null;
-          onProfile(originDraft, share);
+          onProfile(originDraft, shareDraft);
           setSaving(false);
           setNote(message ?? 'Saved.');
         }}
       >
         <div>
-          <label htmlFor={nameId} className="mb-1.5 block text-[0.8125rem] text-ink-3">
+          <label htmlFor={nameId} className="mb-1.5 block text-caption text-ink-3">
             What we call you
           </label>
           <input
@@ -340,7 +350,7 @@ function AccountPanel({
           />
         </div>
         <div>
-          <label htmlFor={originId} className="mb-1.5 block text-[0.8125rem] text-ink-3">
+          <label htmlFor={originId} className="mb-1.5 block text-caption text-ink-3">
             Where you are from
           </label>
           <input
@@ -355,8 +365,8 @@ function AccountPanel({
           />
         </div>
         <Switch
-          checked={share}
-          onChange={(next) => onProfile(originDraft, next)}
+          checked={shareDraft}
+          onChange={setShareDraft}
           label={
             <>
               Let others see <em className="not-italic text-ink">{label}</em> while you
@@ -367,9 +377,9 @@ function AccountPanel({
         />
         <div className="flex items-center gap-3">
           <button type="submit" disabled={saving} className={PRIMARY}>
-            {saving ? 'Saving' : 'Save'}
+            {saving ? 'Save…' : 'Save'}
           </button>
-          <p role="status" className="text-[0.8125rem] text-ink-3">
+          <p role="status" className="text-caption text-ink-3">
             {note ?? ''}
           </p>
         </div>
@@ -389,13 +399,12 @@ function AccountPanel({
           </button>
         ) : (
           <div className="rounded-card border border-rule bg-surface p-4">
-            <p className="text-[0.9375rem] leading-relaxed">
+            <p className="text-control leading-relaxed">
               This removes your account and everything it holds: your email address,
-              your name, where you are from, your settings, and
-              {sittings === 1 ? ' the one sitting ' : ` the ${sittings} sittings `}
+              your name, where you are from, your settings, and the sittings
               synced to it. It cannot be undone.
             </p>
-            <p className="mt-3 text-[0.8125rem] leading-relaxed text-ink-3">
+            <p className="mt-3 text-caption leading-relaxed text-ink-3">
               Your practice log stays on this device. Closing the account only removes
               the copy we hold.
             </p>
@@ -427,11 +436,11 @@ function AccountPanel({
                 }}
                 className={`${CHIP} flex-1`}
               >
-                {busy ? 'Deleting' : 'Delete my account'}
+                {busy ? 'Delete my account…' : 'Delete my account'}
               </button>
             </div>
             {error && (
-              <p role="alert" className="mt-3 text-[0.8125rem] leading-relaxed text-ink-2">
+              <p role="alert" className="mt-3 text-caption leading-relaxed text-ink-2">
                 {error}
               </p>
             )}
@@ -450,7 +459,7 @@ function AccountPanel({
 function RecentSittings({ entries }: { entries: PracticeEntry[] }) {
   if (entries.length === 0) {
     return (
-      <p className="text-[0.9375rem] text-ink-3">
+      <p className="text-control text-ink-3">
         Nothing here yet. Your first sitting will be at the top.
       </p>
     );
@@ -458,34 +467,29 @@ function RecentSittings({ entries }: { entries: PracticeEntry[] }) {
   const recent = entries.slice(0, 8);
   return (
     <div>
-      <h2 className="mb-3 text-[0.8125rem] text-ink-3">Recent sittings</h2>
+      <h2 className="mb-3 text-caption text-ink-3">Recent sittings</h2>
       <ul className="flex flex-col">
         {recent.map((entry) => (
           <li
             key={entry.id}
             className="flex items-baseline justify-between gap-4 border-b border-rule py-2.5 last:border-b-0"
           >
-            <span className="text-[0.9375rem] text-ink-2">
+            <span className="text-control text-ink-2">
               {dayLabel(entry.startedAt)}
               <span className="text-ink-3 tabular-nums">
                 {' · '}
                 {localTime(entry.startedAt)}
               </span>
             </span>
-            <span className="shrink-0 text-[0.9375rem] tabular-nums">
+            <span className="shrink-0 text-control tabular-nums">
               {humanMinutes(entry.minutes)}
               {!entry.completed && (
-                <span className="text-[0.8125rem] text-ink-3"> · ended early</span>
+                <span className="text-caption text-ink-3"> · ended early</span>
               )}
             </span>
           </li>
         ))}
       </ul>
-      {entries.length > recent.length && (
-        <p className="mt-4 text-[0.8125rem] text-ink-3 tabular-nums">
-          and {entries.length - recent.length} more
-        </p>
-      )}
     </div>
   );
 }

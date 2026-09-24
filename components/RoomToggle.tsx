@@ -1,7 +1,7 @@
 'use client';
 
 import type { Room } from '@/lib/room';
-import { ICON, ICON_ROOM } from './controls';
+import { ICON_ROOM } from './controls';
 
 /**
  * Dawn or dusk, by hand: the round button beside the menu from the choice
@@ -11,20 +11,15 @@ import { ICON, ICON_ROOM } from './controls';
  * says so in words for anyone not looking at it. `useRoom` keeps the choice
  * until the day next turns.
  *
- * It stands beside the menu from the doors on, so the corner never changes
- * shape mid-rail — which means it is also drawn on paper, where the room's
- * own tokens would put dusk's cream on a cream page. Hence the variant: the
- * same button in the ground it is standing on.
+ * Only in the room. On the paper screens — the name, the place — it changed
+ * nothing a person could see, so since 22 September 2026 it is not there.
  */
 export default function RoomToggle({
   room,
   onToggle,
-  variant = 'room',
 }: {
   room: Room;
   onToggle: () => void;
-  /** `paper` on the name and the place; `room` everywhere else on the rail. */
-  variant?: 'room' | 'paper';
 }) {
   const to = room === 'dusk' ? 'dawn' : 'dusk';
   return (
@@ -33,7 +28,7 @@ export default function RoomToggle({
       onClick={onToggle}
       aria-label={`Switch to ${to}`}
       title={`Switch to ${to}`}
-      className={variant === 'room' ? ICON_ROOM : ICON}
+      className={ICON_ROOM}
     >
       {to === 'dawn' ? (
         <svg viewBox="0 0 24 24" className="size-5" fill="none" aria-hidden>

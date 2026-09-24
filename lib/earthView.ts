@@ -5,8 +5,8 @@
  * somebody in Lisbon, an empty strip of dusk beside the date line — is tested
  * rather than looked at. `WorldMap` only measures its box and draws.
  *
- * Two fits. `containFit` is the whole earth, never cropped: the sitting and
- * `/world` are pictures of everyone. `coverFit` is for the doors, where the
+ * Two fits. `containFit` is the whole earth, never cropped: the sitting is
+ * a picture of everyone. `coverFit` is for the doors, where the
  * earth is the whole screen behind the question: across the full width on a
  * wide screen, and on a tall one large enough that the lights are lights, which
  * means cropped — around where you are.

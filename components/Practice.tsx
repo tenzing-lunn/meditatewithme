@@ -17,9 +17,9 @@ import {
  * that a bad week must look like a quiet grid, never like a warning.
  *
  * That is also why the streak is phrased as days rather than shown as a number
- * with a flame next to it, and why the longest streak appears only once it is
- * genuinely longer than the current one — dangling a personal best over
- * somebody on day two is discouraging rather than motivating.
+ * with a flame next to it, and why there is no longest streak: a personal
+ * best is a scoreboard whoever it is shown to. `summarise` still computes it;
+ * nothing here reads it.
  */
 
 /** Thirteen weeks. Long enough to show a habit, short enough to fit a phone. */
@@ -36,7 +36,7 @@ export default function Practice({
 
   if (s.sittings === 0) {
     return (
-      <p className="text-ink-3 max-w-[34ch] text-center text-sm leading-relaxed">
+      <p className="text-ink-3 max-w-[34ch] text-center text-caption leading-relaxed">
         Your first sitting will show up here.
       </p>
     );
@@ -47,16 +47,16 @@ export default function Practice({
   return (
     <div className="flex w-full max-w-sm flex-col items-center gap-5">
       <div className="flex flex-col items-center gap-1">
-        <p className="font-display text-2xl font-bold">
+        <p className="font-display text-section font-bold">
           {s.currentStreak > 0 ? (
             <>
               {s.currentStreak}{' '}
-              <span className="text-ink-3 font-body text-sm font-normal">
+              <span className="text-ink-3 font-body text-caption font-normal">
                 day{s.currentStreak === 1 ? '' : 's'} in a row
               </span>
             </>
           ) : (
-            <span className="text-ink-2 font-body text-base font-normal">
+            <span className="text-ink-2 font-body text-body font-normal">
               Begin again whenever you like
             </span>
           )}
@@ -64,18 +64,10 @@ export default function Practice({
 
         {/* ink-2, not ink-3: this line is a fact, not a caption. It stays
             secondary to the streak above it by being a third of its size. */}
-        <p className="text-ink-2 text-sm tabular-nums">
+        <p className="text-ink-2 text-caption tabular-nums">
           {s.sittings} sitting{s.sittings === 1 ? '' : 's'} ·{' '}
           {humanMinutes(s.totalMinutes)}
         </p>
-
-        {/* Only once it means something. A personal best of 2 shown to
-            somebody on day 2 is just noise. */}
-        {s.longestStreak > s.currentStreak && s.longestStreak > 2 && (
-          <p className="text-ink-3 text-sm tabular-nums">
-            Longest {s.longestStreak} days
-          </p>
-        )}
       </div>
 
       <Grid days={days} />

@@ -5,7 +5,6 @@ import { usualFingerprint } from '@/lib/journey';
 import type { UserPreferences } from '@/lib/types';
 
 const USUAL_KEY = 'mwm.usual';
-const FLOW_KEY = 'mwm.flow';
 
 interface Usual {
   enabled: boolean;
@@ -29,17 +28,6 @@ function readUsual(): Usual {
   }
 }
 
-function readAnswered(): boolean {
-  try {
-    const v = JSON.parse(localStorage.getItem(FLOW_KEY) ?? 'null') as
-      | { answeredAt?: unknown }
-      | null;
-    return typeof v?.answeredAt === 'number';
-  } catch {
-    return false;
-  }
-}
-
 /**
  * "Skip the questions and use these."
  *
@@ -51,17 +39,21 @@ function readAnswered(): boolean {
  * means, and it is why the fingerprint is stored beside the flag rather than
  * the flag alone.
  *
- * `answered` is whether this device has struck the bowl before, which is
- * what decides whether a guest is asked their name and origin.
+ * THE SWITCH TURNS ITSELF ON ONCE
+ * A first-timer has no usual to skip to; after the first sitting completes
+ * they do, so `afterFirstSitting` turns the skip on with the preferences it
+ * was just sat with — only if `mwm.usual` has never been written. Off is a
+ * choice and is remembered: a stored `false` is never flipped back.
+ *
+ * Whether this device has sat before is not read here: the practice log is
+ * the one record of that (`Journey`'s `hasSat`). Until 22 September 2026 a
+ * second key, `mwm.flow`, was written on the first strike for the same
+ * question; it is no longer read, and a stale one is harmless.
  */
 export function useUsual(prefs: UserPreferences) {
   const [stored, setStored] = useState<Usual>(() =>
     typeof window === 'undefined' ? OFF : readUsual(),
   );
-  const [answered, setAnswered] = useState(() =>
-    typeof window === 'undefined' ? false : readAnswered(),
-  );
-
   const usual = stored.enabled && stored.fingerprint === usualFingerprint(prefs);
 
   // `forPrefs`: the settings drawer changes a setting and keeps the skip on
@@ -80,14 +72,14 @@ export function useUsual(prefs: UserPreferences) {
     [prefs],
   );
 
-  const markAnswered = useCallback(() => {
+  const afterFirstSitting = useCallback(() => {
     try {
-      localStorage.setItem(FLOW_KEY, JSON.stringify({ answeredAt: Date.now() }));
+      if (localStorage.getItem(USUAL_KEY) !== null) return;
     } catch {
-      // Private mode.
+      return;
     }
-    setAnswered(true);
-  }, []);
+    setUsual(true);
+  }, [setUsual]);
 
-  return { usual, setUsual, answered, markAnswered };
+  return { usual, setUsual, afterFirstSitting };
 }

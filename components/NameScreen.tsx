@@ -9,11 +9,13 @@ import Screen from './Screen';
 /**
  * "What should we call you?"
  *
- * Optional. A first name is what other people would see beside your light
- * if you later choose to be seen; nothing here is sent anywhere until then.
- * The screen is the line and nothing else: it draws itself out as *Enter
- * your name* types on it, and the question is there only for a screen
- * reader. *Back* is at the foot, where every question has it; *Skip* is
+ * Optional, and asked on the visit after a first sitting, never on the
+ * first (`screensFor`). A first name is what other people would see beside
+ * your light if you later choose to be seen; nothing here is sent anywhere
+ * until then, and the one line under the question says so — the reason is
+ * on the screen, since a name asked for no visible reason is a toll. The
+ * line draws itself out as *Enter your name* types on it. *Back* is at the
+ * foot, where every question has it; *Skip* is
  * under the line from the start, and *Next*
  * appears right under it once something is typed, because until then there
  * is nothing to go on with. The field has focus the moment the screen
@@ -53,9 +55,8 @@ export default function NameScreen({
   return (
     <Screen
       current={current}
-      bare
       title="What should we call you?"
-      lede="A first name is plenty. It is how you would be known if you sit with others and choose to be seen."
+      lede="Your first name, if you'd like to be seen."
       onBack={onBack}
       step={step}
       steps={steps}
