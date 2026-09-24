@@ -14,6 +14,18 @@ and §3's history says what it replaced.
 
 ## 1. Live status
 
+**23 September 2026: Pale water goes live.** Tenzing merged `dev` into
+`main` (release commit `Release: Pale water`), putting live everything
+§2's *On `dev`* paragraph describes: the pond, the one-sentence arrival with
+its wheel pickers and play buttons, the skim, the nine recorded beds
+(including the replaced hum and sea and the new singing bowl), and the
+audit work on `dev` since 21 September. **Jonny had not seen it** before it
+went live. Claude never pressed Begin in the new design (the preview was
+checked silently); whether Tenzing walked a real sitting on the preview
+before merging is not recorded. Home, Settings and Account took only
+the new colours and type. Rollback: redeploy the previous release,
+`7d0538c`, or promote its Vercel deployment again.
+
 **The room is live at meditatewithme.vercel.app.** `main` was merged from
 `dev` at `626ef93` on 1 September 2026 (11:55 local), replacing the holding
 page. Every push to `main` is now a release of the room, not of a placeholder.
@@ -80,8 +92,8 @@ release, `7026657`.
 
 ## 2. What a visitor gets
 
-**On `dev` since 22 September 2026: Pale water.** Not on `main`, not shown
-to Jonny. The warm rail described below is replaced for the visit itself.
+**Pale water, on `dev` since 22 September 2026 and live since 23
+September.** Not shown to Jonny before it went live. The warm rail described below is replaced for the visit itself.
 A guest lands on a pale grey-blue pond: one small stone for each person lit
 this hour (up to 60, placed by a hash of their cell, not by geography), each
 with slow rings spreading from it, and a name beside a stone for those who
