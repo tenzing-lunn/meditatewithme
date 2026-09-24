@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
 import { TIMER_STOPS } from '@/lib/timer';
 import { BELL_KINDS, type BellKind, type UserPreferences } from '@/lib/types';
 import type { Point } from '@/lib/pond';
 import Brand from './Brand';
 import { FOCUS } from './controls';
+import Picker from './Picker';
 import { TRACKS, type TrackSlug } from './mix';
 import type { MixPatch } from './Sounds';
 
@@ -16,8 +17,9 @@ import type { MixPatch } from './Sounds';
  * What the rail asked across four screens (how long, which bell, what
  * sound, and the bowl) is one sentence here, and each choice in it is a
  * phrase you can press: *Sit for [15 minutes], end with [a singing bowl],
- * [in silence].* The sentence always reads as what will happen, so there is
- * nothing to confirm; Begin throws the stone.
+ * [in silence].* Pressing one opens its wheel in the middle of the screen
+ * (`Picker`), where the bell and the sounds can be played before choosing.
+ * The sentence always reads as what will happen, so Begin throws the stone.
  *
  * Pale water, 22 September 2026. The pond itself is drawn by `Journey`,
  * under this, so it carries on unchanged into the sitting.
@@ -34,13 +36,15 @@ const SOUND_WORDS: Record<TrackSlug | 'silence', string> = {
   rain: 'rain',
   wind: 'wind',
   waterfall: 'a waterfall',
+  ocean: 'the sea',
+  fire: 'a fire',
   hum: 'a low hum',
+  chimes: 'wind chimes',
   night: 'night sounds',
 };
 
 const PHRASE = `rounded-sm underline decoration-ink-3/60 decoration-1 underline-offset-[0.18em] transition-colors duration-200 hover:text-ember hover:decoration-ember motion-reduce:transition-none ${FOCUS}`;
 
-const OPTION = `min-h-11 rounded-control px-3 text-left text-control transition-colors duration-150 hover:bg-ember-soft focus-visible:bg-ember-soft focus-visible:outline-none motion-reduce:transition-none`;
 
 export default function Arrive({
   prefs,
@@ -54,6 +58,8 @@ export default function Arrive({
   leaving,
   onBegin,
   onPreviewBell,
+  onTaste,
+  onHush,
   onWater,
 }: {
   prefs: UserPreferences;
@@ -71,9 +77,14 @@ export default function Arrive({
   leaving: boolean;
   onBegin: (from: Point) => void;
   onPreviewBell: (kind: BellKind) => void;
+  /** A few seconds of a bed that is not chosen yet: the play button in the sound wheel. */
+  onTaste: (slug: TrackSlug) => void;
+  /** Stop that, now. */
+  onHush: () => void;
   /** A tap on bare water, in client pixels: somewhere to skim a pebble to. */
   onWater?: (at: Point) => void;
 }) {
+  const [open, setOpen] = useState<'t' | 'b' | 's' | null>(null);
   const together = prefs.showCount && prefs.untilBell;
   const sound: TrackSlug | 'silence' =
     TRACKS.find((t) => (prefs.soundMix[t.slug] ?? 0) > 0)?.slug ?? 'silence';
@@ -111,74 +122,16 @@ export default function Arrive({
         )}
         <p className="font-display text-question leading-[1.35] text-ink-2 sm:text-question-lg">
           {together ? 'Sit ' : 'Sit for '}
-          <Phrase label={together ? `until the bell${bellLabel ? ` at ${bellLabel}` : ''}` : minutes(prefs.timerMinutes)} name="How long">
-            {(close) => (
-              <span className="grid grid-cols-4 gap-1">
-                <span className="col-span-full px-3 pt-1 pb-1 text-caption text-ink-3">Minutes</span>
-                {TIMER_STOPS.map((m) => (
-                  <Option
-                    key={m}
-                    on={!together && prefs.timerMinutes === m}
-                    onPick={() => {
-                      update({ timerMinutes: m, untilBell: false });
-                      close();
-                    }}
-                    label={minutes(m)}
-                  >
-                    {m}
-                  </Option>
-                ))}
-                <Option
-                  wide
-                  on={together}
-                  onPick={() => {
-                    update({ untilBell: true, showCount: true });
-                    close();
-                  }}
-                >
-                  Until the bell{bellLabel ? ` at ${bellLabel}` : ''}, with everyone
-                </Option>
-              </span>
-            )}
+          <Phrase name="How long" onOpen={() => setOpen('t')}>
+            {together ? `until the bell${bellLabel ? ` at ${bellLabel}` : ''}` : minutes(prefs.timerMinutes)}
           </Phrase>
           {', end with '}
-          <Phrase label={BELL_WORDS[prefs.endBell]} name="The bell">
-            {(close) => (
-              <span className="flex flex-col">
-                {BELL_KINDS.map((kind) => (
-                  <Option
-                    key={kind}
-                    on={prefs.endBell === kind}
-                    onPick={() => {
-                      update({ endBell: kind });
-                      onPreviewBell(kind);
-                      close();
-                    }}
-                  >
-                    {BELL_WORDS[kind]}
-                  </Option>
-                ))}
-              </span>
-            )}
+          <Phrase name="The bell" onOpen={() => setOpen('b')}>
+            {BELL_WORDS[prefs.endBell]}
           </Phrase>
           {sound === 'silence' ? ', in ' : ', with '}
-          <Phrase label={SOUND_WORDS[sound]} name="Sound">
-            {(close) => (
-              <span className="flex flex-col">
-                {(['silence', ...TRACKS.map((t) => t.slug)] as const).map((slug) => (
-                  <Option
-                    key={slug}
-                    on={sound === slug}
-                    onPick={() => {
-                      pickSound(slug);
-                      close();
-                    }}
-                  >
-                    {SOUND_WORDS[slug]}
-                  </Option>
-                ))}
-              </span>
-            )}
+          <Phrase name="Sound" onOpen={() => setOpen('s')}>
+            {SOUND_WORDS[sound]}
           </Phrase>
           .
         </p>
@@ -196,6 +149,54 @@ export default function Arrive({
           Begin
         </button>
       </div>
+
+      {open === 't' && (
+        <Picker
+          title="How long"
+          value={together ? 'bell' : String(prefs.timerMinutes)}
+          options={[
+            ...TIMER_STOPS.map((m) => ({ value: String(m), label: minutes(m) })),
+            { value: 'bell', label: `until the bell${bellLabel ? ` at ${bellLabel}` : ''}` },
+          ]}
+          onConfirm={(v) => {
+            update(v === 'bell' ? { untilBell: true, showCount: true } : { timerMinutes: Number(v), untilBell: false });
+            setOpen(null);
+          }}
+          onCancel={() => setOpen(null)}
+        />
+      )}
+      {open === 'b' && (
+        <Picker
+          title="The bell at the end"
+          value={prefs.endBell}
+          options={BELL_KINDS.map((k) => ({ value: k, label: BELL_WORDS[k], audible: true }))}
+          onConfirm={(v) => {
+            update({ endBell: v as BellKind });
+            setOpen(null);
+          }}
+          onCancel={() => setOpen(null)}
+          onPlay={(v) => onPreviewBell(v as BellKind)}
+          playMs={4000}
+        />
+      )}
+      {open === 's' && (
+        <Picker
+          title="While you sit"
+          value={sound}
+          options={(['silence', ...TRACKS.map((t) => t.slug)] as const).map((slug) => ({
+            value: slug,
+            label: SOUND_WORDS[slug],
+            audible: slug !== 'silence',
+          }))}
+          onConfirm={(v) => {
+            pickSound(v as TrackSlug | 'silence');
+            setOpen(null);
+          }}
+          onCancel={() => setOpen(null)}
+          onPlay={(v) => onTaste(v as TrackSlug)}
+          onStop={onHush}
+        />
+      )}
     </div>
   );
 }
@@ -204,98 +205,23 @@ function minutes(m: number): string {
   return `${m} ${m === 1 ? 'minute' : 'minutes'}`;
 }
 
-/**
- * A phrase in the sentence, and the short list it opens. A menu of radio
- * items, closed by Escape, by a pick, or by pressing anywhere else.
- */
+/** A phrase in the sentence: pressing it opens its wheel (`Picker`). */
 function Phrase({
-  label,
   name,
+  onOpen,
   children,
 }: {
-  label: string;
   name: string;
-  children: (close: () => void) => ReactNode;
-}) {
-  const [open, setOpen] = useState(false);
-  const id = useId();
-  const box = useRef<HTMLSpanElement | null>(null);
-  const button = useRef<HTMLButtonElement | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const list = box.current?.querySelector<HTMLElement>('[role="menu"]');
-    (list?.querySelector<HTMLElement>('[aria-checked="true"]') ?? list?.querySelector<HTMLElement>('button'))?.focus();
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return;
-      e.preventDefault();
-      setOpen(false);
-      button.current?.focus();
-    };
-    const onDown = (e: PointerEvent) => {
-      if (!box.current?.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('keydown', onKey);
-    document.addEventListener('pointerdown', onDown);
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.removeEventListener('pointerdown', onDown);
-    };
-  }, [open]);
-
-  return (
-    <span ref={box} className="relative inline">
-      <button
-        ref={button}
-        type="button"
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-controls={open ? id : undefined}
-        aria-label={`${name}: ${label}`}
-        onClick={() => setOpen((v) => !v)}
-        className={`${PHRASE} ${open ? 'text-ember decoration-ember' : 'text-ink'}`}
-      >
-        {label}
-      </button>
-      {open && (
-        <span
-          id={id}
-          role="menu"
-          aria-label={name}
-          className="absolute bottom-full left-0 z-30 mb-2 block w-[min(20rem,calc(100vw-3rem))] rounded-card border border-rule bg-surface p-2 font-body text-ink shadow-menu"
-        >
-          {children(() => {
-            setOpen(false);
-            button.current?.focus();
-          })}
-        </span>
-      )}
-    </span>
-  );
-}
-
-function Option({
-  on,
-  wide = false,
-  label,
-  onPick,
-  children,
-}: {
-  on: boolean;
-  wide?: boolean;
-  /** When the words shown are not enough on their own: "15" is "15 minutes". */
-  label?: string;
-  onPick: () => void;
-  children: ReactNode;
+  onOpen: () => void;
+  children: string;
 }) {
   return (
     <button
       type="button"
-      role="menuitemradio"
-      aria-checked={on}
-      aria-label={label}
-      onClick={onPick}
-      className={`${OPTION} ${wide ? 'col-span-full' : ''} ${on ? 'font-semibold text-ember' : 'text-ink-2'}`}
+      aria-haspopup="dialog"
+      aria-label={`${name}: ${children}`}
+      onClick={onOpen}
+      className={`${PHRASE} text-ink`}
     >
       {children}
     </button>

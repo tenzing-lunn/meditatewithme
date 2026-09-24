@@ -307,6 +307,17 @@ This is the single most important line in the timer. A meditation app whose bell
 
 ## 7. Subsystem 4 — Audio
 
+> **Since 23 September 2026 the beds are recordings** (CC0, Freesound; the
+> list and the stretch of each in `lib/beds.ts`, the loops built by
+> `scripts/build-sounds.mjs` into `public/sounds/`). Each MP3 holds its loop
+> plus a second of itself at either end, and the source loops between
+> `loopStart`/`loopEnd` inside that padding, so no browser's decoder delay
+> reaches the seam; loop lengths are multiples of 3 s, a whole number of MP3
+> frames at 48 kHz, so both loop points are encoded identically. A bed is
+> fetched the first time its gain is raised, not with the graph. Where what
+> follows describes generated noise, it is history; the gain graph, the
+> ramps and the master are unchanged. The bells are still synthesised.
+
 One `AudioContext`. One gain node per track. Buffers decoded once and looped natively.
 
 ```
@@ -680,7 +691,7 @@ meditatewithme/
 │   ├── Afterwards.tsx           # the ending
 │   ├── Home.tsx, SettingsDrawer.tsx # the signed-in page and its drawer
 │   ├── WorldMap.tsx             # canvas earth; the sitting, Home and the mode question
-│   ├── Sounds.tsx               # the six tiles and Volume; the rail, the
+│   ├── Sounds.tsx               # the nine tiles and Volume; the rail, the
 │   │                            #   drawer and the sitting all render this
 │   ├── Account.tsx, Practice.tsx, Switch.tsx, Wordmark.tsx
 │   ├── controls.ts              # the six control styles

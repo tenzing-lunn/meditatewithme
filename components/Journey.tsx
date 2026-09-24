@@ -573,7 +573,16 @@ export default function Journey({
                     <Arrive
                       prefs={prefs}
                       update={update}
-                      onSound={onSound}
+                      // Only written down: the play button is for hearing
+                      // it, and Begin brings it in for the sitting.
+                      onSound={(patch) => update({ soundMix: { ...prefs.soundMix, ...patch } })}
+                      onTaste={(slug) => {
+                        // Inside the tap on the play button, which is what
+                        // lets the browser start the audio at all.
+                        unlockAudio();
+                        mix.taste(slug);
+                      }}
+                      onHush={mix.hush}
                       bellLabel={bellLabel}
                       others={world.loaded ? stones.length : null}
                       clock={now === null ? null : localTime(now)}

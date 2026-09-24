@@ -5,10 +5,10 @@ import { FOCUS_ROOM } from './controls';
 import { DEFAULT_MASTER, MASTER_KEY, TRACKS, type TrackSlug } from './mix';
 
 /**
- * Silence, the five beds, and one Volume over whichever is on.
+ * Silence, the beds, and one Volume over whichever is on.
  *
- * Six tiles: silence, and the five beds. Silence is the usual answer, so it
- * is the one that starts chosen — but it is a tile among the others rather
+ * Nine tiles since 23 September 2026: silence, and the eight beds. Silence
+ * is the usual answer, so it is the one that starts chosen — but it is a tile among the others rather
  * than a switch in front of them, because it is a choice like they are.
  *
  * ONE SOUND, NOT A MIX — 22 September 2026
@@ -48,7 +48,7 @@ import { DEFAULT_MASTER, MASTER_KEY, TRACKS, type TrackSlug } from './mix';
 /** A change to the mix: the bed chosen, the beds silenced, or the volume. */
 export type MixPatch = Partial<Record<TrackSlug | typeof MASTER_KEY, number>>;
 
-/** Silence first, then the five beds, in the order they are shown. */
+/** Silence first, then the beds, in the order they are shown. */
 const CHOICES = [
   { slug: 'silence' as const, label: 'Silence' },
   ...TRACKS.map((t) => ({ slug: t.slug, label: t.label })),
@@ -64,6 +64,15 @@ export function Texture({ slug }: { slug: TrackSlug | 'silence' }) {
         <path d="M6 9h44a6 6 0 1 0-6-6M6 17h34a5 5 0 1 1-5 5" {...line} />
       )}
       {slug === 'waterfall' && <path d="M14 2v16M26 2v20M38 2v14M50 2v20M62 2v16" {...line} />}
+      {slug === 'ocean' && (
+        <path d="M4 20c7 0 9-11 17-11 5 0 6 5 2 6M28 20c7 0 9-11 17-11 5 0 6 5 2 6M52 20c7 0 9-11 17-11 5 0 6 5 2 6" {...line} />
+      )}
+      {slug === 'fire' && (
+        <path d="M20 24h40M28 21c-4-4 3-7 0-12M40 21c-5-6 4-10 0-18M52 21c-4-4 3-7 0-12" {...line} />
+      )}
+      {slug === 'chimes' && (
+        <path d="M18 3h44M24 3v11M34 3v17M44 3v8M54 3v14" {...line} />
+      )}
       {slug === 'hum' && <path d="M4 13c8-9 14 9 22 0s14 9 22 0 14 9 22 0" {...line} />}
       {slug === 'night' && (
         <>

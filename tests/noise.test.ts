@@ -1,7 +1,8 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { buildNoiseLoop, fillNoise, type NoiseKind } from '../lib/noise.ts';
+import { BED_SOURCES, CROSSFADE_SECONDS } from '../lib/beds.ts';
+import { fillNoise, type NoiseKind } from '../lib/noise.ts';
 import {
   DEFAULT_MASTER,
   MASTER_KEY,
@@ -31,68 +32,9 @@ describe('fillNoise', () => {
   });
 });
 
-describe('buildNoiseLoop', () => {
-  test('returns exactly the requested length', () => {
-    for (const kind of KINDS) {
-      assert.equal(buildNoiseLoop(2048, 256, kind).length, 2048);
-    }
-  });
-
-  test('stays inside the range an AudioBuffer can carry', () => {
-    // Anything far beyond ±1 clips at the destination, and both pink and brown
-    // are built from running sums that could in principle grow.
-    for (const kind of KINDS) {
-      const out = buildNoiseLoop(48_000, 4_000, kind);
-      for (const v of out) {
-        assert.ok(Number.isFinite(v), `${kind} produced ${v}`);
-        assert.ok(Math.abs(v) <= 1.5, `${kind} reached ${v}`);
-      }
-    }
-  });
-
-  test('the wrap is not a click', () => {
-    // The whole reason the tail is crossfaded over the head. A loop whose last
-    // sample and first sample are far apart pops on every repeat — obvious on
-    // the twentieth pass, inaudible on the first, which is why it is asserted
-    // rather than listened for.
-    for (const kind of KINDS) {
-      const out = buildNoiseLoop(48_000, 4_000, kind);
-
-      let total = 0;
-      for (let i = 1; i < out.length; i++) {
-        total += Math.abs((out[i] ?? 0) - (out[i - 1] ?? 0));
-      }
-      const averageStep = total / (out.length - 1);
-      const wrapStep = Math.abs((out[0] ?? 0) - (out[out.length - 1] ?? 0));
-
-      // The claim is "the same order as an ordinary step between neighbours",
-      // not "smaller". An uncrossfaded seam lands far outside this.
-      assert.ok(
-        wrapStep < averageStep * 12,
-        `${kind}: wrap ${wrapStep} vs average step ${averageStep}`,
-      );
-    }
-  });
-
-  test('a fade longer than the buffer does not read off the end', () => {
-    // Reachable by shortening LOOP_SECONDS below WRAP_FADE_SECONDS. Without
-    // the clamp this fills the head with undefined and the bed goes silent at
-    // the start of every repeat.
-    const out = buildNoiseLoop(64, 4096, 'white');
-    assert.equal(out.length, 64);
-    for (const v of out) assert.ok(Number.isFinite(v));
-  });
-
-  test('a zero fade is still a valid buffer', () => {
-    const out = buildNoiseLoop(1024, 0, 'pink');
-    assert.equal(out.length, 1024);
-    for (const v of out) assert.ok(Number.isFinite(v));
-  });
-});
-
 describe('the track vocabulary', () => {
-  test('is the five the scope table promises', () => {
-    assert.equal(TRACK_SLUGS.length, 5);
+  test('is the five the scope table promised, and the three added since', () => {
+    assert.equal(TRACK_SLUGS.length, 8);
   });
 
   test('every slug is unique', () => {
@@ -117,5 +59,27 @@ describe('the track vocabulary', () => {
 
   test('the default master is audible but not the point', () => {
     assert.ok(DEFAULT_MASTER > 0 && DEFAULT_MASTER < 1);
+  });
+});
+
+describe('the recorded beds', () => {
+  test('every bed has exactly one source, and every source is a bed', () => {
+    assert.deepEqual(
+      [...BED_SOURCES.map((b) => b.slug)].sort(),
+      [...TRACK_SLUGS].sort(),
+    );
+  });
+
+  test('every loop is long enough to hide its crossfade', () => {
+    for (const b of BED_SOURCES) {
+      assert.ok(b.loop > CROSSFADE_SECONDS * 4, `${b.slug}: ${b.loop}s`);
+      assert.ok(b.start >= 0, `${b.slug}: starts at ${b.start}`);
+    }
+  });
+
+  test('every loop is a whole number of MP3 frames at 48 kHz', () => {
+    // Otherwise the two loop points sit at different places in a frame and
+    // are compressed differently: a faint tick once a loop.
+    for (const b of BED_SOURCES) assert.equal(b.loop % 3, 0, `${b.slug}: ${b.loop}s`);
   });
 });

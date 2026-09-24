@@ -618,10 +618,10 @@ the drawer alike. Until 17 September 2026 these were three full-width chips
 with centred labels: a 700px target carrying 15px of type, and nothing to
 choose between.
 
-**The sounds** (`Sounds`) are six tiles — silence and the five beds —
+**The sounds** (`Sounds`) are nine tiles — silence and the eight beds —
 two across on a phone and three from `sm`, each carrying a drawn texture.
 Silence is a tile among them and the one that starts chosen. Under the grid,
-once a bed is on, one *Volume* row: not a sixth sound but how loud that bed
+once a bed is on, one *Volume* row: not a tenth sound but how loud that bed
 is. It replaced a lone switch that revealed a pale card of pills and an
 *Adjust levels* button — the same question asked twice, the second time on a
 page of its own.
@@ -785,7 +785,7 @@ body size, each with an optional caption aside on the right: *How long* (the
 answer at the sentence size in the action colour, the slider, its last stop
 always *Until the bell*), *The bell* (the three cards from the rail, smaller,
 the same `radiogroup`; *Tap to hear*),
-*Underneath* (the same six tiles and *Volume* as the rail's sound
+*Underneath* (the same nine tiles and *Volume* as the rail's sound
 question; *Heard in the sitting*). The skip switch is on Home's bar alone. Chosen tiles are the
 rail's: `room-action` border on `room-action` at 15%. The body scrolls
 inside the drawer when the window is short. The three lines open it on the

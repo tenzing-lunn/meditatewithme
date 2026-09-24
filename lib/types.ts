@@ -57,7 +57,8 @@ export function isBellKind(v: unknown): v is BellKind {
 }
 
 /**
- * The five ambient beds.
+ * The ambient beds: five until 23 September 2026, when ocean, fire and
+ * chimes were added.
  *
  * Declared here rather than in components/mix.ts for the same reason
  * BELL_KINDS is: the value round-trips through localStorage and through a
@@ -68,7 +69,16 @@ export function isBellKind(v: unknown): v is BellKind {
  * The labels and the sound itself stay in components/mix.ts. This is the
  * vocabulary; that is the instrument.
  */
-export const TRACK_SLUGS = ['rain', 'wind', 'waterfall', 'hum', 'night'] as const;
+export const TRACK_SLUGS = [
+  'rain',
+  'wind',
+  'waterfall',
+  'ocean',
+  'fire',
+  'hum',
+  'chimes',
+  'night',
+] as const;
 
 export type TrackSlug = (typeof TRACK_SLUGS)[number];
 

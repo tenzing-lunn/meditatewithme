@@ -89,8 +89,10 @@ chose to be seen. Over it, the name in Newsreader with the stone-in-rings
 mark, the time, the menu, and one sentence: *Sit for [15 minutes], end with
 [a singing bowl], in [silence].* Each bracket opens a short list: the
 length (the twelve stops, or *until the bell at :55, with everyone*), the
-three bells (picking one plays it), and silence or one of the five beds
-(picking one is silent until Begin). **Begin** starts the sitting in that
+three bells (picking one plays it), and silence or one of the eight beds
+(picking one plays it for about four seconds and lets it fade, the way the
+bell previews; it comes back at Begin — and fetches that recording, which
+can take a moment the first time). **Begin** starts the sitting in that
 click, as the bowl did, and throws your stone from the button: it skims
 across the water, slowing, and sinks at the centre, leaving its shadow and
 its rings. The sitting's words fade in once it has settled: the faint mark
@@ -501,6 +503,31 @@ under rain as under waterfall. Rain also peaked at 1.34, above full scale:
 at the top of its fader it was distorting, not getting louder. Each bed now
 carries a fixed trim to −16 LUFS, the loudest common target at which nothing
 clips. Re-measured after: 0.12 dB apart, worst peak 0.933.
+
+**The beds are real recordings since 23 September 2026, on `dev`.** The
+synthesised beds were first reworked (a lighter rain) and extended (ocean,
+fire, chimes), and Tenzing listened and found them bad. All eight are now
+CC0 field recordings from Freesound — public domain, free for a commercial
+site, no credit owed — chosen by Claude from the most-downloaded CC0
+recordings of each kind and approved by Tenzing. **Jonny has not been asked
+and has not heard them**; the list of sounds, and whether to buy the
+licensed recordings he was going to, are still his. The eight, with
+recordists and the stretch used, are in `lib/beds.ts`: rain (jmbphilmes),
+wind and night crickets (felix.blume), a waterfall in Estonia (nsmusic), the
+Baltic shore (pulswelle), a fireplace (martats), a tanpura for *hum*
+(sankalp) and wind chimes (giddster). The files were taken from Freesound's
+public HQ previews (128 kbps MP3), not the originals, which need an account.
+
+`scripts/build-sounds.mjs` cuts each into a seamless loop of 60 to 108
+seconds, matches them to −20 LUFS with a limiter on their rare spikes, and
+writes `public/sounds/` (12 MB in all; a visitor fetches only the bed they
+choose, when they choose it). Ocean sits 1.4 dB under, and **fire 5.4 dB
+under**: its recording is pops over near-silence, so the pops are its
+loudness and limiting them only made it quieter. A steadier fire (a wood
+stove, `wwstudioswastaken`) is the proposed replacement. The beds are
+quieter overall than the synthesised ones were (−20 against −16), so the
+same *Volume* is about 4 dB softer. The bells are unchanged. **Not listened
+to by Claude; Tenzing has to.**
 
 **The faders are still linear**, which is the other half of what that
 paragraph used to say and is deliberately not fixed here. Mapping the position
