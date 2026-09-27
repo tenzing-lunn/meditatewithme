@@ -417,26 +417,42 @@ That per-viewer URL is also why a CDN can't simply cache it — MediaMTX's
 - Anything over the internet: TLS, RTMPS, the Vercel routes being called by
   a remote server, Vercel preview protection. That is Phase 2.
 
-### Phase 2 — a real server (needs an account a person makes)
+### Phase 2 — a real server (`live-a`, up 27 September 2026)
 
-Claude can't create accounts or enter payment details. **A person makes the
-VPS account and server** (Hetzner CX22 or OVH VPS-1, Europe, Ubuntu 24.04),
-in Jonny's name once he has agreed, and adds an SSH key. Everything after
-that is in `infra/mediamtx/README.md`:
+**`live-a`**: Hetzner Cloud **CPX12** (1 vCPU, 2 GB, 40 GB, 20 TB traffic),
+Europe, Ubuntu 26.04, `2.28.224.143`, **$14.09/month**, billed hourly. The
+CX23 we meant to buy was sold out across the EU that day, so this is the
+next size that was there. **Before launch, resize or replace it if the
+tests call for it** (one 2.5 Mbps stream with one viewer ran at a load of
+0.4). The account is in Tenzing's name, to move to Jonny's once he has
+agreed. **Don't delete or rebuild it casually** — the IP is in the
+hostname. SSH: `root@2.28.224.143` with `~/.ssh/meditatewithme_live`, on
+Tenzing's Mac only. How it was built: `infra/mediamtx/README.md`.
 
-- [ ] Server made; SSH key added; ports 22, 80, 443, 1935, 1936, 8890/udp.
-- [ ] A hostname (the domain, or `<ip>.sslip.io` until it's pointed).
-- [ ] MediaMTX 1.21.1 pinned, under systemd, secrets in
-      `/etc/mediamtx.env`.
-- [ ] Caddy serving HLS on HTTPS; RTMPS on 1936 with the same certificate.
-- [ ] Vercel env (`dev` and production): `LIVE_AUTH_SECRET`,
-      `LIVE_HOOK_SECRET`, `LIVE_HLS_BASE`. Check preview protection doesn't
-      block MediaMTX calling the routes.
-- [ ] Re-run every Phase 1 check against the server, from a phone on
-      mobile data: Moblin (iPhone), an Android app, OBS; playback on an
-      iPhone (and in Low Power Mode) and on Android.
+- [x] Server made; SSH key; `ufw` lets in 22, 80, 443, 1936/tcp and
+      8890/udp only — 1935 (plain RTMP) is closed to the internet.
+- [x] Hostname `2-28-224-143.sslip.io` until the domain is pointed.
+- [x] MediaMTX 1.21.1 pinned in `/opt/mediamtx`, under systemd, secrets in
+      `/etc/mediamtx.env` (fresh ones, not the Mac's).
+- [x] Caddy serving HLS on HTTPS; RTMPS on 1936 with Caddy's certificate,
+      copied daily by `mediamtx-certs.timer` — verified valid from outside.
+- [x] Vercel env for `dev`: `LIVE_AUTH_SECRET`, `LIVE_HOOK_SECRET`,
+      `LIVE_HLS_BASE`. Previews are behind Vercel's login, so the server
+      calls `dev` through a *Protection Bypass for Automation* (made with
+      Tenzing's OK). Production's env is not set yet — it comes with 2b.
+- [x] Checked from this Mac against the server and the dev preview:
+      wrong key and no key refused (401 from our route, over RTMPS); the
+      right key publishes; `/api/live` names it within 12 s; HLS playlist
+      and segments over HTTPS (a 1.3 MB segment in 0.9 s); hls.js plays
+      it at 1280×720 on `/live-test`; ending the stream clears
+      `/api/live` within 3 s.
+- [ ] **From a phone on mobile data:** Moblin (iPhone), an Android app,
+      OBS; playback on an iPhone (and in Low Power Mode) and on Android.
+      Drops of 10 s and 40 s. From Thailand, for the Asia route.
 - [ ] Measure a real candle's bitrate at 720p and 480p.
-- [ ] Uptime check that messages a person; unattended OS updates.
+- [x] Unattended OS updates (on by default, checked).
+- [ ] Uptime check on `https://2-28-224-143.sslip.io/` that messages a
+      person.
 - [ ] **The second server** at the other provider, the player trying A then
       B, and a publisher sending to both. After one server is proven.
 
