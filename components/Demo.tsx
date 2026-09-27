@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Afterwards from './Afterwards';
+import LiveLayer from './LiveLayer';
 import Pond from './Pond';
 import Sitting from './Sitting';
 import { useReducedMotion } from './useReducedMotion';
@@ -19,6 +20,9 @@ import { DEMO_POINTS } from './worldDemo';
  * ten seconds; `finished&settled` is what comes after it, the minutes and
  * the ways on. `&alone` on either is the by-yourself sitting, and `&throw`
  * on `sitting` throws the stone in from the bottom left first.
+ * `/?demo=live` is the sitting with someone on camera: a stand-in picture,
+ * or a real stream with `&src=<an HLS address>`; `&between` is the moment
+ * between two people on camera.
  * It is reached only through a dynamic import inside
  * `Entry`'s `NODE_ENV === 'development'` branch, which is dead in a
  * production build, so this module and the fixture it imports are never
@@ -41,6 +45,8 @@ export default function Demo({ which }: { which: string }) {
     params.has('throw') ? { at: { x: 96, y: window.innerHeight - 110 }, t: performance.now() } : null,
   );
   const alone = params.has('alone');
+  const live = which === 'live';
+  const src = params.get('src');
   const finished = which === 'finished';
   const [bellAt] = useState(() => (finished ? performance.now() : null));
   const stones = alone
@@ -57,6 +63,17 @@ export default function Demo({ which }: { which: string }) {
       <div className="absolute inset-0">
         <Pond stones={stones} you throwFrom={thrown} bellAt={bellAt} reduced={reduced} />
       </div>
+      {live && !params.has('between') && (
+        <LiveLayer
+          src={src}
+          picture={
+            src ? undefined : (
+              // A candle in a dark room, near enough to judge the wash by.
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_55%,#f6c46a_0,#b0642a_4%,#3a2416_18%,#120c08_60%)]" />
+            )
+          }
+        />
+      )}
       <div className="absolute inset-0">
         {finished && params.has('settled') ? (
           <Afterwards minutes={10} onAgain={() => {}} onFinish={() => {}} />
@@ -81,6 +98,7 @@ export default function Demo({ which }: { which: string }) {
             onSoundOpen={() => {}}
             onEnd={() => {}}
             ended={finished}
+            nextSession={live && params.has('between') ? Math.ceil(Date.now() / 3_600_000) * 3_600_000 : null}
           />
         )}
       </div>

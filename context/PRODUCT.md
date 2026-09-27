@@ -121,6 +121,21 @@ you this hour* on the ending. A guest can no longer choose *on your own*;
 a member still can, from the doors on Home, which kept its old layout and
 only took the new colours and type.
 
+**Live video in the sitting, on `dev` only since 27 September 2026.** Not
+live and not shown to Jonny. In a sitting with others, when a collaborator
+is on camera (`plans/live-video.md`), their picture appears as a framed
+window in the middle of the pond — silent, the water and the rings around
+it, the company line and *Sound* and *End* below as usual. It fades in only
+once frames are playing and back to the plain pond when nobody is on, when
+the stream stalls (a blip of under 20 seconds is held through), or when a
+phone refuses to autoplay (any tap on the sitting starts it). Between two
+people on camera the company line says *The next session starts at
+[the top of the hour].* Production shows none of it: its env has no video
+server set, so `/api/live` answers nobody. **Undecided:** a guest cannot
+choose *on your own* on Pale water, so as built every guest's sitting would
+show the camera; Jonny's 13 September direction was the live video as an
+option of its own (§5).
+
 **Rebuilt on 14 September 2026** (`docs/ui-rebuild.md`, on `ui-warm`). The
 photographic room, the landing word, the settings panel and the ring are gone;
 what follows is the site as it is now. The functionality underneath — the

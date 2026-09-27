@@ -804,6 +804,18 @@ with the one shadow. Items are 44px, ink-2 600, ember-soft on hover and
 focus. Up and Down wrap, Home and End, Escape closes and returns focus:
 Create account, Sign in.
 
+### The live window
+
+On `dev` only (27 September 2026). Whoever is on camera, in a sitting with
+others: a 16:9 window centred on the pond, `max-w-4xl`, `rounded-card`, a
+`rule` edge, `scrim` behind the picture until it plays, no shadow. The
+pond stays the ground — its rings and the sitting's words sit around the
+window, never on the picture, so nothing needs a wash to be read. It fades
+in over 1000ms once frames play and out the same way; under reduced motion
+it simply appears. Silent, no controls, never full-bleed. Between two
+people on camera it is gone and the company line says when the next
+session starts.
+
 ### The bowl
 A 12rem drawn bowl inside a button labelled *Strike the bowl and begin*,
 with the settings line under it. (A caption, *Strike the bowl to begin.*,

@@ -26,6 +26,7 @@ import { ICON, WORD } from './controls';
 import { displayName, type AuthState } from './useAuth';
 import { useClock } from './useClock';
 import { useFullscreen } from './useFullscreen';
+import { useLive } from './useLive';
 import { useWakeLock } from './useWakeLock';
 import type { Mix } from './useMix';
 import { useOrigin } from './useOrigin';
@@ -74,7 +75,8 @@ import { useWorld } from './useWorld';
  * The rail mounts every screen it will ever show, all at once, so anything
  * it holds is downloaded, parsed and rendered on the one page where nothing
  * but the arrival is on screen. `Account` is the same argument behind a
- * menu, and `Sitting` behind Begin.
+ * menu, and `Sitting` behind Begin — and `LiveLayer`, only ever in a sitting
+ * with others.
  *
  * Deliberately NOT here: `Arrive` and `Pond`, which are the landing and
  * must never wait for anything; `Afterwards`, which is 72 lines and holds a constant the
@@ -92,6 +94,7 @@ const CHUNKS = {
   name: () => import('./NameScreen'),
   origin: () => import('./OriginScreen'),
   sitting: () => import('./Sitting'),
+  live: () => import('./LiveLayer'),
 } as const;
 
 const nothing = () => null;
@@ -99,6 +102,7 @@ const Account = dynamic(CHUNKS.account, { loading: nothing });
 const NameScreen = dynamic(CHUNKS.name, { loading: nothing });
 const OriginScreen = dynamic(CHUNKS.origin, { loading: nothing });
 const Sitting = dynamic(CHUNKS.sitting, { loading: nothing });
+const LiveLayer = dynamic(CHUNKS.live, { loading: nothing });
 
 /**
  * Fetch all of them, once the doors are on screen and the browser is idle.
@@ -268,6 +272,12 @@ export default function Journey({
   const world = useWorld(withOthersNow || (stage.kind === 'rail' && stage.at === 'arrive'));
   const labels = world.points.flatMap((p) => p.labels ?? []);
   const ownLabel = profile.share ? composeLabel(profile.name, profile.origin) : null;
+
+  // Whoever is on camera, in place of the water, while sitting with others.
+  // Low Power Mode refuses to autoplay even muted video; a tap on the
+  // sitting is a gesture it accepts, so any tap starts it (`livePlay`).
+  const onCamera = useLive(withOthersNow);
+  const livePlay = useRef<(() => void) | null>(null);
 
   // Seen by name only while sitting with others, and only if they said so.
   const { count, litCount, begin: recordBegin } = usePresence({
@@ -515,6 +525,8 @@ export default function Journey({
         />
       </div>
 
+      {withOthersNow && <LiveLayer src={onCamera.live?.hls ?? null} playRef={livePlay} />}
+
       {finished && !held && (
         <div className="absolute inset-0">
           <Afterwards
@@ -542,6 +554,7 @@ export default function Journey({
             landed ? 'opacity-100' : 'pointer-events-none opacity-0'
           }`}
           inert={!landed}
+          onPointerDown={() => livePlay.current?.()}
         >
           <Sitting
             sit={sit}
@@ -556,6 +569,7 @@ export default function Journey({
             onSoundOpen={mix.unmute}
             onEnd={endEarly}
             ended={finished}
+            nextSession={onCamera.live ? null : onCamera.next}
           />
         </div>
       )}

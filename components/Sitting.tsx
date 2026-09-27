@@ -8,6 +8,7 @@ import {
   type FocusEvent,
 } from 'react';
 import { companyLine } from '@/lib/company';
+import { localTime } from '@/lib/format';
 import { mmss, remainingMs } from '@/lib/timer';
 import Brand from './Brand';
 import { WORD } from './controls';
@@ -39,7 +40,8 @@ export interface Sit {
  * `Journey`, so this is only what lies on it. With others, their stones and
  * one sentence about who is here; by yourself, your own rings alone. The mark
  * is faint in the corner and the clock small beside it, because the water is
- * the thing.
+ * the thing. When someone is on camera `Journey` frames them on the water
+ * (`LiveLayer`); between two of them the line says when the next starts.
  *
  * Sound opens the six tiles and their Volume in a sheet above the foot; the
  * caller raises the master when it opens, since a first-timer's graph was
@@ -74,6 +76,7 @@ export default function Sitting({
   onSoundOpen,
   onEnd,
   ended = false,
+  nextSession = null,
 }: {
   sit: Sit;
   now: number | null;
@@ -89,6 +92,8 @@ export default function Sitting({
   onEnd: () => void;
   /** The bell has rung: the held beat, before the minutes. */
   ended?: boolean;
+  /** Between two people on camera: when the next goes on, ms. */
+  nextSession?: number | null;
 }) {
   const [soundOpen, setSoundOpen] = useState(false);
   const [awake, setAwake] = useState(true);
@@ -149,9 +154,13 @@ export default function Sitting({
     },
   };
   const remaining = remainingMs(sit.endsAt, mono);
-  const line = sit.withOthers
-    ? companyLine(labels, count, litCount, ownLabel, now ?? Date.now())
-    : null;
+  // Between two people on camera, that is what the line says; otherwise
+  // it is who is here.
+  const line = !sit.withOthers
+    ? null
+    : nextSession !== null && !ended
+      ? `The next session starts at ${localTime(nextSession)}.`
+      : companyLine(labels, count, litCount, ownLabel, now ?? Date.now());
 
   // Over the pond, which `Journey` draws underneath: nothing here has a
   // ground of its own, so the water shows through everywhere.

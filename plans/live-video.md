@@ -471,11 +471,12 @@ Tenzing's Mac only. How it was built: `infra/mediamtx/README.md`.
 ### Phase 2b — in the site (only after Jonny has agreed the price)
 
 - [ ] The *meditate with others* door, and its "nobody is on camera" state.
-- [ ] The sitting renders `<LiveStream>`, falls back to the earth on stall,
-      comes back when it plays; `play()` on the bowl strike (Low Power Mode).
-- [ ] Hold the last picture ~20 s when a collaborator drops before falling
-      back to the earth, so a blip doesn't flash the earth in (seen on the
-      phone test: the site goes "nobody live" the moment the phone drops).
+- [x] The sitting with others shows whoever is on air — a framed window on
+      the pond (`LiveLayer`), in only once frames play, back to the pond on
+      stall or nobody; any tap on the sitting calls `play()` (Low Power
+      Mode). 27 September, on `dev`.
+- [x] A vanished stream is held 20 s before letting go (`useLive`), so a
+      blip doesn't flash the pond in.
 - [ ] 480p cap on phones.
 - [x] **One collaborator per hour** (27 September, Tenzing's rule): the
       first live in an empty hour holds it; anyone else live waits off the
@@ -486,10 +487,15 @@ Tenzing's Mac only. How it was built: `infra/mediamtx/README.md`.
       in `lib/live.ts`, 13 tests; claims in `live_hours`. Grace is
       `GRACE_MS` — 5 minutes; Tenzing would ideally like 2, but 5 gives the
       next collaborator time to get ready.
-- [ ] The between screen itself: "the next session starts at the top of
-      the hour", shown in the grace minutes and when the holder leaves.
-- [ ] Dev demo `/?demo=live` and `/?demo=live&dropped`; `/live-test` then
-      deleted.
+- [x] Between sessions the company line says *The next session starts at
+      [time].* in the grace minutes and when the holder leaves.
+- [ ] **Decide with Jonny: who sees the camera.** Pale water has no *on your
+      own* for a guest, so as built every guest's sitting shows it; his
+      13 September direction was the live video as its own option.
+- [x] Dev demo `/?demo=live` (stand-in picture, or `&src=` a real stream)
+      and `&between`.
+- [ ] `/live-test` deleted once the sitting has been seen with a real
+      stream on a phone.
 - [ ] Privacy page: people on camera, where video is served from.
 - [ ] `PRODUCT.md`, `ARCHITECTURE.md` §9 and `DESIGN.md` in the same
       commits.

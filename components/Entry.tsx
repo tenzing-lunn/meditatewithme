@@ -74,7 +74,7 @@ export default function Entry() {
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
       const which = new URLSearchParams(window.location.search).get('demo');
-      if (which === 'sitting' || which === 'finished') {
+      if (which === 'sitting' || which === 'finished' || which === 'live') {
         void import('./Demo').then((m) => setDemo({ which, Demo: m.default }));
       }
     }
