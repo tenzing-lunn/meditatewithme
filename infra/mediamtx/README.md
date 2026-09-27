@@ -28,15 +28,17 @@ mediamtx mediamtx.yml
 ```
 
 Then publish (OBS: server `rtmp://localhost:1935/live`, stream key as printed)
-and open `http://localhost:3000/live-test` (dev only; 404 in production).
+and open `http://localhost:3000/live-test` (404 on the production site only).
 
 ## On a server
 
-Ubuntu 24.04 on a small VPS in Europe (Hetzner CX22 or OVH VPS-1). The account
-and the server are made by a person, in the client's name.
+Built this way on 27 September 2026: `live-a`, a Hetzner CPX12 (1 vCPU, 2 GB,
+Ubuntu 26.04) in Europe at `2.28.224.143`, hostname `2-28-224-143.sslip.io`.
+The account and the server are made by a person.
 
-1. **Ports:** 22/tcp, 80/tcp and 443/tcp (Caddy), 1935/tcp (RTMP),
-   1936/tcp (RTMPS), 8890/udp (SRT). Nothing else.
+1. **Ports** (`ufw`): 22/tcp, 80/tcp and 443/tcp (Caddy), 1936/tcp (RTMPS),
+   8890/udp (SRT). Nothing else — plain RTMP on 1935 still listens but is not
+   let in, so a key never crosses the internet in the clear over RTMP.
 2. **A hostname** for the server, e.g. `live.meditatewithme.com`, or
    `<ip-with-dashes>.sslip.io` until the domain is pointed. The site is HTTPS,
    so HLS must be too.
@@ -91,7 +93,8 @@ and the server are made by a person, in the client's name.
 7. **RTMPS**, so keys don't cross the internet in the clear. MediaMTX
    (running as a `DynamicUser`) cannot read Caddy's certificates, which are
    private to the `caddy` user, so a root timer copies them daily into
-   `/etc/mediamtx/tls/` (readable by the service). **No restart**: MediaMTX
+   `/etc/mediamtx/tls/` (readable by the service) — on `live-a` that is
+   `/usr/local/bin/mediamtx-certs` and `mediamtx-certs.timer`. **No restart**: MediaMTX
    watches the files and reloads them itself, and a restart would cut off
    whoever is live. Copy atomically — write to a temporary file, then `mv`
    the key first and the certificate second. Then, in `/etc/mediamtx.env`:
@@ -108,9 +111,13 @@ and the server are made by a person, in the client's name.
    key travels in the clear unless a passphrase is set, so over the internet
    RTMPS is the one to hand out.
 8. **Vercel env** (for `dev` and production): `LIVE_AUTH_SECRET`,
-   `LIVE_HOOK_SECRET`, `LIVE_HLS_BASE=https://<hostname>`. If preview
-   deployments are protected, MediaMTX cannot reach a preview's routes — test
-   against a deployment it can reach.
+   `LIVE_HOOK_SECRET`, `LIVE_HLS_BASE=https://<hostname>`, the same two
+   secrets as `/etc/mediamtx.env`. Previews sit behind Vercel's login, so for
+   `dev` the server points at `meditatewithme-git-dev-…vercel.app` and both of
+   its URLs end in `?x-vercel-protection-bypass=<secret>` — the project's
+   *Protection Bypass for Automation* (created 27 September 2026, note
+   "live-a MediaMTX server"). Revoking it in Project Settings → Deployment
+   Protection cuts the server off from `dev`. Production needs no bypass.
 9. **Updates:** `unattended-upgrades` for the OS; MediaMTX only by changing
    the pinned version here and redeploying, after reading its changelog —
    HLS sessions regressed in several releases from 1.18 to 1.21.0, and

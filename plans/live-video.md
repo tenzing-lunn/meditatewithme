@@ -348,7 +348,7 @@ pattern. How to run it again: `infra/mediamtx/README.md`.
       publishing checked by us; reading public and never waits on Vercel;
       RTSP, WebRTC, MoQ, API and metrics off.
 - [x] `components/LiveStream.tsx` (hls.js, muted, inline, no controls,
-      reports playing/stalled) and a dev-only `/live-test` page (404 in the
+      reports playing/stalled) and a test page `/live-test` (404 on the production site; shown on the dev preview; 404 in the
       production build — checked).
 - [x] **Refused:** a wrong key (401 from our route), no key (401), any other
       path (not configured).
