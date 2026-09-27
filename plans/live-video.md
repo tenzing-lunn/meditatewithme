@@ -477,7 +477,17 @@ Tenzing's Mac only. How it was built: `infra/mediamtx/README.md`.
       back to the earth, so a blip doesn't flash the earth in (seen on the
       phone test: the site goes "nobody live" the moment the phone drops).
 - [ ] 480p cap on phones.
-- [ ] The handover line at :55.
+- [x] **One collaborator per hour** (27 September, Tenzing's rule): the
+      first live in an empty hour holds it; anyone else live waits off the
+      air (and can watch themselves at `/live-test?slug=`); in the last 5
+      minutes with someone waiting, or once the holder leaves, viewers get
+      the between answer (`next`, the top of the hour); on the hour the
+      longest-waiting takes over, so two live together alternate. `onAir`
+      in `lib/live.ts`, 13 tests; claims in `live_hours`. Grace is
+      `GRACE_MS` — 5 minutes; Tenzing would ideally like 2, but 5 gives the
+      next collaborator time to get ready.
+- [ ] The between screen itself: "the next session starts at the top of
+      the hour", shown in the grace minutes and when the holder leaves.
 - [ ] Dev demo `/?demo=live` and `/?demo=live&dropped`; `/live-test` then
       deleted.
 - [ ] Privacy page: people on camera, where video is served from.

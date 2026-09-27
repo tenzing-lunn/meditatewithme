@@ -95,3 +95,72 @@ export function sinceFrom(value: unknown, now: number): string | null {
 export function hlsUrl(base: string, slug: string): string {
   return `${base.replace(/\/+$/, '')}/${pathFor(slug)}/index.m3u8`;
 }
+
+/**
+ * Who is on air: one collaborator per hour, handovers only on the hour.
+ *
+ * The hour belongs to whoever held it first — claimed by the first request
+ * in it that finds someone live, and kept in `live_hours` so it survives a
+ * dropped connection (the holder gets it back on reconnecting). Anyone else
+ * live waits off the air: connected, able to check their picture, not shown.
+ * In the last GRACE_MS of the hour, or once the holder has gone, a waiting
+ * collaborator means the between screen until the hour; nobody waiting
+ * means the holder just carries on, or nothing.
+ *
+ * On the hour the air goes to whoever has waited longest: since they went
+ * live, or since the end of the last hour they held in this same session.
+ * So two collaborators live together alternate hourly, and three take turns
+ * in the order they arrived. A claim is never made in the grace minutes, so
+ * someone arriving at :57 is not charged an hour they barely had.
+ */
+export const HOUR_MS = 3_600_000;
+export const GRACE_MS = 5 * 60_000;
+
+export type LiveStream = {
+  slug: string;
+  /** When this session came online, ms. */
+  since: number;
+  /** Start of the latest hour this slug held, ms; null if never. */
+  lastHeld: number | null;
+};
+
+export type OnAir =
+  | { kind: 'live'; slug: string; claim: boolean }
+  | { kind: 'between'; next: number }
+  | { kind: 'none' };
+
+export function hourOf(now: number): number {
+  return now - (now % HOUR_MS);
+}
+
+function waitingSince(s: LiveStream): number {
+  const heldEnd = s.lastHeld === null ? null : s.lastHeld + HOUR_MS;
+  return heldEnd !== null && heldEnd > s.since ? heldEnd : s.since;
+}
+
+export function onAir(streams: LiveStream[], holder: string | null, now: number): OnAir {
+  if (streams.length === 0) return { kind: 'none' };
+  const next = hourOf(now) + HOUR_MS;
+  const grace = now >= next - GRACE_MS;
+
+  let claim = false;
+  if (holder === null) {
+    if (grace) {
+      // Too late in the hour to claim it. One stream is simply shown;
+      // several wait for the hour, where the longest waiting takes it.
+      return streams.length === 1
+        ? { kind: 'live', slug: streams[0]!.slug, claim: false }
+        : { kind: 'between', next };
+    }
+    const first = [...streams].sort(
+      (a, b) => waitingSince(a) - waitingSince(b) || (a.slug < b.slug ? -1 : 1),
+    )[0]!;
+    holder = first.slug;
+    claim = true;
+  }
+
+  const onAirNow = streams.some((s) => s.slug === holder);
+  const waiting = streams.some((s) => s.slug !== holder);
+  if (onAirNow && !(grace && waiting)) return { kind: 'live', slug: holder, claim };
+  return waiting ? { kind: 'between', next } : { kind: 'none' };
+}

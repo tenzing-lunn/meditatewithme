@@ -3,8 +3,11 @@ import assert from 'node:assert/strict';
 
 import {
   authCheck,
+  GRACE_MS,
+  HOUR_MS,
   hlsUrl,
   keyFrom,
+  onAir,
   sinceFrom,
   slugFromPath,
 } from '../lib/live.ts';
@@ -96,5 +99,93 @@ describe('hlsUrl', () => {
   test('joins base and path, with or without a trailing slash', () => {
     assert.equal(hlsUrl('https://a.example/', 'abcd1234'), 'https://a.example/live/abcd1234/index.m3u8');
     assert.equal(hlsUrl('http://localhost:8888', 'abcd1234'), 'http://localhost:8888/live/abcd1234/index.m3u8');
+  });
+});
+
+describe('onAir', () => {
+  const H = Date.UTC(2026, 8, 27, 10); // 10:00
+  const at = (min: number) => H + min * 60_000;
+  const s = (slug: string, sinceMin: number, lastHeldMin: number | null = null) => ({
+    slug,
+    since: at(sinceMin),
+    lastHeld: lastHeldMin === null ? null : at(lastHeldMin),
+  });
+
+  test('nobody live is nothing', () => {
+    assert.deepEqual(onAir([], null, at(10)), { kind: 'none' });
+    assert.deepEqual(onAir([], 'aaaaaaaa', at(10)), { kind: 'none' });
+  });
+
+  test('the first to go live in an empty hour claims it and is shown', () => {
+    assert.deepEqual(onAir([s('aaaaaaaa', 2)], null, at(2)), {
+      kind: 'live', slug: 'aaaaaaaa', claim: true,
+    });
+  });
+
+  test('a second collaborator waits off the air while the holder sits', () => {
+    const r = onAir([s('aaaaaaaa', 2), s('bbbbbbbb', 20)], 'aaaaaaaa', at(30));
+    assert.deepEqual(r, { kind: 'live', slug: 'aaaaaaaa', claim: false });
+  });
+
+  test('in the grace minutes, with someone waiting, the between screen', () => {
+    const r = onAir([s('aaaaaaaa', 2), s('bbbbbbbb', 20)], 'aaaaaaaa', H + HOUR_MS - GRACE_MS);
+    assert.deepEqual(r, { kind: 'between', next: H + HOUR_MS });
+  });
+
+  test('in the grace minutes, with nobody waiting, the holder carries on', () => {
+    const r = onAir([s('aaaaaaaa', 2)], 'aaaaaaaa', at(58));
+    assert.deepEqual(r, { kind: 'live', slug: 'aaaaaaaa', claim: false });
+  });
+
+  test('the holder leaving early, with someone waiting: between until the hour', () => {
+    assert.deepEqual(onAir([s('bbbbbbbb', 20)], 'aaaaaaaa', at(30)), {
+      kind: 'between', next: H + HOUR_MS,
+    });
+  });
+
+  test('the holder leaving with nobody waiting: nothing', () => {
+    assert.deepEqual(onAir([], 'aaaaaaaa', at(30)), { kind: 'none' });
+  });
+
+  test('a holder who drops and reconnects keeps the hour', () => {
+    const r = onAir([s('bbbbbbbb', 20), s('aaaaaaaa', 31)], 'aaaaaaaa', at(32));
+    assert.deepEqual(r, { kind: 'live', slug: 'aaaaaaaa', claim: false });
+  });
+
+  test('on the hour the one who waited takes over', () => {
+    // 11:00. A held 10:00 so has waited since 11:00; B since 10:20.
+    const r = onAir([s('aaaaaaaa', 2, 0), s('bbbbbbbb', 20)], null, at(60));
+    assert.deepEqual(r, { kind: 'live', slug: 'bbbbbbbb', claim: true });
+  });
+
+  test('two who stay live alternate hourly', () => {
+    // 12:00. A held 10:00, B held 11:00.
+    const r = onAir([s('aaaaaaaa', 2, 0), s('bbbbbbbb', 20, 60)], null, at(120));
+    assert.deepEqual(r, { kind: 'live', slug: 'aaaaaaaa', claim: true });
+  });
+
+  test('three take turns in the order they arrived', () => {
+    // 11:00: A held 10:00; B came at 10:20, C at 10:50.
+    const r = onAir([s('aaaaaaaa', 2, 0), s('cccccccc', 50), s('bbbbbbbb', 20)], null, at(60));
+    assert.deepEqual(r, { kind: 'live', slug: 'bbbbbbbb', claim: true });
+  });
+
+  test('an hour held in an earlier session does not count against a new one', () => {
+    // A held 08:00, left, came back at 10:30; B arrived 10:40.
+    const r = onAir([s('aaaaaaaa', 30, -120), s('bbbbbbbb', 40)], null, at(45));
+    assert.deepEqual(r, { kind: 'live', slug: 'aaaaaaaa', claim: true });
+  });
+
+  test('no claim in the grace minutes: one is shown, several wait for the hour', () => {
+    assert.deepEqual(onAir([s('aaaaaaaa', 57)], null, at(57)), {
+      kind: 'live', slug: 'aaaaaaaa', claim: false,
+    });
+    assert.deepEqual(onAir([s('aaaaaaaa', 57), s('bbbbbbbb', 58)], null, at(58)), {
+      kind: 'between', next: H + HOUR_MS,
+    });
+    // ...and at 11:00 the one who came first at 10:57 takes it.
+    assert.deepEqual(onAir([s('aaaaaaaa', 57), s('bbbbbbbb', 58)], null, at(60)), {
+      kind: 'live', slug: 'aaaaaaaa', claim: true,
+    });
   });
 });

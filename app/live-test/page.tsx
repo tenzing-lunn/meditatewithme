@@ -9,5 +9,5 @@ import LiveTest from './LiveTest';
  */
 export default function Page() {
   if (process.env.VERCEL_ENV === 'production') notFound();
-  return <LiveTest />;
+  return <LiveTest hlsBase={process.env.LIVE_HLS_BASE ?? null} />;
 }
