@@ -813,9 +813,13 @@ under it: `rounded-card`, a `rule` edge that turns `ember` on hover, a
 stacked on a phone), a small mark (a grey fish; a framed figure in ember)
 before a 1.25rem title and a control-size line in `ink-2`.
 
-Everyone else sitting is a fish, `#7a868d` at 55–85% opacity, 20px nose
-to tail on desktop and 15px on a phone, 14px and 11px once there are more
-than a hundred. Quiet water: each fish wanders its own slow loop. Crowded
+Everyone else sitting right now is a fish — nobody else here, no fish,
+and never one for yourself — `#7a868d` at 55–85% opacity, 20px nose to
+tail on desktop and 15px on a phone, 14px and 11px once there are more
+than a hundred. Each fish has three joints, head, body and tail, the body
+and tail following the head like a chain (never bent more than about 50°
+at the tail), and a forked tail fin that beats faster and wider the faster
+it swims. Quiet water: each fish wanders its own slow loop. Crowded
 (more than one fish per 12,000 px²): swarms of 6 to 60 milling around a
 drifting centre. A touch pushes the ones within eleven body-lengths
 straight away, easing off over five seconds. Fish ease toward their place

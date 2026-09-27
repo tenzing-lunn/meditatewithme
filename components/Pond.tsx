@@ -2,7 +2,7 @@
 
 import { useEffect, useImperativeHandle, useRef, type Ref } from 'react';
 
-import { fishAt, planFish, SCATTER_S, type FishPlan, type Touch } from '@/lib/fish';
+import { fishAt, follow, planFish, SCATTER_S, type FishPlan, type Joint, type Touch } from '@/lib/fish';
 import {
   flickConfig,
   reachFor,
@@ -152,8 +152,12 @@ export default function Pond({
     let h = 0;
     let plan: FishPlan | null = null;
     let planned = '';
-    /** Where each fish was drawn and which way it faced, to ease toward where it should be. */
-    const drawn = new Map<string, { x: number; y: number; a: number }>();
+    /**
+     * Each fish as drawn: its head, the body and tail joints trailing it,
+     * and where its tail is in its beat — so it eases toward where it
+     * should be and bends on the way.
+     */
+    const drawn = new Map<string, { x: number; y: number; body: Joint; tail: Joint; beat: number }>();
     let last = 0;
 
     const fit = () => {
@@ -164,6 +168,10 @@ export default function Pond({
       el.height = Math.round(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       planned = '';
+      // New water: every fish is put straight where it belongs rather than
+      // swimming over from where it was on the old size (or from the corner,
+      // when the canvas was measured hidden at nothing by nothing).
+      drawn.clear();
     };
 
     const ring = (r: Ring) => {
@@ -201,28 +209,60 @@ export default function Pond({
       ctx.restore();
     };
 
-    /** One fish, nose along `a`, centred on (x, y). */
-    const fish = (x: number, y: number, a: number, size: number, alpha: number) => {
+    /**
+     * One fish from its three joints: a rounded head, the body narrowing
+     * to the tail joint, and a forked tail fin swung by `sway` (radians).
+     */
+    const fish = (head: Joint, body: Joint, tail: Joint, size: number, sway: number, alpha: number) => {
       if (alpha <= 0) return;
-      const k = size / 20;
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(a);
-      ctx.scale(k, k);
-      ctx.translate(-3.75, 0);
+      const unit = (ax: number, ay: number) => {
+        const d = Math.hypot(ax, ay) || 1;
+        return { x: ax / d, y: ay / d };
+      };
+      const d0 = unit(head.x - body.x, head.y - body.y);
+      const d1 = unit(body.x - tail.x, body.y - tail.y);
+      const dm = unit(d0.x + d1.x, d0.y + d1.y);
+      const side = (p: Joint, d: { x: number; y: number }, w: number, s: 1 | -1) => ({
+        x: p.x - d.y * w * s,
+        y: p.y + d.x * w * s,
+      });
+      const nose = { x: head.x + d0.x * size * 0.2, y: head.y + d0.y * size * 0.2 };
+      const outline = [
+        nose,
+        side(head, d0, size * 0.13, 1),
+        side(body, dm, size * 0.12, 1),
+        side(tail, d1, size * 0.035, 1),
+        side(tail, d1, size * 0.035, -1),
+        side(body, dm, size * 0.12, -1),
+        side(head, d0, size * 0.13, -1),
+      ];
       ctx.globalAlpha = alpha;
       ctx.fillStyle = FISH;
       ctx.beginPath();
-      ctx.moveTo(-3.2, 0);
-      ctx.lineTo(-6, -3.3);
-      ctx.lineTo(-5, 0);
-      ctx.lineTo(-6, 3.3);
-      ctx.closePath();
-      ctx.moveTo(-3.6, 0);
-      ctx.bezierCurveTo(-1, -3.3, 7, -3.8, 13.5, 0);
-      ctx.bezierCurveTo(7, 3.8, -1, 3.3, -3.6, 0);
+      // A closed curve through the midpoints, so the outline has no corners.
+      const mid = (a: Joint, b: Joint) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+      const start = mid(outline[outline.length - 1]!, outline[0]!);
+      ctx.moveTo(start.x, start.y);
+      outline.forEach((pt, k) => {
+        const m = mid(pt, outline[(k + 1) % outline.length]!);
+        ctx.quadraticCurveTo(pt.x, pt.y, m.x, m.y);
+      });
       ctx.fill();
-      ctx.restore();
+      // The tail fin, swinging about the tail joint.
+      const c = Math.cos(sway);
+      const sn = Math.sin(sway);
+      const back = { x: -(d1.x * c - d1.y * sn), y: -(d1.x * sn + d1.y * c) };
+      const across = { x: -back.y, y: back.x };
+      const reach = size * 0.26;
+      const spread = size * 0.15;
+      ctx.beginPath();
+      ctx.moveTo(tail.x, tail.y);
+      ctx.lineTo(tail.x + back.x * reach + across.x * spread, tail.y + back.y * reach + across.y * spread);
+      ctx.lineTo(tail.x + back.x * reach * 0.62, tail.y + back.y * reach * 0.62);
+      ctx.lineTo(tail.x + back.x * reach - across.x * spread, tail.y + back.y * reach - across.y * spread);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = 1;
     };
 
     const shadow = (x: number, y: number, sw: number, sh: number, alpha: number) => {
@@ -243,6 +283,7 @@ export default function Pond({
 
     const draw = (nowMs: number) => {
       const p = props.current;
+      if (!w || !h) return;
       const t = p.reduced ? 4.2 : nowMs / 1000;
       ctx.clearRect(0, 0, w, h);
       ctx.lineWidth = 1;
@@ -266,7 +307,7 @@ export default function Pond({
       const dt = last ? Math.min(0.1, clock - last) : 0;
       last = clock;
       const ease = p.reduced ? 1 : 1 - Math.exp(-dt * 2.5);
-      const swimming: { x: number; y: number; a: number; o: number; label?: string }[] = [];
+      const swimming: { head: Joint; body: Joint; tail: Joint; sway: number; o: number; label?: string }[] = [];
       const here = new Set<string>();
       p.stones.forEach((s, i) => {
         here.add(s.key);
@@ -276,16 +317,23 @@ export default function Pond({
         const was = drawn.get(s.key);
         const x = was ? was.x + (to.x - was.x) * ease : to.x;
         const y = was ? was.y + (to.y - was.y) * ease : to.y;
-        const moved = was ? Math.hypot(x - was.x, y - was.y) : 0;
-        let a = was ? was.a : Math.PI * ((i * 37) % 360) / 180;
-        if (moved > 0.02) {
-          // Turn toward where it is going, not all at once.
-          const want = Math.atan2(y - was!.y, x - was!.x);
-          const d = Math.atan2(Math.sin(want - a), Math.cos(want - a));
-          a += d * Math.min(1, dt * 6);
+        const seg = plan!.size * 0.28;
+        let body: Joint;
+        let tail: Joint;
+        if (was) {
+          [body, tail] = follow({ x, y }, [was.body, was.tail], seg) as [Joint, Joint];
+        } else {
+          // A newcomer starts straight, facing a way of its own.
+          const a = (Math.PI * ((i * 37) % 360)) / 180;
+          body = { x: x - Math.cos(a) * seg, y: y - Math.sin(a) * seg };
+          tail = { x: x - Math.cos(a) * seg * 2, y: y - Math.sin(a) * seg * 2 };
         }
-        drawn.set(s.key, { x, y, a });
-        swimming.push({ x, y, a, o: (0.55 + 0.3 * ((i * 7) % 5) / 4) * fade * others, label: s.label });
+        // The tail beats faster, and wider, the faster the fish swims.
+        const speed = was && dt > 0 ? Math.hypot(x - was.x, y - was.y) / dt : 0;
+        const beat = (was?.beat ?? i * 1.3) + dt * (3 + Math.min(7, speed * 0.2));
+        const sway = p.reduced ? 0 : Math.sin(beat) * (0.2 + Math.min(0.35, speed * 0.01));
+        drawn.set(s.key, { x, y, body, tail, beat });
+        swimming.push({ head: { x, y }, body, tail, sway, o: (0.55 + 0.3 * ((i * 7) % 5) / 4) * fade * others, label: s.label });
       });
       for (const k of drawn.keys()) if (!here.has(k)) drawn.delete(k);
 
@@ -384,11 +432,11 @@ export default function Pond({
       ctx.font = `${phone ? 11 : 12}px system-ui, -apple-system, 'Segoe UI', sans-serif`;
       ctx.textBaseline = 'middle';
       for (const f of swimming) {
-        fish(f.x, f.y, f.a, plan!.size, f.o);
+        fish(f.head, f.body, f.tail, plan!.size, f.sway, f.o);
         if (f.label && f.o > 0) {
           ctx.globalAlpha = Math.min(1, f.o * 1.2);
           ctx.fillStyle = LABEL;
-          ctx.fillText(f.label, f.x + plan!.size * 0.7, f.y - plan!.size * 0.9);
+          ctx.fillText(f.label, f.head.x + plan!.size * 0.7, f.head.y - plan!.size * 0.9);
           ctx.globalAlpha = 1;
         }
       }

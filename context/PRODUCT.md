@@ -127,7 +127,9 @@ in · the fish*) and built from it at Tenzing's word. A guest now lands on
 two doors on the water — *How would you like to sit?* — **By yourself**
 (*Your own time, among N others*) and **Guided meditation** (*Live now*,
 *The next session starts at …*, or *Nobody is guiding right now*).
-Everyone else sitting this hour is a small grey fish, not a stone: each
+Everyone else sitting right now (not everyone who sat this hour) is a
+small grey fish with a head, body and tail that bend as it swims — never
+one for yourself, so sitting with nobody else is an empty pond: each
 wanders alone while the pond is quiet and they gather into milling swarms
 once it is crowded; touching the water scatters the nearby ones, and a
 skimmed pebble scatters them where it lands. *By yourself* leads to the

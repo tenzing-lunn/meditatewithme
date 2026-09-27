@@ -191,3 +191,34 @@ export function fishAt(plan: FishPlan, i: number, t: number, touches: readonly T
   }
   return { x, y };
 }
+
+/**
+ * A fish's spine: head, body, tail. Each joint follows the one ahead of it at
+ * a fixed length, the way a chain dragged by its end does, so the body bends
+ * through a turn instead of swinging round like a stick.
+ */
+export interface Joint {
+  x: number;
+  y: number;
+}
+
+export function follow(head: Joint, joints: readonly Joint[], seg: number, maxBend = 0.9): Joint[] {
+  const out: Joint[] = [];
+  let ahead: Joint | null = null;
+  let lead = head;
+  for (const j of joints) {
+    let a = Math.atan2(j.y - lead.y, j.x - lead.x);
+    if (ahead) {
+      // No sharper than `maxBend` against the segment in front: a fish that
+      // doubles back turns its body, it does not fold in half.
+      const straight = Math.atan2(lead.y - ahead.y, lead.x - ahead.x);
+      const bend = Math.atan2(Math.sin(a - straight), Math.cos(a - straight));
+      a = straight + Math.max(-maxBend, Math.min(maxBend, bend));
+    }
+    const next = { x: lead.x + Math.cos(a) * seg, y: lead.y + Math.sin(a) * seg };
+    out.push(next);
+    ahead = lead;
+    lead = next;
+  }
+  return out;
+}

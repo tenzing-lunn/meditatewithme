@@ -470,17 +470,29 @@ export default function Journey({
 
   const bellLabel = now === null ? null : localTime(nextSharedBellAt(now));
 
-  // One stone per person lit this hour, each keyed by its cell and its place
-  // in it, so a stone keeps its spot on the water for as long as it is there.
+  // One fish per person here now — not everyone who sat this hour and left —
+  // each keyed by its cell and its place in it, so a fish keeps its path
+  // while its person stays. While you sit, your own heartbeat is among them
+  // and you are not a fish: one comes off — yours by name if you share one —
+  // down to the count of everybody else here (`count` includes you). Nobody
+  // else here, no fish.
+  const sitting = sit !== null;
   const stones = useMemo<Stone[]>(() => {
     const out: Stone[] = [];
     for (const p of world.points) {
-      for (let k = 0; k < Math.max(1, p.lit) && out.length < MAX_STONES; k++) {
+      for (let k = 0; k < p.live && out.length < MAX_STONES; k++) {
         out.push({ key: `${p.lat},${p.lon}#${k}`, label: p.labels?.[k] });
       }
     }
+    if (!sitting) return out;
+    const others = Math.max(0, count === null ? out.length - 1 : Math.min(out.length, count - 1));
+    while (out.length > others) {
+      let drop = ownLabel ? out.findIndex((s) => s.label === ownLabel) : -1;
+      for (let k = out.length - 1; drop < 0 && k >= 0; k--) if (!out[k]!.label) drop = k;
+      out.splice(drop < 0 ? out.length - 1 : drop, 1);
+    }
     return out;
-  }, [world.points]);
+  }, [world.points, sitting, count, ownLabel]);
 
   // Where each question sits on this visitor's own rail, counted without
   // the arrival, which is not a question.

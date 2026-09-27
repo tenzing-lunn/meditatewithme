@@ -1,7 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { fishAt, hash, planFish, swarmSize, type Area } from '../lib/fish.ts';
+import { fishAt, follow, hash, planFish, swarmSize, type Area } from '../lib/fish.ts';
 
 const DESK: Area = { w: 1440, h: 900, y0: 0.08, y1: 0.86 };
 const PHONE: Area = { w: 390, h: 844, y0: 0.08, y1: 0.86 };
@@ -76,4 +76,29 @@ describe('fishAt', () => {
 test('hash is stable', () => {
   assert.equal(hash('ana'), hash('ana'));
   assert.notEqual(hash('ana'), hash('bo'));
+});
+
+describe('follow', () => {
+  test('each joint keeps its length behind the one ahead', () => {
+    const [body, tail] = follow({ x: 10, y: 0 }, [{ x: 0, y: 0 }, { x: -5, y: 0 }], 6);
+    assert.ok(Math.abs(Math.hypot(body!.x - 10, body!.y) - 6) < 1e-9);
+    assert.ok(Math.abs(Math.hypot(tail!.x - body!.x, tail!.y - body!.y) - 6) < 1e-9);
+  });
+
+  test('through a turn the body bends: the tail trails where the head was', () => {
+    // Swimming right, then the head turns up.
+    const [body, tail] = follow({ x: 0, y: -6 }, [{ x: 0, y: 0 }, { x: -6, y: 0 }], 6);
+    assert.ok(Math.abs(body!.x) < 1e-9 && Math.abs(body!.y) < 1e-9);
+    // Trailing to the side the head came from, bent as far as a fish bends.
+    assert.ok(tail!.x < -3 && tail!.y > 0);
+  });
+
+  test('the tail never folds back past its body', () => {
+    // The tail left lying ahead of the body, as after a sharp reversal.
+    const [body, tail] = follow({ x: 0, y: 0 }, [{ x: -6, y: 0 }, { x: 0, y: 0.5 }], 6);
+    const back = Math.atan2(body!.y, body!.x);
+    const seg = Math.atan2(tail!.y - body!.y, tail!.x - body!.x);
+    const bend = Math.abs(Math.atan2(Math.sin(seg - back), Math.cos(seg - back)));
+    assert.ok(bend <= 0.9 + 1e-9, `bent ${bend}`);
+  });
 });
