@@ -130,7 +130,10 @@ two doors on the water — *How would you like to sit?* — **By yourself**
 a chevron in the top-left corner goes back to the doors from either.
 Everyone else sitting right now (not everyone who sat this hour) is a
 small grey fish with a head, body and tail that bend as it swims — never
-one for yourself, so sitting with nobody else is an empty pond: each
+one for yourself, so sitting with nobody else is an empty pond. Each
+swims in its person's part of the world on a loose map (west left, north
+up), with their place written beside it only if they chose to share it;
+each
 wanders alone while the pond is quiet and they gather into milling swarms
 once it is crowded; touching the water scatters the nearby ones, and a
 skimmed pebble scatters them where it lands. *By yourself* leads to the

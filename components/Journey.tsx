@@ -481,7 +481,7 @@ export default function Journey({
     const out: Stone[] = [];
     for (const p of world.points) {
       for (let k = 0; k < p.live && out.length < MAX_STONES; k++) {
-        out.push({ key: `${p.lat},${p.lon}#${k}`, label: p.labels?.[k] });
+        out.push({ key: `${p.lat},${p.lon}#${k}`, label: p.labels?.[k], lat: p.lat, lon: p.lon });
       }
     }
     if (!sitting) return out;

@@ -55,6 +55,8 @@ export default function Demo({ which }: { which: string }) {
         Array.from({ length: Math.max(1, Math.min(2, p.lit)) }, (_, k) => ({
           key: `${p.lat},${p.lon}#${k}`,
           label: p.labels?.[k],
+          lat: p.lat,
+          lon: p.lon,
         })),
       );
 

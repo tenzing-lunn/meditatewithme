@@ -29,7 +29,8 @@ import {
  *
  * Everyone else sitting is a grey fish (27 September 2026, in place of the
  * other stones): alone on a path of its own while the water is quiet, in
- * milling swarms once it is crowded (`lib/fish.ts`). A touch scatters the
+ * milling swarms once it is crowded, each in its person's part of the
+ * world on a loose map (`lib/fish.ts`). A touch scatters the
  * ones near it; a flicked pebble scatters them where it lands.
  */
 
@@ -38,6 +39,9 @@ export interface Stone {
   key: string;
   /** "Ana from Lisbon", when they chose to be seen. */
   label?: string;
+  /** Roughly where they are (a one-degree cell): where on the water they swim. */
+  lat?: number;
+  lon?: number;
 }
 
 /** What the page can do to the water from outside. */
@@ -300,7 +304,7 @@ export default function Pond({
       const keys = p.stones.map((s) => s.key);
       const sig = `${keys.join('|')}#${w}x${h}#${band.y1}`;
       if (sig !== planned) {
-        plan = planFish(keys, { w, h, ...band });
+        plan = planFish(p.stones, { w, h, ...band });
         planned = sig;
       }
       const clock = nowMs / 1000;

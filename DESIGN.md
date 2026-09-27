@@ -819,9 +819,14 @@ tail on desktop and 15px on a phone, 14px and 11px once there are more
 than a hundred. Each fish has three joints, head, body and tail, the body
 and tail following the head like a chain (never bent more than about 50°
 at the tail), and a forked tail fin that beats faster and wider the faster
-it swims. Quiet water: each fish wanders its own slow loop. Crowded
-(more than one fish per 12,000 px²): swarms of 6 to 60 milling around a
-drifting centre. A touch pushes the ones within eleven body-lengths
+it swims. Each fish swims in its person's part of the world on a loose
+map of the water — west on the left, north at the top, 62°N to 43°S
+filling the band — from the one-degree cell of their heartbeat. Quiet
+water: each fish wanders a small loop around its place. Crowded (more
+than one fish per 12,000 px²): each region (24° by 16°) mills as one
+swarm around the region's middle, up to 60 to a swarm. The place is
+written beside a fish only when its person chose to share it (*Ana from
+Lisbon*); nobody is named or placed in words without choosing it. A touch pushes the ones within eleven body-lengths
 straight away, easing off over five seconds. Fish ease toward their place
 and turn toward where they swim, so nothing jumps. None under reduced
 motion but still fish, and none in a guided sitting.

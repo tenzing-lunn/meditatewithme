@@ -1,7 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { fishAt, follow, hash, planFish, swarmSize, type Area } from '../lib/fish.ts';
+import { fishAt, follow, hash, homeFor, planFish, swarmSize, type Area, type Swimmer } from '../lib/fish.ts';
 
 const DESK: Area = { w: 1440, h: 900, y0: 0.08, y1: 0.86 };
 const PHONE: Area = { w: 390, h: 844, y0: 0.08, y1: 0.86 };
@@ -100,5 +100,48 @@ describe('follow', () => {
     const seg = Math.atan2(tail!.y - body!.y, tail!.x - body!.x);
     const bend = Math.abs(Math.atan2(Math.sin(seg - back), Math.cos(seg - back)));
     assert.ok(bend <= 0.9 + 1e-9, `bent ${bend}`);
+  });
+});
+
+describe('a loose map', () => {
+  const LISBON = { lat: 38.5, lon: -9.5 };
+  const TOKYO = { lat: 35.5, lon: 139.5 };
+  const OSLO = { lat: 59.5, lon: 10.5 };
+  const SYDNEY = { lat: -33.5, lon: 151.5 };
+
+  test('west on the left, north at the top, all on the water', () => {
+    assert.ok(homeFor(LISBON.lat, LISBON.lon, DESK).x < homeFor(TOKYO.lat, TOKYO.lon, DESK).x);
+    assert.ok(homeFor(OSLO.lat, OSLO.lon, DESK).y < homeFor(SYDNEY.lat, SYDNEY.lon, DESK).y);
+    for (const [lat, lon] of [[90, -180], [-90, 180], [0, 0]]) {
+      const h = homeFor(lat!, lon!, DESK);
+      assert.ok(h.x > 0 && h.x < DESK.w && h.y > DESK.h * DESK.y0 && h.y < DESK.h * DESK.y1);
+    }
+  });
+
+  test('a quiet fish wanders near its person\'s place', () => {
+    const plan = planFish([{ key: 'ana', lat: 40.5, lon: -74.5 }, { key: 'kenji', ...TOKYO }], DESK);
+    for (let t = 0; t < 600; t += 11) {
+      assert.ok(fishAt(plan, 0, t).x < DESK.w / 2, 'New York stays west');
+      assert.ok(fishAt(plan, 1, t).x > DESK.w / 2, 'Tokyo stays east');
+    }
+  });
+
+  test('crowded, a region swims together, and every fish stays on the water', () => {
+    const people: Swimmer[] = [
+      ...keys(150).map((key) => ({ key, ...LISBON })),
+      ...keys(150).map((key) => ({ key: `t${key}`, ...TOKYO })),
+      { key: 'far', lat: 89.5, lon: 179.5 },
+      { key: 'nowhere' },
+    ];
+    const plan = planFish(people, DESK);
+    assert.equal(plan.fish.length, people.length);
+    assert.equal(new Set(plan.fish.slice(0, 150).map((f) => f.path)).size <= 3, true);
+    assert.ok(plan.fish.slice(0, 150).every((f) => !plan.fish.slice(150, 300).some((o) => o.path === f.path)));
+    for (let t = 0; t < 300; t += 9.1) {
+      people.forEach((_, i) => {
+        const p = fishAt(plan, i, t);
+        assert.ok(p.x > -10 && p.x < DESK.w + 10 && p.y > DESK.h * DESK.y0 - 10 && p.y < DESK.h * DESK.y1 + 10, `${i} at ${t}`);
+      });
+    }
   });
 });

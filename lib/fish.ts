@@ -9,6 +9,13 @@
  * its fish mill around its centre, each at its own distance and speed, most
  * one way round and a few the other. Swarms grow as more people come.
  *
+ * Where a fish swims is a loose map of where its person is (Tenzing, 27
+ * September 2026): west on the left, north at the top, so somebody in
+ * Lisbon wanders the left of the water and somebody in Tokyo the right.
+ * Crowded, the swarms are regions: everybody in the same stretch of the
+ * world mills together. A fish with no place keeps a path hashed from its
+ * key, as they all did before.
+ *
  * A touch on the water scatters the fish near it: they are pushed straight
  * away, hard at first and easing off over a few seconds, and drift back.
  *
@@ -87,6 +94,36 @@ function rand(seed: number): () => number {
   };
 }
 
+/** One person to draw: their key, and roughly where they are, if known. */
+export interface Swimmer {
+  key: string;
+  lat?: number;
+  lon?: number;
+}
+
+/** A stretch of the world that swims together once the pond is crowded, degrees. */
+const REGION_LON = 24;
+const REGION_LAT = 16;
+
+const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+
+/**
+ * Where on the water a place is: a loose map, west on the left and north at
+ * the top. Latitude runs from 62°N to 43°S, where nearly everybody lives,
+ * so the inhabited world fills the water rather than a strip of it.
+ */
+export function homeFor(lat: number, lon: number, a: Area): { x: number; y: number } {
+  const lo = a.h * a.y0;
+  const hi = a.h * a.y1;
+  return {
+    x: a.w * (0.1 + 0.8 * clamp01((lon + 170) / 340)),
+    y: lo + (hi - lo) * (0.12 + 0.76 * clamp01((62 - lat) / 105)),
+  };
+}
+
+const placed = (s: Swimmer): s is Swimmer & { lat: number; lon: number } =>
+  typeof s.lat === 'number' && typeof s.lon === 'number';
+
 /** How many fish share a swarm, for this many on this much water. */
 export function swarmSize(n: number, area: Area): number {
   const quiet = (area.w * area.h) / QUIET_AREA;
@@ -94,18 +131,27 @@ export function swarmSize(n: number, area: Area): number {
   return Math.max(6, Math.min(60, Math.round(n / 8)));
 }
 
-function pathFor(seed: number, r: number, a: Area): Path {
+function pathFor(seed: number, r: number, a: Area, home?: { x: number; y: number }): Path {
   const next = rand(seed);
   const lo = a.h * a.y0;
   const hi = a.h * a.y1;
-  const cx = a.w * (0.15 + 0.7 * next());
-  const cy = lo + (hi - lo) * (0.15 + 0.7 * next());
+  const fx = next();
+  const fy = next();
+  // At home, a little off it so neighbours do not sit on one another, and a
+  // smaller loop, so a fish stays in its part of the world.
+  const cx = home
+    ? Math.max(a.w * 0.08, Math.min(a.w * 0.92, home.x + a.w * 0.06 * (fx - 0.5)))
+    : a.w * (0.15 + 0.7 * fx);
+  const cy = home
+    ? Math.max(lo + (hi - lo) * 0.08, Math.min(hi - (hi - lo) * 0.08, home.y + (hi - lo) * 0.12 * (fy - 0.5)))
+    : lo + (hi - lo) * (0.15 + 0.7 * fy);
+  const wander = home ? 0.25 : 1;
   // The loop reaches 1.35 × ax across and 1.3 × ay down, and a swarm's
   // fish up to 1.12 × r (0.81 × r down) beyond its centre: all of it on the water.
   const rx = r * 1.12 + 4;
   const ry = r * 0.81 + 4;
-  const ax = Math.min(a.w * (0.1 + 0.15 * next()), cx - 20 - rx, a.w - 20 - rx - cx) / 1.35;
-  const ay = Math.min((hi - lo) * (0.12 + 0.18 * next()), cy - lo - ry, hi - ry - cy) / 1.3;
+  const ax = Math.min(a.w * (0.1 + 0.15 * next()) * wander, cx - 20 - rx, a.w - 20 - rx - cx) / 1.35;
+  const ay = Math.min((hi - lo) * (0.12 + 0.18 * next()) * wander, cy - lo - ry, hi - ry - cy) / 1.3;
   return {
     cx,
     cy,
@@ -121,30 +167,67 @@ function pathFor(seed: number, r: number, a: Area): Path {
 }
 
 /** Where everybody's fish swims, for these people on this water. */
-export function planFish(keys: readonly string[], area: Area): FishPlan {
-  const n = keys.length;
+export function planFish(people: readonly (string | Swimmer)[], area: Area): FishPlan {
+  const all: Swimmer[] = people.map((p) => (typeof p === 'string' ? { key: p } : p));
+  const n = all.length;
   const phone = area.w < 640;
   const size = n > 100 ? (phone ? 11 : 14) : phone ? 15 : 20;
   const g = swarmSize(n, area);
   const paths: Path[] = [];
-  const fish: Orbit[] = [];
+  const fish: Orbit[] = new Array<Orbit>(n);
+  const radius = (m: number) => size * (0.9 + 0.55 * Math.sqrt(Math.max(1, m)));
 
   if (g === 1) {
-    keys.forEach((k, i) => {
-      paths.push(pathFor(hash(k), 0, area));
-      fish.push(orbitFor(hash(k) ^ 0x9e3779b9, i));
+    all.forEach((s, i) => {
+      const h = hash(s.key);
+      paths.push(pathFor(h, 0, area, placed(s) ? homeFor(s.lat, s.lon, area) : undefined));
+      fish[i] = orbitFor(h ^ 0x9e3779b9, i);
     });
-  } else {
-    const swarms = Math.ceil(n / g);
+    return { paths, fish, size };
+  }
+
+  // Crowded. The placed swim with their region, a region too full for one
+  // swarm splitting into several; the rest in swarms hashed from their keys.
+  const regions = new Map<string, number[]>();
+  const unplaced: number[] = [];
+  all.forEach((s, i) => {
+    if (!placed(s)) return void unplaced.push(i);
+    const r = `${Math.floor((s.lon + 180) / REGION_LON)},${Math.floor((s.lat + 90) / REGION_LAT)}`;
+    const list = regions.get(r) ?? [];
+    list.push(i);
+    regions.set(r, list);
+  });
+
+  for (const [r, members] of regions) {
+    const parts = Math.ceil(members.length / 60);
+    const groups: number[][] = Array.from({ length: parts }, () => []);
+    for (const i of members) groups[hash(all[i]!.key) % parts]!.push(i);
+    groups.forEach((group, part) => {
+      if (group.length === 0) return;
+      let lat = 0;
+      let lon = 0;
+      for (const i of group) {
+        lat += all[i]!.lat!;
+        lon += all[i]!.lon!;
+      }
+      const home = homeFor(lat / group.length, lon / group.length, area);
+      const path = paths.length;
+      // One from a region on its own is a fish on its own.
+      paths.push(pathFor(hash(r) + part * 7919, group.length === 1 ? 0 : radius(group.length), area, home));
+      for (const i of group) fish[i] = orbitFor(hash(all[i]!.key) ^ 0x9e3779b9, path);
+    });
+  }
+
+  if (unplaced.length) {
+    const swarms = Math.ceil(unplaced.length / g);
+    const first = paths.length;
     const members = new Array<number>(swarms).fill(0);
-    keys.forEach((k) => {
-      const s = hash(k) % swarms;
+    for (const i of unplaced) {
+      const s = hash(all[i]!.key) % swarms;
       members[s]!++;
-      fish.push(orbitFor(hash(k) ^ 0x9e3779b9, s));
-    });
-    for (let s = 0; s < swarms; s++) {
-      paths.push(pathFor(0x5eed + s * 7919, size * (0.9 + 0.55 * Math.sqrt(Math.max(1, members[s]!))), area));
+      fish[i] = orbitFor(hash(all[i]!.key) ^ 0x9e3779b9, first + s);
     }
+    for (let s = 0; s < swarms; s++) paths.push(pathFor(0x5eed + s * 7919, radius(members[s]!), area));
   }
   return { paths, fish, size };
 }
