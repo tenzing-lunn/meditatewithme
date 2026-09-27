@@ -631,6 +631,8 @@ The whole point of this design. Adding live video should touch three files.
 
 Nothing above requires touching the session logic, the clock, the count, or the audio graph. The `kind` column and the `stream_url`/`lighter_id` columns already exist in v1 and sit unused. That unused column is the seam, and it costs nothing now.
 
+**The pipeline behind it exists on `dev` since 26 September 2026, and nothing a visitor sees uses it yet.** It came out differently from the table above: nobody is booked into `sessions`. Each collaborator has a stream key (`stream_keys`, SHA-256 only, service role only); they publish to a self-hosted MediaMTX, which asks `/api/live/auth` before letting them in and reports through `/api/live/hook` while they stay online; `/api/live` names whoever is live, newest first, and a stream whose server stops reporting drops out after 90 seconds (`lib/live.ts`). The player is `components/LiveStream.tsx`. Why self-hosted rather than Vimeo or a managed service, what was proven and how, and what is left: `plans/live-video.md`. Running the server: `infra/mediamtx/README.md`.
+
 ---
 
 ## 10. Failure modes
