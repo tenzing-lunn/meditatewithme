@@ -489,9 +489,14 @@ Tenzing's Mac only. How it was built: `infra/mediamtx/README.md`.
       next collaborator time to get ready.
 - [x] Between sessions the company line says *The next session starts at
       [time].* in the grace minutes and when the holder leaves.
-- [ ] **Decide with Jonny: who sees the camera.** Pale water has no *on your
-      own* for a guest, so as built every guest's sitting shows it; his
-      13 September direction was the live video as its own option.
+- [x] **Who sees the camera — Tenzing, 27 September:** two doors first,
+      *By yourself* (your own length; everyone else sitting is a grey fish
+      around your stone — quiet: each wanders alone; crowded: swarms) and
+      *Guided meditation* (the live video; not "the candle"). Only the
+      guided door shows video. Wireframed on the redesign canvas, page
+      *Two ways in · the fish*; not built. As built on `dev` today the
+      video shows in any sitting with others — that changes when the
+      doors are built.
 - [x] Dev demo `/?demo=live` (stand-in picture, or `&src=` a real stream)
       and `&between`.
 - [ ] `/live-test` deleted once the sitting has been seen with a real
