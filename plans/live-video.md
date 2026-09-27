@@ -446,9 +446,21 @@ Tenzing's Mac only. How it was built: `infra/mediamtx/README.md`.
       and segments over HTTPS (a 1.3 MB segment in 0.9 s); hls.js plays
       it at 1280×720 on `/live-test`; ending the stream clears
       `/api/live` within 3 s.
-- [ ] **From a phone on mobile data:** Moblin (iPhone), an Android app,
-      OBS; playback on an iPhone (and in Low Power Mode) and on Android.
-      Drops of 10 s and 40 s. From Thailand, for the Asia route.
+- [x] **Moblin on Tenzing's iPhone, mobile data, 27 September:** publishes
+      over RTMPS. Moblin puts a separate stream key into the stream *name*,
+      `?` and all, which MediaMTX refuses ("invalid path name") — the whole
+      address has to go in Moblin's URL box with its key box empty;
+      `npm run live:key` now prints that line. Its key frame interval must
+      be 2 s (MediaMTX warned "segment duration changed from 2s to 4s").
+      Two airplane-mode drops: the server saw the phone back 32 s and 17 s
+      later (a new network address the second time); the Mac showed
+      "nobody live" at once, then the picture about 10 s after the phone.
+- [x] **Latency grew to ~45 s after the drops.** hls.js defaults add a
+      second per stall with no ceiling; now `liveMaxLatencyDurationCount:
+      6`, and Safari's own player is moved to live on returning to the tab.
+      Retest.
+- [ ] Android app, OBS; playback on an iPhone (and in Low Power Mode) and
+      on Android. From Thailand, for the Asia route.
 - [ ] Measure a real candle's bitrate at 720p and 480p.
 - [x] Unattended OS updates (on by default, checked).
 - [ ] Uptime check on `https://2-28-224-143.sslip.io/` that messages a
@@ -461,6 +473,9 @@ Tenzing's Mac only. How it was built: `infra/mediamtx/README.md`.
 - [ ] The *meditate with others* door, and its "nobody is on camera" state.
 - [ ] The sitting renders `<LiveStream>`, falls back to the earth on stall,
       comes back when it plays; `play()` on the bowl strike (Low Power Mode).
+- [ ] Hold the last picture ~20 s when a collaborator drops before falling
+      back to the earth, so a blip doesn't flash the earth in (seen on the
+      phone test: the site goes "nobody live" the moment the phone drops).
 - [ ] 480p cap on phones.
 - [ ] The handover line at :55.
 - [ ] Dev demo `/?demo=live` and `/?demo=live&dropped`; `/live-test` then

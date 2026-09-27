@@ -36,6 +36,8 @@ type Props = {
 const STALL_MS = 8_000;
 const RETRY_MIN_MS = 3_000;
 const RETRY_MAX_MS = 30_000;
+const LIVE_BEHIND_S = 20;
+const LIVE_EDGE_S = 6;
 
 export default function LiveStream({ src, onState, playRef, className }: Props) {
   const video = useRef<HTMLVideoElement>(null);
@@ -73,7 +75,10 @@ export default function LiveStream({ src, onState, playRef, className }: Props) 
         const { default: Hls } = await import('hls.js');
         if (cancelled) return;
         if (Hls.isSupported()) {
-          hls = new Hls({ capLevelToPlayerSize: true });
+          // hls.js never catches up by default: each stall adds a second
+          // and there is no ceiling, so after a few drops the candle is
+          // minutes old. More than six segments behind, it jumps to live.
+          hls = new Hls({ capLevelToPlayerSize: true, liveMaxLatencyDurationCount: 6 });
           hls.on(Hls.Events.ERROR, (_e, data) => {
             if (data.fatal) fail();
           });
@@ -114,9 +119,16 @@ export default function LiveStream({ src, onState, playRef, className }: Props) 
       if (!stallTimer) stallTimer = setTimeout(fail, STALL_MS);
     };
     // Browsers pause silent video in a background tab to save power, and do
-    // not resume it themselves. Coming back to the tab resumes it.
+    // not resume it themselves. Coming back to the tab resumes it, at live:
+    // Safari's own player has no latency ceiling, so it is moved there by
+    // hand (hls.js does it itself).
     const visible = () => {
-      if (document.visibilityState === 'visible' && el.paused) tryPlay();
+      if (document.visibilityState !== 'visible') return;
+      if (!hls && el.seekable.length) {
+        const edge = el.seekable.end(el.seekable.length - 1);
+        if (edge - el.currentTime > LIVE_BEHIND_S) el.currentTime = edge - LIVE_EDGE_S;
+      }
+      if (el.paused) tryPlay();
     };
 
     document.addEventListener('visibilitychange', visible);

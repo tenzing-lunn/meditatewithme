@@ -50,6 +50,9 @@ Key for ${name} — shown once. Send it privately.
     Server      ${rtmp}
     Stream key  ${slug}?key=${key}
 
+  Moblin (iPhone) — all of it in the URL box, its stream key box left empty
+    ${rtmp}/${slug}?key=${key}
+
   SRT (Moblin, Larix, OBS) — not encrypted; prefer the above over the internet
     srt://${host}:8890?streamid=publish:live/${slug}:key:${key}
 
