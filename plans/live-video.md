@@ -494,9 +494,10 @@ Tenzing's Mac only. How it was built: `infra/mediamtx/README.md`.
       around your stone — quiet: each wanders alone; crowded: swarms) and
       *Guided meditation* (the live video; not "the candle"). Only the
       guided door shows video. Wireframed on the redesign canvas, page
-      *Two ways in · the fish*; not built. As built on `dev` today the
-      video shows in any sitting with others — that changes when the
-      doors are built.
+      *Two ways in · the fish*, and **built on `dev` the same day**: the
+      doors are the guest's front page, the fish are `lib/fish.ts`, and the
+      video shows only in the guided sitting. Members still come in by
+      Home's old doors — not yet given the guided door.
 - [x] Dev demo `/?demo=live` (stand-in picture, or `&src=` a real stream)
       and `&between`.
 - [ ] `/live-test` deleted once the sitting has been seen with a real

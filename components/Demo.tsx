@@ -86,6 +86,7 @@ export default function Demo({ which }: { which: string }) {
               endsAt: 10 * 60_000,
               together: !alone,
               withOthers: !alone,
+              guided: live,
             }}
             now={Date.now()}
             mono={mono}

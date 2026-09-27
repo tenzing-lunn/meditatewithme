@@ -67,36 +67,6 @@ export function reachFor(width: number, height: number): number {
 }
 
 /**
- * A stable place on the pond for a key, as a fraction of the box.
- *
- * Stones are not put where people are on the earth: a map of the world
- * crowds Europe and empties the Pacific, and the pond is not a map. Each key
- * hashes to its own spot and keeps it while it is there, so a stone never
- * jumps when somebody else arrives. A spot too close to your own stone, or
- * under the words, is skipped and the next one tried.
- */
-export function spotFor(
-  key: string,
-  avoid: (p: Point) => boolean,
-): Point {
-  let h = 2166136261;
-  for (let i = 0; i < key.length; i++) {
-    h ^= key.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  let p: Point = { x: 0.5, y: 0.5 };
-  for (let tries = 0; tries < 24; tries++) {
-    h = Math.imul(h ^ (h >>> 15), 2246822507);
-    h = Math.imul(h ^ (h >>> 13), 3266489909);
-    const a = ((h >>> 0) % 10007) / 10007;
-    const b = (Math.floor((h >>> 0) / 10007) % 10009) / 10009;
-    p = { x: 0.06 + a * 0.88, y: 0.12 + b * 0.8 };
-    if (!avoid(p)) return p;
-  }
-  return p;
-}
-
-/**
  * The skim, as a professional throws it: low and flat, one long
  * deceleration, each touch a shorter hop than the last, spinning so slowly
  * that the turn is barely seen. Then it stops, sinks, and leaves its rings.

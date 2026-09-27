@@ -804,10 +804,28 @@ with the one shadow. Items are 44px, ink-2 600, ember-soft on hover and
 focus. Up and Down wrap, Home and End, Escape closes and returns focus:
 Create account, Sign in.
 
+### The two doors and the fish
+
+On `dev` only (27 September 2026). The guest's front page is the pond
+with *How would you like to sit?* in the question role and two doors
+under it: `rounded-card`, a `rule` edge that turns `ember` on hover, a
+`surface` fill at 80%, 88px tall (100px from `sm`, side by side there,
+stacked on a phone), a small mark (a grey fish; a framed figure in ember)
+before a 1.25rem title and a control-size line in `ink-2`.
+
+Everyone else sitting is a fish, `#7a868d` at 55–85% opacity, 20px nose
+to tail on desktop and 15px on a phone, 14px and 11px once there are more
+than a hundred. Quiet water: each fish wanders its own slow loop. Crowded
+(more than one fish per 12,000 px²): swarms of 6 to 60 milling around a
+drifting centre. A touch pushes the ones within eleven body-lengths
+straight away, easing off over five seconds. Fish ease toward their place
+and turn toward where they swim, so nothing jumps. None under reduced
+motion but still fish, and none in a guided sitting.
+
 ### The live window
 
-On `dev` only (27 September 2026). Whoever is on camera, in a sitting with
-others: a 16:9 window centred on the pond, `max-w-4xl`, `rounded-card`, a
+On `dev` only (27 September 2026). Whoever is on camera, in a guided
+sitting: a 16:9 window centred on the pond, `max-w-4xl`, `rounded-card`, a
 `rule` edge, `scrim` behind the picture until it plays, no shadow. The
 pond stays the ground — its rings and the sitting's words sit around the
 window, never on the picture, so nothing needs a wash to be read. It fades

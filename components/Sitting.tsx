@@ -29,8 +29,10 @@ export interface Sit {
   endsAt: number;
   /** Ends on the shared bell, with everyone else who chose it. */
   together: boolean;
-  /** Chose the door marked With others: the other stones are shown. */
+  /** Among the others: their fish are shown, and the company line. */
   withOthers: boolean;
+  /** Chose *Guided meditation*: whoever is on camera, framed on the water. */
+  guided: boolean;
 }
 
 /**

@@ -19,6 +19,7 @@ import Afterwards, { COOLDOWN_MS } from './Afterwards';
 import Arrive from './Arrive';
 import Pond, { type PondHandle, type Stone } from './Pond';
 import Rail from './Rail';
+import TwoDoors from './TwoDoors';
 import type { Sit } from './Sitting';
 import type { MixPatch } from './Sounds';
 import { openingBell, previewBell, scheduleBell, unlockAudio, type ScheduledBell } from './audio';
@@ -156,8 +157,8 @@ type Thrown = { at: Point; t: number } | null;
 /** From Begin to the stone settled: the throw's five seconds and its sink. */
 const THROW_MS = 6400;
 
-/** One stone per person lit this hour, and no more than the water can hold. */
-const MAX_STONES = 60;
+/** One fish per person lit this hour, and no more than the water can hold. */
+const MAX_STONES = 400;
 
 function newSittingId(): string {
   try {
@@ -269,14 +270,17 @@ export default function Journey({
   // The others' stones, only while sitting with others, and through the
   // held beat. And on the arrival, which opens on them.
   const withOthersNow = sit !== null && sit.withOthers;
-  const world = useWorld(withOthersNow || (stage.kind === 'rail' && stage.at === 'arrive'));
+  const guidedNow = sit !== null && sit.guided;
+  const atDoors = stage.kind === 'rail' && stage.at === 'doors';
+  const world = useWorld(withOthersNow || (stage.kind === 'rail' && (stage.at === 'arrive' || atDoors)));
   const labels = world.points.flatMap((p) => p.labels ?? []);
   const ownLabel = profile.share ? composeLabel(profile.name, profile.origin) : null;
 
-  // Whoever is on camera, in place of the water, while sitting with others.
-  // Low Power Mode refuses to autoplay even muted video; a tap on the
-  // sitting is a gesture it accepts, so any tap starts it (`livePlay`).
-  const onCamera = useLive(withOthersNow);
+  // Whoever is on camera, framed on the water, in a guided sitting — and
+  // on the doors, for the line under *Guided meditation*. Low Power Mode
+  // refuses to autoplay even muted video; a tap on the sitting is a gesture
+  // it accepts, so any tap starts it (`livePlay`).
+  const onCamera = useLive(guidedNow || atDoors);
   const livePlay = useRef<(() => void) | null>(null);
 
   // Seen by name only while sitting with others, and only if they said so.
@@ -350,7 +354,7 @@ export default function Journey({
     return () => document.removeEventListener('keydown', onKey);
   }, [back]);
 
-  const begin = useCallback((thrown: Thrown) => {
+  const begin = useCallback((thrown: Thrown, guided = false) => {
     // Inside the click, all of it. The context, the graph, the stored mix,
     // and full screen if it was asked for: none of them start any other way.
     unlockAudio();
@@ -363,7 +367,9 @@ export default function Journey({
 
     const startedAt = performance.now();
     const sessionNow = now ?? serverNow();
-    const together = prefs.showCount && prefs.untilBell;
+    // A guided sitting ends with everyone on the shared bell at :55, which
+    // is where the person on camera hands over.
+    const together = guided || (prefs.showCount && prefs.untilBell);
     const end = together
       ? monotonicEndAtFromServerTarget(nextSharedBellAt(sessionNow), sessionNow, startedAt)
       : computeEndsAt(startedAt, prefs.timerMinutes);
@@ -383,7 +389,8 @@ export default function Journey({
         startedAtWall: Date.now(),
         endsAt: end,
         together,
-        withOthers: prefs.showCount,
+        withOthers: guided || prefs.showCount,
+        guided,
       },
       bell,
       opening,
@@ -477,7 +484,7 @@ export default function Journey({
 
   // Where each question sits on this visitor's own rail, counted without
   // the arrival, which is not a question.
-  const questions: readonly ScreenName[] = screens.filter((s) => s !== 'arrive');
+  const questions: readonly ScreenName[] = screens.filter((s) => s !== 'arrive' && s !== 'doors');
   const stepOf = (s: ScreenName) => questions.indexOf(s) + 1;
 
   /** On from a question: the next one, or, after the last, the sitting. */
@@ -505,8 +512,15 @@ export default function Journey({
 
   const finished = stage.kind === 'finished';
   const thrown = stage.kind === 'rail' ? null : stage.thrown;
-  const onWater = stage.kind !== 'rail' || stage.at === 'arrive';
-  const showStones = stage.kind === 'rail' || (sit?.withOthers ?? false) || finished;
+  const onWater = stage.kind !== 'rail' || stage.at === 'arrive' || stage.at === 'doors';
+  // No fish in a guided sitting: the picture is the company there.
+  const guided = stage.kind !== 'rail' && stage.sit.guided;
+  const showStones = !guided && (stage.kind === 'rail' || (sit?.withOthers ?? false) || finished);
+  const guideLine = onCamera.live
+    ? 'Live now'
+    : onCamera.next !== null
+      ? `The next session starts at ${localTime(onCamera.next)}`
+      : 'Nobody is guiding right now';
 
   return (
     <main id="main" className="relative h-dvh overflow-clip bg-paper text-ink">
@@ -525,7 +539,7 @@ export default function Journey({
         />
       </div>
 
-      {withOthersNow && <LiveLayer src={onCamera.live?.hls ?? null} playRef={livePlay} />}
+      {guidedNow && <LiveLayer src={onCamera.live?.hls ?? null} playRef={livePlay} />}
 
       {finished && !held && (
         <div className="absolute inset-0">
@@ -554,7 +568,10 @@ export default function Journey({
             landed ? 'opacity-100' : 'pointer-events-none opacity-0'
           }`}
           inert={!landed}
-          onPointerDown={() => livePlay.current?.()}
+          onPointerDown={(e) => {
+            livePlay.current?.();
+            pond.current?.scatter({ x: e.clientX, y: e.clientY });
+          }}
         >
           <Sitting
             sit={sit}
@@ -569,7 +586,7 @@ export default function Journey({
             onSoundOpen={mix.unmute}
             onEnd={endEarly}
             ended={finished}
-            nextSession={onCamera.live ? null : onCamera.next}
+            nextSession={sit.guided && !onCamera.live ? onCamera.next : null}
           />
         </div>
       )}
@@ -582,6 +599,22 @@ export default function Journey({
             dir={stage.kind === 'rail' ? stage.dir : 1}
             render={(screen, current) => {
               switch (screen) {
+                case 'doors':
+                  return (
+                    <TwoDoors
+                      others={world.loaded ? stones.length : null}
+                      guide={guideLine}
+                      clock={now === null ? null : localTime(now)}
+                      menu={menu}
+                      ready={now !== null}
+                      onYourself={() => {
+                        update({ showCount: true });
+                        next();
+                      }}
+                      onGuided={() => begin(null, true)}
+                      onWater={(at) => pond.current?.flick(at)}
+                    />
+                  );
                 case 'arrive':
                   return (
                     <Arrive

@@ -2,18 +2,17 @@
 
 import { useEffect, useImperativeHandle, useRef, type Ref } from 'react';
 
+import { fishAt, planFish, SCATTER_S, type FishPlan, type Touch } from '@/lib/fish';
 import {
   flickConfig,
   reachFor,
   ringsAt,
   skimAt,
   skimConfig,
-  spotFor,
   touchRings,
   type Point,
   type Ring,
   type SkimConfig,
-  type Source,
 } from '@/lib/pond';
 
 /**
@@ -25,12 +24,17 @@ import {
  * the wireframe's skim look stepped.
  *
  * The pond stays mounted from the arrival to the ending (`Journey` draws it
- * under every stage), so the stones never move and your rings carry on
- * through the change of words above them. Only its props change.
+ * under every stage), so the fish swim on and your rings carry on through
+ * the change of words above them. Only its props change.
+ *
+ * Everyone else sitting is a grey fish (27 September 2026, in place of the
+ * other stones): alone on a path of its own while the water is quiet, in
+ * milling swarms once it is crowded (`lib/fish.ts`). A touch scatters the
+ * ones near it; a flicked pebble scatters them where it lands.
  */
 
 export interface Stone {
-  /** Stable while the person is here; the stone's place is hashed from it. */
+  /** Stable while the person is here; their fish's path is hashed from it. */
   key: string;
   /** "Ana from Lisbon", when they chose to be seen. */
   label?: string;
@@ -40,6 +44,8 @@ export interface Stone {
 export interface PondHandle {
   /** Flick a pale pebble from the shore to this point (client pixels). */
   flick: (at: Point) => void;
+  /** Scatter the fish near this point (client pixels), now. */
+  scatter: (at: Point) => void;
 }
 
 /** A pebble in the air or just sunk: its throw, and when it left the hand (ms). */
@@ -55,7 +61,7 @@ const SETTLE = { rings: 3, period: 1.1, life: 4.5, reach: 70 };
 export const YOU: Point = { x: 0.5, y: 0.44 };
 
 const INK = '62,76,86';
-const STONE = '#9ba6ac';
+const FISH = '#7a868d';
 const ACCENT = '#3e4c55';
 const SHADOW = '47,59,66';
 const LABEL = '#5a656c';
@@ -99,6 +105,11 @@ export default function Pond({
    * play, and the motion is all it is.
    */
   const flicks = useRef<Flick[]>([]);
+  /** Touches on the water, on the pond's clock (s), still pushing fish away. */
+  const touches = useRef<Touch[]>([]);
+  const touch = (x: number, y: number, t: number) => {
+    touches.current = [...touches.current.filter((s) => t - s.t < SCATTER_S), { x, y, t }].slice(-6);
+  };
   useImperativeHandle(
     ref,
     () => ({
@@ -114,8 +125,18 @@ export default function Pond({
           x: Math.max(-20, Math.min(r.width + 20, to.x - side * Math.min(180, r.width * 0.3))),
           y: r.height + 24,
         };
-        flicks.current.push({ cfg: flickConfig(from, to, side), t0: performance.now() });
+        const cfg = flickConfig(from, to, side);
+        const t0 = performance.now();
+        flicks.current.push({ cfg, t0 });
         if (flicks.current.length > 12) flicks.current.shift();
+        // The fish scatter where it lands, not where the finger was.
+        touch(to.x, to.y, t0 / 1000 + cfg.T);
+      },
+      scatter(at) {
+        const el = canvas.current;
+        if (!el || props.current.reduced) return;
+        const r = el.getBoundingClientRect();
+        touch(at.x - r.left, at.y - r.top, performance.now() / 1000);
       },
     }),
     [],
@@ -129,7 +150,11 @@ export default function Pond({
     let raf = 0;
     let w = 0;
     let h = 0;
-    let spots = new Map<string, Point>();
+    let plan: FishPlan | null = null;
+    let planned = '';
+    /** Where each fish was drawn and which way it faced, to ease toward where it should be. */
+    const drawn = new Map<string, { x: number; y: number; a: number }>();
+    let last = 0;
 
     const fit = () => {
       const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -138,17 +163,7 @@ export default function Pond({
       el.width = Math.round(w * dpr);
       el.height = Math.round(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      spots = new Map();
-    };
-
-    /** Keep stones off your own and out from under the words. */
-    const avoid = (p: Point) => {
-      const near = Math.hypot((p.x - YOU.x) * w, (p.y - YOU.y) * h) < 0.14 * Math.min(w, h) + 40;
-      const wide = w > h;
-      const underWords = wide
-        ? (p.x < 0.55 && p.y > 0.56) || (p.y > 0.86 && p.x > 0.2 && p.x < 0.8)
-        : p.y > 0.62;
-      return near || underWords;
+      planned = '';
     };
 
     const ring = (r: Ring) => {
@@ -186,6 +201,30 @@ export default function Pond({
       ctx.restore();
     };
 
+    /** One fish, nose along `a`, centred on (x, y). */
+    const fish = (x: number, y: number, a: number, size: number, alpha: number) => {
+      if (alpha <= 0) return;
+      const k = size / 20;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(a);
+      ctx.scale(k, k);
+      ctx.translate(-3.75, 0);
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = FISH;
+      ctx.beginPath();
+      ctx.moveTo(-3.2, 0);
+      ctx.lineTo(-6, -3.3);
+      ctx.lineTo(-5, 0);
+      ctx.lineTo(-6, 3.3);
+      ctx.closePath();
+      ctx.moveTo(-3.6, 0);
+      ctx.bezierCurveTo(-1, -3.3, 7, -3.8, 13.5, 0);
+      ctx.bezierCurveTo(7, 3.8, -1, 3.3, -3.6, 0);
+      ctx.fill();
+      ctx.restore();
+    };
+
     const shadow = (x: number, y: number, sw: number, sh: number, alpha: number) => {
       if (alpha <= 0) return;
       ctx.save();
@@ -208,36 +247,49 @@ export default function Pond({
       ctx.clearRect(0, 0, w, h);
       ctx.lineWidth = 1;
 
-      // A crowded pond is quieter water: past a dozen stones each one's rings
-      // reach less far and leave it fainter, so the whole stays about as busy
-      // as the wireframe's nine.
-      const crowd = Math.min(1, Math.sqrt(12 / Math.max(1, p.stones.length)));
       const R = reachFor(w, h);
       const me = { x: YOU.x * w, y: YOU.y * h };
       const bell = p.bellAt === null ? null : (nowMs - p.bellAt) / 1000;
       // The others go quietly once the bell has rung.
       const others = bell === null ? 1 : Math.max(0, 1 - bell / 2.5);
 
-      const sources: Source[] = [];
-      const placed: { x: number; y: number; i: number; s: Stone; a: number }[] = [];
+      // The fish keep to the open water: all of it while sitting, above the
+      // words on the arrival.
+      const band = p.you ? { y0: 0.08, y1: 0.84 } : w > h ? { y0: 0.1, y1: 0.56 } : { y0: 0.1, y1: 0.5 };
+      const keys = p.stones.map((s) => s.key);
+      const sig = `${keys.join('|')}#${w}x${h}#${band.y1}`;
+      if (sig !== planned) {
+        plan = planFish(keys, { w, h, ...band });
+        planned = sig;
+      }
+      const clock = nowMs / 1000;
+      const dt = last ? Math.min(0.1, clock - last) : 0;
+      last = clock;
+      const ease = p.reduced ? 1 : 1 - Math.exp(-dt * 2.5);
+      const swimming: { x: number; y: number; a: number; o: number; label?: string }[] = [];
+      const here = new Set<string>();
       p.stones.forEach((s, i) => {
-        let spot = spots.get(s.key);
-        if (!spot) {
-          spot = spotFor(s.key, avoid);
-          spots.set(s.key, spot);
-        }
+        here.add(s.key);
         if (!seen.current.has(s.key)) seen.current.set(s.key, nowMs);
-        const a = p.reduced ? 1 : Math.min(1, (nowMs - seen.current.get(s.key)!) / 1500);
-        const x = spot.x * w;
-        const y = spot.y * h;
-        placed.push({ x, y, i, s, a: a * others });
-        sources.push({
-          x, y, reach: R * (0.45 + 0.55 * crowd), period: 2.8, life: 10,
-          phase: ((i * 1.7) % 2.8), strength: 0.75 * a * others * crowd, yours: false,
-        });
+        const fade = p.reduced ? 1 : Math.min(1, (nowMs - seen.current.get(s.key)!) / 1500);
+        const to = fishAt(plan!, i, p.reduced ? 4.2 : clock, p.reduced ? [] : touches.current);
+        const was = drawn.get(s.key);
+        const x = was ? was.x + (to.x - was.x) * ease : to.x;
+        const y = was ? was.y + (to.y - was.y) * ease : to.y;
+        const moved = was ? Math.hypot(x - was.x, y - was.y) : 0;
+        let a = was ? was.a : Math.PI * ((i * 37) % 360) / 180;
+        if (moved > 0.02) {
+          // Turn toward where it is going, not all at once.
+          const want = Math.atan2(y - was!.y, x - was!.x);
+          const d = Math.atan2(Math.sin(want - a), Math.cos(want - a));
+          a += d * Math.min(1, dt * 6);
+        }
+        drawn.set(s.key, { x, y, a });
+        swimming.push({ x, y, a, o: (0.55 + 0.3 * ((i * 7) % 5) / 4) * fade * others, label: s.label });
       });
+      for (const k of drawn.keys()) if (!here.has(k)) drawn.delete(k);
 
-      const rings = ringsAt(t + 4.2, sources);
+      const rings: Ring[] = [];
 
       // Your stone: thrown, settling, or simply there.
       let stone: { x: number; y: number; h: number; sunk: number; spin: number } | null = null;
@@ -331,13 +383,12 @@ export default function Pond({
       const phone = w < 640;
       ctx.font = `${phone ? 11 : 12}px system-ui, -apple-system, 'Segoe UI', sans-serif`;
       ctx.textBaseline = 'middle';
-      for (const q of placed) {
-        const pw = 9 + ((q.i * 7) % 5);
-        pebble(q.x, q.y, pw, pw * 0.78, (((q.i * 37) % 180) - 90) * (Math.PI / 180), STONE, q.a);
-        if (q.s.label && q.a > 0) {
-          ctx.globalAlpha = q.a;
+      for (const f of swimming) {
+        fish(f.x, f.y, f.a, plan!.size, f.o);
+        if (f.label && f.o > 0) {
+          ctx.globalAlpha = Math.min(1, f.o * 1.2);
           ctx.fillStyle = LABEL;
-          ctx.fillText(q.s.label, q.x + 13, q.y);
+          ctx.fillText(f.label, f.x + plan!.size * 0.7, f.y - plan!.size * 0.9);
           ctx.globalAlpha = 1;
         }
       }

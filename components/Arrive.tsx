@@ -119,7 +119,7 @@ export default function Arrive({
 
       <div className="mt-auto max-w-[36rem]">
         {others !== null && others > 0 && (
-          <p className="mb-4 text-body text-ink-2">Each stone is someone sitting this hour.</p>
+          <p className="mb-4 text-body text-ink-2">Each fish is someone sitting this hour.</p>
         )}
         <p className="font-display text-question leading-[1.35] text-ink-2 sm:text-question-lg">
           {together ? 'Sit ' : 'Sit for '}

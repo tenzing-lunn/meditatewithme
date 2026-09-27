@@ -1,7 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { flickConfig, ringsAt, skimAt, skimConfig, spotFor, touchRings } from '../lib/pond.ts';
+import { flickConfig, ringsAt, skimAt, skimConfig, touchRings } from '../lib/pond.ts';
 
 describe('skimAt', () => {
   const c = skimConfig({ x: 100, y: 800 }, { x: 720, y: 400 }, 1440, 900);
@@ -41,14 +41,6 @@ describe('rings', () => {
     for (const r of ringsAt(7.3, [s])) assert.ok(r.o >= 0 && r.o <= 1 && r.r <= 153);
     const old = touchRings([{ x: 0, y: 0, age: 5, k: 1 }]);
     assert.equal(old.length, 0);
-  });
-});
-
-describe('spotFor', () => {
-  test('the same key, the same place; and it keeps out of the way', () => {
-    const avoid = (p: { x: number; y: number }) => p.y > 0.6;
-    assert.deepEqual(spotFor('51,0#0', avoid), spotFor('51,0#0', avoid));
-    for (let i = 0; i < 50; i++) assert.ok(spotFor(`k${i}`, avoid).y <= 0.6);
   });
 });
 

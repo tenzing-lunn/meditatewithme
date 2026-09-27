@@ -121,20 +121,26 @@ you this hour* on the ending. A guest can no longer choose *on your own*;
 a member still can, from the doors on Home, which kept its old layout and
 only took the new colours and type.
 
-**Live video in the sitting, on `dev` only since 27 September 2026.** Not
-live and not shown to Jonny. In a sitting with others, when a collaborator
-is on camera (`plans/live-video.md`), their picture appears as a framed
-window in the middle of the pond — silent, the water and the rings around
-it, the company line and *Sound* and *End* below as usual. It fades in only
-once frames are playing and back to the plain pond when nobody is on, when
-the stream stalls (a blip of under 20 seconds is held through), or when a
-phone refuses to autoplay (any tap on the sitting starts it). Between two
-people on camera the company line says *The next session starts at
-[the top of the hour].* Production shows none of it: its env has no video
-server set, so `/api/live` answers nobody. **Undecided:** a guest cannot
-choose *on your own* on Pale water, so as built every guest's sitting would
-show the camera; Jonny's 13 September direction was the live video as an
-option of its own (§5).
+**Two doors and the fish, on `dev` only since 27 September 2026.** Not
+live and not shown to Jonny; drawn first on the redesign canvas (*Two ways
+in · the fish*) and built from it at Tenzing's word. A guest now lands on
+two doors on the water — *How would you like to sit?* — **By yourself**
+(*Your own time, among N others*) and **Guided meditation** (*Live now*,
+*The next session starts at …*, or *Nobody is guiding right now*).
+Everyone else sitting this hour is a small grey fish, not a stone: each
+wanders alone while the pond is quiet and they gather into milling swarms
+once it is crowded; touching the water scatters the nearby ones, and a
+skimmed pebble scatters them where it lands. *By yourself* leads to the
+sentence and Begin as before, and the sitting is your stone among the
+fish. *Guided meditation* starts the sitting in the click: whoever is on
+camera, framed on the water (fading in only once it plays, held through a
+blip of under 20 seconds, started by any tap in Low Power Mode), no fish,
+ending with everyone at the shared bell at :55; between two people on
+camera the line says when the next session starts, and with nobody live
+it is the water. A member still reaches the sitting through Home's older
+doors, which have not been changed and do not offer the guided sitting
+yet. Production shows none of it until `dev` is merged, and even then no
+video until its env names a video server.
 
 **Rebuilt on 14 September 2026** (`docs/ui-rebuild.md`, on `ui-warm`). The
 photographic room, the landing word, the settings panel and the ring are gone;

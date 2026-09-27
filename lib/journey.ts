@@ -8,9 +8,11 @@ import type { UserPreferences } from './types';
  * 2026) there is one screen where a sitting begins, the arrival: the pond,
  * one sentence holding the length, the bell and the sound, and Begin. The
  * rail's time, bell, sound and bowl screens folded into that sentence.
+ * Since 27 September 2026 a guest meets two doors first: *By yourself*
+ * leads on to the arrival, *Guided meditation* straight into the sitting.
  */
 
-export const SCREENS = ['arrive', 'name', 'origin'] as const;
+export const SCREENS = ['doors', 'arrive', 'name', 'origin'] as const;
 
 export type Screen = (typeof SCREENS)[number];
 
@@ -24,8 +26,9 @@ export interface JourneyFacts {
 }
 
 /**
- * Everybody starts at the arrival. For a guest that is the front page;
- * somebody signed in reaches it through a door on their home.
+ * A guest starts at the two doors, the front page, and *By yourself* leads
+ * to the arrival; somebody signed in reaches the arrival through a door on
+ * their home.
  *
  * A first visit asks nothing personal: by default nobody sees a name or a
  * place, so they would be an entrance fee with no payoff. The visit after a
@@ -35,7 +38,7 @@ export interface JourneyFacts {
  * then on. The last question's Next begins the sitting.
  */
 export function screensFor(f: JourneyFacts): Screen[] {
-  const out: Screen[] = ['arrive'];
+  const out: Screen[] = f.signedIn ? ['arrive'] : ['doors', 'arrive'];
   if (f.hasSat && !f.originAsked) {
     if (!f.signedIn) out.push('name');
     out.push('origin');
