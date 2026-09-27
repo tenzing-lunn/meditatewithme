@@ -599,6 +599,7 @@ export default function Journey({
             onEnd={endEarly}
             ended={finished}
             nextSession={sit.guided && !onCamera.live ? onCamera.next : null}
+            onBack={endEarly}
           />
         </div>
       )}
@@ -654,6 +655,7 @@ export default function Journey({
                         } else next();
                       }}
                       onWater={(at) => pond.current?.flick(at)}
+                      onBack={step(screens, 'arrive', -1) === null ? undefined : back}
                       onPreviewBell={(kind) => {
                         unlockAudio();
                         previewBell(kind);

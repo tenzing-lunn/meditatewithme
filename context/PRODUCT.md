@@ -126,7 +126,8 @@ live and not shown to Jonny; drawn first on the redesign canvas (*Two ways
 in · the fish*) and built from it at Tenzing's word. A guest now lands on
 two doors on the water — *How would you like to sit?* — **By yourself**
 (*Your own time, among N others*) and **Guided meditation** (*Live now*,
-*The next session starts at …*, or *Nobody is guiding right now*).
+*The next session starts at …*, or *Nobody is guiding right now*);
+a chevron in the top-left corner goes back to the doors from either.
 Everyone else sitting right now (not everyone who sat this hour) is a
 small grey fish with a head, body and tail that bend as it swims — never
 one for yourself, so sitting with nobody else is an empty pond: each

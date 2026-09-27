@@ -10,6 +10,7 @@ import {
 import { companyLine } from '@/lib/company';
 import { localTime } from '@/lib/format';
 import { mmss, remainingMs } from '@/lib/timer';
+import BackChevron from './BackChevron';
 import Brand from './Brand';
 import { WORD } from './controls';
 import Sounds, { type MixPatch } from './Sounds';
@@ -79,6 +80,7 @@ export default function Sitting({
   onEnd,
   ended = false,
   nextSession = null,
+  onBack,
 }: {
   sit: Sit;
   now: number | null;
@@ -96,6 +98,8 @@ export default function Sitting({
   ended?: boolean;
   /** Between two people on camera: when the next goes on, ms. */
   nextSession?: number | null;
+  /** Leave the sitting for the two ways in. */
+  onBack?: () => void;
 }) {
   const [soundOpen, setSoundOpen] = useState(false);
   const [awake, setAwake] = useState(true);
@@ -173,7 +177,10 @@ export default function Sitting({
       onKeyDown={wake}
     >
       <div className={`flex items-center justify-between px-6 pt-[calc(1rem+env(safe-area-inset-top))] sm:px-14 lg:px-24 ${controls}`}>
-        <Brand word={false} />
+        <div className="flex items-center gap-3" inert={ended} {...holdWhileFocused}>
+          {onBack && !ended && <BackChevron onBack={onBack} />}
+          <Brand word={false} />
+        </div>
         {!ended && (
           <p role="timer" aria-label="Time left" className="text-caption tabular-nums text-ink-3">
             {mmss(remaining)}

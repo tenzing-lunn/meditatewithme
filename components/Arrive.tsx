@@ -5,6 +5,7 @@ import { useState, type ReactNode } from 'react';
 import { TIMER_STOPS } from '@/lib/timer';
 import { BELL_KINDS, type BellKind, type UserPreferences } from '@/lib/types';
 import type { Point } from '@/lib/pond';
+import BackChevron from './BackChevron';
 import Brand from './Brand';
 import { FOCUS } from './controls';
 import Picker from './Picker';
@@ -62,6 +63,7 @@ export default function Arrive({
   onTaste,
   onHush,
   onWater,
+  onBack,
 }: {
   prefs: UserPreferences;
   update: (patch: Partial<UserPreferences>) => void;
@@ -84,6 +86,8 @@ export default function Arrive({
   onHush: () => void;
   /** A tap on bare water, in client pixels: somewhere to skim a pebble to. */
   onWater?: (at: Point) => void;
+  /** Back to the two doors; absent when there are none to go back to. */
+  onBack?: () => void;
 }) {
   const [open, setOpen] = useState<'t' | 'b' | 's' | null>(null);
   const together = prefs.showCount && prefs.untilBell;
@@ -110,7 +114,10 @@ export default function Arrive({
       }}
     >
       <header className="flex items-center justify-between">
-        <Brand />
+        <div className="flex items-center gap-3">
+          {onBack && <BackChevron onBack={onBack} />}
+          <Brand />
+        </div>
         <div className="flex items-center gap-3 text-caption text-ink-3">
           {clock && <span className="tabular-nums">{clock}</span>}
           {menu}

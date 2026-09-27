@@ -826,6 +826,12 @@ straight away, easing off over five seconds. Fish ease toward their place
 and turn toward where they swim, so nothing jumps. None under reduced
 motion but still fish, and none in a guided sitting.
 
+Once a door is chosen, a chevron in the top-left corner, in the menu's own
+44px square (`ICON`) before the mark, goes back to the two doors: on the
+*By yourself* screen it steps back, and in a sitting (either door) it
+ends the sitting the way *End* does and lands on the doors — Home for
+somebody signed in. It rests and wakes with the sitting's other controls.
+
 ### The live window
 
 On `dev` only (27 September 2026). Whoever is on camera, in a guided
