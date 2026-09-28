@@ -129,7 +129,8 @@ two doors on the water — *How would you like to sit?* — **By yourself**
 *The next session starts at …*, or *Nobody is guiding right now*);
 a chevron in the top-left corner goes back to the doors from either.
 Everyone else sitting right now (not everyone who sat this hour) is a
-small grey fish with a head, body and tail that bend as it swims — never
+small grey fish that swims nose first, its head, body and tail bending
+through its turns and with the wave of its swimming — never
 one for yourself, so sitting with nobody else is an empty pond. Each
 swims in its person's part of the world on a loose map (west left, north
 up), with their place written beside it only if they chose to share it;

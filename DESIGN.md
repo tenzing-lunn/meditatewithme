@@ -816,20 +816,32 @@ before a 1.25rem title and a control-size line in `ink-2`.
 Everyone else sitting right now is a fish — nobody else here, no fish,
 and never one for yourself — `#7a868d` at 55–85% opacity, 20px nose to
 tail on desktop and 15px on a phone, 14px and 11px once there are more
-than a hundred. Each fish has three joints, head, body and tail, the body
-and tail following the head like a chain (never bent more than about 50°
-at the tail), and a forked tail fin that beats faster and wider the faster
-it swims. Each fish swims in its person's part of the world on a loose
+than a hundred. A fish swims nose first: it steers toward where it
+belongs at a limited rate of turn, speeds up and slows down smoothly
+(a cruise of a quarter of a body length a second, up to four and a half,
+ten for the moment a touch startles it), and never slides sideways, backs
+up or turns on the spot. Calm, it never turns on a radius under a body
+length and a half (half a body length when startled), so
+it sweeps round rather than chasing its tail. Within about a body length
+of its place it slows to a drift and hardly steers, so it hangs there,
+turning now and then. Its
+spine has three joints, head, body and tail, with a forked fin off the
+tail. A turn curves the body along the path the head took, and a wave
+runs from head to tail, barely at the head and most at the fin, beating
+faster and wider the faster it swims, so a gliding fish hardly moves
+(`swim` in `lib/fish.ts`). Each fish swims in its person's part of the world on a loose
 map of the water — west on the left, north at the top, 62°N to 43°S
 filling the band — from the one-degree cell of their heartbeat. Quiet
 water: each fish wanders a small loop around its place. Crowded (more
 than one fish per 12,000 px²): each region (24° by 16°) mills as one
-swarm around the region's middle, up to 60 to a swarm. The place is
+swarm around the region's middle, roughly 60 to a swarm. Which
+swarm a fish joins is hashed so that one person coming or going moves
+nobody else's fish, or only those of a swarm that appears or goes. The place is
 written beside a fish only when its person chose to share it (*Ana from
 Lisbon*); nobody is named or placed in words without choosing it. A touch pushes the ones within eleven body-lengths
-straight away, easing off over five seconds. Fish ease toward their place
-and turn toward where they swim, so nothing jumps. None under reduced
-motion but still fish, and none in a guided sitting.
+straight away, easing off over five seconds, and they dart away before drifting back.
+Under reduced motion the fish are still, straight, each where it belongs;
+none in a guided sitting.
 
 Once a door is chosen, a chevron in the top-left corner, in the menu's own
 44px square (`ICON`) before the mark, goes back to the two doors: on the

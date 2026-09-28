@@ -201,7 +201,7 @@ export function planFish(people: readonly (string | Swimmer)[], area: Area): Fis
   for (const [r, members] of regions) {
     const parts = Math.ceil(members.length / 60);
     const groups: number[][] = Array.from({ length: parts }, () => []);
-    for (const i of members) groups[hash(all[i]!.key) % parts]!.push(i);
+    for (const i of members) groups[pick(hash(all[i]!.key), parts)]!.push(i);
     groups.forEach((group, part) => {
       if (group.length === 0) return;
       let lat = 0;
@@ -219,17 +219,41 @@ export function planFish(people: readonly (string | Swimmer)[], area: Area): Fis
   }
 
   if (unplaced.length) {
-    const swarms = Math.ceil(unplaced.length / g);
+    // Rounded rather than rounded up, so the count holds while people come
+    // and go around a steady crowd (g grows with n); never over 60 to one.
+    const swarms = Math.max(1, Math.round(unplaced.length / g), Math.ceil(unplaced.length / 60));
     const first = paths.length;
     const members = new Array<number>(swarms).fill(0);
     for (const i of unplaced) {
-      const s = hash(all[i]!.key) % swarms;
+      const s = pick(hash(all[i]!.key), swarms);
       members[s]!++;
       fish[i] = orbitFor(hash(all[i]!.key) ^ 0x9e3779b9, first + s);
     }
     for (let s = 0; s < swarms; s++) paths.push(pathFor(0x5eed + s * 7919, radius(members[s]!), area));
   }
   return { paths, fish, size };
+}
+
+/**
+ * Which of `count` swarms a fish joins: the one its key scores highest
+ * with (rendezvous hashing). When the count changes by one only the fish
+ * that pick the new swarm, or lose the old one, move; `hash % count` would
+ * send most of the pond swimming across the water.
+ */
+function pick(h: number, count: number): number {
+  let best = 0;
+  let top = -1;
+  for (let s = 0; s < count; s++) {
+    let x = (h ^ Math.imul(s + 1, 0x9e3779b9)) >>> 0;
+    x = Math.imul(x ^ (x >>> 16), 0x85ebca6b);
+    x = Math.imul(x ^ (x >>> 13), 0xc2b2ae35);
+    x = (x ^ (x >>> 16)) >>> 0;
+    if (x > top) {
+      top = x;
+      best = s;
+    }
+  }
+  return best;
 }
 
 function orbitFor(seed: number, path: number): Orbit {
@@ -246,6 +270,19 @@ function orbitFor(seed: number, path: number): Orbit {
 
 /** Where fish `i` is at `t` seconds, pushed by any touches still pushing. */
 export function fishAt(plan: FishPlan, i: number, t: number, touches: readonly Touch[] = []): { x: number; y: number } {
+  const { x, y } = pushed(plan, i, t, touches);
+  return { x, y };
+}
+
+/**
+ * How hard fish `i` is being scattered at `t`, 0 to 1: what lets it dart
+ * rather than cruise while a touch is still pushing it.
+ */
+export function alarmAt(plan: FishPlan, i: number, t: number, touches: readonly Touch[] = []): number {
+  return pushed(plan, i, t, touches).alarm;
+}
+
+function pushed(plan: FishPlan, i: number, t: number, touches: readonly Touch[]) {
   const f = plan.fish[i]!;
   const p = plan.paths[f.path]!;
   let x = p.cx + p.ax * Math.sin(p.w1 * t + p.p1) + p.ax * 0.35 * Math.sin(p.w2 * 2.3 * t + p.p2);
@@ -260,6 +297,9 @@ export function fishAt(plan: FishPlan, i: number, t: number, touches: readonly T
   y += 1.6 * Math.cos(t * f.sp * 1.2 + f.br);
 
   const reach = plan.size * 11;
+  let alarm = 0;
+  let px = 0;
+  let py = 0;
   for (const s of touches) {
     const age = t - s.t;
     if (age < 0 || age > SCATTER_S) continue;
@@ -269,39 +309,237 @@ export function fishAt(plan: FishPlan, i: number, t: number, touches: readonly T
     if (d >= reach) continue;
     const env = age < 0.3 ? age / 0.3 : Math.exp(-(age - 0.3) * 0.8);
     const push = (reach - d) * 1.15 * env;
-    x += (dx / d) * push;
-    y += (dy / d) * push;
+    px += (dx / d) * push;
+    py += (dy / d) * push;
+    alarm = Math.max(alarm, Math.min(1, 1.6 * env * (1 - d / reach)));
   }
-  return { x, y };
+  return { x: x + px, y: y + py, alarm };
 }
 
-/**
- * A fish's spine: head, body, tail. Each joint follows the one ahead of it at
- * a fixed length, the way a chain dragged by its end does, so the body bends
- * through a turn instead of swinging round like a stick.
+/*
+ * HOW A FISH SWIMS
+ *
+ * `fishAt` says where a fish ought to be; `swim` is how it gets there. A
+ * fish has a heading and a speed and only ever moves along the heading,
+ * nose first: it steers toward its mark at a limited rate of turn, speeds
+ * up and slows down smoothly, and can never slide sideways, back up, or
+ * pivot on the spot, because how sharply it may turn shrinks with how
+ * slowly it swims, and a calm fish only turns in wide circles. Arrived, it
+ * idles: a lazy drift past its mark, a gentle turn, and back.
+ *
+ * Its spine has three axes (Tenzing, 28 September 2026): the head, the
+ * body and the tail, each a joint that turns. Two things turn them. A
+ * turn curves the body along the path the head just took, more the
+ * tighter the turn. And a travelling wave runs from head to tail, the way
+ * a carp or a trout swims: barely at the head, more at the body, most at
+ * the tail and its fin, each a little behind the one in front, beating
+ * faster and wider the faster the fish goes, so a gliding fish hardly
+ * moves and a scattered one beats hard.
+ *
+ * Speeds are in body lengths, so a small fish on a phone swims like a big
+ * one on a desk.
  */
+
+/** A spine joint, or any point on the water. */
 export interface Joint {
   x: number;
   y: number;
 }
 
-export function follow(head: Joint, joints: readonly Joint[], seg: number, maxBend = 0.9): Joint[] {
-  const out: Joint[] = [];
-  let ahead: Joint | null = null;
-  let lead = head;
-  for (const j of joints) {
-    let a = Math.atan2(j.y - lead.y, j.x - lead.x);
-    if (ahead) {
-      // No sharper than `maxBend` against the segment in front: a fish that
-      // doubles back turns its body, it does not fold in half.
-      const straight = Math.atan2(lead.y - ahead.y, lead.x - ahead.x);
-      const bend = Math.atan2(Math.sin(a - straight), Math.cos(a - straight));
-      a = straight + Math.max(-maxBend, Math.min(maxBend, bend));
-    }
-    const next = { x: lead.x + Math.cos(a) * seg, y: lead.y + Math.sin(a) * seg };
-    out.push(next);
-    ahead = lead;
-    lead = next;
-  }
-  return out;
+/** How a fish moves. Speeds in body lengths per second; turns in radians per second. */
+export const SWIM = {
+  /** Never slower, away from its mark; and right at it, a lazy drift that never quite stops. */
+  cruise: 0.25,
+  idle: 0.1,
+  /** As fast as a calm fish goes, and as fast as a startled one does. */
+  top: 4.5,
+  burst: 10,
+  /**
+   * Wanted speed per unit of distance to the mark beyond `slack` body
+   * lengths of it, 1/s: about a second behind it.
+   */
+  pull: 1.5,
+  slack: 0.75,
+  /** Change of speed, body lengths/s², calm and startled. */
+  accel: 2.5,
+  burstAccel: 30,
+  /** Rate of turn near its mark, far from it, and startled. */
+  turn: 1.4,
+  turnFar: 2.4,
+  turnBurst: 5,
+  /**
+   * The tightest circle, body lengths, calm and startled: however slow, it
+   * never turns tighter, so a calm fish sweeps round rather than chasing
+   * its tail.
+   */
+  radius: 1.5,
+  burstRadius: 0.5,
+  /** Its tightest calm circle once well behind its mark, so it keeps up with a swarm. */
+  chaseRadius: 0.75,
+  /** How quickly the rate of turn itself changes, rad/s², calm and startled. */
+  spin: 6,
+  spinBurst: 40,
+  /** A longer frame is swum in steps no longer than this. */
+  step: 0.1,
+  /** A gap longer than this (a tab left hidden) puts the fish back at its mark. */
+  gap: 1,
+} as const;
+
+/** The most each joint bends, radians: never folded. */
+export const BEND = { head: 0.15, body: 0.5, tail: 0.7 } as const;
+
+/** Nose piece, front body, rear body and tail fin, as fractions of the length. */
+const SEG = { nose: 0.2, front: 0.28, rear: 0.28, fin: 0.26 } as const;
+
+export interface FishState {
+  /** The head joint, px. */
+  x: number;
+  y: number;
+  /** Which way it faces and swims, radians. */
+  heading: number;
+  /** px/s, along the heading. */
+  speed: number;
+  /** Rate of turn, rad/s. */
+  turn: number;
+  /** Where the swimming wave is, radians. */
+  phase: number;
+  /**
+   * Each joint's bend, radians: the head joint turns the nose off the
+   * heading, the body joint the rear body off the front, and the tail
+   * joint the tail fin off the rear body.
+   */
+  bend: { head: number; body: number; tail: number };
+}
+
+/** A fish just arrived: at `at`, straight, facing `heading`, cruising. */
+export function spawnFish(at: Joint, heading: number, size: number, phase = 0): FishState {
+  return {
+    x: at.x,
+    y: at.y,
+    heading: wrap(heading),
+    speed: SWIM.cruise * size,
+    turn: 0,
+    phase,
+    bend: { head: 0, body: 0, tail: 0 },
+  };
+}
+
+const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
+const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+const lerp = (a: number, b: number, u: number) => a + (b - a) * u;
+
+/**
+ * Swimming toward `target`, `dt` seconds on, in steps of at most
+ * `SWIM.step`. `size` is the fish's length, px; `alarm` (0 to 1, from
+ * `alarmAt`) lets it dart.
+ */
+export function swim(
+  s: FishState,
+  target: Joint,
+  dt: number,
+  opts: { size: number; alarm?: number },
+): FishState {
+  if (!(dt > 0) || !Number.isFinite(target.x) || !Number.isFinite(target.y)) return s;
+  if (dt > SWIM.gap) return spawnFish(target, s.heading, opts.size, s.phase);
+  const n = Math.ceil(dt / SWIM.step - 1e-9);
+  for (let k = 0; k < n; k++) s = stroke(s, target, dt / n, opts);
+  return s;
+}
+
+function stroke(s: FishState, target: Joint, dt: number, opts: { size: number; alarm?: number }): FishState {
+  const L = opts.size;
+  const alarm = clamp(opts.alarm ?? 0, 0, 1);
+
+  const dx = target.x - s.x;
+  const dy = target.y - s.y;
+  const dist = Math.hypot(dx, dy);
+  // Right on top of its mark there is no way to face: it carries on.
+  const off = dist > L * 0.25 ? wrap(Math.atan2(dy, dx) - s.heading) : 0;
+
+  // Speed: faster the further behind, and, near its mark, only once it
+  // faces it, so a fish turning round there cruises rather than dashes.
+  // Further off it keeps some pace while it turns, or it would fall behind. Within a body length or so of
+  // its mark it is close enough, and only drifts.
+  const near = clamp((dist / L - 0.5) / 1.5, 0, 1);
+  const top = lerp(SWIM.top, SWIM.burst, alarm) * L;
+  const away = 0.6 * clamp((dist / L - 1) / 1.5, 0, 1);
+  const facing = away + (1 - away) * Math.max(0, Math.cos(off)) ** 2;
+  const gap = Math.max(0, dist - SWIM.slack * L);
+  const brake = lerp(SWIM.accel, SWIM.burstAccel, alarm) * L;
+  // And never faster than it could still stop in, so it arrives rather than overshoots.
+  const go = Math.min(SWIM.pull * gap, Math.sqrt(2 * 0.8 * brake * gap)) * facing;
+  const want = clamp(go, lerp(SWIM.idle, SWIM.cruise, near) * L, top);
+  const accel = brake * dt;
+  const speed = clamp(s.speed + clamp(want - s.speed, -accel, accel), 0, SWIM.burst * L);
+
+  // Turn: toward the mark, eased in, never faster than the limit, and
+  // never tighter than its smallest circle.
+  const far = clamp((dist / L - 2) / 4, 0, 1);
+  const limit = Math.min(
+    lerp(lerp(SWIM.turn, SWIM.turnFar, far), SWIM.turnBurst, alarm),
+    // Fallen behind a swarm, it turns tighter to catch up rather than looping wide.
+    speed / (lerp(lerp(SWIM.radius, SWIM.chaseRadius, far), SWIM.burstRadius, alarm) * L),
+  );
+  const spin = lerp(SWIM.spin, SWIM.spinBurst, alarm) * dt;
+  // Close by it hardly steers, so it hangs and drifts rather than circling.
+  const aim = clamp(off * lerp(0.4, 2.2, Math.max(near, alarm)), -limit, limit);
+  const turn = clamp(s.turn + clamp(aim - s.turn, -spin, spin), -limit, limit);
+  const heading = wrap(s.heading + turn * dt);
+
+  // The wave: its beat and its sweep both grow with speed.
+  const v = speed / L;
+  // Never more than a quarter beat a step, so a slow frame cannot alias it.
+  const hz = Math.min(5, 0.4 + 0.6 * v, 0.25 / dt);
+  const phase = (s.phase + 2 * Math.PI * hz * dt) % (2 * Math.PI);
+  const m = 0.1 + 0.9 * Math.min(1, v / 3) + 0.4 * clamp((v - 3) / 7, 0, 1);
+  // The turn: each joint bends by the curve of the path the head took.
+  const k = (turn * SEG.front) / Math.max(v, 0.6);
+  const bend = {
+    head: clamp(-0.04 * m * Math.sin(phase + 0.5) + 0.25 * k, -BEND.head, BEND.head),
+    body: clamp(0.14 * m * Math.sin(phase) - k, -BEND.body, BEND.body),
+    tail: clamp(0.3 * m * Math.sin(phase - 1.1) - 0.85 * k, -BEND.tail, BEND.tail),
+  };
+
+  return {
+    x: s.x + Math.cos(heading) * speed * dt,
+    y: s.y + Math.sin(heading) * speed * dt,
+    heading,
+    speed,
+    turn,
+    phase,
+    bend,
+  };
+}
+
+export interface Spine {
+  nose: Joint;
+  head: Joint;
+  body: Joint;
+  tail: Joint;
+  /** The back of the tail fin, and which way the fin points forward, radians. */
+  fin: Joint;
+  finAngle: number;
+  /** Which way each piece points forward: nose piece, front body, rear body. */
+  angles: { nose: number; front: number; rear: number };
+}
+
+/** Where the joints are, for drawing a fish `size` px long. */
+export function spine(s: FishState, size: number): Spine {
+  const nose = s.heading + s.bend.head;
+  const front = s.heading;
+  const rear = front + s.bend.body;
+  const fin = rear + s.bend.tail;
+  const at = (p: Joint, a: number, len: number) => ({ x: p.x + Math.cos(a) * len, y: p.y + Math.sin(a) * len });
+  const head = { x: s.x, y: s.y };
+  const body = at(head, front, -SEG.front * size);
+  const tail = at(body, rear, -SEG.rear * size);
+  return {
+    nose: at(head, nose, SEG.nose * size),
+    head,
+    body,
+    tail,
+    fin: at(tail, fin, -SEG.fin * size),
+    finAngle: fin,
+    angles: { nose, front, rear },
+  };
 }

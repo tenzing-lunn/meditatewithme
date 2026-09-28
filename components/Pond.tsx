@@ -2,7 +2,21 @@
 
 import { useEffect, useImperativeHandle, useRef, type Ref } from 'react';
 
-import { fishAt, follow, planFish, SCATTER_S, type FishPlan, type Joint, type Touch } from '@/lib/fish';
+import {
+  alarmAt,
+  fishAt,
+  hash,
+  planFish,
+  SCATTER_S,
+  spawnFish,
+  spine,
+  swim,
+  type FishPlan,
+  type FishState,
+  type Joint,
+  type Spine,
+  type Touch,
+} from '@/lib/fish';
 import {
   flickConfig,
   reachFor,
@@ -157,11 +171,10 @@ export default function Pond({
     let plan: FishPlan | null = null;
     let planned = '';
     /**
-     * Each fish as drawn: its head, the body and tail joints trailing it,
-     * and where its tail is in its beat — so it eases toward where it
-     * should be and bends on the way.
+     * Each fish as it swims (`swim` in lib/fish.ts): where it is, which way
+     * it faces, how fast, and how its three joints are bent.
      */
-    const drawn = new Map<string, { x: number; y: number; body: Joint; tail: Joint; beat: number }>();
+    const drawn = new Map<string, FishState>();
     let last = 0;
 
     const fit = () => {
@@ -214,31 +227,27 @@ export default function Pond({
     };
 
     /**
-     * One fish from its three joints: a rounded head, the body narrowing
-     * to the tail joint, and a forked tail fin swung by `sway` (radians).
+     * One fish through its three joints: a rounded head, the body
+     * narrowing to the tail joint, and a forked tail fin off the tail
+     * joint — so the swimming wave shows along the whole body.
      */
-    const fish = (head: Joint, body: Joint, tail: Joint, size: number, sway: number, alpha: number) => {
+    const fish = (sp: Spine, size: number, alpha: number) => {
       if (alpha <= 0) return;
-      const unit = (ax: number, ay: number) => {
-        const d = Math.hypot(ax, ay) || 1;
-        return { x: ax / d, y: ay / d };
+      const { nose, head, body, tail } = sp;
+      // Across each joint, square to the two pieces meeting there.
+      const side = (p: Joint, a: number, b: number, w: number, s: 1 | -1) => {
+        const m = Math.atan2(Math.sin(a) + Math.sin(b), Math.cos(a) + Math.cos(b));
+        return { x: p.x - Math.sin(m) * w * s, y: p.y + Math.cos(m) * w * s };
       };
-      const d0 = unit(head.x - body.x, head.y - body.y);
-      const d1 = unit(body.x - tail.x, body.y - tail.y);
-      const dm = unit(d0.x + d1.x, d0.y + d1.y);
-      const side = (p: Joint, d: { x: number; y: number }, w: number, s: 1 | -1) => ({
-        x: p.x - d.y * w * s,
-        y: p.y + d.x * w * s,
-      });
-      const nose = { x: head.x + d0.x * size * 0.2, y: head.y + d0.y * size * 0.2 };
+      const { nose: an, front, rear } = sp.angles;
       const outline = [
         nose,
-        side(head, d0, size * 0.13, 1),
-        side(body, dm, size * 0.12, 1),
-        side(tail, d1, size * 0.035, 1),
-        side(tail, d1, size * 0.035, -1),
-        side(body, dm, size * 0.12, -1),
-        side(head, d0, size * 0.13, -1),
+        side(head, an, front, size * 0.13, 1),
+        side(body, front, rear, size * 0.12, 1),
+        side(tail, rear, sp.finAngle, size * 0.035, 1),
+        side(tail, rear, sp.finAngle, size * 0.035, -1),
+        side(body, front, rear, size * 0.12, -1),
+        side(head, an, front, size * 0.13, -1),
       ];
       ctx.globalAlpha = alpha;
       ctx.fillStyle = FISH;
@@ -252,10 +261,8 @@ export default function Pond({
         ctx.quadraticCurveTo(pt.x, pt.y, m.x, m.y);
       });
       ctx.fill();
-      // The tail fin, swinging about the tail joint.
-      const c = Math.cos(sway);
-      const sn = Math.sin(sway);
-      const back = { x: -(d1.x * c - d1.y * sn), y: -(d1.x * sn + d1.y * c) };
+      // The tail fin, hanging off the tail joint.
+      const back = { x: -Math.cos(sp.finAngle), y: -Math.sin(sp.finAngle) };
       const across = { x: -back.y, y: back.x };
       const reach = size * 0.26;
       const spread = size * 0.15;
@@ -308,36 +315,28 @@ export default function Pond({
         planned = sig;
       }
       const clock = nowMs / 1000;
-      const dt = last ? Math.min(0.1, clock - last) : 0;
+      // Unclamped: `swim` swims a slow frame in tenths of a second and puts
+      // a fish back at its mark after a long gap.
+      const dt = last ? clock - last : 0;
       last = clock;
-      const ease = p.reduced ? 1 : 1 - Math.exp(-dt * 2.5);
-      const swimming: { head: Joint; body: Joint; tail: Joint; sway: number; o: number; label?: string }[] = [];
+      const size = plan!.size;
+      const swimming: { spine: Spine; o: number; label?: string }[] = [];
       const here = new Set<string>();
       p.stones.forEach((s, i) => {
         here.add(s.key);
         if (!seen.current.has(s.key)) seen.current.set(s.key, nowMs);
         const fade = p.reduced ? 1 : Math.min(1, (nowMs - seen.current.get(s.key)!) / 1500);
         const to = fishAt(plan!, i, p.reduced ? 4.2 : clock, p.reduced ? [] : touches.current);
+        const k = hash(s.key);
         const was = drawn.get(s.key);
-        const x = was ? was.x + (to.x - was.x) * ease : to.x;
-        const y = was ? was.y + (to.y - was.y) * ease : to.y;
-        const seg = plan!.size * 0.28;
-        let body: Joint;
-        let tail: Joint;
-        if (was) {
-          [body, tail] = follow({ x, y }, [was.body, was.tail], seg) as [Joint, Joint];
-        } else {
-          // A newcomer starts straight, facing a way of its own.
-          const a = (Math.PI * ((i * 37) % 360)) / 180;
-          body = { x: x - Math.cos(a) * seg, y: y - Math.sin(a) * seg };
-          tail = { x: x - Math.cos(a) * seg * 2, y: y - Math.sin(a) * seg * 2 };
-        }
-        // The tail beats faster, and wider, the faster the fish swims.
-        const speed = was && dt > 0 ? Math.hypot(x - was.x, y - was.y) / dt : 0;
-        const beat = (was?.beat ?? i * 1.3) + dt * (3 + Math.min(7, speed * 0.2));
-        const sway = p.reduced ? 0 : Math.sin(beat) * (0.2 + Math.min(0.35, speed * 0.01));
-        drawn.set(s.key, { x, y, body, tail, beat });
-        swimming.push({ head: { x, y }, body, tail, sway, o: (0.55 + 0.3 * ((i * 7) % 5) / 4) * fade * others, label: s.label });
+        // A newcomer starts straight at its mark, facing a way of its own;
+        // under reduced motion every fish is simply there, still.
+        const now =
+          !was || p.reduced
+            ? spawnFish(to, ((k % 360) * Math.PI) / 180, size, ((k >>> 9) % 628) / 100)
+            : swim(was, to, dt, { size, alarm: alarmAt(plan!, i, clock, touches.current) });
+        drawn.set(s.key, now);
+        swimming.push({ spine: spine(now, size), o: (0.55 + 0.3 * ((i * 7) % 5) / 4) * fade * others, label: s.label });
       });
       for (const k of drawn.keys()) if (!here.has(k)) drawn.delete(k);
 
@@ -436,11 +435,11 @@ export default function Pond({
       ctx.font = `${phone ? 11 : 12}px system-ui, -apple-system, 'Segoe UI', sans-serif`;
       ctx.textBaseline = 'middle';
       for (const f of swimming) {
-        fish(f.head, f.body, f.tail, plan!.size, f.sway, f.o);
+        fish(f.spine, plan!.size, f.o);
         if (f.label && f.o > 0) {
           ctx.globalAlpha = Math.min(1, f.o * 1.2);
           ctx.fillStyle = LABEL;
-          ctx.fillText(f.label, f.head.x + plan!.size * 0.7, f.head.y - plan!.size * 0.9);
+          ctx.fillText(f.label, f.spine.head.x + plan!.size * 0.7, f.spine.head.y - plan!.size * 0.9);
           ctx.globalAlpha = 1;
         }
       }
