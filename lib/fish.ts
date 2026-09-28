@@ -94,6 +94,47 @@ function rand(seed: number): () => number {
   };
 }
 
+/**
+ * How one person's fish looks, from their key, so it keeps it while they
+ * stay: never bigger than the pond's size for its crowd, down to about two
+ * thirds of it, and one of three builds (Tenzing, 28 September 2026) —
+ * slender like a minnow, the plain one, or deep-bodied like a bream — each
+ * a little different again in its girth and its tail.
+ */
+export interface Look {
+  /** Of the plan's size, 0.65–1. */
+  scale: number;
+  /** Half-widths at the head, the body and the tail joint, of its length. */
+  head: number;
+  body: number;
+  tail: number;
+  /** The tail fin: how far back it reaches and how wide it forks, of its length. */
+  fin: number;
+  fork: number;
+}
+
+const BUILDS: readonly Omit<Look, 'scale'>[] = [
+  { head: 0.1, body: 0.085, tail: 0.03, fin: 0.3, fork: 0.12 },
+  { head: 0.13, body: 0.12, tail: 0.035, fin: 0.26, fork: 0.15 },
+  { head: 0.155, body: 0.165, tail: 0.04, fin: 0.22, fork: 0.19 },
+];
+
+export function lookFor(key: string): Look {
+  const next = rand(hash(key) ^ 0x51f15e);
+  const build = BUILDS[Math.floor(next() * BUILDS.length) % BUILDS.length]!;
+  const scale = 0.65 + 0.35 * next();
+  const girth = 0.9 + 0.2 * next();
+  const tailed = 0.85 + 0.3 * next();
+  return {
+    scale,
+    head: build.head * girth,
+    body: build.body * girth,
+    tail: build.tail,
+    fin: build.fin * tailed,
+    fork: build.fork * tailed,
+  };
+}
+
 /** One person to draw: their key, and roughly where they are, if known. */
 export interface Swimmer {
   key: string;

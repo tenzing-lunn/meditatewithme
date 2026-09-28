@@ -849,6 +849,11 @@ Once a door is chosen, a chevron in the top-left corner, in the menu's own
 ends the sitting the way *End* does and lands on the doors — Home for
 somebody signed in. It rests and wakes with the sitting's other controls.
 
+No two fish are quite alike, and none is bigger than the sizes above:
+each person's fish is 65–100% of them, one of three builds — slender, plain
+or deep-bodied — a little fuller or slimmer again, with a longer or shorter
+tail, all from their key, so a fish keeps its look while its person stays.
+
 ### The live window
 
 On `dev` only (27 September 2026). Whoever is on camera, in a guided

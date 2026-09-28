@@ -2,6 +2,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  lookFor,
   alarmAt,
   BEND,
   fishAt,
@@ -347,5 +348,18 @@ describe('a loose map', () => {
         assert.ok(p.x > -10 && p.x < DESK.w + 10 && p.y > DESK.h * DESK.y0 - 10 && p.y < DESK.h * DESK.y1 + 10, `${i} at ${t}`);
       });
     }
+  });
+});
+
+describe('lookFor', () => {
+  test('a fish keeps its look, never bigger than the pond size, in three builds', () => {
+    assert.deepEqual(lookFor('ana'), lookFor('ana'));
+    const looks = keys(400).map(lookFor);
+    assert.ok(looks.every((l) => l.scale >= 0.65 && l.scale <= 1));
+    assert.ok(Math.min(...looks.map((l) => l.scale)) < 0.7 && Math.max(...looks.map((l) => l.scale)) > 0.95);
+    // Slender, plain and deep: body widths fall in three bands.
+    const bands = new Set(looks.map((l) => (l.body < 0.1 ? 'slender' : l.body < 0.14 ? 'plain' : 'deep')));
+    assert.equal(bands.size, 3);
+    assert.ok(looks.every((l) => l.tail < l.body && l.body <= l.head * 1.2));
   });
 });

@@ -6,6 +6,7 @@ import {
   alarmAt,
   fishAt,
   hash,
+  lookFor,
   planFish,
   SCATTER_S,
   spawnFish,
@@ -14,6 +15,7 @@ import {
   type FishPlan,
   type FishState,
   type Joint,
+  type Look,
   type Spine,
   type Touch,
 } from '@/lib/fish';
@@ -231,7 +233,7 @@ export default function Pond({
      * narrowing to the tail joint, and a forked tail fin off the tail
      * joint — so the swimming wave shows along the whole body.
      */
-    const fish = (sp: Spine, size: number, alpha: number) => {
+    const fish = (sp: Spine, size: number, look: Look, alpha: number) => {
       if (alpha <= 0) return;
       const { nose, head, body, tail } = sp;
       // Across each joint, square to the two pieces meeting there.
@@ -242,12 +244,12 @@ export default function Pond({
       const { nose: an, front, rear } = sp.angles;
       const outline = [
         nose,
-        side(head, an, front, size * 0.13, 1),
-        side(body, front, rear, size * 0.12, 1),
-        side(tail, rear, sp.finAngle, size * 0.035, 1),
-        side(tail, rear, sp.finAngle, size * 0.035, -1),
-        side(body, front, rear, size * 0.12, -1),
-        side(head, an, front, size * 0.13, -1),
+        side(head, an, front, size * look.head, 1),
+        side(body, front, rear, size * look.body, 1),
+        side(tail, rear, sp.finAngle, size * look.tail, 1),
+        side(tail, rear, sp.finAngle, size * look.tail, -1),
+        side(body, front, rear, size * look.body, -1),
+        side(head, an, front, size * look.head, -1),
       ];
       ctx.globalAlpha = alpha;
       ctx.fillStyle = FISH;
@@ -264,8 +266,8 @@ export default function Pond({
       // The tail fin, hanging off the tail joint.
       const back = { x: -Math.cos(sp.finAngle), y: -Math.sin(sp.finAngle) };
       const across = { x: -back.y, y: back.x };
-      const reach = size * 0.26;
-      const spread = size * 0.15;
+      const reach = size * look.fin;
+      const spread = size * look.fork;
       ctx.beginPath();
       ctx.moveTo(tail.x, tail.y);
       ctx.lineTo(tail.x + back.x * reach + across.x * spread, tail.y + back.y * reach + across.y * spread);
@@ -320,7 +322,7 @@ export default function Pond({
       const dt = last ? clock - last : 0;
       last = clock;
       const size = plan!.size;
-      const swimming: { spine: Spine; o: number; label?: string }[] = [];
+      const swimming: { spine: Spine; size: number; look: Look; o: number; label?: string }[] = [];
       const here = new Set<string>();
       p.stones.forEach((s, i) => {
         here.add(s.key);
@@ -328,15 +330,17 @@ export default function Pond({
         const fade = p.reduced ? 1 : Math.min(1, (nowMs - seen.current.get(s.key)!) / 1500);
         const to = fishAt(plan!, i, p.reduced ? 4.2 : clock, p.reduced ? [] : touches.current);
         const k = hash(s.key);
+        const look = lookFor(s.key);
+        const own = size * look.scale;
         const was = drawn.get(s.key);
         // A newcomer starts straight at its mark, facing a way of its own;
         // under reduced motion every fish is simply there, still.
         const now =
           !was || p.reduced
-            ? spawnFish(to, ((k % 360) * Math.PI) / 180, size, ((k >>> 9) % 628) / 100)
-            : swim(was, to, dt, { size, alarm: alarmAt(plan!, i, clock, touches.current) });
+            ? spawnFish(to, ((k % 360) * Math.PI) / 180, own, ((k >>> 9) % 628) / 100)
+            : swim(was, to, dt, { size: own, alarm: alarmAt(plan!, i, clock, touches.current) });
         drawn.set(s.key, now);
-        swimming.push({ spine: spine(now, size), o: (0.55 + 0.3 * ((i * 7) % 5) / 4) * fade * others, label: s.label });
+        swimming.push({ spine: spine(now, own), size: own, look, o: (0.55 + 0.3 * ((i * 7) % 5) / 4) * fade * others, label: s.label });
       });
       for (const k of drawn.keys()) if (!here.has(k)) drawn.delete(k);
 
@@ -435,7 +439,7 @@ export default function Pond({
       ctx.font = `${phone ? 11 : 12}px system-ui, -apple-system, 'Segoe UI', sans-serif`;
       ctx.textBaseline = 'middle';
       for (const f of swimming) {
-        fish(f.spine, plan!.size, f.o);
+        fish(f.spine, f.size, f.look, f.o);
         if (f.label && f.o > 0) {
           ctx.globalAlpha = Math.min(1, f.o * 1.2);
           ctx.fillStyle = LABEL;
