@@ -1,7 +1,7 @@
 /**
  * The singing bowl, as the site's mark: the bowl that began a sitting on
  * the old rail (`Bowl.tsx`), in blue, its side stacked in bands from base
- * to rim, with its wooden striker standing beside it. Tenzing, 28 September 2026, in
+ * to rim, with its wooden striker lying in front of it. Tenzing, 28 September 2026, in
  * place of the flame.
  *
  * One drawing, as a string, for both uses: the tab icon is this SVG served
@@ -14,13 +14,18 @@
 /** The page's pale water, for the home-screen icon's ground. */
 export const WATER = '#e5e9ec';
 
-/** The bands, base to rim: each a curved stripe following the bowl round. */
-const BANDS = ['#1d3f63', '#2c5a86', '#3f75a6', '#2a527c', '#5b8fbf', '#3a6c9b', '#7aa8d2'];
-const INSIDE = '#dbe8f4';
-const RIM = '#18395c';
-const WOOD = '#9a6a3f';
-const WOOD_DARK = '#6b4526';
-const WOOD_LIGHT = '#c08a58';
+/**
+ * Muted, as metal and wood are, not bright as plastic: the bands in slate
+ * blues, darker at the base, and a sheen across the whole side so it reads
+ * round. The striker is turned wood in the same dull key, with a suede
+ * sleeve the colour of the bowl.
+ */
+const BANDS = ['#2a4866', '#3a5f84', '#4d76a0', '#34597e', '#6189b3', '#456d95', '#7699bf'];
+const INSIDE = '#c9d7e4';
+const RIM = '#263c52';
+const WOOD = '#8a7661';
+const WOOD_DARK = '#5a4a3b';
+const WOOD_LIGHT = '#b3a18c';
 
 const CX = 112;
 const RIM_Y = 92;
@@ -53,17 +58,40 @@ export function bowlSvg(): string {
     return `<path d="${ring(hi, false)} ${ring(lo, true)} Z" fill="${c}"/>`;
   }).join('');
   return (
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 6 236 236">` +
-    // The cushion's shadow, then the bowl.
-    `<ellipse cx="${CX}" cy="${BASE_Y + 12}" rx="64" ry="11" fill="${RIM}" opacity="0.2"/>` +
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="4 14 232 232">` +
+    `<defs>` +
+    // Light from the upper left: bright down the left of the side, shade on the right.
+    `<linearGradient id="sheen" x1="0" y1="0" x2="1" y2="0">` +
+    `<stop offset="0" stop-color="#ffffff" stop-opacity="0.28"/>` +
+    `<stop offset="0.35" stop-color="#ffffff" stop-opacity="0.06"/>` +
+    `<stop offset="0.75" stop-color="#000000" stop-opacity="0.08"/>` +
+    `<stop offset="1" stop-color="#000000" stop-opacity="0.3"/>` +
+    `</linearGradient>` +
+    // Across the stick, so it reads as turned and round.
+    `<linearGradient id="wood" x1="0" y1="0" x2="0" y2="1">` +
+    `<stop offset="0" stop-color="${WOOD_LIGHT}"/>` +
+    `<stop offset="0.45" stop-color="${WOOD}"/>` +
+    `<stop offset="1" stop-color="${WOOD_DARK}"/>` +
+    `</linearGradient>` +
+    `<linearGradient id="suede" x1="0" y1="0" x2="0" y2="1">` +
+    `<stop offset="0" stop-color="#7f98b2"/>` +
+    `<stop offset="1" stop-color="${RIM}"/>` +
+    `</linearGradient>` +
+    `</defs>` +
+    // Partly see-through, so the tab behind shows in it.
+    `<g opacity="0.8">` +
+    `<ellipse cx="${CX}" cy="${BASE_Y + 12}" rx="64" ry="11" fill="${RIM}" opacity="0.25"/>` +
     bands +
-    `<ellipse cx="${CX}" cy="${RIM_Y}" rx="${RIM_W}" ry="${f(RIM_W * TILT)}" fill="${INSIDE}" stroke="${RIM}" stroke-width="7"/>` +
-    `<ellipse cx="${CX}" cy="${RIM_Y + 4}" rx="70" ry="12" fill="${BANDS[4]}" opacity="0.35"/>` +
-    // The striker, wooden, standing up right beside the bowl with a slight
-    // lean: a turned stick, rounded at both ends, lit down one side.
-    `<g transform="rotate(-10 212 186)">` +
-    `<rect x="204" y="58" width="17" height="130" rx="8.5" fill="${WOOD}" stroke="${WOOD_DARK}" stroke-width="3"/>` +
-    `<rect x="208" y="66" width="4" height="112" rx="2" fill="${WOOD_LIGHT}" opacity="0.8"/>` +
+    `<path d="${ring(0, false)} ${ring(1, true)} Z" fill="url(#sheen)"/>` +
+    `<ellipse cx="${CX}" cy="${RIM_Y}" rx="${RIM_W}" ry="${f(RIM_W * TILT)}" fill="${INSIDE}" stroke="${RIM}" stroke-width="6"/>` +
+    `<ellipse cx="${CX}" cy="${RIM_Y + 4}" rx="70" ry="12" fill="${BANDS[3]}" opacity="0.3"/>` +
+    `</g>` +
+    // The striker, lying on the ground in front of the bowl and to its
+    // right, its suede end toward the bowl, with its shadow under it.
+    `<g opacity="0.9" transform="rotate(-10 172 202)">` +
+    `<rect x="120" y="207" width="104" height="9" rx="4.5" fill="#000000" opacity="0.13"/>` +
+    `<rect x="120" y="194" width="104" height="15" rx="7.5" fill="url(#wood)"/>` +
+    `<rect x="120" y="193" width="44" height="17" rx="8.5" fill="url(#suede)"/>` +
     `</g>` +
     `</svg>`
   );
