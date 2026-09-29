@@ -14,6 +14,22 @@ and §3's history says what it replaced.
 
 ## 1. Live status
 
+**29 September 2026: How you sit, and the fish, go live.** Tenzing asked
+for `dev` to be merged into `main` (release commit `Release: How you sit,
+and the fish`) ahead of his own user tests, putting live everything in §2's
+*How you sit, and the fish* paragraph: *by yourself* or *with a guide* as a
+phrase in the arrival's sentence, the fish for the people here now on a
+loose map of the water, the chevron back, the singing-bowl icon, the new
+skim and rings, and Begin's sink and the ending's crossfade. **Jonny had not
+seen it.** The live video is **not** on in production: `LIVE_HLS_BASE`,
+`LIVE_HOOK_SECRET` and `LIVE_AUTH_SECRET` are set for `dev` previews only, so
+production's `/api/live` answers *nobody live* and *with a guide* reads
+*Nobody is guiding right now* until they are added for Production. Claude
+never pressed Begin; the start and end motion was checked silently on the
+demo pages, and the new skim was not watched in a browser before the merge.
+Rollback: redeploy `e515edb`, the Pale water release, or promote its Vercel
+deployment again.
+
 **23 September 2026: Pale water goes live.** Tenzing merged `dev` into
 `main` (release commit `Release: Pale water`), putting live everything
 §2's *On `dev`* paragraph describes: the pond, the one-sentence arrival with
@@ -124,8 +140,8 @@ you this hour* on the ending. A guest can no longer choose *on your own*;
 a member still can, from the doors on Home, which kept its old layout and
 only took the new colours and type.
 
-**How you sit, and the fish, on `dev` only since 27 September 2026.** Not
-live and not shown to Jonny; drawn first on the redesign canvas (*Two ways
+**How you sit, and the fish, on `dev` since 27 September 2026 and live since
+29 September.** Not shown to Jonny; drawn first on the redesign canvas (*Two ways
 in · the fish*) and built from it at Tenzing's word. A guest now lands on
 the arrival as before, its sentence now opening with how you sit — *Sit
 **by yourself** for …* or *Sit **with a guide** until the bell at …*, a

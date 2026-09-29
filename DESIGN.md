@@ -806,7 +806,7 @@ Create account, Sign in.
 
 ### How you sit, and the fish
 
-On `dev` only (27–28 September 2026). There is no separate page for the
+On `dev` from 27–28 September 2026, live since 29 September. There is no separate page for the
 choice: the arrival's sentence opens with it, a phrase like the others —
 *Sit **by yourself** for 10 minutes, …* or *Sit **with a guide** until the
 bell at 8:55, …*, picked on the same wheel. With a guide the length is
@@ -857,7 +857,7 @@ tail, all from their key, so a fish keeps its look while its person stays.
 
 ### The skim and the rings
 
-On `dev` only (28 September 2026; `lib/pond.ts`, drawn by `Pond`). Begin
+Live since 29 September 2026 (built 28 September; `lib/pond.ts`, drawn by `Pond`). Begin
 throws your stone from the button. It comes out of the hand over 200ms and
 hops: ten touches on desktop, eight on a phone, each hop 0.8 of the time
 of the one before, and lower as the square of that, 8px at the top of the
@@ -889,7 +889,8 @@ and the bell's train held at one moment.
 
 ### The live window
 
-On `dev` only (27 September 2026). Whoever is on camera, in a guided
+On `dev` from 27 September 2026, live since 29 September, but with no
+stream in production until its variables are set there. Whoever is on camera, in a guided
 sitting: a 16:9 window centred on the pond, `max-w-4xl`, `rounded-card`, a
 `rule` edge, `scrim` behind the picture until it plays, no shadow. The
 pond stays the ground — its rings and the sitting's words sit around the
