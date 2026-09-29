@@ -129,7 +129,9 @@ the arrival as before, its sentence now opening with how you sit — *Sit
 phrase picked like the length, the bell and the sound — and, with a
 guide, a line saying *Live now*, *The next session starts at …*, or
 *Nobody is guiding right now*; a chevron in the corner of a sitting
-goes back to the start.
+goes back to the start. The tab and home-screen icon is the old singing
+bowl in blue on the pale water, in place of the flame (the shared-link
+card still shows the flame).
 Everyone else sitting right now (not everyone who sat this hour) is a
 small grey fish that swims nose first, its head, body and tail bending
 through its turns and with the wave of its swimming — never

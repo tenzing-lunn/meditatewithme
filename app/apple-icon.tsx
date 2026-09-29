@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 
-import { FlameMark, DUSK } from '@/components/FlameMark';
+import { BowlMark, WATER } from '@/components/BowlMark';
 
 /**
  * The home-screen icon, for anyone who adds the site to an iPhone.
@@ -24,10 +24,10 @@ export default function AppleIcon() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: DUSK,
+          background: WATER,
         }}
       >
-        <FlameMark size={124} />
+        <BowlMark size={132} />
       </div>
     ),
     size,

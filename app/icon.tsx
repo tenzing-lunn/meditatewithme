@@ -1,11 +1,11 @@
 import { ImageResponse } from 'next/og';
 
-import { FlameMark, DUSK } from '@/components/FlameMark';
+import { BowlMark, WATER } from '@/components/BowlMark';
 
 /**
  * The tab icon. Generated rather than committed as a .ico so it shares a
- * single definition of the flame with the home-screen icon and the shared-link
- * card — see components/FlameMark.tsx.
+ * single definition of the bowl with the home-screen icon — see
+ * components/BowlMark.tsx.
  */
 
 export const size = { width: 32, height: 32 };
@@ -22,12 +22,12 @@ export default function Icon() {
           alignItems: 'center',
           justifyContent: 'center',
           // Opaque, not transparent: the tab strip behind this is light in one
-          // browser and dark in the next, and a flame floating on nothing
-          // loses its outline against the light one.
-          background: DUSK,
+          // browser and dark in the next, and a bowl floating on nothing
+          // loses its outline against one of them.
+          background: WATER,
         }}
       >
-        <FlameMark size={26} />
+        <BowlMark size={28} />
       </div>
     ),
     size,
