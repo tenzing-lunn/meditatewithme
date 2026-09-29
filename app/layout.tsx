@@ -43,6 +43,12 @@ export const metadata: Metadata = {
     locale: 'en_GB',
   },
   twitter: { card: 'summary_large_image', title: 'Meditate With Me', description },
+  // The bowl, as SVG (`app/bowl.svg/route.ts`); the home-screen icon is `app/apple-icon.tsx`.
+  icons: {
+    icon: [{ url: '/bowl.svg', type: 'image/svg+xml' }],
+    // Named here too: an explicit `icons` stops Next adding the file's own link.
+    apple: [{ url: '/apple-icon', sizes: '180x180', type: 'image/png' }],
+  },
   // One screen at a time, nothing to crawl, but it should still be findable.
   robots: { index: true, follow: true },
 };

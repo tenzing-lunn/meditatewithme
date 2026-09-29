@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 
-import { BowlMark, WATER } from '@/components/BowlMark';
+import { bowlSvg, WATER } from '@/components/BowlMark';
 
 /**
  * The home-screen icon, for anyone who adds the site to an iPhone.
@@ -27,7 +27,8 @@ export default function AppleIcon() {
           background: WATER,
         }}
       >
-        <BowlMark size={132} />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img width={150} height={150} alt="" src={`data:image/svg+xml,${encodeURIComponent(bowlSvg())}`} />
       </div>
     ),
     size,

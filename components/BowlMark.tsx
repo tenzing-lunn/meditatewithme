@@ -1,58 +1,69 @@
 /**
- * The singing bowl, as a mark: the bowl that began a sitting on the old
- * rail (`Bowl.tsx`), drawn in blue for the tab and the home screen.
- * Tenzing, 28 September 2026, in place of the flame.
+ * The singing bowl, as the site's mark: the bowl that began a sitting on
+ * the old rail (`Bowl.tsx`), in blue, its side stacked in bands from base
+ * to rim, with its striker lying beside it. Tenzing, 28 September 2026, in
+ * place of the flame.
  *
- * Rendered by satori inside `ImageResponse`, never by the browser, so it is
- * plain SVG with literal colours: satori reads neither custom properties
- * nor `currentColor`. At 32px the rings and the shadow would be mud, so it
- * is the body, the mouth and the rim only; a striker read as a spoon.
+ * One drawing, as a string, for both uses: the tab icon is this SVG served
+ * as it is (`app/bowl.svg/route.ts`), so it stays sharp at any size and its
+ * ground is transparent; the home-screen icon (`app/apple-icon.tsx`) puts
+ * it on the pale water as an image, because iOS wants an opaque square.
+ * Literal colours only: satori reads no custom properties.
  */
 
-/** The page's pale water, so the tab reads as the site. */
+/** The page's pale water, for the home-screen icon's ground. */
 export const WATER = '#e5e9ec';
 
-/**
- * The bands, base to rim: a singing bowl's hammered rings of colour,
- * stacked up its side, each a curved stripe following the bowl round.
- */
+/** The bands, base to rim: each a curved stripe following the bowl round. */
 const BANDS = ['#1d3f63', '#2c5a86', '#3f75a6', '#2a527c', '#5b8fbf', '#3a6c9b', '#7aa8d2'];
 const INSIDE = '#dbe8f4';
 const RIM = '#18395c';
+const STICK = '#2c5a86';
+const FELT = '#7aa8d2';
 
-const RIM_Y = 96;
-const BASE_Y = 180;
-const RIM_W = 96;
-const BASE_W = 30;
+const CX = 112;
+const RIM_Y = 92;
+const BASE_Y = 170;
+const RIM_W = 90;
+const BASE_W = 28;
 /** Depth of each ring's ellipse against its width: the same tilt as the mouth. */
-const TILT = 22 / 96;
+const TILT = 0.23;
+
+const f = (n: number) => n.toFixed(2);
 
 /** Half-width of the bowl at depth t (0 at the rim, 1 at the base). */
 const widthAt = (t: number) => BASE_W + (RIM_W - BASE_W) * Math.sqrt(1 - t * t);
 
-/** The front half of the ring at depth t, left to right (or back). */
+/** The front half of the ring at depth t, left to right, or back again. */
 function ring(t: number, back: boolean): string {
   const w = widthAt(t);
   const y = RIM_Y + (BASE_Y - RIM_Y) * t;
-  const [from, to] = back ? [120 + w, 120 - w] : [120 - w, 120 + w];
-  return `${back ? 'L' : 'M'}${from.toFixed(2)} ${y.toFixed(2)} A${w.toFixed(2)} ${(w * TILT).toFixed(2)} 0 0 ${back ? 1 : 0} ${to.toFixed(2)} ${y.toFixed(2)}`;
+  const [from, to] = back ? [CX + w, CX - w] : [CX - w, CX + w];
+  return `${back ? 'L' : 'M'}${f(from)} ${f(y)} A${f(w)} ${f(w * TILT)} 0 0 ${back ? 1 : 0} ${f(to)} ${f(y)}`;
 }
 
-export function BowlMark({ size }: { size: number }) {
-  // Wide and round, as a singing bowl is: a mouth much wider than the bowl
-  // is deep, the sides rounding into a small base, on a low cushion.
+/** The mark, 240 units square, on a transparent ground. */
+export function bowlSvg(): string {
   const n = BANDS.length;
+  const bands = BANDS.map((c, k) => {
+    // From the base up, so each band laps the one below it.
+    const lo = 1 - k / n;
+    const hi = 1 - (k + 1) / n;
+    return `<path d="${ring(hi, false)} ${ring(lo, true)} Z" fill="${c}"/>`;
+  }).join('');
   return (
-    <svg width={size} height={size} viewBox="16 26 208 208" fill="none">
-      <ellipse cx="120" cy="190" rx="62" ry="10" fill={RIM} opacity="0.22" />
-      {BANDS.map((c, k) => {
-        // Drawn from the base up, so each band laps the one below it.
-        const lo = 1 - k / n;
-        const hi = 1 - (k + 1) / n;
-        return <path key={c + k} d={`${ring(hi, false)} ${ring(lo, true)} Z`} fill={c} />;
-      })}
-      <ellipse cx="120" cy={RIM_Y} rx={RIM_W} ry={RIM_W * TILT} fill={INSIDE} stroke={RIM} strokeWidth="7" />
-      <ellipse cx="120" cy={RIM_Y + 4} rx="74" ry="12" fill={BANDS[4]} opacity="0.35" />
-    </svg>
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="4 20 232 232">` +
+    // The cushion's shadow, then the bowl.
+    `<ellipse cx="${CX}" cy="${BASE_Y + 12}" rx="64" ry="11" fill="${RIM}" opacity="0.2"/>` +
+    bands +
+    `<ellipse cx="${CX}" cy="${RIM_Y}" rx="${RIM_W}" ry="${f(RIM_W * TILT)}" fill="${INSIDE}" stroke="${RIM}" stroke-width="7"/>` +
+    `<ellipse cx="${CX}" cy="${RIM_Y + 4}" rx="70" ry="12" fill="${BANDS[4]}" opacity="0.35"/>` +
+    // The striker, lying on the ground in front and to the right: a
+    // straight stick, its striking end wrapped in a sleeve of suede.
+    `<g transform="rotate(-18 176 208)">` +
+    `<rect x="104" y="201" width="114" height="13" rx="6.5" fill="${STICK}"/>` +
+    `<rect x="104" y="199" width="44" height="17" rx="8.5" fill="${FELT}" stroke="${RIM}" stroke-width="2.5"/>` +
+    `</g>` +
+    `</svg>`
   );
 }
