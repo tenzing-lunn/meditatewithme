@@ -5,7 +5,6 @@ import { useState, type ReactNode } from 'react';
 import { TIMER_STOPS } from '@/lib/timer';
 import { BELL_KINDS, type BellKind, type UserPreferences } from '@/lib/types';
 import type { Point } from '@/lib/pond';
-import BackChevron from './BackChevron';
 import Brand from './Brand';
 import { FOCUS } from './controls';
 import Picker from './Picker';
@@ -63,7 +62,9 @@ export default function Arrive({
   onTaste,
   onHush,
   onWater,
-  onBack,
+  guided,
+  guide,
+  onGuided,
 }: {
   prefs: UserPreferences;
   update: (patch: Partial<UserPreferences>) => void;
@@ -86,10 +87,13 @@ export default function Arrive({
   onHush: () => void;
   /** A tap on bare water, in client pixels: somewhere to skim a pebble to. */
   onWater?: (at: Point) => void;
-  /** Back to the two doors; absent when there are none to go back to. */
-  onBack?: () => void;
+  /** Sitting with whoever is on camera, rather than by yourself. */
+  guided: boolean;
+  /** Who is guiding: "Live now", or when the next session starts. */
+  guide: string;
+  onGuided: (guided: boolean) => void;
 }) {
-  const [open, setOpen] = useState<'t' | 'b' | 's' | null>(null);
+  const [open, setOpen] = useState<'m' | 't' | 'b' | 's' | null>(null);
   const together = prefs.showCount && prefs.untilBell;
   const sound: TrackSlug | 'silence' =
     TRACKS.find((t) => (prefs.soundMix[t.slug] ?? 0) > 0)?.slug ?? 'silence';
@@ -114,10 +118,7 @@ export default function Arrive({
       }}
     >
       <header className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {onBack && <BackChevron onBack={onBack} />}
-          <Brand />
-        </div>
+        <Brand />
         <div className="flex items-center gap-3 text-caption text-ink-3">
           {clock && <span className="tabular-nums">{clock}</span>}
           {menu}
@@ -129,20 +130,35 @@ export default function Arrive({
           <p className="mb-4 text-body text-ink-2">Each fish is someone sitting this hour.</p>
         )}
         <p className="font-display text-question leading-[1.35] text-ink-2 sm:text-question-lg">
-          {together ? 'Sit ' : 'Sit for '}
-          <Phrase name="How long" onOpen={() => setOpen('t')}>
-            {together ? `until the bell${bellLabel ? ` at ${bellLabel}` : ''}` : minutes(prefs.timerMinutes)}
+          {'Sit '}
+          <Phrase name="How" onOpen={() => setOpen('m')}>
+            {guided ? 'with a guide' : 'by yourself'}
           </Phrase>
+          {/* A guided sitting is the session's: it ends on the shared bell. */}
+          {guided ? (
+            ` until the bell${bellLabel ? ` at ${bellLabel}` : ''}`
+          ) : (
+            <>
+              {together ? ' ' : ' for '}
+              <Phrase name="How long" onOpen={() => setOpen('t')}>
+                {together ? `until the bell${bellLabel ? ` at ${bellLabel}` : ''}` : minutes(prefs.timerMinutes)}
+              </Phrase>
+            </>
+          )}
           {', end with '}
           <Phrase name="The bell" onOpen={() => setOpen('b')}>
             {BELL_WORDS[prefs.endBell]}
           </Phrase>
           {sound === 'silence' ? ', in ' : ', with '}
-          <Phrase name="Sound" onOpen={() => setOpen('s')}>
-            {SOUND_WORDS[sound]}
-          </Phrase>
-          .
+          {/* The full stop stays with the last phrase, never a line of its own. */}
+          <span className="whitespace-nowrap">
+            <Phrase name="Sound" onOpen={() => setOpen('s')}>
+              {SOUND_WORDS[sound]}
+            </Phrase>
+            .
+          </span>
         </p>
+        {guided && <p className="mt-3 text-body text-ink-3">{guide}.</p>}
 
         <button
           type="button"
@@ -158,6 +174,21 @@ export default function Arrive({
         </button>
       </div>
 
+      {open === 'm' && (
+        <Picker
+          title="How you sit"
+          value={guided ? 'guided' : 'alone'}
+          options={[
+            { value: 'alone', label: 'by yourself' },
+            { value: 'guided', label: 'with a guide' },
+          ]}
+          onConfirm={(v) => {
+            onGuided(v === 'guided');
+            setOpen(null);
+          }}
+          onCancel={() => setOpen(null)}
+        />
+      )}
       {open === 't' && (
         <Picker
           title="How long"

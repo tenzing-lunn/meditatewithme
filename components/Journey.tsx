@@ -19,7 +19,6 @@ import Afterwards, { COOLDOWN_MS } from './Afterwards';
 import Arrive from './Arrive';
 import Pond, { type PondHandle, type Stone } from './Pond';
 import Rail from './Rail';
-import TwoDoors from './TwoDoors';
 import type { Sit } from './Sitting';
 import type { MixPatch } from './Sounds';
 import { openingBell, previewBell, scheduleBell, unlockAudio, type ScheduledBell } from './audio';
@@ -271,16 +270,18 @@ export default function Journey({
   // held beat. And on the arrival, which opens on them.
   const withOthersNow = sit !== null && sit.withOthers;
   const guidedNow = sit !== null && sit.guided;
-  const atDoors = stage.kind === 'rail' && stage.at === 'doors';
-  const world = useWorld(withOthersNow || (stage.kind === 'rail' && (stage.at === 'arrive' || atDoors)));
+  const atArrive = stage.kind === 'rail' && stage.at === 'arrive';
+  const world = useWorld(withOthersNow || atArrive);
+  /** *By yourself* or *with a guide*, chosen in the arrival's sentence. */
+  const [guidedPick, setGuidedPick] = useState(false);
   const labels = world.points.flatMap((p) => p.labels ?? []);
   const ownLabel = profile.share ? composeLabel(profile.name, profile.origin) : null;
 
   // Whoever is on camera, framed on the water, in a guided sitting — and
-  // on the doors, for the line under *Guided meditation*. Low Power Mode
+  // on the arrival, for the line under the sentence. Low Power Mode
   // refuses to autoplay even muted video; a tap on the sitting is a gesture
   // it accepts, so any tap starts it (`livePlay`).
-  const onCamera = useLive(guidedNow || atDoors);
+  const onCamera = useLive(guidedNow || atArrive);
   const livePlay = useRef<(() => void) | null>(null);
 
   // Seen by name only while sitting with others, and only if they said so.
@@ -496,15 +497,15 @@ export default function Journey({
 
   // Where each question sits on this visitor's own rail, counted without
   // the arrival, which is not a question.
-  const questions: readonly ScreenName[] = screens.filter((s) => s !== 'arrive' && s !== 'doors');
+  const questions: readonly ScreenName[] = screens.filter((s) => s !== 'arrive');
   const stepOf = (s: ScreenName) => questions.indexOf(s) + 1;
 
   /** On from a question: the next one, or, after the last, the sitting. */
   const onward = useCallback(() => {
     const s = stageRef.current;
-    if (s.kind === 'rail' && step(screens, s.at, 1) === null) begin(null);
+    if (s.kind === 'rail' && step(screens, s.at, 1) === null) begin(null, guidedPick);
     else next();
-  }, [screens, begin, next]);
+  }, [screens, begin, next, guidedPick]);
 
   const menu = signedIn ? (
     <button type="button" onClick={home} className={WORD}>
@@ -524,7 +525,7 @@ export default function Journey({
 
   const finished = stage.kind === 'finished';
   const thrown = stage.kind === 'rail' ? null : stage.thrown;
-  const onWater = stage.kind !== 'rail' || stage.at === 'arrive' || stage.at === 'doors';
+  const onWater = stage.kind !== 'rail' || stage.at === 'arrive';
   // No fish in a guided sitting: the picture is the company there.
   const guided = stage.kind !== 'rail' && stage.sit.guided;
   const showStones = !guided && (stage.kind === 'rail' || (sit?.withOthers ?? false) || finished);
@@ -557,7 +558,7 @@ export default function Journey({
         <div className="absolute inset-0">
           <Afterwards
             minutes={stage.minutes}
-            onAgain={() => begin(null)}
+            onAgain={() => begin(null, guidedPick)}
             onDone={
               home
                 ? () => {
@@ -612,22 +613,6 @@ export default function Journey({
             dir={stage.kind === 'rail' ? stage.dir : 1}
             render={(screen, current) => {
               switch (screen) {
-                case 'doors':
-                  return (
-                    <TwoDoors
-                      others={world.loaded ? stones.length : null}
-                      guide={guideLine}
-                      clock={now === null ? null : localTime(now)}
-                      menu={menu}
-                      ready={now !== null}
-                      onYourself={() => {
-                        update({ showCount: true });
-                        next();
-                      }}
-                      onGuided={() => begin(null, true)}
-                      onWater={(at) => pond.current?.flick(at)}
-                    />
-                  );
                 case 'arrive':
                   return (
                     <Arrive
@@ -651,11 +636,17 @@ export default function Journey({
                       leaving={stage.kind !== 'rail'}
                       onBegin={(at) => {
                         if (step(screens, 'arrive', 1) === null) {
-                          begin({ at, t: performance.now() });
+                          begin({ at, t: performance.now() }, guidedPick);
                         } else next();
                       }}
                       onWater={(at) => pond.current?.flick(at)}
-                      onBack={step(screens, 'arrive', -1) === null ? undefined : back}
+                      guided={guidedPick}
+                      guide={guideLine}
+                      onGuided={(g) => {
+                        setGuidedPick(g);
+                        // By yourself is among the fish, as the door was.
+                        if (!g) update({ showCount: true });
+                      }}
                       onPreviewBell={(kind) => {
                         unlockAudio();
                         previewBell(kind);

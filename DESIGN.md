@@ -804,14 +804,16 @@ with the one shadow. Items are 44px, ink-2 600, ember-soft on hover and
 focus. Up and Down wrap, Home and End, Escape closes and returns focus:
 Create account, Sign in.
 
-### The two doors and the fish
+### How you sit, and the fish
 
-On `dev` only (27 September 2026). The guest's front page is the pond
-with *How would you like to sit?* in the question role and two doors
-under it: `rounded-card`, a `rule` edge that turns `ember` on hover, a
-`surface` fill at 80%, 88px tall (100px from `sm`, side by side there,
-stacked on a phone), a small mark (a grey fish; a framed figure in ember)
-before a 1.25rem title and a control-size line in `ink-2`.
+On `dev` only (27–28 September 2026). There is no separate page for the
+choice: the arrival's sentence opens with it, a phrase like the others —
+*Sit **by yourself** for 10 minutes, …* or *Sit **with a guide** until the
+bell at 8:55, …*, picked on the same wheel. With a guide the length is
+not a phrase (a guided sitting ends on the shared bell), and one line in
+`ink-3` under the sentence says who is guiding: *Live now*, *The next
+session starts at …*, or *Nobody is guiding right now*. The full stop
+stays with the last phrase and never takes a line of its own.
 
 Everyone else sitting right now is a fish — nobody else here, no fish,
 and never one for yourself — `#7a868d` at 55–85% opacity, 20px nose to
@@ -843,11 +845,10 @@ straight away, easing off over five seconds, and they dart away before drifting 
 Under reduced motion the fish are still, straight, each where it belongs;
 none in a guided sitting.
 
-Once a door is chosen, a chevron in the top-left corner, in the menu's own
-44px square (`ICON`) before the mark, goes back to the two doors: on the
-*By yourself* screen it steps back, and in a sitting (either door) it
-ends the sitting the way *End* does and lands on the doors — Home for
-somebody signed in. It rests and wakes with the sitting's other controls.
+In a sitting, a chevron in the top-left corner, in the menu's own 44px
+square (`ICON`) before the mark, ends the sitting the way *End* does and
+goes back to the start — Home for somebody signed in. It rests and wakes
+with the sitting's other controls.
 
 No two fish are quite alike, and none is bigger than the sizes above:
 each person's fish is 65–100% of them, one of three builds — slender, plain

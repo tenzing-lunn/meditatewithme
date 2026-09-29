@@ -121,13 +121,15 @@ you this hour* on the ending. A guest can no longer choose *on your own*;
 a member still can, from the doors on Home, which kept its old layout and
 only took the new colours and type.
 
-**Two doors and the fish, on `dev` only since 27 September 2026.** Not
+**How you sit, and the fish, on `dev` only since 27 September 2026.** Not
 live and not shown to Jonny; drawn first on the redesign canvas (*Two ways
 in · the fish*) and built from it at Tenzing's word. A guest now lands on
-two doors on the water — *How would you like to sit?* — **By yourself**
-(*Your own time, among N others*) and **Guided meditation** (*Live now*,
-*The next session starts at …*, or *Nobody is guiding right now*);
-a chevron in the top-left corner goes back to the doors from either.
+the arrival as before, its sentence now opening with how you sit — *Sit
+**by yourself** for …* or *Sit **with a guide** until the bell at …*, a
+phrase picked like the length, the bell and the sound — and, with a
+guide, a line saying *Live now*, *The next session starts at …*, or
+*Nobody is guiding right now*; a chevron in the corner of a sitting
+goes back to the start.
 Everyone else sitting right now (not everyone who sat this hour) is a
 small grey fish that swims nose first, its head, body and tail bending
 through its turns and with the wave of its swimming — never

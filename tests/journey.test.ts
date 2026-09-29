@@ -6,15 +6,15 @@ import { DEFAULT_PREFERENCES } from '../lib/preferences.ts';
 
 describe('screensFor', () => {
   test('a guest, first time: only the arrival', () => {
-    assert.deepEqual(screensFor({ signedIn: false, hasSat: false, originAsked: false }), ['doors', 'arrive']);
+    assert.deepEqual(screensFor({ signedIn: false, hasSat: false, originAsked: false }), ['arrive']);
   });
 
   test('a guest who has sat is asked their name and place, once, after Begin', () => {
     assert.deepEqual(
       screensFor({ signedIn: false, hasSat: true, originAsked: false }),
-      ['doors', 'arrive', 'name', 'origin'],
+      ['arrive', 'name', 'origin'],
     );
-    assert.deepEqual(screensFor({ signedIn: false, hasSat: true, originAsked: true }), ['doors', 'arrive']);
+    assert.deepEqual(screensFor({ signedIn: false, hasSat: true, originAsked: true }), ['arrive']);
   });
 
   test('signed in and has sat: the place, never the name', () => {
@@ -25,12 +25,12 @@ describe('screensFor', () => {
     assert.deepEqual(screensFor({ signedIn: true, hasSat: true, originAsked: true }), ['arrive']);
   });
 
-  test('a guest meets the doors first, a member the arrival', () => {
+  test('the arrival is always first', () => {
     for (const signedIn of [true, false])
       for (const hasSat of [true, false])
         for (const originAsked of [true, false]) {
           const s = screensFor({ signedIn, hasSat, originAsked });
-          assert.equal(s[0], signedIn ? 'arrive' : 'doors');
+          assert.equal(s[0], 'arrive');
           assert.equal(new Set(s).size, s.length);
           // The name is never asked of a member, and never without the place.
           if (signedIn) assert.equal(s.includes('name'), false);
@@ -44,8 +44,7 @@ describe('step', () => {
   test('forward, back, and off the ends', () => {
     assert.equal(step(s, 'arrive', 1), 'name');
     assert.equal(step(s, 'name', -1), 'arrive');
-    assert.equal(step(s, 'arrive', -1), 'doors');
-    assert.equal(step(s, 'doors', -1), null);
+    assert.equal(step(s, 'arrive', -1), null);
     assert.equal(step(s, 'origin', 1), null);
     assert.equal(step(s, 'name', 1), 'origin');
   });
