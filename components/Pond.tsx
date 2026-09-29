@@ -20,15 +20,19 @@ import {
   type Touch,
 } from '@/lib/fish';
 import {
+  breathsAt,
   flickConfig,
   reachFor,
   ringsAt,
   skimAt,
   skimConfig,
+  smooth,
   touchRings,
+  trainAt,
   type Point,
   type Ring,
   type SkimConfig,
+  type Train,
 } from '@/lib/pond';
 
 /**
@@ -74,8 +78,28 @@ interface Flick {
   t0: number;
 }
 
-/** A flicked pebble's own rings once it has sunk: a few, soon gone. */
-const SETTLE = { rings: 3, period: 1.1, life: 4.5, reach: 70 };
+/** A flicked pebble's own train once it stops: three rings, soon gone. */
+const SETTLE = { rings: 3, life: 4.5, reach: 70, strength: 0.7, width: 1.1, rise: 0.1 };
+
+/** Your stone's landing: the biggest train on the water, five rings. */
+const LANDING = { rings: 5, life: 9, strength: 1, width: 1.6, rise: 0.12 };
+
+/** The bell: one soft train, wide, and then the water is still. */
+const BELL = { rings: 4, life: 13, strength: 0.85, width: 1.4, rise: 0.4 };
+
+/**
+ * Seconds of breathing already behind a stone that was simply there rather
+ * than thrown, so it breathes at its settled pace from the first frame.
+ */
+const SETTLED = 90;
+
+/** A stone in the air, sliding, or going under (`skimAt`'s stone). */
+type Flying = { x: number; y: number; h: number; sunk: number; spin: number; o: number };
+
+/** The seed of your stone's breaths: the same all through one sitting. */
+function seed(thrown: { t: number } | null): number {
+  return thrown ? Math.floor(thrown.t) >>> 0 : 1;
+}
 
 /** Where your stone lands, as a fraction of the pond. */
 export const YOU: Point = { x: 0.5, y: 0.44 };
@@ -195,6 +219,7 @@ export default function Pond({
 
     const ring = (r: Ring) => {
       if (r.o <= 0.004) return;
+      ctx.lineWidth = r.w ?? 1;
       ctx.beginPath();
       ctx.arc(r.x, r.y, r.r + 1, 0, Math.PI * 2);
       ctx.strokeStyle = `rgba(255,255,255,${(0.7 * r.o).toFixed(3)})`;
@@ -347,7 +372,7 @@ export default function Pond({
       const rings: Ring[] = [];
 
       // Your stone: thrown, settling, or simply there.
-      let stone: { x: number; y: number; h: number; sunk: number; spin: number } | null = null;
+      let stone: Flying | null = null;
       if (p.you) {
         const since = p.throwFrom && !p.reduced ? (nowMs - p.throwFrom.t) / 1000 : Infinity;
         const rect = el.getBoundingClientRect();
@@ -363,75 +388,59 @@ export default function Pond({
           rings.push(...touchRings(frame.touches));
         }
         const landed = frame ? since - frame.stopAt : Infinity;
-        if (bell === null && landed >= 0) {
-          // Your rings: counted from the moment it stopped, so the first one
-          // leaves the stone as it lands rather than arriving already spread.
-          const P = 2.8;
-          const L = 10;
-          const fade = 0.95;
-          if (Number.isFinite(landed)) {
-            for (let j = Math.max(0, Math.ceil((landed - L) / P)); j * P <= landed; j++) {
-              const age = landed - j * P;
-              if (age > L) continue;
-              const u = age / L;
-              rings.push({
-                x: me.x, y: me.y, r: 3 + u ** 0.75 * R * 1.4,
-                o: Math.min(1, age / 0.4) * (1 - u) ** 1.7 * fade, yours: true,
-              });
-            }
-          } else {
+        if (p.reduced) {
+          // Still water: a few rings drawn once, never moving.
+          if (bell === null) {
             rings.push(
-              ...ringsAt(t + 4.2, [
-                { x: me.x, y: me.y, reach: R * 1.4, period: P, life: L, phase: 0, strength: fade, yours: true },
+              ...ringsAt(8.4, [
+                { x: me.x, y: me.y, reach: R * 1.4, period: 2.8, life: 10, phase: 0, strength: 0.95, yours: true },
               ]),
             );
           }
+        } else if (bell === null) {
+          if (Number.isFinite(landed)) {
+            // It landed: the big train, then the stone breathes now and then.
+            rings.push(...trainAt(landed, { x: me.x, y: me.y, reach: R * 1.4, yours: true, ...LANDING }));
+            rings.push(...breathsAt(landed, me, R * 1.2, seed(p.throwFrom)));
+          } else if (!p.throwFrom) {
+            rings.push(...breathsAt(t + SETTLED, me, R * 1.2, seed(null)));
+          }
         }
         if (bell !== null) {
-          // The bell: one wide ring after another from your stone.
-          const P = 3.4;
-          const L = 13;
-          for (let j = Math.max(0, Math.ceil((bell - L) / P)); j * P <= bell; j++) {
-            const age = bell - j * P;
-            if (age > L) continue;
-            const u = age / L;
-            rings.push({
-              x: me.x, y: me.y, r: 3 + u ** 0.75 * Math.max(w, h) * 0.75,
-              o: Math.min(1, age / 0.4) * (1 - u) ** 1.7 * 0.9, yours: true,
-            });
-          }
+          // The bell: one soft, wide train from your stone. Held at one
+          // moment under reduced motion, so it is there but does not spread.
+          const bellTrain: Train = { x: me.x, y: me.y, reach: Math.max(w, h) * 0.75, yours: true, ...BELL };
+          rings.push(...trainAt(p.reduced ? 3 : bell, bellTrain));
         }
       }
 
       // Flicked pebbles: their touches, and once sunk, a few rings of their own.
-      const flying: { x: number; y: number; h: number; sunk: number; spin: number }[] = [];
+      const flying: Flying[] = [];
       flicks.current = flicks.current.filter((f) => {
         const since = (nowMs - f.t0) / 1000;
-        const end = f.cfg.T + (SETTLE.rings - 1) * SETTLE.period + SETTLE.life;
+        const end = f.cfg.T + SETTLE.life + 1.5;
         if (since > end) return false;
         const frame = skimAt(since, f.cfg);
-        rings.push(...touchRings(frame.touches));
-        for (let j = 0; j < SETTLE.rings; j++) {
-          const age = since - f.cfg.T - j * SETTLE.period;
-          if (age < 0 || age > SETTLE.life) continue;
-          const u = age / SETTLE.life;
-          rings.push({
-            x: f.cfg.to.x, y: f.cfg.to.y, r: 2 + u ** 0.75 * SETTLE.reach,
-            o: Math.min(1, age / 0.3) * (1 - u) ** 1.7 * 0.7, yours: false,
-          });
-        }
+        rings.push(...touchRings(frame.touches, 0.7));
+        rings.push(...trainAt(since - f.cfg.T, { x: f.cfg.to.x, y: f.cfg.to.y, yours: false, ...SETTLE }));
         if (frame.stone.sunk < 1) flying.push(frame.stone);
         return true;
       });
 
       for (const r of rings) ring(r);
+      ctx.lineWidth = 1;
 
       for (const f of flying) {
-        const so = f.sunk > 0 ? 0.2 * (1 - f.sunk) : 0.22 - f.h * 0.03;
-        shadow(f.x, f.y + 1, 11 + f.sunk * 3, 4.5 + f.sunk * 3, so);
+        // The shadow stays on the water; the pebble is lifted off it by the
+        // hop, so the two part in the air and meet at each touch.
+        const sk = smooth(f.sunk);
+        const up = f.h / 4;
+        const so = f.sunk > 0 ? 0.2 * (1 - sk) : (0.22 - up * 0.07) * f.o;
+        shadow(f.x, f.y + 1, (11 + sk * 3) * (1 - up * 0.1), (4.5 + sk * 3) * (1 - up * 0.1), so);
+        const size = (1 + up * 0.06) * (1 - 0.2 * sk);
         pebble(
-          f.x, f.y - f.h - 2, 12, 9, (f.spin * 1.6 - 8) * (Math.PI / 180), PALE, 1 - f.sunk,
-          `rgba(${INK},${(0.35 * (1 - f.sunk)).toFixed(3)})`,
+          f.x, f.y - f.h - 2 + sk * 2, 12 * size, 9 * size, (f.spin - 8) * (Math.PI / 180), PALE, f.o,
+          `rgba(${INK},${(0.35 * f.o).toFixed(3)})`,
         );
       }
 
@@ -450,12 +459,22 @@ export default function Pond({
 
       if (p.you) {
         if (stone) {
-          // In flight: a small shadow on the water, the stone just above it.
-          const sw = 12 + stone.sunk * 4;
-          const sh = 5 + stone.sunk * 4;
-          const so = stone.sunk > 0 ? 0.24 - 0.08 * stone.sunk : 0.26 - stone.h * 0.03;
+          // In flight: the shadow on the water, the stone lifted off it by
+          // the hop, so they part in the air and meet at each touch; the
+          // higher it is the smaller and fainter the shadow. Once it stops it
+          // settles into the water, a little smaller and fading as it goes,
+          // and its shadow becomes the one the settled stone keeps.
+          const sk = smooth(stone.sunk);
+          const up = stone.h / 8;
+          const sw = (12 + sk * 4) * (1 - up * 0.18);
+          const sh = (5 + sk * 4) * (1 - up * 0.18);
+          const so = stone.sunk > 0 ? 0.24 - 0.08 * sk : (0.26 - up * 0.1) * Math.max(stone.o, sk);
           shadow(stone.x, stone.y + 1, sw, sh, so);
-          pebble(stone.x, stone.y - stone.h - 2, 13, 10, (stone.spin - 8) * (Math.PI / 180), ACCENT, 1 - stone.sunk);
+          const size = (1 + up * 0.08) * (1 - 0.25 * sk);
+          pebble(
+            stone.x, stone.y - stone.h - 2 + sk * 2.5, 13 * size, 10 * size,
+            (stone.spin - 8) * (Math.PI / 180), ACCENT, stone.o,
+          );
         } else {
           // Settled: only the shadow of the stone under the water.
           shadow(me.x, me.y + 1, 16, 9, 0.16);
