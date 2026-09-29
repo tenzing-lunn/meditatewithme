@@ -156,6 +156,9 @@ type Thrown = { at: Point; t: number } | null;
 /** From Begin to the stone settled: the throw's five seconds and its sink. */
 const THROW_MS = 6400;
 
+/** The held sitting fading out as the minutes come in. */
+const FADE_MS = 800;
+
 /** One fish per person lit this hour, and no more than the water can hold. */
 const MAX_STONES = 400;
 
@@ -265,6 +268,9 @@ export default function Journey({
   // ended, before the minutes are said.
   const held = stage.kind === 'finished' && mono - stage.endedAt < COOLDOWN_MS;
   const sit = stage.kind === 'sitting' || held ? stage.sit : null;
+  // Then the sitting fades out from under the minutes rather than vanishing.
+  const fading = stage.kind === 'finished' && !held && mono - stage.endedAt < COOLDOWN_MS + FADE_MS;
+  const shownSit = sit ?? (fading ? stage.sit : null);
 
   // The others' stones, only while sitting with others, and through the
   // held beat. And on the arrival, which opens on them.
@@ -575,19 +581,19 @@ export default function Journey({
         </div>
       )}
 
-      {sit !== null && (
+      {shownSit !== null && (
         <div
-          className={`absolute inset-0 transition-opacity duration-1000 motion-reduce:transition-none ${
-            landed ? 'opacity-100' : 'pointer-events-none opacity-0'
-          }`}
-          inert={!landed}
+          className={`absolute inset-0 transition-opacity motion-reduce:transition-none ${
+            fading ? 'duration-700' : 'duration-1000'
+          } ${landed && !fading ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+          inert={!landed || fading}
           onPointerDown={(e) => {
             livePlay.current?.();
             pond.current?.scatter({ x: e.clientX, y: e.clientY });
           }}
         >
           <Sitting
-            sit={sit}
+            sit={shownSit}
             now={now}
             mono={mono}
             count={count}
@@ -599,7 +605,7 @@ export default function Journey({
             onSoundOpen={mix.unmute}
             onEnd={endEarly}
             ended={finished}
-            nextSession={sit.guided && !onCamera.live ? onCamera.next : null}
+            nextSession={shownSit.guided && !onCamera.live ? onCamera.next : null}
             onBack={endEarly}
           />
         </div>

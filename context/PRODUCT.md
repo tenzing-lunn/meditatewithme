@@ -105,12 +105,15 @@ three bells (picking one plays it), and silence or one of the eight beds
 (picking one plays it for about four seconds and lets it fade, the way the
 bell previews; it comes back at Begin — and fetches that recording, which
 can take a moment the first time). **Begin** starts the sitting in that
-click, as the bowl did, and throws your stone from the button: it skims
+click, as the bowl did: the sentence sinks into the water word by word,
+and your stone is thrown from the button: it skims
 across the water, slowing, and sinks at the centre, leaving its shadow and
-its rings. The sitting's words fade in once it has settled: the faint mark
-and the time left above, the company line and *Sound* and *End* below. At
-the bell the other stones go and one wide ring leaves yours; *Come back.*
-is held for ten seconds, then *N minutes. The water is still again.* with
+its rings — then now and then a soft ring, never on a beat. The sitting's
+words fade in once it has settled: the faint mark and the time left above,
+the company line and *Sound* and *End* below. At the bell the other stones
+go and one soft train of wide rings leaves yours; *Come back.* comes into
+focus with it and is held for ten seconds, then the sitting fades and
+*N minutes.* rises into the same line, with *The water is still again.* and
 *Again* and *Done*. The name and place, when due after a first sitting, are
 asked after Begin, and the last question's Next begins.
 

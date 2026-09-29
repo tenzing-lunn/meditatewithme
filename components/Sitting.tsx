@@ -189,11 +189,16 @@ export default function Sitting({
       </div>
       {ended && (
         <div
-          className="pointer-events-none absolute inset-0 z-10 flex items-end justify-center pb-[22dvh]"
+          className="pointer-events-none absolute inset-0 z-10 flex flex-col px-6 sm:px-14 lg:px-24"
           role="status"
           aria-label="Coming back"
         >
-          <p className="font-display text-question leading-none text-ink sm:text-question-lg">
+          {/* On the line the minutes will take (`Afterwards`): the same
+              header above it, unseen, so one gives way to the other. */}
+          <div aria-hidden className="invisible pt-[calc(1rem+env(safe-area-inset-top))]">
+            <Brand />
+          </div>
+          <p className="come-back mx-auto mt-[58dvh] flex h-[var(--text-minutes)] items-center font-display text-question leading-none text-ink sm:text-question-lg">
             Come back.
           </p>
         </div>
