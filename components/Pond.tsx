@@ -81,8 +81,8 @@ interface Flick {
 /** A flicked pebble's own train once it stops: three rings, soon gone. */
 const SETTLE = { rings: 3, life: 4.5, reach: 70, strength: 0.7, width: 1.1, rise: 0.1 };
 
-/** Your stone's landing: the biggest train on the water, five rings. */
-const LANDING = { rings: 5, life: 9, strength: 1, width: 1.6, rise: 0.12 };
+/** Your stone's landing: the biggest train on the water, four rings, as soft as the touches' so it never reads as a target. */
+const LANDING = { rings: 4, life: 9, strength: 0.6, width: 1.2, rise: 0.12 };
 
 /** The bell: one soft train, wide, and then the water is still. */
 const BELL = { rings: 4, life: 13, strength: 0.85, width: 1.4, rise: 0.4 };
