@@ -1,6 +1,6 @@
 ---
 name: Meditate With Me
-description: Pale water. A dull, very light grey-blue pond where everyone sitting this hour is a small stone with slow rings spreading from it. One sentence and Begin; your stone skims in and settles; the bell is one wide ring. Newsreader for what the site says, the system sans for what you press, slate for the one thing that goes forward.
+description: Pale water. A dull, very light grey-blue pond where everyone sitting this hour is a small stone with slow rings spreading from it. One sentence and Begin; your stone skims in and settles, and breathes a soft ring now and then; the bell is one soft train of wide rings. Newsreader for what the site says, the system sans for what you press, slate for the one thing that goes forward.
 colors:
   paper: "#e5e9ec"
   surface: "#eef1f3"
@@ -804,6 +804,102 @@ with the one shadow. Items are 44px, ink-2 600, ember-soft on hover and
 focus. Up and Down wrap, Home and End, Escape closes and returns focus:
 Create account, Sign in.
 
+### How you sit, and the fish
+
+On `dev` from 27–28 September 2026, live since 29 September. There is no separate page for the
+choice: the arrival's sentence opens with it, a phrase like the others —
+*Sit **by yourself** for 10 minutes, …* or *Sit **with a guide** until the
+bell at 8:55, …*, picked on the same wheel. With a guide the length is
+not a phrase (a guided sitting ends on the shared bell), and one line in
+`ink-3` under the sentence says who is guiding: *Live now*, *The next
+session starts at …*, or *Nobody is guiding right now*. The full stop
+stays with the last phrase and never takes a line of its own.
+
+Everyone else sitting right now is a fish — nobody else here, no fish,
+and never one for yourself — `#7a868d` at 55–85% opacity, 20px nose to
+tail on desktop and 15px on a phone, 14px and 11px once there are more
+than a hundred. A fish swims nose first: it steers toward where it
+belongs at a limited rate of turn, speeds up and slows down smoothly
+(a cruise of a quarter of a body length a second, up to four and a half,
+ten for the moment a touch startles it), and never slides sideways, backs
+up or turns on the spot. Calm, it never turns on a radius under a body
+length and a half (half a body length when startled), so
+it sweeps round rather than chasing its tail. Within about a body length
+of its place it slows to a drift and hardly steers, so it hangs there,
+turning now and then. Its
+spine has three joints, head, body and tail, with a forked fin off the
+tail. A turn curves the body along the path the head took, and a wave
+runs from head to tail, barely at the head and most at the fin, beating
+faster and wider the faster it swims, so a gliding fish hardly moves
+(`swim` in `lib/fish.ts`). Each fish swims in its person's part of the world on a loose
+map of the water — west on the left, north at the top, 62°N to 43°S
+filling the band — from the one-degree cell of their heartbeat. Quiet
+water: each fish wanders a small loop around its place. Crowded (more
+than one fish per 12,000 px²): each region (24° by 16°) mills as one
+swarm around the region's middle, roughly 60 to a swarm. Which
+swarm a fish joins is hashed so that one person coming or going moves
+nobody else's fish, or only those of a swarm that appears or goes. The place is
+written beside a fish only when its person chose to share it (*Ana from
+Lisbon*); nobody is named or placed in words without choosing it. A touch pushes the ones within eleven body-lengths
+straight away, easing off over five seconds, and they dart away before drifting back.
+Under reduced motion the fish are still, straight, each where it belongs;
+none in a guided sitting.
+
+In a sitting, a chevron in the top-left corner, in the menu's own 44px
+square (`ICON`) before the mark, ends the sitting the way *End* does and
+goes back to the start — Home for somebody signed in. It rests and wakes
+with the sitting's other controls.
+
+No two fish are quite alike, and none is bigger than the sizes above:
+each person's fish is 65–100% of them, one of three builds — slender, plain
+or deep-bodied — a little fuller or slimmer again, with a longer or shorter
+tail, all from their key, so a fish keeps its look while its person stays.
+
+### The skim and the rings
+
+Live since 29 September 2026 (built 28 September; `lib/pond.ts`, drawn by `Pond`). Begin
+throws your stone from the button. It comes out of the hand over 200ms and
+hops: ten touches on desktop, eight on a phone, each hop 0.8 of the time
+of the one before, and lower as the square of that, 8px at the top of the
+first (6px on a phone), so the last hops barely leave the water. Its shadow
+stays on the water, smaller and fainter the higher the stone is, so the two
+part in the air and meet at each touch. The whole throw is one ease-out,
+so it is always slowing; the hops take the first 74% of it and then it
+slides on the surface to a stop, 5s after the press (4.4s on a phone). It
+turns 110° on the way, slowing as it slows. Then it sinks over 1.1s, a
+little smaller and fading, and its shadow becomes the settled one — all
+inside the 6.4s before the sitting's words come in.
+
+Nothing on the water rings on a beat. Whatever touches it sets off a
+**train**: a leading ring and a few behind it, each leaving later and
+closer behind the one in front, each fainter, a little smaller and thinner.
+Every ring slows as it spreads, thins, and fades as its energy spreads out
+(as one over the square root of its radius), then the water is still. Each
+touch leaves a train of two or three, smaller for the later, softer hops;
+the stop leaves the biggest, five rings over 9s. After that your stone
+**breathes**: one soft ring now and then, a third as strong as the
+landing, rising over 1.4s, a few pixels off centre. The gaps are seeded
+and irregular — shorter just after the landing, stretching over the first
+minute to about twelve seconds on average, six to twenty-four, never two
+alike in a row. A flicked pebble is the same throw in 1.9s with a small
+train of three where it stops. The bell is one soft train of four wide
+rings over 13s, and your breaths stop. Under reduced motion there is no
+throw and nothing spreads: a few still rings round your stone's shadow,
+and the bell's train held at one moment.
+
+### The live window
+
+On `dev` from 27 September 2026, live since 29 September, but with no
+stream in production until its variables are set there. Whoever is on camera, in a guided
+sitting: a 16:9 window centred on the pond, `max-w-4xl`, `rounded-card`, a
+`rule` edge, `scrim` behind the picture until it plays, no shadow. The
+pond stays the ground — its rings and the sitting's words sit around the
+window, never on the picture, so nothing needs a wash to be read. It fades
+in over 1000ms once frames play and out the same way; under reduced motion
+it simply appears. Silent, no controls, never full-bleed. Between two
+people on camera it is gone and the company line says when the next
+session starts.
+
 ### The bowl
 A 12rem drawn bowl inside a button labelled *Strike the bowl and begin*,
 with the settings line under it. (A caption, *Strike the bowl to begin.*,
@@ -838,8 +934,16 @@ and it rests with the controls — a tap shows it.
   150ms (`.rail-leave`); the arriving one rises 1.5rem into place over 300ms
   from 120ms in (`.rail-enter`). `--rail-dir` is -1 going back, which runs
   both downward. Nothing inside a panel animates its own arrival.
-- **Settle**: `.screen-settle`, 240ms fade-up — the ending's column, and Next
-  appearing under the name's line.
+- **Settle**: `.screen-settle`, 240ms fade-up — Next appearing under the
+  name's line.
+- **Begin**: the sentence goes into the water. Each word and phrase is a
+  `.sink` numbered in reading order; on `[data-leaving]` each fades, drifts
+  down 0.25rem and blurs 2px over 340–420ms, staggered across 220ms, so the
+  whole sentence is gone in about 0.6s. The header, the fish line and the
+  word *Begin* fade together over 300ms. The pebble beside *Begin* shrinks
+  to 0.75 and fades over 200ms while the thrown stone fades up out of the
+  same spot over the same 0.2s, so one hands over to the other. Under
+  reduced motion the words only fade, together.
 - **Colour**: 200ms on every control.
 - **Typed prompt**: `useTypedOut`, 55ms a character (45ms more after a
   space) starting 200ms after the screen arrives, once per arrival; the caret
@@ -865,9 +969,12 @@ and it rests with the controls — a tap shows it.
 - **Lift**: `--lift-ms: 1400ms`; `.lift-out` on the rail (scale to 0.55,
   down 28vh, fade), `.lift-in` on the sitting (from 1.06 / 0 to 1 / 1), the
   frame's background, already the room, on the same clock.
-- **Ending**: 10s hold on *Come back.* over the ended sitting — the earth
-  stays, the clock goes, the controls rest — with the bell's tail, then
-  the minutes settle in.
+- **Ending**: *Come back.* comes into focus with the bell (`.come-back`,
+  1.6s: from blur 6px and 0.25rem low), on the line the minutes will take,
+  and is held for 10s over the ended sitting — the water stays, the clock
+  goes, the controls rest. Then the sitting fades out over 700ms as the
+  minutes rise into that same line (`.after-in`, 900ms from 200ms in): one
+  line changing, not a new page. Under reduced motion both only fade.
 - **Earth**: the shared breath and each candle's own flicker, from the cell's
   coordinates rather than `Math.random()`.
 - **Reduced motion**: one `@media` block, at the end of `globals.css`, sets

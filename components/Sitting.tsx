@@ -8,7 +8,9 @@ import {
   type FocusEvent,
 } from 'react';
 import { companyLine } from '@/lib/company';
+import { localTime } from '@/lib/format';
 import { mmss, remainingMs } from '@/lib/timer';
+import BackChevron from './BackChevron';
 import Brand from './Brand';
 import { WORD } from './controls';
 import Sounds, { type MixPatch } from './Sounds';
@@ -28,8 +30,10 @@ export interface Sit {
   endsAt: number;
   /** Ends on the shared bell, with everyone else who chose it. */
   together: boolean;
-  /** Chose the door marked With others: the other stones are shown. */
+  /** Among the others: their fish are shown, and the company line. */
   withOthers: boolean;
+  /** Chose *Guided meditation*: whoever is on camera, framed on the water. */
+  guided: boolean;
 }
 
 /**
@@ -39,7 +43,8 @@ export interface Sit {
  * `Journey`, so this is only what lies on it. With others, their stones and
  * one sentence about who is here; by yourself, your own rings alone. The mark
  * is faint in the corner and the clock small beside it, because the water is
- * the thing.
+ * the thing. When someone is on camera `Journey` frames them on the water
+ * (`LiveLayer`); between two of them the line says when the next starts.
  *
  * Sound opens the six tiles and their Volume in a sheet above the foot; the
  * caller raises the master when it opens, since a first-timer's graph was
@@ -74,6 +79,8 @@ export default function Sitting({
   onSoundOpen,
   onEnd,
   ended = false,
+  nextSession = null,
+  onBack,
 }: {
   sit: Sit;
   now: number | null;
@@ -89,6 +96,10 @@ export default function Sitting({
   onEnd: () => void;
   /** The bell has rung: the held beat, before the minutes. */
   ended?: boolean;
+  /** Between two people on camera: when the next goes on, ms. */
+  nextSession?: number | null;
+  /** Leave the sitting for the two ways in. */
+  onBack?: () => void;
 }) {
   const [soundOpen, setSoundOpen] = useState(false);
   const [awake, setAwake] = useState(true);
@@ -149,9 +160,13 @@ export default function Sitting({
     },
   };
   const remaining = remainingMs(sit.endsAt, mono);
-  const line = sit.withOthers
-    ? companyLine(labels, count, litCount, ownLabel, now ?? Date.now())
-    : null;
+  // Between two people on camera, that is what the line says; otherwise
+  // it is who is here.
+  const line = !sit.withOthers
+    ? null
+    : nextSession !== null && !ended
+      ? `The next session starts at ${localTime(nextSession)}.`
+      : companyLine(labels, count, litCount, ownLabel, now ?? Date.now());
 
   // Over the pond, which `Journey` draws underneath: nothing here has a
   // ground of its own, so the water shows through everywhere.
@@ -162,7 +177,10 @@ export default function Sitting({
       onKeyDown={wake}
     >
       <div className={`flex items-center justify-between px-6 pt-[calc(1rem+env(safe-area-inset-top))] sm:px-14 lg:px-24 ${controls}`}>
-        <Brand word={false} />
+        <div className="flex items-center gap-3" inert={ended} {...holdWhileFocused}>
+          {onBack && !ended && <BackChevron onBack={onBack} />}
+          <Brand word={false} />
+        </div>
         {!ended && (
           <p role="timer" aria-label="Time left" className="text-caption tabular-nums text-ink-3">
             {mmss(remaining)}
@@ -171,11 +189,16 @@ export default function Sitting({
       </div>
       {ended && (
         <div
-          className="pointer-events-none absolute inset-0 z-10 flex items-end justify-center pb-[22dvh]"
+          className="pointer-events-none absolute inset-0 z-10 flex flex-col px-6 sm:px-14 lg:px-24"
           role="status"
           aria-label="Coming back"
         >
-          <p className="font-display text-question leading-none text-ink sm:text-question-lg">
+          {/* On the line the minutes will take (`Afterwards`): the same
+              header above it, unseen, so one gives way to the other. */}
+          <div aria-hidden className="invisible pt-[calc(1rem+env(safe-area-inset-top))]">
+            <Brand />
+          </div>
+          <p className="come-back mx-auto mt-[58dvh] flex h-[var(--text-minutes)] items-center font-display text-question leading-none text-ink sm:text-question-lg">
             Come back.
           </p>
         </div>

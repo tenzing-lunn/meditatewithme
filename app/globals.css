@@ -330,6 +330,64 @@ body {
 }
 
 /*
+ * Begin: the sentence goes into the water. Each word fades, drifts down a
+ * little and softens, in reading order (`--i` of `--n`), the whole of it in
+ * about half a second. Only on leaving: the words have no transition
+ * otherwise. Under reduced motion they simply fade together.
+ */
+[data-leaving] .sink {
+  opacity: 0;
+  transform: translateY(0.25rem);
+  filter: blur(2px);
+  transition:
+    opacity 340ms var(--ease-rail),
+    transform 420ms var(--ease-rail),
+    filter 420ms var(--ease-rail);
+  transition-delay: calc(var(--i, 0) / var(--n, 1) * 220ms);
+}
+
+.sink {
+  display: inline-block;
+}
+
+/*
+ * The bell: *Come back.* comes into focus with it, slowly, the way a struck
+ * bowl swells. The ending's minutes then settle into the same line
+ * (`after-in`) while the sitting fades out from under them.
+ */
+@keyframes come-back {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+    transform: translateY(0.25rem);
+  }
+  to {
+    opacity: 1;
+    filter: none;
+    transform: none;
+  }
+}
+
+.come-back {
+  animation: come-back 1600ms var(--ease-rail) both;
+}
+
+@keyframes after-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.4rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.after-in {
+  animation: after-in 900ms var(--ease-rail) 200ms both;
+}
+
+/*
  * The dot beside the count on the doors, which is the only thing there
  * that moves on its own. It breathes over four seconds and never goes
  * out: a candle already lit, not a notification asking to be dealt with.
@@ -727,7 +785,8 @@ body {
  * Everything the stylesheet does when the visitor has asked for less motion.
  * The rail and the settle go to nothing and the lift to a short crossfade;
  * the loops — the caret, the live dot, the candle, the hint — hold still;
- * the strike is one pulse with no rings, and a tapped bell simply lights.
+ * the strike is one pulse with no rings, and a tapped bell simply lights;
+ * the sentence, *Come back.* and the minutes only fade.
  * The moves decided in JS (the dial's spring, the typed prompt, the earth's
  * breath) read `useReducedMotion` instead, and are listed there.
  */
@@ -760,6 +819,30 @@ body {
 
   .bowl-struck .bowl-body {
     animation: bowl-pulse 300ms ease-out;
+  }
+
+  [data-leaving] .sink {
+    transform: none;
+    filter: none;
+    transition: opacity 300ms ease-out;
+  }
+
+  @keyframes come-back {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes after-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   @keyframes lift-out {

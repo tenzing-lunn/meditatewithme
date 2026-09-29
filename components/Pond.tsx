@@ -3,17 +3,36 @@
 import { useEffect, useImperativeHandle, useRef, type Ref } from 'react';
 
 import {
+  alarmAt,
+  fishAt,
+  hash,
+  lookFor,
+  planFish,
+  SCATTER_S,
+  spawnFish,
+  spine,
+  swim,
+  type FishPlan,
+  type FishState,
+  type Joint,
+  type Look,
+  type Spine,
+  type Touch,
+} from '@/lib/fish';
+import {
+  breathsAt,
   flickConfig,
   reachFor,
   ringsAt,
   skimAt,
   skimConfig,
-  spotFor,
+  smooth,
   touchRings,
+  trainAt,
   type Point,
   type Ring,
   type SkimConfig,
-  type Source,
+  type Train,
 } from '@/lib/pond';
 
 /**
@@ -25,21 +44,32 @@ import {
  * the wireframe's skim look stepped.
  *
  * The pond stays mounted from the arrival to the ending (`Journey` draws it
- * under every stage), so the stones never move and your rings carry on
- * through the change of words above them. Only its props change.
+ * under every stage), so the fish swim on and your rings carry on through
+ * the change of words above them. Only its props change.
+ *
+ * Everyone else sitting is a grey fish (27 September 2026, in place of the
+ * other stones): alone on a path of its own while the water is quiet, in
+ * milling swarms once it is crowded, each in its person's part of the
+ * world on a loose map (`lib/fish.ts`). A touch scatters the
+ * ones near it; a flicked pebble scatters them where it lands.
  */
 
 export interface Stone {
-  /** Stable while the person is here; the stone's place is hashed from it. */
+  /** Stable while the person is here; their fish's path is hashed from it. */
   key: string;
   /** "Ana from Lisbon", when they chose to be seen. */
   label?: string;
+  /** Roughly where they are (a one-degree cell): where on the water they swim. */
+  lat?: number;
+  lon?: number;
 }
 
 /** What the page can do to the water from outside. */
 export interface PondHandle {
   /** Flick a pale pebble from the shore to this point (client pixels). */
   flick: (at: Point) => void;
+  /** Scatter the fish near this point (client pixels), now. */
+  scatter: (at: Point) => void;
 }
 
 /** A pebble in the air or just sunk: its throw, and when it left the hand (ms). */
@@ -48,14 +78,34 @@ interface Flick {
   t0: number;
 }
 
-/** A flicked pebble's own rings once it has sunk: a few, soon gone. */
-const SETTLE = { rings: 3, period: 1.1, life: 4.5, reach: 70 };
+/** A flicked pebble's own train once it stops: three rings, soon gone. */
+const SETTLE = { rings: 3, life: 4.5, reach: 70, strength: 0.7, width: 1.1, rise: 0.1 };
+
+/** Your stone's landing: the biggest train on the water, five rings. */
+const LANDING = { rings: 5, life: 9, strength: 1, width: 1.6, rise: 0.12 };
+
+/** The bell: one soft train, wide, and then the water is still. */
+const BELL = { rings: 4, life: 13, strength: 0.85, width: 1.4, rise: 0.4 };
+
+/**
+ * Seconds of breathing already behind a stone that was simply there rather
+ * than thrown, so it breathes at its settled pace from the first frame.
+ */
+const SETTLED = 90;
+
+/** A stone in the air, sliding, or going under (`skimAt`'s stone). */
+type Flying = { x: number; y: number; h: number; sunk: number; spin: number; o: number };
+
+/** The seed of your stone's breaths: the same all through one sitting. */
+function seed(thrown: { t: number } | null): number {
+  return thrown ? Math.floor(thrown.t) >>> 0 : 1;
+}
 
 /** Where your stone lands, as a fraction of the pond. */
 export const YOU: Point = { x: 0.5, y: 0.44 };
 
 const INK = '62,76,86';
-const STONE = '#9ba6ac';
+const FISH = '#7a868d';
 const ACCENT = '#3e4c55';
 const SHADOW = '47,59,66';
 const LABEL = '#5a656c';
@@ -99,6 +149,11 @@ export default function Pond({
    * play, and the motion is all it is.
    */
   const flicks = useRef<Flick[]>([]);
+  /** Touches on the water, on the pond's clock (s), still pushing fish away. */
+  const touches = useRef<Touch[]>([]);
+  const touch = (x: number, y: number, t: number) => {
+    touches.current = [...touches.current.filter((s) => t - s.t < SCATTER_S), { x, y, t }].slice(-6);
+  };
   useImperativeHandle(
     ref,
     () => ({
@@ -114,8 +169,18 @@ export default function Pond({
           x: Math.max(-20, Math.min(r.width + 20, to.x - side * Math.min(180, r.width * 0.3))),
           y: r.height + 24,
         };
-        flicks.current.push({ cfg: flickConfig(from, to, side), t0: performance.now() });
+        const cfg = flickConfig(from, to, side);
+        const t0 = performance.now();
+        flicks.current.push({ cfg, t0 });
         if (flicks.current.length > 12) flicks.current.shift();
+        // The fish scatter where it lands, not where the finger was.
+        touch(to.x, to.y, t0 / 1000 + cfg.T);
+      },
+      scatter(at) {
+        const el = canvas.current;
+        if (!el || props.current.reduced) return;
+        const r = el.getBoundingClientRect();
+        touch(at.x - r.left, at.y - r.top, performance.now() / 1000);
       },
     }),
     [],
@@ -129,7 +194,14 @@ export default function Pond({
     let raf = 0;
     let w = 0;
     let h = 0;
-    let spots = new Map<string, Point>();
+    let plan: FishPlan | null = null;
+    let planned = '';
+    /**
+     * Each fish as it swims (`swim` in lib/fish.ts): where it is, which way
+     * it faces, how fast, and how its three joints are bent.
+     */
+    const drawn = new Map<string, FishState>();
+    let last = 0;
 
     const fit = () => {
       const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -138,21 +210,16 @@ export default function Pond({
       el.width = Math.round(w * dpr);
       el.height = Math.round(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      spots = new Map();
-    };
-
-    /** Keep stones off your own and out from under the words. */
-    const avoid = (p: Point) => {
-      const near = Math.hypot((p.x - YOU.x) * w, (p.y - YOU.y) * h) < 0.14 * Math.min(w, h) + 40;
-      const wide = w > h;
-      const underWords = wide
-        ? (p.x < 0.55 && p.y > 0.56) || (p.y > 0.86 && p.x > 0.2 && p.x < 0.8)
-        : p.y > 0.62;
-      return near || underWords;
+      planned = '';
+      // New water: every fish is put straight where it belongs rather than
+      // swimming over from where it was on the old size (or from the corner,
+      // when the canvas was measured hidden at nothing by nothing).
+      drawn.clear();
     };
 
     const ring = (r: Ring) => {
       if (r.o <= 0.004) return;
+      ctx.lineWidth = r.w ?? 1;
       ctx.beginPath();
       ctx.arc(r.x, r.y, r.r + 1, 0, Math.PI * 2);
       ctx.strokeStyle = `rgba(255,255,255,${(0.7 * r.o).toFixed(3)})`;
@@ -186,6 +253,56 @@ export default function Pond({
       ctx.restore();
     };
 
+    /**
+     * One fish through its three joints: a rounded head, the body
+     * narrowing to the tail joint, and a forked tail fin off the tail
+     * joint — so the swimming wave shows along the whole body.
+     */
+    const fish = (sp: Spine, size: number, look: Look, alpha: number) => {
+      if (alpha <= 0) return;
+      const { nose, head, body, tail } = sp;
+      // Across each joint, square to the two pieces meeting there.
+      const side = (p: Joint, a: number, b: number, w: number, s: 1 | -1) => {
+        const m = Math.atan2(Math.sin(a) + Math.sin(b), Math.cos(a) + Math.cos(b));
+        return { x: p.x - Math.sin(m) * w * s, y: p.y + Math.cos(m) * w * s };
+      };
+      const { nose: an, front, rear } = sp.angles;
+      const outline = [
+        nose,
+        side(head, an, front, size * look.head, 1),
+        side(body, front, rear, size * look.body, 1),
+        side(tail, rear, sp.finAngle, size * look.tail, 1),
+        side(tail, rear, sp.finAngle, size * look.tail, -1),
+        side(body, front, rear, size * look.body, -1),
+        side(head, an, front, size * look.head, -1),
+      ];
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = FISH;
+      ctx.beginPath();
+      // A closed curve through the midpoints, so the outline has no corners.
+      const mid = (a: Joint, b: Joint) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+      const start = mid(outline[outline.length - 1]!, outline[0]!);
+      ctx.moveTo(start.x, start.y);
+      outline.forEach((pt, k) => {
+        const m = mid(pt, outline[(k + 1) % outline.length]!);
+        ctx.quadraticCurveTo(pt.x, pt.y, m.x, m.y);
+      });
+      ctx.fill();
+      // The tail fin, hanging off the tail joint.
+      const back = { x: -Math.cos(sp.finAngle), y: -Math.sin(sp.finAngle) };
+      const across = { x: -back.y, y: back.x };
+      const reach = size * look.fin;
+      const spread = size * look.fork;
+      ctx.beginPath();
+      ctx.moveTo(tail.x, tail.y);
+      ctx.lineTo(tail.x + back.x * reach + across.x * spread, tail.y + back.y * reach + across.y * spread);
+      ctx.lineTo(tail.x + back.x * reach * 0.62, tail.y + back.y * reach * 0.62);
+      ctx.lineTo(tail.x + back.x * reach - across.x * spread, tail.y + back.y * reach - across.y * spread);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    };
+
     const shadow = (x: number, y: number, sw: number, sh: number, alpha: number) => {
       if (alpha <= 0) return;
       ctx.save();
@@ -204,43 +321,58 @@ export default function Pond({
 
     const draw = (nowMs: number) => {
       const p = props.current;
+      if (!w || !h) return;
       const t = p.reduced ? 4.2 : nowMs / 1000;
       ctx.clearRect(0, 0, w, h);
       ctx.lineWidth = 1;
 
-      // A crowded pond is quieter water: past a dozen stones each one's rings
-      // reach less far and leave it fainter, so the whole stays about as busy
-      // as the wireframe's nine.
-      const crowd = Math.min(1, Math.sqrt(12 / Math.max(1, p.stones.length)));
       const R = reachFor(w, h);
       const me = { x: YOU.x * w, y: YOU.y * h };
       const bell = p.bellAt === null ? null : (nowMs - p.bellAt) / 1000;
       // The others go quietly once the bell has rung.
       const others = bell === null ? 1 : Math.max(0, 1 - bell / 2.5);
 
-      const sources: Source[] = [];
-      const placed: { x: number; y: number; i: number; s: Stone; a: number }[] = [];
+      // The fish keep to the open water: all of it while sitting, above the
+      // words on the arrival.
+      const band = p.you ? { y0: 0.08, y1: 0.84 } : w > h ? { y0: 0.1, y1: 0.56 } : { y0: 0.1, y1: 0.5 };
+      const keys = p.stones.map((s) => s.key);
+      const sig = `${keys.join('|')}#${w}x${h}#${band.y1}`;
+      if (sig !== planned) {
+        plan = planFish(p.stones, { w, h, ...band });
+        planned = sig;
+      }
+      const clock = nowMs / 1000;
+      // Unclamped: `swim` swims a slow frame in tenths of a second and puts
+      // a fish back at its mark after a long gap.
+      const dt = last ? clock - last : 0;
+      last = clock;
+      const size = plan!.size;
+      const swimming: { spine: Spine; size: number; look: Look; o: number; label?: string }[] = [];
+      const here = new Set<string>();
       p.stones.forEach((s, i) => {
-        let spot = spots.get(s.key);
-        if (!spot) {
-          spot = spotFor(s.key, avoid);
-          spots.set(s.key, spot);
-        }
+        here.add(s.key);
         if (!seen.current.has(s.key)) seen.current.set(s.key, nowMs);
-        const a = p.reduced ? 1 : Math.min(1, (nowMs - seen.current.get(s.key)!) / 1500);
-        const x = spot.x * w;
-        const y = spot.y * h;
-        placed.push({ x, y, i, s, a: a * others });
-        sources.push({
-          x, y, reach: R * (0.45 + 0.55 * crowd), period: 2.8, life: 10,
-          phase: ((i * 1.7) % 2.8), strength: 0.75 * a * others * crowd, yours: false,
-        });
+        const fade = p.reduced ? 1 : Math.min(1, (nowMs - seen.current.get(s.key)!) / 1500);
+        const to = fishAt(plan!, i, p.reduced ? 4.2 : clock, p.reduced ? [] : touches.current);
+        const k = hash(s.key);
+        const look = lookFor(s.key);
+        const own = size * look.scale;
+        const was = drawn.get(s.key);
+        // A newcomer starts straight at its mark, facing a way of its own;
+        // under reduced motion every fish is simply there, still.
+        const now =
+          !was || p.reduced
+            ? spawnFish(to, ((k % 360) * Math.PI) / 180, own, ((k >>> 9) % 628) / 100)
+            : swim(was, to, dt, { size: own, alarm: alarmAt(plan!, i, clock, touches.current) });
+        drawn.set(s.key, now);
+        swimming.push({ spine: spine(now, own), size: own, look, o: (0.55 + 0.3 * ((i * 7) % 5) / 4) * fade * others, label: s.label });
       });
+      for (const k of drawn.keys()) if (!here.has(k)) drawn.delete(k);
 
-      const rings = ringsAt(t + 4.2, sources);
+      const rings: Ring[] = [];
 
       // Your stone: thrown, settling, or simply there.
-      let stone: { x: number; y: number; h: number; sunk: number; spin: number } | null = null;
+      let stone: Flying | null = null;
       if (p.you) {
         const since = p.throwFrom && !p.reduced ? (nowMs - p.throwFrom.t) / 1000 : Infinity;
         const rect = el.getBoundingClientRect();
@@ -256,100 +388,93 @@ export default function Pond({
           rings.push(...touchRings(frame.touches));
         }
         const landed = frame ? since - frame.stopAt : Infinity;
-        if (bell === null && landed >= 0) {
-          // Your rings: counted from the moment it stopped, so the first one
-          // leaves the stone as it lands rather than arriving already spread.
-          const P = 2.8;
-          const L = 10;
-          const fade = 0.95;
-          if (Number.isFinite(landed)) {
-            for (let j = Math.max(0, Math.ceil((landed - L) / P)); j * P <= landed; j++) {
-              const age = landed - j * P;
-              if (age > L) continue;
-              const u = age / L;
-              rings.push({
-                x: me.x, y: me.y, r: 3 + u ** 0.75 * R * 1.4,
-                o: Math.min(1, age / 0.4) * (1 - u) ** 1.7 * fade, yours: true,
-              });
-            }
-          } else {
+        if (p.reduced) {
+          // Still water: a few rings drawn once, never moving.
+          if (bell === null) {
             rings.push(
-              ...ringsAt(t + 4.2, [
-                { x: me.x, y: me.y, reach: R * 1.4, period: P, life: L, phase: 0, strength: fade, yours: true },
+              ...ringsAt(8.4, [
+                { x: me.x, y: me.y, reach: R * 1.4, period: 2.8, life: 10, phase: 0, strength: 0.95, yours: true },
               ]),
             );
           }
+        } else if (bell === null) {
+          if (Number.isFinite(landed)) {
+            // It landed: the big train, then the stone breathes now and then.
+            rings.push(...trainAt(landed, { x: me.x, y: me.y, reach: R * 1.4, yours: true, ...LANDING }));
+            rings.push(...breathsAt(landed, me, R * 1.2, seed(p.throwFrom)));
+          } else if (!p.throwFrom) {
+            rings.push(...breathsAt(t + SETTLED, me, R * 1.2, seed(null)));
+          }
         }
         if (bell !== null) {
-          // The bell: one wide ring after another from your stone.
-          const P = 3.4;
-          const L = 13;
-          for (let j = Math.max(0, Math.ceil((bell - L) / P)); j * P <= bell; j++) {
-            const age = bell - j * P;
-            if (age > L) continue;
-            const u = age / L;
-            rings.push({
-              x: me.x, y: me.y, r: 3 + u ** 0.75 * Math.max(w, h) * 0.75,
-              o: Math.min(1, age / 0.4) * (1 - u) ** 1.7 * 0.9, yours: true,
-            });
-          }
+          // The bell: one soft, wide train from your stone. Held at one
+          // moment under reduced motion, so it is there but does not spread.
+          const bellTrain: Train = { x: me.x, y: me.y, reach: Math.max(w, h) * 0.75, yours: true, ...BELL };
+          rings.push(...trainAt(p.reduced ? 3 : bell, bellTrain));
         }
       }
 
       // Flicked pebbles: their touches, and once sunk, a few rings of their own.
-      const flying: { x: number; y: number; h: number; sunk: number; spin: number }[] = [];
+      const flying: Flying[] = [];
       flicks.current = flicks.current.filter((f) => {
         const since = (nowMs - f.t0) / 1000;
-        const end = f.cfg.T + (SETTLE.rings - 1) * SETTLE.period + SETTLE.life;
+        const end = f.cfg.T + SETTLE.life + 1.5;
         if (since > end) return false;
         const frame = skimAt(since, f.cfg);
-        rings.push(...touchRings(frame.touches));
-        for (let j = 0; j < SETTLE.rings; j++) {
-          const age = since - f.cfg.T - j * SETTLE.period;
-          if (age < 0 || age > SETTLE.life) continue;
-          const u = age / SETTLE.life;
-          rings.push({
-            x: f.cfg.to.x, y: f.cfg.to.y, r: 2 + u ** 0.75 * SETTLE.reach,
-            o: Math.min(1, age / 0.3) * (1 - u) ** 1.7 * 0.7, yours: false,
-          });
-        }
+        rings.push(...touchRings(frame.touches, 0.7));
+        rings.push(...trainAt(since - f.cfg.T, { x: f.cfg.to.x, y: f.cfg.to.y, yours: false, ...SETTLE }));
         if (frame.stone.sunk < 1) flying.push(frame.stone);
         return true;
       });
 
       for (const r of rings) ring(r);
+      ctx.lineWidth = 1;
 
       for (const f of flying) {
-        const so = f.sunk > 0 ? 0.2 * (1 - f.sunk) : 0.22 - f.h * 0.03;
-        shadow(f.x, f.y + 1, 11 + f.sunk * 3, 4.5 + f.sunk * 3, so);
+        // The shadow stays on the water; the pebble is lifted off it by the
+        // hop, so the two part in the air and meet at each touch.
+        const sk = smooth(f.sunk);
+        const up = f.h / 4;
+        const so = f.sunk > 0 ? 0.2 * (1 - sk) : (0.22 - up * 0.07) * f.o;
+        shadow(f.x, f.y + 1, (11 + sk * 3) * (1 - up * 0.1), (4.5 + sk * 3) * (1 - up * 0.1), so);
+        const size = (1 + up * 0.06) * (1 - 0.2 * sk);
         pebble(
-          f.x, f.y - f.h - 2, 12, 9, (f.spin * 1.6 - 8) * (Math.PI / 180), PALE, 1 - f.sunk,
-          `rgba(${INK},${(0.35 * (1 - f.sunk)).toFixed(3)})`,
+          f.x, f.y - f.h - 2 + sk * 2, 12 * size, 9 * size, (f.spin - 8) * (Math.PI / 180), PALE, f.o,
+          `rgba(${INK},${(0.35 * f.o).toFixed(3)})`,
         );
       }
 
       const phone = w < 640;
       ctx.font = `${phone ? 11 : 12}px system-ui, -apple-system, 'Segoe UI', sans-serif`;
       ctx.textBaseline = 'middle';
-      for (const q of placed) {
-        const pw = 9 + ((q.i * 7) % 5);
-        pebble(q.x, q.y, pw, pw * 0.78, (((q.i * 37) % 180) - 90) * (Math.PI / 180), STONE, q.a);
-        if (q.s.label && q.a > 0) {
-          ctx.globalAlpha = q.a;
+      for (const f of swimming) {
+        fish(f.spine, f.size, f.look, f.o);
+        if (f.label && f.o > 0) {
+          ctx.globalAlpha = Math.min(1, f.o * 1.2);
           ctx.fillStyle = LABEL;
-          ctx.fillText(q.s.label, q.x + 13, q.y);
+          ctx.fillText(f.label, f.spine.head.x + plan!.size * 0.7, f.spine.head.y - plan!.size * 0.9);
           ctx.globalAlpha = 1;
         }
       }
 
       if (p.you) {
         if (stone) {
-          // In flight: a small shadow on the water, the stone just above it.
-          const sw = 12 + stone.sunk * 4;
-          const sh = 5 + stone.sunk * 4;
-          const so = stone.sunk > 0 ? 0.24 - 0.08 * stone.sunk : 0.26 - stone.h * 0.03;
+          // In flight: the shadow on the water, the stone lifted off it by
+          // the hop, so they part in the air and meet at each touch; the
+          // higher it is the smaller and fainter the shadow. Once it stops it
+          // settles into the water, a little smaller and fading as it goes,
+          // and its shadow becomes the one the settled stone keeps.
+          const sk = smooth(stone.sunk);
+          const up = stone.h / 8;
+          const sw = (12 + sk * 4) * (1 - up * 0.18);
+          const sh = (5 + sk * 4) * (1 - up * 0.18);
+          const so = stone.sunk > 0 ? 0.24 - 0.08 * sk : (0.26 - up * 0.1) * Math.max(stone.o, sk);
           shadow(stone.x, stone.y + 1, sw, sh, so);
-          pebble(stone.x, stone.y - stone.h - 2, 13, 10, (stone.spin - 8) * (Math.PI / 180), ACCENT, 1 - stone.sunk);
+          const size = (1 + up * 0.08) * (1 - 0.25 * sk);
+          pebble(
+            stone.x, stone.y - stone.h - 2 + sk * 2.5, 13 * size, 10 * size,
+            (stone.spin - 8) * (Math.PI / 180), ACCENT, stone.o,
+          );
         } else {
           // Settled: only the shadow of the stone under the water.
           shadow(me.x, me.y + 1, 16, 9, 0.16);

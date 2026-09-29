@@ -21,3 +21,7 @@ coverage/
 # Impeccable's per-project working files (detector cache, local consent).
 # The skill itself is installed globally, not vendored here.
 .impeccable/
+
+# MediaMTX writes a throwaway key and certificate here when MoQ is on.
+infra/mediamtx/auto.key
+infra/mediamtx/auto.crt

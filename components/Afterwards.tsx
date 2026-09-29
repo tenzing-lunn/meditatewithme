@@ -38,7 +38,7 @@ export default function Afterwards({
       <header className="pt-[calc(1rem+env(safe-area-inset-top))]">
         <Brand />
       </header>
-      <div className="mx-auto mt-[58dvh] flex w-full max-w-md flex-col items-center text-center screen-settle">
+      <div className="mx-auto mt-[58dvh] flex w-full max-w-md flex-col items-center text-center after-in">
         <p className="font-display text-minutes leading-none">
           {minutes} {minutes === 1 ? 'minute' : 'minutes'}.
         </p>

@@ -1,0 +1,57 @@
+# MediaMTX for Meditate With Me — live video.
+#
+# Only what differs from MediaMTX's defaults is here. Secrets are not: they
+# come from the environment (see README.md), because MediaMTX lets any setting
+# be overridden by MTX_<SETTING> — MTX_AUTHHTTPADDRESS carries the auth URL
+# as https://mtx:<secret>@<site>/api/live/auth (MediaMTX sends the secret as
+# Basic auth, so it never appears in a URL that gets logged), and the hook
+# script reads LIVE_HOOK_* itself.
+
+logLevel: info
+
+# Everyone who publishes is checked by our own route against Supabase.
+# Reading is public (the HLS stream is what the site shows), so reads never
+# wait on Vercel. The API, metrics and pprof are off, so nothing else needs
+# checking.
+authMethod: http
+authHTTPAddress: http://localhost:3000/api/live/auth
+authHTTPExclude:
+  - action: read
+  - action: playback
+
+api: false
+metrics: false
+pprof: false
+playback: false
+
+# Publishers: RTMP (OBS, most phone apps) and SRT (better over long, lossy
+# links). RTSP, WebRTC and MoQ are off until something needs them.
+rtsp: false
+webrtc: false
+moq: false
+rtmp: true
+rtmpAddress: :1935
+srt: true
+srtAddress: :8890
+
+# Viewers: HLS. Latency does not matter for a candle; steadiness does, so
+# plain fMP4 segments rather than low-latency parts. Always remuxed, so the
+# first viewer does not wait for a muxer to start.
+hls: true
+hlsAddress: :8888
+hlsVariant: fmp4
+hlsSegmentDuration: 2s
+hlsSegmentCount: 7
+hlsAlwaysRemux: true
+hlsAllowOrigins: ["*"]
+# Caddy sits in front on the server; this lets the logs show viewers, not it.
+hlsTrustedProxies: ["127.0.0.1"]
+
+# Only live/<slug> exists. Any other path is refused before auth is asked.
+paths:
+  "~^live/[a-z0-9]{8}$":
+    # Runs for as long as the stream is online; SIGINT when it goes offline.
+    # Not restarted if it exits: it only exits once MediaMTX is gone, and a
+    # restart would start a new `since`, making an old stream look new.
+    runOnOnline: sh hook.sh
+    runOnOnlineRestart: false

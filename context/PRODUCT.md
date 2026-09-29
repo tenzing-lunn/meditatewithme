@@ -14,6 +14,22 @@ and §3's history says what it replaced.
 
 ## 1. Live status
 
+**29 September 2026: How you sit, and the fish, go live.** Tenzing asked
+for `dev` to be merged into `main` (release commit `Release: How you sit,
+and the fish`) ahead of his own user tests, putting live everything in §2's
+*How you sit, and the fish* paragraph: *by yourself* or *with a guide* as a
+phrase in the arrival's sentence, the fish for the people here now on a
+loose map of the water, the chevron back, the singing-bowl icon, the new
+skim and rings, and Begin's sink and the ending's crossfade. **Jonny had not
+seen it.** The live video is **not** on in production: `LIVE_HLS_BASE`,
+`LIVE_HOOK_SECRET` and `LIVE_AUTH_SECRET` are set for `dev` previews only, so
+production's `/api/live` answers *nobody live* and *with a guide* reads
+*Nobody is guiding right now* until they are added for Production. Claude
+never pressed Begin; the start and end motion was checked silently on the
+demo pages, and the new skim was not watched in a browser before the merge.
+Rollback: redeploy `e515edb`, the Pale water release, or promote its Vercel
+deployment again.
+
 **23 September 2026: Pale water goes live.** Tenzing merged `dev` into
 `main` (release commit `Release: Pale water`), putting live everything
 §2's *On `dev`* paragraph describes: the pond, the one-sentence arrival with
@@ -105,12 +121,15 @@ three bells (picking one plays it), and silence or one of the eight beds
 (picking one plays it for about four seconds and lets it fade, the way the
 bell previews; it comes back at Begin — and fetches that recording, which
 can take a moment the first time). **Begin** starts the sitting in that
-click, as the bowl did, and throws your stone from the button: it skims
+click, as the bowl did: the sentence sinks into the water word by word,
+and your stone is thrown from the button: it skims
 across the water, slowing, and sinks at the centre, leaving its shadow and
-its rings. The sitting's words fade in once it has settled: the faint mark
-and the time left above, the company line and *Sound* and *End* below. At
-the bell the other stones go and one wide ring leaves yours; *Come back.*
-is held for ten seconds, then *N minutes. The water is still again.* with
+its rings — then now and then a soft ring, never on a beat. The sitting's
+words fade in once it has settled: the faint mark and the time left above,
+the company line and *Sound* and *End* below. At the bell the other stones
+go and one soft train of wide rings leaves yours; *Come back.* comes into
+focus with it and is held for ten seconds, then the sitting fades and
+*N minutes.* rises into the same line, with *The water is still again.* and
 *Again* and *Done*. The name and place, when due after a first sitting, are
 asked after Begin, and the last question's Next begins.
 
@@ -120,6 +139,38 @@ switch on the bowl, the earth and its candles in the sitting, and *With
 you this hour* on the ending. A guest can no longer choose *on your own*;
 a member still can, from the doors on Home, which kept its old layout and
 only took the new colours and type.
+
+**How you sit, and the fish, on `dev` since 27 September 2026 and live since
+29 September.** Not shown to Jonny; drawn first on the redesign canvas (*Two ways
+in · the fish*) and built from it at Tenzing's word. A guest now lands on
+the arrival as before, its sentence now opening with how you sit — *Sit
+**by yourself** for …* or *Sit **with a guide** until the bell at …*, a
+phrase picked like the length, the bell and the sound — and, with a
+guide, a line saying *Live now*, *The next session starts at …*, or
+*Nobody is guiding right now*; a chevron in the corner of a sitting
+goes back to the start. The tab and home-screen icon is the old singing
+bowl in blue on the pale water, in place of the flame (the shared-link
+card still shows the flame).
+Everyone else sitting right now (not everyone who sat this hour) is a
+small grey fish that swims nose first, its head, body and tail bending
+through its turns and with the wave of its swimming — never
+one for yourself, so sitting with nobody else is an empty pond. Each
+swims in its person's part of the world on a loose map (west left, north
+up), with their place written beside it only if they chose to share it;
+each
+wanders alone while the pond is quiet and they gather into milling swarms
+once it is crowded; touching the water scatters the nearby ones, and a
+skimmed pebble scatters them where it lands. *By yourself* leads to the
+sentence and Begin as before, and the sitting is your stone among the
+fish. *Guided meditation* starts the sitting in the click: whoever is on
+camera, framed on the water (fading in only once it plays, held through a
+blip of under 20 seconds, started by any tap in Low Power Mode), no fish,
+ending with everyone at the shared bell at :55; between two people on
+camera the line says when the next session starts, and with nobody live
+it is the water. A member still reaches the sitting through Home's older
+doors, which have not been changed and do not offer the guided sitting
+yet. Production shows none of it until `dev` is merged, and even then no
+video until its env names a video server.
 
 **Rebuilt on 14 September 2026** (`docs/ui-rebuild.md`, on `ui-warm`). The
 photographic room, the landing word, the settings panel and the ring are gone;

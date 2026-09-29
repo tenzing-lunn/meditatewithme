@@ -26,6 +26,7 @@ import { ICON, WORD } from './controls';
 import { displayName, type AuthState } from './useAuth';
 import { useClock } from './useClock';
 import { useFullscreen } from './useFullscreen';
+import { useLive } from './useLive';
 import { useWakeLock } from './useWakeLock';
 import type { Mix } from './useMix';
 import { useOrigin } from './useOrigin';
@@ -74,7 +75,8 @@ import { useWorld } from './useWorld';
  * The rail mounts every screen it will ever show, all at once, so anything
  * it holds is downloaded, parsed and rendered on the one page where nothing
  * but the arrival is on screen. `Account` is the same argument behind a
- * menu, and `Sitting` behind Begin.
+ * menu, and `Sitting` behind Begin — and `LiveLayer`, only ever in a sitting
+ * with others.
  *
  * Deliberately NOT here: `Arrive` and `Pond`, which are the landing and
  * must never wait for anything; `Afterwards`, which is 72 lines and holds a constant the
@@ -92,6 +94,7 @@ const CHUNKS = {
   name: () => import('./NameScreen'),
   origin: () => import('./OriginScreen'),
   sitting: () => import('./Sitting'),
+  live: () => import('./LiveLayer'),
 } as const;
 
 const nothing = () => null;
@@ -99,6 +102,7 @@ const Account = dynamic(CHUNKS.account, { loading: nothing });
 const NameScreen = dynamic(CHUNKS.name, { loading: nothing });
 const OriginScreen = dynamic(CHUNKS.origin, { loading: nothing });
 const Sitting = dynamic(CHUNKS.sitting, { loading: nothing });
+const LiveLayer = dynamic(CHUNKS.live, { loading: nothing });
 
 /**
  * Fetch all of them, once the doors are on screen and the browser is idle.
@@ -152,8 +156,11 @@ type Thrown = { at: Point; t: number } | null;
 /** From Begin to the stone settled: the throw's five seconds and its sink. */
 const THROW_MS = 6400;
 
-/** One stone per person lit this hour, and no more than the water can hold. */
-const MAX_STONES = 60;
+/** The held sitting fading out as the minutes come in. */
+const FADE_MS = 800;
+
+/** One fish per person lit this hour, and no more than the water can hold. */
+const MAX_STONES = 400;
 
 function newSittingId(): string {
   try {
@@ -261,13 +268,27 @@ export default function Journey({
   // ended, before the minutes are said.
   const held = stage.kind === 'finished' && mono - stage.endedAt < COOLDOWN_MS;
   const sit = stage.kind === 'sitting' || held ? stage.sit : null;
+  // Then the sitting fades out from under the minutes rather than vanishing.
+  const fading = stage.kind === 'finished' && !held && mono - stage.endedAt < COOLDOWN_MS + FADE_MS;
+  const shownSit = sit ?? (fading ? stage.sit : null);
 
   // The others' stones, only while sitting with others, and through the
   // held beat. And on the arrival, which opens on them.
   const withOthersNow = sit !== null && sit.withOthers;
-  const world = useWorld(withOthersNow || (stage.kind === 'rail' && stage.at === 'arrive'));
+  const guidedNow = sit !== null && sit.guided;
+  const atArrive = stage.kind === 'rail' && stage.at === 'arrive';
+  const world = useWorld(withOthersNow || atArrive);
+  /** *By yourself* or *with a guide*, chosen in the arrival's sentence. */
+  const [guidedPick, setGuidedPick] = useState(false);
   const labels = world.points.flatMap((p) => p.labels ?? []);
   const ownLabel = profile.share ? composeLabel(profile.name, profile.origin) : null;
+
+  // Whoever is on camera, framed on the water, in a guided sitting — and
+  // on the arrival, for the line under the sentence. Low Power Mode
+  // refuses to autoplay even muted video; a tap on the sitting is a gesture
+  // it accepts, so any tap starts it (`livePlay`).
+  const onCamera = useLive(guidedNow || atArrive);
+  const livePlay = useRef<(() => void) | null>(null);
 
   // Seen by name only while sitting with others, and only if they said so.
   const { count, litCount, begin: recordBegin } = usePresence({
@@ -340,7 +361,7 @@ export default function Journey({
     return () => document.removeEventListener('keydown', onKey);
   }, [back]);
 
-  const begin = useCallback((thrown: Thrown) => {
+  const begin = useCallback((thrown: Thrown, guided = false) => {
     // Inside the click, all of it. The context, the graph, the stored mix,
     // and full screen if it was asked for: none of them start any other way.
     unlockAudio();
@@ -353,7 +374,9 @@ export default function Journey({
 
     const startedAt = performance.now();
     const sessionNow = now ?? serverNow();
-    const together = prefs.showCount && prefs.untilBell;
+    // A guided sitting ends with everyone on the shared bell at :55, which
+    // is where the person on camera hands over.
+    const together = guided || (prefs.showCount && prefs.untilBell);
     const end = together
       ? monotonicEndAtFromServerTarget(nextSharedBellAt(sessionNow), sessionNow, startedAt)
       : computeEndsAt(startedAt, prefs.timerMinutes);
@@ -373,7 +396,8 @@ export default function Journey({
         startedAtWall: Date.now(),
         endsAt: end,
         together,
-        withOthers: prefs.showCount,
+        withOthers: guided || prefs.showCount,
+        guided,
       },
       bell,
       opening,
@@ -453,17 +477,29 @@ export default function Journey({
 
   const bellLabel = now === null ? null : localTime(nextSharedBellAt(now));
 
-  // One stone per person lit this hour, each keyed by its cell and its place
-  // in it, so a stone keeps its spot on the water for as long as it is there.
+  // One fish per person here now — not everyone who sat this hour and left —
+  // each keyed by its cell and its place in it, so a fish keeps its path
+  // while its person stays. While you sit, your own heartbeat is among them
+  // and you are not a fish: one comes off — yours by name if you share one —
+  // down to the count of everybody else here (`count` includes you). Nobody
+  // else here, no fish.
+  const sitting = sit !== null;
   const stones = useMemo<Stone[]>(() => {
     const out: Stone[] = [];
     for (const p of world.points) {
-      for (let k = 0; k < Math.max(1, p.lit) && out.length < MAX_STONES; k++) {
-        out.push({ key: `${p.lat},${p.lon}#${k}`, label: p.labels?.[k] });
+      for (let k = 0; k < p.live && out.length < MAX_STONES; k++) {
+        out.push({ key: `${p.lat},${p.lon}#${k}`, label: p.labels?.[k], lat: p.lat, lon: p.lon });
       }
     }
+    if (!sitting) return out;
+    const others = Math.max(0, count === null ? out.length - 1 : Math.min(out.length, count - 1));
+    while (out.length > others) {
+      let drop = ownLabel ? out.findIndex((s) => s.label === ownLabel) : -1;
+      for (let k = out.length - 1; drop < 0 && k >= 0; k--) if (!out[k]!.label) drop = k;
+      out.splice(drop < 0 ? out.length - 1 : drop, 1);
+    }
     return out;
-  }, [world.points]);
+  }, [world.points, sitting, count, ownLabel]);
 
   // Where each question sits on this visitor's own rail, counted without
   // the arrival, which is not a question.
@@ -473,9 +509,9 @@ export default function Journey({
   /** On from a question: the next one, or, after the last, the sitting. */
   const onward = useCallback(() => {
     const s = stageRef.current;
-    if (s.kind === 'rail' && step(screens, s.at, 1) === null) begin(null);
+    if (s.kind === 'rail' && step(screens, s.at, 1) === null) begin(null, guidedPick);
     else next();
-  }, [screens, begin, next]);
+  }, [screens, begin, next, guidedPick]);
 
   const menu = signedIn ? (
     <button type="button" onClick={home} className={WORD}>
@@ -496,7 +532,14 @@ export default function Journey({
   const finished = stage.kind === 'finished';
   const thrown = stage.kind === 'rail' ? null : stage.thrown;
   const onWater = stage.kind !== 'rail' || stage.at === 'arrive';
-  const showStones = stage.kind === 'rail' || (sit?.withOthers ?? false) || finished;
+  // No fish in a guided sitting: the picture is the company there.
+  const guided = stage.kind !== 'rail' && stage.sit.guided;
+  const showStones = !guided && (stage.kind === 'rail' || (sit?.withOthers ?? false) || finished);
+  const guideLine = onCamera.live
+    ? 'Live now'
+    : onCamera.next !== null
+      ? `The next session starts at ${localTime(onCamera.next)}`
+      : 'Nobody is guiding right now';
 
   return (
     <main id="main" className="relative h-dvh overflow-clip bg-paper text-ink">
@@ -515,11 +558,13 @@ export default function Journey({
         />
       </div>
 
+      {guidedNow && <LiveLayer src={onCamera.live?.hls ?? null} playRef={livePlay} />}
+
       {finished && !held && (
         <div className="absolute inset-0">
           <Afterwards
             minutes={stage.minutes}
-            onAgain={() => begin(null)}
+            onAgain={() => begin(null, guidedPick)}
             onDone={
               home
                 ? () => {
@@ -536,15 +581,19 @@ export default function Journey({
         </div>
       )}
 
-      {sit !== null && (
+      {shownSit !== null && (
         <div
-          className={`absolute inset-0 transition-opacity duration-1000 motion-reduce:transition-none ${
-            landed ? 'opacity-100' : 'pointer-events-none opacity-0'
-          }`}
-          inert={!landed}
+          className={`absolute inset-0 transition-opacity motion-reduce:transition-none ${
+            fading ? 'duration-700' : 'duration-1000'
+          } ${landed && !fading ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+          inert={!landed || fading}
+          onPointerDown={(e) => {
+            livePlay.current?.();
+            pond.current?.scatter({ x: e.clientX, y: e.clientY });
+          }}
         >
           <Sitting
-            sit={sit}
+            sit={shownSit}
             now={now}
             mono={mono}
             count={count}
@@ -556,6 +605,8 @@ export default function Journey({
             onSoundOpen={mix.unmute}
             onEnd={endEarly}
             ended={finished}
+            nextSession={shownSit.guided && !onCamera.live ? onCamera.next : null}
+            onBack={endEarly}
           />
         </div>
       )}
@@ -591,10 +642,17 @@ export default function Journey({
                       leaving={stage.kind !== 'rail'}
                       onBegin={(at) => {
                         if (step(screens, 'arrive', 1) === null) {
-                          begin({ at, t: performance.now() });
+                          begin({ at, t: performance.now() }, guidedPick);
                         } else next();
                       }}
                       onWater={(at) => pond.current?.flick(at)}
+                      guided={guidedPick}
+                      guide={guideLine}
+                      onGuided={(g) => {
+                        setGuidedPick(g);
+                        // By yourself is among the fish, as the door was.
+                        if (!g) update({ showCount: true });
+                      }}
                       onPreviewBell={(kind) => {
                         unlockAudio();
                         previewBell(kind);

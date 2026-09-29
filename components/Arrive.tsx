@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 
 import { TIMER_STOPS } from '@/lib/timer';
 import { BELL_KINDS, type BellKind, type UserPreferences } from '@/lib/types';
@@ -44,6 +44,9 @@ const SOUND_WORDS: Record<TrackSlug | 'silence', string> = {
   night: 'night sounds',
 };
 
+/** Everything but the sentence, on Begin: it goes quietly, before the words. */
+const FADE = 'transition-opacity duration-300 motion-reduce:transition-none';
+
 const PHRASE = `rounded-sm underline decoration-ink-3/60 decoration-1 underline-offset-[0.18em] transition-colors duration-200 hover:text-ember hover:decoration-ember motion-reduce:transition-none ${FOCUS}`;
 
 
@@ -62,6 +65,9 @@ export default function Arrive({
   onTaste,
   onHush,
   onWater,
+  guided,
+  guide,
+  onGuided,
 }: {
   prefs: UserPreferences;
   update: (patch: Partial<UserPreferences>) => void;
@@ -84,11 +90,63 @@ export default function Arrive({
   onHush: () => void;
   /** A tap on bare water, in client pixels: somewhere to skim a pebble to. */
   onWater?: (at: Point) => void;
+  /** Sitting with whoever is on camera, rather than by yourself. */
+  guided: boolean;
+  /** Who is guiding: "Live now", or when the next session starts. */
+  guide: string;
+  onGuided: (guided: boolean) => void;
 }) {
-  const [open, setOpen] = useState<'t' | 'b' | 's' | null>(null);
+  const fade = `${FADE} ${leaving ? 'opacity-0' : ''}`;
+  const [open, setOpen] = useState<'m' | 't' | 'b' | 's' | null>(null);
   const together = prefs.showCount && prefs.untilBell;
   const sound: TrackSlug | 'silence' =
     TRACKS.find((t) => (prefs.soundMix[t.slug] ?? 0) > 0)?.slug ?? 'silence';
+
+  // Each word and phrase of the sentence, numbered in reading order, so on
+  // Begin they go into the water one after another (`.sink`).
+  let n = 0;
+  const sink = (): CSSProperties => ({ '--i': n++ }) as CSSProperties;
+  const words = (text: string) =>
+    text.split(/(\s+)/).map((part, k) =>
+      part.trim() === '' ? part : (
+        <span key={k} className="sink" style={sink()}>
+          {part}
+        </span>
+      ),
+    );
+  const sentence = (
+    <>
+      {words('Sit ')}
+      <Phrase name="How" onOpen={() => setOpen('m')} style={sink()}>
+        {guided ? 'with a guide' : 'by yourself'}
+      </Phrase>
+      {/* A guided sitting is the session's: it ends on the shared bell. */}
+      {guided ? (
+        words(` until the bell${bellLabel ? ` at ${bellLabel}` : ''}`)
+      ) : (
+        <>
+          {together ? ' ' : words(' for ')}
+          <Phrase name="How long" onOpen={() => setOpen('t')} style={sink()}>
+            {together ? `until the bell${bellLabel ? ` at ${bellLabel}` : ''}` : minutes(prefs.timerMinutes)}
+          </Phrase>
+        </>
+      )}
+      {words(', end with ')}
+      <Phrase name="The bell" onOpen={() => setOpen('b')} style={sink()}>
+        {BELL_WORDS[prefs.endBell]}
+      </Phrase>
+      {words(sound === 'silence' ? ', in ' : ', with ')}
+      {/* The full stop stays with the last phrase, never a line of its own. */}
+      <span className="whitespace-nowrap">
+        <Phrase name="Sound" onOpen={() => setOpen('s')} style={sink()}>
+          {SOUND_WORDS[sound]}
+        </Phrase>
+        <span className="sink" style={sink()}>
+          .
+        </span>
+      </span>
+    </>
+  );
 
   const pickSound = (slug: TrackSlug | 'silence') => {
     const patch: MixPatch = {};
@@ -98,10 +156,11 @@ export default function Arrive({
 
   return (
     <div
-      className={`relative flex h-full w-full flex-col px-6 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(2rem+env(safe-area-inset-bottom))] transition-opacity duration-700 motion-reduce:transition-none sm:px-14 lg:px-24 ${
-        leaving ? 'pointer-events-none opacity-0' : 'opacity-100'
+      className={`relative flex h-full w-full flex-col px-6 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(2rem+env(safe-area-inset-bottom))] sm:px-14 lg:px-24 ${
+        leaving ? 'pointer-events-none' : ''
       }`}
       inert={leaving}
+      data-leaving={leaving || undefined}
       onClick={(e) => {
         // Only bare water: never a phrase, a list, Begin, the menu or a word.
         const hit = e.target as Element;
@@ -109,7 +168,7 @@ export default function Arrive({
         onWater?.({ x: e.clientX, y: e.clientY });
       }}
     >
-      <header className="flex items-center justify-between">
+      <header className={`flex items-center justify-between ${fade}`}>
         <Brand />
         <div className="flex items-center gap-3 text-caption text-ink-3">
           {clock && <span className="tabular-nums">{clock}</span>}
@@ -119,23 +178,15 @@ export default function Arrive({
 
       <div className="mt-auto max-w-[36rem]">
         {others !== null && others > 0 && (
-          <p className="mb-4 text-body text-ink-2">Each stone is someone sitting this hour.</p>
+          <p className={`mb-4 text-body text-ink-2 ${fade}`}>Each fish is someone sitting this hour.</p>
         )}
-        <p className="font-display text-question leading-[1.35] text-ink-2 sm:text-question-lg">
-          {together ? 'Sit ' : 'Sit for '}
-          <Phrase name="How long" onOpen={() => setOpen('t')}>
-            {together ? `until the bell${bellLabel ? ` at ${bellLabel}` : ''}` : minutes(prefs.timerMinutes)}
-          </Phrase>
-          {', end with '}
-          <Phrase name="The bell" onOpen={() => setOpen('b')}>
-            {BELL_WORDS[prefs.endBell]}
-          </Phrase>
-          {sound === 'silence' ? ', in ' : ', with '}
-          <Phrase name="Sound" onOpen={() => setOpen('s')}>
-            {SOUND_WORDS[sound]}
-          </Phrase>
-          .
+        <p
+          className="font-display text-question leading-[1.35] text-ink-2 sm:text-question-lg"
+          style={{ '--n': n } as CSSProperties}
+        >
+          {sentence}
         </p>
+        {guided && <p className={`mt-3 text-body text-ink-3 ${fade}`}>{guide}.</p>}
 
         <button
           type="button"
@@ -146,11 +197,33 @@ export default function Arrive({
           }}
           className={`mt-10 inline-flex min-h-12 items-center gap-3 rounded-sm pr-2 text-answer text-ink transition-opacity duration-200 hover:opacity-80 disabled:opacity-40 motion-reduce:transition-none ${FOCUS}`}
         >
-          <span data-stone className={`block h-2.5 w-3 rounded-[52%_46%_50%_48%/56%_50%_47%_44%] ${leaving ? 'bg-transparent' : 'bg-ember'}`} />
-          Begin
+          {/* The pebble in your hand: it hands over to the thrown one, which
+              fades up out of the same spot over the same fifth of a second. */}
+          <span
+            data-stone
+            className={`block h-2.5 w-3 rounded-[52%_46%_50%_48%/56%_50%_47%_44%] bg-ember transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none ${
+              leaving ? 'scale-75 opacity-0' : ''
+            }`}
+          />
+          <span className={fade}>Begin</span>
         </button>
       </div>
 
+      {open === 'm' && (
+        <Picker
+          title="How you sit"
+          value={guided ? 'guided' : 'alone'}
+          options={[
+            { value: 'alone', label: 'by yourself' },
+            { value: 'guided', label: 'with a guide' },
+          ]}
+          onConfirm={(v) => {
+            onGuided(v === 'guided');
+            setOpen(null);
+          }}
+          onCancel={() => setOpen(null)}
+        />
+      )}
       {open === 't' && (
         <Picker
           title="How long"
@@ -210,10 +283,13 @@ function minutes(m: number): string {
 function Phrase({
   name,
   onOpen,
+  style,
   children,
 }: {
   name: string;
   onOpen: () => void;
+  /** Its place in the sentence, for the sink on Begin. */
+  style?: CSSProperties;
   children: string;
 }) {
   return (
@@ -222,7 +298,8 @@ function Phrase({
       aria-haspopup="dialog"
       aria-label={`${name}: ${children}`}
       onClick={onOpen}
-      className={`${PHRASE} text-ink`}
+      className={`${PHRASE} sink text-ink`}
+      style={style}
     >
       {children}
     </button>

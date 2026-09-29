@@ -345,3 +345,8 @@ invoice you weren't expecting" promise forbids.
   17 and 18 are moot since the rebuild deleted the components they named;
   its own header says which. Part B's open rows are the ones its B10 table
   does not strike through.
+- `plans/live-video.md` — live video for *meditate with others*
+  (platform reopened after research on 26 September): collaborators given
+  stream keys, the Chiang Mai house first on 9 November
+  2026. New work outside v1; nothing is built until Phase 0's decisions are
+  made and the price is agreed.
