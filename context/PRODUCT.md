@@ -25,8 +25,11 @@ seen it.** The live video is **not** on in production: `LIVE_HLS_BASE`,
 `LIVE_HOOK_SECRET` and `LIVE_AUTH_SECRET` are set for `dev` previews only, so
 production's `/api/live` answers *nobody live* and *with a guide* reads
 *Nobody is guiding right now* until they are added for Production. Claude
-never pressed Begin; the start and end motion was checked silently on the
-demo pages, and the new skim was not watched in a browser before the merge.
+never pressed Begin (a real sitting writes shared state). After the merge
+the skim and rings were stepped frame by frame on the silent demo, desktop
+and phone, on a frozen clock, and the sentence's sink, *Come back.* and the
+minutes scrubbed through their animations: the landing train was softened
+and the sink's fade made to lag its drift, on `dev`.
 Rollback: redeploy `e515edb`, the Pale water release, or promote its Vercel
 deployment again.
 

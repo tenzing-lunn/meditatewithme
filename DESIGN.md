@@ -876,8 +876,8 @@ closer behind the one in front, each fainter, a little smaller and thinner.
 Every ring slows as it spreads, thins, and fades as its energy spreads out
 (as one over the square root of its radius), then the water is still. Each
 touch leaves a train of two or three, smaller for the later, softer hops;
-the stop leaves the biggest, five rings over 9s. After that your stone
-**breathes**: one soft ring now and then, a third as strong as the
+the stop leaves the biggest, four rings over 9s at 0.6 strength and 1.2px, in the touches' family rather than a target. After that your stone
+**breathes**: one soft ring now and then, about half as strong as the
 landing, rising over 1.4s, a few pixels off centre. The gaps are seeded
 and irregular — shorter just after the landing, stretching over the first
 minute to about twelve seconds on average, six to twenty-four, never two
@@ -938,8 +938,9 @@ and it rests with the controls — a tap shows it.
   name's line.
 - **Begin**: the sentence goes into the water. Each word and phrase is a
   `.sink` numbered in reading order; on `[data-leaving]` each fades, drifts
-  down 0.25rem and blurs 2px over 340–420ms, staggered across 220ms, so the
-  whole sentence is gone in about 0.6s. The header, the fish line and the
+  down 0.25rem and blurs 2px over 380ms, staggered across 220ms, so the
+  whole sentence is gone in 0.6s; the fade is an ease-in, lagging the drift,
+  so each word is seen going down before it goes. The header, the fish line and the
   word *Begin* fade together over 300ms. The pebble beside *Begin* shrinks
   to 0.75 and fades over 200ms while the thrown stone fades up out of the
   same spot over the same 0.2s, so one hands over to the other. Under

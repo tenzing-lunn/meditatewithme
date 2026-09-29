@@ -339,10 +339,11 @@ body {
   opacity: 0;
   transform: translateY(0.25rem);
   filter: blur(2px);
+  /* The fade lags the drift, so each word is seen going down before it goes. */
   transition:
-    opacity 340ms var(--ease-rail),
-    transform 420ms var(--ease-rail),
-    filter 420ms var(--ease-rail);
+    opacity 380ms cubic-bezier(0.4, 0, 1, 1),
+    transform 380ms var(--ease-rail),
+    filter 380ms var(--ease-rail);
   transition-delay: calc(var(--i, 0) / var(--n, 1) * 220ms);
 }
 
