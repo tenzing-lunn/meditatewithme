@@ -1489,6 +1489,14 @@ journey; being signed in changes only its corner — `Account` (*Sign in*) or
 over the pond). The table below is production until that is merged. Google
 sign-in: `context/GOOGLE_SIGN_IN.md`.
 
+**The email opt-in.** Google's consent screen cannot ask it, so the sign-in
+screens do: `askEmailUpdates` holds the switch in `mwm.emailUpdates` as
+either path starts (Google's redirect reloads the page), and
+`useEmailUpdates`, called in `Entry`, writes it to `profiles.email_updates`
+once there is a user and forgets it. A yes always lands; a no only over
+null, so a second-device sign-in unsubscribes nobody. A trigger stamps
+`email_updates_at` with the server's clock as the consent record.
+
 Which screen you get at `/` is decided by one fact: whether you are signed in.
 
 | | Signed out | Signed in |

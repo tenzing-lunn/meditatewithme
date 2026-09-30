@@ -6,6 +6,8 @@ import { FIELD, PRIMARY, WORD } from './controls';
 import type { AuthState } from './useAuth';
 import type { SyncStatus } from './useSyncPreferences';
 import GoogleSignIn from './GoogleSignIn';
+import Switch from './Switch';
+import { askEmailUpdates } from './useEmailUpdates';
 
 /**
  * The account offer, as a panel that drops from the control that opened it.
@@ -116,6 +118,7 @@ export default function Account({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(linkError ?? null);
   const [resent, setResent] = useState(false);
+  const [updates, setUpdates] = useState(false);
 
   const wrap = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -209,6 +212,7 @@ export default function Account({
   }
 
   const send = async (withName: string | undefined) => {
+    askEmailUpdates(updates);
     setBusy(true);
     setError(null);
     const message = await signIn(email.trim(), withName);
@@ -319,7 +323,9 @@ export default function Account({
               )}
 
               {step !== 'code' && <>
-                <GoogleSignIn signIn={signInWithGoogle} disabled={busy} onError={setError} onBusyChange={setBusy} />
+                <Switch checked={updates} onChange={setUpdates} label="Email me when the app is ready"
+                  description="And now and then, news of the site." />
+                <GoogleSignIn signIn={() => { askEmailUpdates(updates); return signInWithGoogle(); }} disabled={busy} onError={setError} onBusyChange={setBusy} />
                 <div aria-hidden className="flex items-center gap-3 text-caption text-ink-3">
                   <span className="h-px flex-1 bg-rule" />
                   or

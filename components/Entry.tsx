@@ -6,6 +6,7 @@ import type { MixPatch } from './Sounds';
 import Journey from './Journey';
 
 import { hasStoredSession, useAuth } from './useAuth';
+import { useEmailUpdates } from './useEmailUpdates';
 import { useMix } from './useMix';
 import { usePractice } from './usePractice';
 import { usePreferences } from './usePreferences';
@@ -44,6 +45,7 @@ export default function Entry() {
 
   const userId = auth.status === 'signed-in' ? auth.user.id : null;
   const sync = useSyncPreferences({ userId, prefs, replace, loaded });
+  useEmailUpdates(userId);
 
   // The log works signed out. Signing in only carries it between devices.
   const { entries, record, loaded: logLoaded } = usePractice(userId);

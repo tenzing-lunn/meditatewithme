@@ -181,7 +181,14 @@ everybody, signed in or not, lands on the pond, and the only difference is
 the top-right corner. A guest sees *Sign in* there, which opens the panel
 straight away — *Continue with Google* (live since the same day, under
 Tenzing's Google account), or an email code — with *Don't have an account?
-Create one* at its foot turning it to *Create account*, name first. Signed
+Create one* at its foot turning it to *Create account*, name first. **On
+`dev` since 30 September 2026**, both that panel and *Would you like to be
+remembered?* carry an unticked switch above *Continue with Google*, *Email
+me when the app is ready* (*And now and then, news of the site.*), which
+applies to Google and the email code alike and lands in
+`profiles.email_updates` once signed in. Nothing sends mail to that list,
+there is no unsubscribe yet, and the privacy notice that has to cover it
+is still unpublished; Jonny has not been asked. Signed
 in, the corner is your first name; pressing it fades the name and slides
 *Account · Settings · Layout* out of its place (on a phone the wordmark and
 clock fade for them), and pressing elsewhere slides them back. *Account*:
