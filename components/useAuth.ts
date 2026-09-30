@@ -446,9 +446,14 @@ export function useAuth() {
         { emailRedirectTo: `${window.location.origin}/` },
       );
       if (!error) return null;
-      return error.status === 429
-        ? 'Too many emails just now. Wait a minute and try again.'
-        : 'That address could not be used. Check it and try again.';
+      if (error.status === 429) return 'Too many emails just now. Wait a minute and try again.';
+      // Found 30 September 2026: a friend tried seven times at an address
+      // that already had its own account, and was told only to check it.
+      if (error.code === 'email_exists') {
+        return 'That address already has its own account here. Sign out and sign in with it instead.';
+      }
+      if (error.code === 'email_address_invalid') return 'That does not look like an email address.';
+      return 'That address could not be used. Check it and try again.';
     } catch {
       return 'Could not reach the server. Please try again.';
     }

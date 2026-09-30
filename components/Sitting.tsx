@@ -17,6 +17,8 @@ import Sounds, { type MixPatch } from './Sounds';
 
 /** Stillness, in ms, before Sound and End rest. */
 const CONTROLS_REST_MS = 4000;
+/** How long *End the sitting now?* waits before it takes itself back. */
+const CONFIRM_MS = 6000;
 
 export interface Sit {
   /** Its own id, minted at the strike. Carried into the practice log so a
@@ -58,6 +60,13 @@ export interface Sit {
  * sound sheet is open and while focus is inside them, so a keyboard never
  * tabs onto something it cannot see; resting, they cannot be pressed, and
  * the tap that wakes them lands on the sitting instead.
+ *
+ * END ASKS FIRST
+ * End does not end: it turns the two words into *End the sitting now?* with
+ * *Yes, end* and *Keep sitting*, in the same place. The keyboard lands on
+ * *Keep sitting*, Escape is the same as pressing it, and left alone for six
+ * seconds the question takes itself back, so a stray tap in the dark never
+ * costs a sitting.
  *
  * ENDED
  * With `ended` the bell has rung and this is the held beat before the
@@ -102,6 +111,7 @@ export default function Sitting({
   onBack?: () => void;
 }) {
   const [soundOpen, setSoundOpen] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [awake, setAwake] = useState(true);
   const [focusInside, setFocusInside] = useState(false);
   const rest = useRef(0);
@@ -146,10 +156,36 @@ export default function Sitting({
 
   // The bell may ring with the sheet open; it goes with the controls.
   useEffect(() => {
-    if (ended) setSoundOpen(false);
+    if (ended) {
+      setSoundOpen(false);
+      setConfirming(false);
+    }
   }, [ended]);
 
-  const shown = !ended && (awake || soundOpen || focusInside);
+  const endButton = useRef<HTMLButtonElement | null>(null);
+  const keepButton = useRef<HTMLButtonElement | null>(null);
+  const keep = useCallback(() => {
+    setConfirming(false);
+    // Back on *End*, which is about to be there again.
+    requestAnimationFrame(() => endButton.current?.focus({ preventScroll: true }));
+  }, []);
+  useEffect(() => {
+    if (!confirming) return;
+    keepButton.current?.focus({ preventScroll: true });
+    const timer = window.setTimeout(() => setConfirming(false), CONFIRM_MS);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.preventDefault();
+      keep();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [confirming, keep]);
+
+  const shown = !ended && (awake || soundOpen || confirming || focusInside);
   const controls = `transition-opacity duration-500 motion-reduce:transition-none ${
     shown ? 'opacity-100' : 'pointer-events-none opacity-0'
   }`;
@@ -223,21 +259,45 @@ export default function Sitting({
           inert={ended}
           {...holdWhileFocused}
         >
-          <button
-            ref={soundButton}
-            type="button"
-            onClick={() => {
-              if (!soundOpen) onSoundOpen();
-              setSoundOpen((v) => !v);
-            }}
-            aria-expanded={soundOpen}
-            className={WORD}
-          >
-            Sound
-          </button>
-          <button type="button" onClick={onEnd} className={WORD}>
-            End
-          </button>
+          {confirming ? (
+            <div role="group" aria-label="End the sitting now?" className="flex flex-col items-center gap-1 sm:flex-row sm:gap-4">
+              <p className="font-display text-body text-ink">End the sitting now?</p>
+              <div className="flex gap-4">
+                <button type="button" onClick={onEnd} className={`${WORD} text-ink`}>
+                  Yes, end
+                </button>
+                <button ref={keepButton} type="button" onClick={keep} className={WORD}>
+                  Keep sitting
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <button
+                ref={soundButton}
+                type="button"
+                onClick={() => {
+                  if (!soundOpen) onSoundOpen();
+                  setSoundOpen((v) => !v);
+                }}
+                aria-expanded={soundOpen}
+                className={WORD}
+              >
+                Sound
+              </button>
+              <button
+                ref={endButton}
+                type="button"
+                onClick={() => {
+                  setSoundOpen(false);
+                  setConfirming(true);
+                }}
+                className={WORD}
+              >
+                End
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
