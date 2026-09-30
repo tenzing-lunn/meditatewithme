@@ -32,7 +32,9 @@ import { DEFAULT_MASTER, MASTER_KEY, TRACKS, type TrackSlug } from './mix';
  * the *Sound* button opens during a sitting. Until 20 September 2026 those
  * were three different controls, so somebody who learned the mix on the rail
  * met a different instrument at every other door. The rail's is the one that
- * stayed, and this is it.
+ * stayed, and this is it. The sitting's sheet leaves out *Volume* (since
+ * 30 September 2026): mid-sitting the device's own buttons are the volume,
+ * and a slider over the water was one control too many.
  *
  * WHAT IS ALLOWED TO BE HEARD
  * Nothing here builds an audio graph or raises a master on its own. Every
@@ -95,6 +97,7 @@ export default function Sounds({
   onSound,
   onFirst,
   tight = false,
+  volume = true,
 }: {
   mix: Record<string, number>;
   /**
@@ -116,6 +119,8 @@ export default function Sounds({
    * the size a thumb wants.
    */
   tight?: boolean;
+  /** The *Volume* row under a chosen bed. Off in the sitting's sheet. */
+  volume?: boolean;
 }) {
   const prefix = useId();
   const tiles = useRef<(HTMLButtonElement | null)[]>([]);
@@ -189,7 +194,7 @@ export default function Sounds({
         })}
       </div>
 
-      {chosen !== 'silence' && (
+      {volume && chosen !== 'silence' && (
         // Not a sixth sound: how loud the one that is on is. It only exists
         // once there is something for it to be the volume of.
         <div className="flex items-center gap-3">

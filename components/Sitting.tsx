@@ -48,7 +48,7 @@ export interface Sit {
  * the thing. When someone is on camera `Journey` frames them on the water
  * (`LiveLayer`); between two of them the line says when the next starts.
  *
- * Sound opens the six tiles and their Volume in a sheet above the foot; the
+ * Sound opens the tiles, without their Volume, in a sheet above the foot; the
  * caller raises the master when it opens, since a first-timer's graph was
  * built silent. Escape closes it and puts the keyboard back on *Sound*; a tap
  * anywhere outside it closes it and leaves the tap where it landed.
@@ -164,13 +164,18 @@ export default function Sitting({
 
   const endButton = useRef<HTMLButtonElement | null>(null);
   const keepButton = useRef<HTMLButtonElement | null>(null);
+  const refocusEnd = useRef(false);
   const keep = useCallback(() => {
+    refocusEnd.current = true;
     setConfirming(false);
-    // Back on *End*, which is about to be there again.
-    requestAnimationFrame(() => endButton.current?.focus({ preventScroll: true }));
   }, []);
   useEffect(() => {
-    if (!confirming) return;
+    if (!confirming) {
+      // Back on *End*, now that it is there again.
+      if (refocusEnd.current) endButton.current?.focus({ preventScroll: true });
+      refocusEnd.current = false;
+      return;
+    }
     keepButton.current?.focus({ preventScroll: true });
     const timer = window.setTimeout(() => setConfirming(false), CONFIRM_MS);
     const onKey = (e: KeyboardEvent) => {
@@ -247,7 +252,7 @@ export default function Sitting({
         {soundOpen && (
           <div ref={sheet} className="absolute inset-x-0 bottom-full mx-auto w-full max-w-md px-4 pb-3 sm:right-10 sm:left-auto">
             <div className="rounded-card border border-rule bg-surface/90 p-4 shadow-menu">
-              <Sounds mix={soundMix} onSound={onSound} tight />
+              <Sounds mix={soundMix} onSound={onSound} tight volume={false} />
             </div>
           </div>
         )}

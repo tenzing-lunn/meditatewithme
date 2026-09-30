@@ -674,6 +674,9 @@ was a different instrument at both of the other doors. The only thing that
 varies is the wrap: in the sitting it is three across at every width
 (`tight`), because there it shares the screen with the earth, and it lies
 over the earth's foot rather than beside it, so the earth keeps its size.
+Since 30 September 2026 the sitting's sheet also leaves out *Volume*
+(`volume={false}`): mid-sitting the device's own buttons are the volume, and
+a slider over the water was one control too many.
 
 ### Timer dial
 `TimerDial`, the with-others time question. A 14px ring in rule on a 280-unit

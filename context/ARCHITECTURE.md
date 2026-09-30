@@ -704,7 +704,8 @@ meditatewithme/
 │   ├── Afterwards.tsx           # the ending
 │   ├── AccountCorner.tsx        # a member's corner: Account, Settings, Layout
 │   ├── Sounds.tsx               # the nine tiles and Volume; the rail, the
-│   │                            #   drawer and the sitting all render this
+│   │                            #   drawer and the sitting (no Volume) all
+│   │                            #   render this
 │   ├── Account.tsx, Practice.tsx, Switch.tsx, Wordmark.tsx
 │   ├── controls.ts              # the six control styles
 │   ├── use*.ts                  # every hook: auth, prefs, practice, mix, presence,
