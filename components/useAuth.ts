@@ -245,6 +245,12 @@ export function useAuth() {
   }, []);
 
   /**
+   * Addresses the site sent its own code to — connected ones, which Supabase
+   * does not know (`app/api/signin`) — so `verify` knows where to take it.
+   */
+  const connected = useRef(new Set<string>());
+
+  /**
    * Send the email that makes an account.
    *
    * No password means no password to choose, forget, reset, or reuse from
@@ -265,12 +271,6 @@ export function useAuth() {
    * put it on screen — in the site's own words (`lib/authErrors.ts`), never
    * Supabase's.
    */
-  /**
-   * Addresses the site sent its own code to — connected ones, which Supabase
-   * does not know (`app/api/signin`) — so `verify` knows where to take it.
-   */
-  const connected = useRef(new Set<string>());
-
   const signIn = useCallback(
     async (email: string, name?: string): Promise<string | null> => {
       // Gmail goes through the Google button only; see `isGoogleMail`.
