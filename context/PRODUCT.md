@@ -175,8 +175,8 @@ doors, which have not been changed and do not offer the guided sitting
 yet. Production shows none of it until `dev` is merged, and even then no
 video until its env names a video server.
 
-**The account corner, on `dev` since 30 September 2026, not live and not
-shown to Jonny** (`plans/account-corner.md`). The old Home is gone:
+**The account corner, live since 30 September 2026 (`48eab12`, merged so a
+friend of Tenzing's could test the flow), not shown to Jonny** (`plans/account-corner.md`). The old Home is gone:
 everybody, signed in or not, lands on the pond, and the only difference is
 the top-right corner. A guest sees *Sign in* there, which opens the panel
 straight away — *Continue with Google* (live since the same day, under
@@ -190,8 +190,7 @@ your name and email (a new address is confirmed by email), your practice,
 from and whether others see your name while you sit with them; animations,
 sound and your own sounds to come. *Layout*: themes, coming soon. A
 sitting's *Done* returns everybody to the pond. The descriptions of Home,
-its doors and its drawer below are what production still shows until this
-is merged.
+its doors and its drawer below are history: production no longer shows them.
 
 **Rebuilt on 14 September 2026** (`docs/ui-rebuild.md`, on `ui-warm`). The
 photographic room, the landing word, the settings panel and the ring are gone;
@@ -599,8 +598,8 @@ clips. Re-measured after: 0.12 dB apart, worst peak 0.933.
 steel tongue drum (CC0), and three beds were swapped — the waterfall for a
 small creek (CC BY 4.0, kevp888), the sea for long rolling swells (CC0,
 bassimat) and the crickets for a park in the evening, birds and insects
-(CC BY 4.0, klankbeeld). **The two CC BY recordings need a visible credit
-before they reach `main`**: `/credits` exists and is built from
+(CC BY 4.0, klankbeeld). **The two CC BY recordings reached `main` on 30
+September 2026 without a visible credit, and are owed one**: `/credits` exists and is built from
 `lib/beds.ts`, but nothing links to it yet, same as the privacy notice and
 the terms. The creek is very quiet at source and was raised about 27 dB, so
 listen for hiss. Not listened to by an agent; Jonny has not heard any of it.
