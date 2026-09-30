@@ -31,7 +31,7 @@ const nextConfig: NextConfig = {
    * the one it started on, so without this the second origin is a black page
    * and a column of 403s.
    */
-  allowedDevOrigins: ['127.0.0.1'],
+  allowedDevOrigins: ['127.0.0.1', '10.216.31.161'],
 };
 
 export default nextConfig;

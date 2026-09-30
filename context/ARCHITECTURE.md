@@ -318,6 +318,17 @@ This is the single most important line in the timer. A meditation app whose bell
 > follows describes generated noise, it is history; the gain graph, the
 > ramps and the master are unchanged. The bells are still synthesised.
 
+> **29 September 2026: the gong is a recording, and three beds changed.** The
+> bell keyed `gong` (stored in preferences and a CHECK constraint, so the key
+> stays) is a steel tongue drum, `public/sounds/drum.mp3`, played by
+> `playRecording()` in `components/audio.ts` through the same `strike()` as
+> the synthesised bells: same schedule, same tail clamp (faded over its last
+> two seconds when shortened), same master. It is fetched and decoded on first
+> strike, so an opening bell on a slow line is late rather than missing. The
+> `waterfall` bed is now a creek, `ocean` long swells and `night` a park at
+> dusk; slugs unchanged, labels changed. Two of those recordings are CC BY 4.0
+> and are credited by `app/credits/page.tsx`, built from `lib/beds.ts`.
+
 One `AudioContext`. One gain node per track. Buffers decoded once and looped natively.
 
 ```
@@ -691,8 +702,7 @@ meditatewithme/
 │   ├── Bowl.tsx                 # the drawn bowl and its strike
 │   ├── Sitting.tsx              # the dusk frame with the earth
 │   ├── Afterwards.tsx           # the ending
-│   ├── Home.tsx, SettingsDrawer.tsx # the signed-in page and its drawer
-│   ├── WorldMap.tsx             # canvas earth; the sitting, Home and the mode question
+│   ├── AccountCorner.tsx        # a member's corner: Account, Settings, Layout
 │   ├── Sounds.tsx               # the nine tiles and Volume; the rail, the
 │   │                            #   drawer and the sitting all render this
 │   ├── Account.tsx, Practice.tsx, Switch.tsx, Wordmark.tsx
@@ -1472,6 +1482,12 @@ the bowl, which starts a real sitting.
 ---
 
 ## 17. The account side
+
+**On `dev` since 30 September 2026 Home is deleted** and everybody gets the
+journey; being signed in changes only its corner — `Account` (*Sign in*) or
+`AccountCorner` (the name, then *Account · Settings · Layout*, each a page
+over the pond). The table below is production until that is merged. Google
+sign-in: `context/GOOGLE_SIGN_IN.md`.
 
 Which screen you get at `/` is decided by one fact: whether you are signed in.
 

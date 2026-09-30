@@ -422,6 +422,27 @@ sizes for nine declared roles, three of them under 12px.
 
 ## Layout
 
+- **Geometry is what makes it feel balanced, so things line up — by their
+  ink, not their boxes.** Tenzing's rule, 30 September 2026, after the
+  corners of the front page were caught out: the wordmark sat 3px above the
+  clock and *Sign in*, and *Sign in*'s ink ended 8px inside the right gutter
+  while the mark's began exactly on the left one. Nobody names a misalignment
+  like that, but everybody feels the page tilt. So:
+  - **Opposite corners mirror.** The left ink starts on the gutter; the right
+    ink ends on it. A word control's `px-2` is hit area, not margin — pull it
+    back into the gutter (`-mr-2`, `-ml-2`) so the letters, not the padding,
+    touch the line. Begin's stone and the sentence above it start on the same
+    x for the same reason.
+  - **A row shares a baseline.** Text of different sizes in one row (the
+    serif wordmark, the caption clock, the corner word) aligns on its
+    baseline, not on the centre of its box; `items-center` is right only for
+    things of one size or without text.
+  - **Measure, don't eyeball.** Check a change against the lines it should
+    sit on — left edge, right edge, baseline — from the rendered page
+    (bounding rects of the text ranges), at a phone width and a laptop width,
+    before calling it done. A wrapper added for some other reason (a fade,
+    a group) is the usual way alignment breaks: an inline wrapper around a
+    flex child puts it on a line box and shifts it.
 - **One left margin, and everything on the rail hangs from it.** The gutter
   grows with the window — 1.5rem on a phone, 6rem on a wide laptop. A
   question's measure is still 28rem, because a field wider than that is
@@ -479,6 +500,11 @@ sizes for nine declared roles, three of them under 12px.
   `inert`, `aria-hidden`, and `visibility: hidden` once the leaving one has
   faded. **A guest's menu is not on a panel**: `Journey` pins it top right
   over the rail, so it stays in place on every question until the strike.
+  **Since 30 September 2026 (on `dev`) the corner is a word, not a menu**:
+  *Sign in* for a guest (`WORD`), the first name for a member. Pressing the
+  name fades it and slides *Account · Settings · Layout* out from its place
+  (transform and opacity, 300ms, 40ms apart); on a phone the wordmark and
+  the clock fade while they are out. Each opens a paper page over the pond.
 - **The front page is the room.** A guest lands on the doors, on this
   hour's earth, with the wordmark where the question would be and the usual
   as one quiet line and a switch in the foot. There is no paper title page

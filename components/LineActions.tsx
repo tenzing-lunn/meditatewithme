@@ -44,6 +44,9 @@ export default function LineActions({
   prompt,
   onSkip,
   children,
+  nextLabel = 'Next',
+  skipLabel = 'Skip',
+  disabled = false,
 }: {
   /** Something is on the line: show Next. */
   typed: boolean;
@@ -54,6 +57,9 @@ export default function LineActions({
   onSkip: () => void;
   /** Under the row. */
   children?: ReactNode;
+  nextLabel?: string;
+  skipLabel?: string;
+  disabled?: boolean;
 }) {
   const reduced = useReducedMotion();
   const wait = reduced ? 0 : START_MS + typingMs(prompt) + AFTER_MS;
@@ -74,11 +80,12 @@ export default function LineActions({
         <button
           type="button"
           onClick={onSkip}
+          disabled={disabled}
           inert={!settled}
           className={`${active ? 'screen-settle' : ''} -ml-2 ${WORD}`}
           style={active ? ({ animationDelay: `${wait}ms` } as CSSProperties) : undefined}
         >
-          Skip
+          {skipLabel}
         </button>
         <div
           inert={!typed}
@@ -86,8 +93,8 @@ export default function LineActions({
             typed ? '' : 'translate-y-3 opacity-0'
           }`}
         >
-          <button type="submit" className={PRIMARY_SM}>
-            Next
+          <button type="submit" disabled={disabled} className={PRIMARY_SM}>
+            {nextLabel}
           </button>
         </div>
       </div>

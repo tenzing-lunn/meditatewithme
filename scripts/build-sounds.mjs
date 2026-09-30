@@ -4,6 +4,7 @@
 //
 // <dir> holds one file per bed named by slug (rain.mp3, wind.mp3, ...),
 // downloaded from the Freesound pages listed in lib/beds.ts. Needs ffmpeg.
+// A drum.mp3 there (any format ffmpeg reads) rebuilds the recorded bell too.
 //
 // For each bed: the stretch lib/beds.ts names is decoded to 48 kHz stereo,
 // its last CROSSFADE_SECONDS folded over its first so the loop has no seam,
@@ -23,7 +24,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 
-import { BED_SOURCES, CROSSFADE_SECONDS, PAD_SECONDS } from '../lib/beds.ts';
+import { BED_SOURCES, CROSSFADE_SECONDS, DRUM_SOURCE, PAD_SECONDS } from '../lib/beds.ts';
 
 const RATE = 48_000;
 const TARGET_LUFS = -20;
@@ -197,4 +198,34 @@ for (const bed of BED_SOURCES) {
       ` -> ${lufs(loop).toFixed(2)} LUFS, peak ${peakDb(loop).toFixed(1)} dBFS, limited ${limited.most.toFixed(1)} dB at most, over 1 dB for ${(limited.share * 100).toFixed(2)}% of it` +
       (target < TARGET_LUFS ? ` (held ${(TARGET_LUFS - target).toFixed(1)} dB under)` : ''),
   );
+}
+
+// The recorded bell: not a loop, so no crossfade or padding. The first
+// DRUM_SOURCE.seconds, its last BELL_FADE seconds faded to nothing, the peak
+// set to BELL_PEAK_DB. Loudness is left to the peak: a bell is judged by its
+// strike, and the synthesised ones are pinned by peak too (PEAK in audio.ts).
+const BELL_PEAK_DB = -3;
+const BELL_FADE = 3;
+const drum = path.join(dir, 'drum.mp3');
+if (existsSync(drum)) {
+  const bell = decode(drum, 0, DRUM_SOURCE.seconds);
+  const gain = 10 ** ((BELL_PEAK_DB - peakDb(bell)) / 20);
+  const n = bell[0].length;
+  const fade = Math.round(BELL_FADE * RATE);
+  const interleaved = new Float32Array(n * 2);
+  for (let i = 0; i < n; i++) {
+    const t = Math.min(1, (n - i) / fade);
+    const g = gain * Math.sin((t * Math.PI) / 2);
+    interleaved[2 * i] = bell[0][i] * g;
+    interleaved[2 * i + 1] = bell[1][i] * g;
+  }
+  execFileSync(
+    'ffmpeg',
+    ['-v', 'error', '-y', '-f', 'f32le', '-ar', String(RATE), '-ac', '2', '-i', '-',
+      '-c:a', 'libmp3lame', '-b:a', '192k', path.join(OUT, 'drum.mp3')],
+    { input: Buffer.from(interleaved.buffer) },
+  );
+  console.log(`drum       ${DRUM_SOURCE.seconds} s, raised ${(20 * Math.log10(gain)).toFixed(1)} dB to peak ${BELL_PEAK_DB} dBFS`);
+} else {
+  console.log(`drum       skipped: no drum.mp3 in ${dir}`);
 }

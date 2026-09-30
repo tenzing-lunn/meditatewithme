@@ -50,13 +50,13 @@ interface TrackDef {
 const LABELS: Record<TrackSlug, string> = {
   rain: 'Rain',
   wind: 'Wind',
-  waterfall: 'Waterfall',
+  waterfall: 'Creek',
   ocean: 'Ocean',
   fire: 'Fire',
   hum: 'Hum',
   chimes: 'Chimes',
   bowl: 'Bowl',
-  night: 'Night',
+  night: 'Evening',
 };
 
 /** In the order they are shown. */
@@ -112,6 +112,10 @@ function rampTo(ctx: AudioContext, param: AudioParam, value: number, seconds: nu
   // starts from the old target rather than from where the sound actually is,
   // and the result is an audible jump.
   param.cancelScheduledValues(now);
+  if (seconds === 0) {
+    param.setValueAtTime(value, now);
+    return;
+  }
   param.setValueAtTime(param.value, now);
   param.linearRampToValueAtTime(value, now + seconds);
 }

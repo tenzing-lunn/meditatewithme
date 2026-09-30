@@ -175,6 +175,24 @@ doors, which have not been changed and do not offer the guided sitting
 yet. Production shows none of it until `dev` is merged, and even then no
 video until its env names a video server.
 
+**The account corner, on `dev` since 30 September 2026, not live and not
+shown to Jonny** (`plans/account-corner.md`). The old Home is gone:
+everybody, signed in or not, lands on the pond, and the only difference is
+the top-right corner. A guest sees *Sign in* there, which opens the panel
+straight away — *Continue with Google* (live since the same day, under
+Tenzing's Google account), or an email code — with *Don't have an account?
+Create one* at its foot turning it to *Create account*, name first. Signed
+in, the corner is your first name; pressing it fades the name and slides
+*Account · Settings · Layout* out of its place (on a phone the wordmark and
+clock fade for them), and pressing elsewhere slides them back. *Account*:
+your name and email (a new address is confirmed by email), your practice,
+*Sign out*, *Delete account*. *Settings*: for now privacy — where you are
+from and whether others see your name while you sit with them; animations,
+sound and your own sounds to come. *Layout*: themes, coming soon. A
+sitting's *Done* returns everybody to the pond. The descriptions of Home,
+its doors and its drawer below are what production still shows until this
+is merged.
+
 **Rebuilt on 14 September 2026** (`docs/ui-rebuild.md`, on `ui-warm`). The
 photographic room, the landing word, the settings panel and the ring are gone;
 what follows is the site as it is now. The functionality underneath — the
@@ -423,6 +441,13 @@ Nothing is asked for that is not used: the name is *Hello, Ana* and, if you
 chose to be seen, the name on the earth. Signing in once is enough; the
 session renews itself. `Sign out` ends it on that device only.
 
+After a guest's sitting, before Again/Done, a centered question asks
+*Would you like to be remembered?* Yes opens name → place → email →
+six-digit confirmation, one question at a time, then the signed-in Home.
+No (or *Not now* during the questions) continues to Again/Done. The
+place is saved with the profile; creating an account does not change the
+visitor's choice about sharing their name and place.
+
 **Closing an account.** *Delete account*, in the account panel, opens a
 confirmation naming what goes — the email address, the name, where you are
 from, the settings and the sittings synced to it — and saying the practice log on
@@ -569,6 +594,16 @@ under rain as under waterfall. Rain also peaked at 1.34, above full scale:
 at the top of its fader it was distorting, not getting louder. Each bed now
 carries a fixed trim to −16 LUFS, the loudest common target at which nothing
 clips. Re-measured after: 0.12 dB apart, worst peak 0.933.
+
+**29 September 2026, Tenzing's own downloads, on `dev`:** the gong is a
+steel tongue drum (CC0), and three beds were swapped — the waterfall for a
+small creek (CC BY 4.0, kevp888), the sea for long rolling swells (CC0,
+bassimat) and the crickets for a park in the evening, birds and insects
+(CC BY 4.0, klankbeeld). **The two CC BY recordings need a visible credit
+before they reach `main`**: `/credits` exists and is built from
+`lib/beds.ts`, but nothing links to it yet, same as the privacy notice and
+the terms. The creek is very quiet at source and was raised about 27 dB, so
+listen for hiss. Not listened to by an agent; Jonny has not heard any of it.
 
 **The beds are real recordings since 23 September 2026, on `dev`.** The
 synthesised beds were first reworked (a lighter rain) and extended (ocean,

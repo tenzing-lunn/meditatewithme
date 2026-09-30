@@ -2,9 +2,10 @@
 
 import { useEffect, useId, useRef, useState } from 'react';
 import { NAME_MAX } from '@/lib/label';
-import { FIELD, MENU_ITEM, PRIMARY, WORD } from './controls';
+import { FIELD, PRIMARY, WORD } from './controls';
 import type { AuthState } from './useAuth';
 import type { SyncStatus } from './useSyncPreferences';
+import GoogleSignIn from './GoogleSignIn';
 
 /**
  * The account offer, as a panel that drops from the control that opened it.
@@ -48,17 +49,13 @@ import type { SyncStatus } from './useSyncPreferences';
  * it is not, so there is no second form for people who already have an account
  * — only a quieter way into the same one, skipping the name.
  *
- * THE TWO DOORS ARE ON A MENU
- * Jonny asked (7 September 2026) for the top-right control to be a three-line
- * settings button that offers `Create account` and `Sign in` as two separate
- * choices, rather than one button labelled with the first and carrying the
- * second as a footnote. So the trigger is the icon, pressing it opens a
- * two-item menu, and each item opens the same panel at a different step —
- * name for a new account, address for an existing one. The flow behind the
- * panel is unchanged; only the door into it is. The panel hangs under the
- * trigger; the variant that stood it above an offer at the foot of the
- * ending went with that offer (22 September 2026), as did the labelled
- * button.
+ * SIGN IN IS THE DOOR, AND CREATING ONE IS ITS FOOTNOTE
+ * The corner says *Sign in*, the way web apps do, and opens the panel on the
+ * address straight away (30 September 2026; it was a three-line menu with
+ * the two as separate items before). *Don't have an account? Create one* at
+ * its foot turns the same panel to the name first. Google or an email code
+ * creates the account on first use either way, so nobody is stuck on the
+ * wrong one of the two.
  *
  * The field, the button, the menu item and the word are `controls.ts`'s —
  * the same as everywhere else, not a second set at 44px and `ring-1`.
@@ -71,6 +68,7 @@ export default function Account({
   state,
   sync,
   signIn,
+  signInWithGoogle,
   verify,
   linkError,
   signOut,
@@ -80,6 +78,7 @@ export default function Account({
   sync: SyncStatus;
   /** Sends the email. `name` only lands if the address is new — see `useAuth`. */
   signIn: (email: string, name?: string) => Promise<string | null>;
+  signInWithGoogle: () => Promise<string | null>;
   /** Six digits, checked here rather than in an inbox. */
   verify: (email: string, code: string) => Promise<string | null>;
   /**
@@ -96,10 +95,7 @@ export default function Account({
   className?: string;
 }) {
   const [open, setOpen] = useState(Boolean(linkError));
-  const [menuOpen, setMenuOpen] = useState(false);
-  // Either surface is on screen. One flag, so switching from the menu to the
-  // panel in the same press is a swap in place rather than a second entrance.
-  const shown = open || menuOpen;
+  const shown = open;
   // One frame behind `open`, so the panel has a state to transition *from*.
   const [entered, setEntered] = useState(false);
 
@@ -112,10 +108,8 @@ export default function Account({
    * this component stays mounted the whole time and only its panel is
    * conditional.
    */
-  // Straight to the address on a failed link: they have plainly done the name
-  // once already, and being asked it again is the product blaming them for
-  // its own dead token.
-  const [step, setStep] = useState<Step>(linkError ? 'email' : 'name');
+  // Sign in first; the name is only asked of somebody creating an account.
+  const [step, setStep] = useState<Step>('email');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
@@ -126,7 +120,6 @@ export default function Account({
   const wrap = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const firstField = useRef<HTMLInputElement>(null);
-  const firstItem = useRef<HTMLButtonElement>(null);
   const nameId = useId();
   const emailId = useId();
   const codeId = useId();
@@ -170,24 +163,16 @@ export default function Account({
     if (open) firstField.current?.focus();
   }, [open, step]);
 
-  // And straight onto the first choice, for the same reason.
-  useEffect(() => {
-    if (menuOpen) firstItem.current?.focus();
-  }, [menuOpen]);
-
   // Escape, and a press anywhere else. Both are what a dropdown is expected to
   // do, and neither loses the flow — see the state note above.
   useEffect(() => {
     if (!shown) return;
 
-    const close = () => {
-      setOpen(false);
-      setMenuOpen(false);
-    };
+    const close = () => setOpen(false);
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       close();
-      // Focus was on a menu item or in a field, and closing unmounts it —
+      // Focus was in a field, and closing unmounts it —
       // without this, Escape dropped the keyboard on `<body>` and the next
       // Tab started the page over from the top. Found on 8 September 2026 by
       // pressing it. The pointer close below does not do this: somebody who
@@ -269,32 +254,21 @@ export default function Account({
     }
   };
 
-  /**
-   * A door on the menu. `name` is `Create account`, `email` is `Sign in`.
-   *
-   * A code already sent is not thrown away by choosing a door again: somebody
-   * who closed the panel to go and read their email comes back to the code box,
-   * whichever item they press to get there — see the state note above.
-   */
-  const openAt = (at: Step) => {
-    setError(null);
-    if (step !== 'code') setStep(at);
-    setMenuOpen(false);
-    setOpen(true);
-  };
+  // On the address step after the name: the create-account path, still.
+  const creating = name.trim() !== '';
 
   const heading =
     step === 'name'
       ? 'Create account.'
       : step === 'email'
-        ? 'Your email.'
+        ? creating ? 'Create account.' : 'Sign in.'
         : 'Check your email.';
 
   const hint =
     step === 'name'
       ? 'Every sitting is already logged on this device. An account carries it to your others.'
       : step === 'email'
-        ? 'No password — we send you a code, and that is the whole of it.'
+        ? 'Use Google or an email code. You’ll stay signed in on this browser.'
         : `We have sent a six-digit code to ${email.trim()}. The link in that email works too.`;
 
   return (
@@ -303,89 +277,15 @@ export default function Account({
         ref={trigger}
         type="button"
         onClick={() => {
-          // Pressing the icon while the panel is up closes it, the way it
-          // closes a menu — the icon is the one control, whichever it shows.
-          if (open) {
-            setOpen(false);
-            return;
-          }
-          setMenuOpen((v) => !v);
+          setError(null);
+          setOpen((v) => !v);
         }}
         aria-expanded={shown}
-        aria-haspopup="menu"
-        aria-label="Menu"
+        aria-haspopup="dialog"
         className={className}
       >
-        <svg viewBox="0 0 24 24" className="size-5" fill="none" aria-hidden>
-          <path
-            d="M4 7h16M4 12h16M4 17h16"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-          />
-        </svg>
+        Sign in
       </button>
-
-      {/* The two ways in. Same surface and same entrance as the panel below,
-          because the panel is what replaces it when one is chosen. Hung
-          from the trigger: since the warm rail (14 September 2026) there is
-          no display word under the corner for it to sit across. */}
-      {menuOpen && (
-        <div className="absolute top-full right-0 z-20 mt-2">
-          {/* `role="menu"` is a promise about the keyboard, and it was made
-              without being kept: the two items were reachable by Tab and by
-              nothing else, so anyone who took the ARIA at its word and pressed
-              Down got silence. Two items is small enough that the honest fix
-              is to keep the role and wire the keys, rather than drop to a
-              group and lose the pattern people already know.
-
-              Up and Down wrap, Home and End go to the ends, and Escape is
-              handled by the panel's own close. `preventDefault` because Up and
-              Down would otherwise scroll the page behind the menu. */}
-          <div
-            role="menu"
-            aria-label="Account"
-            onKeyDown={(e) => {
-              const items = Array.from(
-                e.currentTarget.querySelectorAll<HTMLButtonElement>(
-                  '[role="menuitem"]',
-                ),
-              );
-              if (items.length === 0) return;
-              const at = items.indexOf(document.activeElement as HTMLButtonElement);
-              const go = (i: number) => {
-                e.preventDefault();
-                items[(i + items.length) % items.length]?.focus();
-              };
-              if (e.key === 'ArrowDown') go(at + 1);
-              else if (e.key === 'ArrowUp') go(at - 1);
-              else if (e.key === 'Home') go(0);
-              else if (e.key === 'End') go(items.length - 1);
-            }}
-            className={`rounded-control flex min-w-44 flex-col overflow-hidden border border-rule bg-surface shadow-menu py-1 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none ${
-              entered ? 'translate-y-0 opacity-100' : '-translate-y-1.5 opacity-0'
-            }`}
-          >
-            <button
-              ref={firstItem}
-              type="button"
-              role="menuitem"
-              onClick={() => openAt('name')}
-              className={MENU_ITEM}
-            >
-              Create account
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => openAt('email')}
-              className={MENU_ITEM}
-            >
-              Sign in
-            </button>
-          </div>
-        </div>
-      )}
 
       {/*
         THE PANEL, IN TWO LAYERS.
@@ -412,6 +312,11 @@ export default function Account({
               <h2 className="font-display text-section font-bold leading-tight text-ink">
                 {heading}
               </h2>
+
+              {step !== 'code' && <>
+                <GoogleSignIn signIn={signInWithGoogle} disabled={busy} onError={setError} onBusyChange={setBusy} />
+                <p className="text-center text-caption text-ink-3">or continue with email</p>
+              </>}
 
               {/* Reserved at three lines, which is the longest of the three
                   hints — the last one has an email address in it, and a long
@@ -555,11 +460,12 @@ export default function Account({
                     type="button"
                     onClick={() => {
                       setError(null);
+                      setName('');
                       setStep('email');
                     }}
                     className={WORD}
                   >
-                    I already have one
+                    Already have one? Sign in
                   </button>
                 )}
 
@@ -572,7 +478,7 @@ export default function Account({
                     }}
                     className={WORD}
                   >
-                    Back
+                    {creating ? 'Back' : 'Don’t have an account? Create one'}
                   </button>
                 )}
 

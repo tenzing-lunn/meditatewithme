@@ -38,6 +38,7 @@ export default function LineField({
   value,
   onChange,
   active,
+  type = 'text',
   ...rest
 }: {
   id: string;
@@ -48,6 +49,7 @@ export default function LineField({
   onChange: (value: string) => void;
   /** The screen is in the frame: type the prompt out. */
   active: boolean;
+  type?: 'text' | 'email';
 } & InputRest) {
   const typed = useTypedOut(prompt, active);
 
@@ -58,7 +60,7 @@ export default function LineField({
       </label>
       <input
         id={id}
-        type="text"
+        type={type}
         autoComplete="off"
         spellCheck={false}
         value={value}

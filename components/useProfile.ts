@@ -44,6 +44,7 @@ export function useProfile({
 
   // What the server is known to hold, so a pull does not push itself back.
   const remote = useRef<Pick<Profile, 'origin' | 'share'> | null>(null);
+  const [pulledUser, setPulledUser] = useState<string | null>(null);
 
   const setProfile = useCallback((patch: Partial<Profile>) => {
     setLocal((p) => {
@@ -61,6 +62,7 @@ export function useProfile({
   useEffect(() => {
     if (!userId) {
       remote.current = null;
+      setPulledUser(null);
       return;
     }
     let cancelled = false;
@@ -72,9 +74,9 @@ export function useProfile({
           .eq('id', userId)
           .maybeSingle();
         if (error) throw error;
-        if (cancelled || !data) return;
-        const row = data as { origin: string | null; share_label: boolean | null };
-        const server = normalizeProfile({ origin: row.origin, share: row.share_label });
+        if (cancelled) return;
+        const row = data as { origin: string | null; share_label: boolean | null } | null;
+        const server = normalizeProfile({ origin: row?.origin, share: row?.share_label });
         if (server.origin !== null || server.share !== null) {
           remote.current = { origin: server.origin, share: server.share };
           setProfile({ origin: server.origin, share: server.share });
@@ -83,6 +85,8 @@ export function useProfile({
           // the effect below, once, because `remote` now differs from it.
           remote.current = { origin: null, share: null };
         }
+        // A ref change alone cannot wake the push effect for a new account.
+        setPulledUser(userId);
       } catch {
         // The local copy stands. A failed pull is not worth interrupting for.
       }
@@ -94,7 +98,7 @@ export function useProfile({
 
   // ---- Push, debounced, on change ---------------------------------------
   useEffect(() => {
-    if (!userId || remote.current === null) return;
+    if (!userId || pulledUser !== userId || remote.current === null) return;
     if (remote.current.origin === local.origin && remote.current.share === local.share) return;
     const timer = window.setTimeout(async () => {
       try {
@@ -111,7 +115,7 @@ export function useProfile({
       }
     }, PUSH_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
-  }, [userId, local.origin, local.share]);
+  }, [userId, pulledUser, local.origin, local.share]);
 
   const profile: Profile = name ? { ...local, name } : local;
   return { profile, setProfile };

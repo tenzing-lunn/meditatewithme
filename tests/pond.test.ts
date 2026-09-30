@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
   breathTimes,
+  breathDuration,
   breathsAt,
   flickConfig,
   ringsAt,
@@ -170,12 +171,12 @@ describe('trainAt', () => {
 describe('breaths: your stone while you sit', () => {
   const gapsOver = (seconds: number, seed: number) => {
     const t = breathTimes(seconds, seed).filter((s) => s <= seconds);
-    return t.slice(1).map((s, i) => ({ at: t[i]!, gap: s - t[i]! }));
+    return t.slice(1).map((s, i) => ({ at: t[i]!, gap: s - t[i]!, duration: breathDuration(seed, i) }));
   };
 
-  test('never a beat: over ten minutes the gaps vary, and no two in a row match', () => {
+  test('never a beat: over ten minutes the quiet pauses vary, and no two in a row match', () => {
     for (const seed of [1, 7, 42, 2026, 123456789]) {
-      const gaps = gapsOver(600, seed).map((g) => g.gap);
+      const gaps = gapsOver(600, seed).map((g) => g.gap - g.duration);
       const mean = gaps.reduce((a, g) => a + g, 0) / gaps.length;
       const sd = Math.sqrt(gaps.reduce((a, g) => a + (g - mean) ** 2, 0) / gaps.length);
       assert.ok(sd / mean > 0.2, `seed ${seed}: CV ${sd / mean}`);
@@ -185,16 +186,20 @@ describe('breaths: your stone while you sit', () => {
     }
   });
 
-  test('rarer after the first minute, and calm: one every 6 to 20 seconds on average', () => {
+  test('brief quiet pauses, slightly longer after the first minute', () => {
+    const early: number[] = [];
+    const late: number[] = [];
+    const mean = (xs: number[]) => xs.reduce((a, g) => a + g, 0) / xs.length;
     for (const seed of [1, 7, 42, 2026, 123456789]) {
       const all = gapsOver(600, seed);
-      const early = all.filter((g) => g.at < 30).map((g) => g.gap);
-      const late = all.filter((g) => g.at >= 60).map((g) => g.gap);
-      const mean = (xs: number[]) => xs.reduce((a, g) => a + g, 0) / xs.length;
-      assert.ok(mean(late) >= 6 && mean(late) <= 20, `seed ${seed}: ${mean(late)}`);
-      assert.ok(mean(early) < mean(late), `seed ${seed}: ${mean(early)} then ${mean(late)}`);
-      assert.ok(all.every((g) => g.gap > 2), 'never two at once');
+      early.push(...all.filter((g) => g.at < 30).map((g) => g.gap - g.duration));
+      late.push(...all.filter((g) => g.at >= 60).map((g) => g.gap - g.duration));
+      assert.ok(all.every((g) => g.gap > g.duration), 'the last ring disappears before the next starts');
     }
+    // Longer cycles leave very few early samples per sitting; compare the
+    // combined samples so one randomly long first pause cannot dominate.
+    assert.ok(mean(late) >= 0.3 && mean(late) <= 1.2, `${mean(late)}`);
+    assert.ok(mean(early) < mean(late), `${mean(early)} then ${mean(late)}`);
   });
 
   test('the same seed breathes the same way; another does not', () => {
@@ -206,11 +211,30 @@ describe('breaths: your stone while you sit', () => {
     assert.deepEqual(breathsAt(137.2, { x: 5, y: 5 }, 150, 99), breathsAt(137.2, { x: 5, y: 5 }, 150, 99));
   });
 
-  test('soft: far fainter than the landing, a few at most, near the stone', () => {
+  test('every ring disappears completely before the next appears', () => {
+    for (const seed of [1, 7, 42, 2026, 123456789]) {
+      const times = breathTimes(600, seed).filter((s) => s <= 600);
+      for (let i = 1; i < times.length; i++) {
+        const end = times[i - 1]! + breathDuration(seed, i - 1);
+        const next = times[i]!;
+        assert.ok(next > end);
+        assert.ok(next - end < 1.8, 'no long blank pause');
+        const tail = breathsAt(end - 0.001, { x: 0, y: 0 }, 150, seed)[0]!;
+        assert.ok(tail.o < 0.022, 'only the barely visible tail is removed');
+        assert.deepEqual(breathsAt(end, { x: 0, y: 0 }, 150, seed), []);
+        assert.deepEqual(breathsAt((end + next) / 2, { x: 0, y: 0 }, 150, seed), []);
+      }
+      for (let t = 0; t < 600; t += 0.13) {
+        assert.ok(breathsAt(t, { x: 0, y: 0 }, 150, seed).length <= 1);
+      }
+    }
+  });
+
+  test('soft: far fainter than the landing, one at most, near the stone', () => {
     const landing = Math.max(...trainAt(0.5, big).map((r) => r.o));
     for (let t = 0; t < 600; t += 0.37) {
       const rs = breathsAt(t, { x: 0, y: 0 }, 150, 5);
-      assert.ok(rs.length <= 4);
+      assert.ok(rs.length <= 1);
       for (const r of rs) {
         assert.ok(r.o < landing * 0.5);
         assert.ok(Math.hypot(r.x, r.y) <= 4 * Math.SQRT2 + 1e-9);

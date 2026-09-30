@@ -126,3 +126,8 @@ export const QUIET_ROOM = `${BUTTON} border border-room-edge text-room-ink hover
 export const QUIET_ROOM_SM = `${BUTTON_SM} border border-room-edge text-room-ink hover:border-room-action hover:text-room-action ${FOCUS_ROOM}`;
 
 export const WORD_ROOM = `inline-flex min-h-11 items-center px-2 text-control font-semibold text-room-ink-2 underline decoration-room-edge underline-offset-4 transition-colors duration-200 hover:text-room-action hover:decoration-room-action motion-reduce:transition-none ${FOCUS_ROOM}`;
+
+/** Text controls used on the pond's arrival and repeat setup. */
+export const POND_ACTION = `group inline-flex min-h-12 items-center justify-center gap-3 rounded-sm px-2 text-answer text-ink transition-opacity duration-200 hover:opacity-80 disabled:opacity-40 motion-reduce:transition-none ${FOCUS}`;
+export const POND_CHOICE = `inline-flex min-h-12 items-center justify-center rounded-sm px-2 font-display text-answer text-ink-2 underline decoration-ink-3/60 decoration-1 underline-offset-[0.18em] transition-colors duration-200 hover:text-ember hover:decoration-ember motion-reduce:transition-none ${FOCUS}`;
+export const POND_CHOICE_ON = 'text-ink decoration-ink';
