@@ -50,3 +50,21 @@ export function authErrorMessage(
   if (/expired|invalid|not match/i.test(text)) return CODE_REJECTED;
   return SERVICE_UNREACHABLE;
 }
+
+/**
+ * What to say for a `reason` from the site's own email routes
+ * (`app/api/account/emails`, `app/api/signin`).
+ */
+export function emailReasonMessage(reason: unknown): string {
+  switch (reason) {
+    case 'taken': return 'That email already has its own account here.';
+    case 'yours': return 'That email is already on your account.';
+    case 'invalid': return 'That does not look like an email address.';
+    case 'wait': return RATE_LIMITED;
+    case 'wrong':
+    case 'dead': return CODE_REJECTED;
+    case 'last': return 'This is the only email on your account, so it has to stay.';
+    case 'unavailable': return 'Connecting another email is not switched on yet.';
+    default: return SERVICE_UNREACHABLE;
+  }
+}

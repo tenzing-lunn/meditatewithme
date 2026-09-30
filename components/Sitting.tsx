@@ -13,10 +13,13 @@ import { mmss, remainingMs } from '@/lib/timer';
 import BackChevron from './BackChevron';
 import Brand from './Brand';
 import { WORD } from './controls';
-import Sounds, { type MixPatch } from './Sounds';
+import SoundLine from './SoundLine';
+import type { MixPatch } from './Sounds';
 
 /** Stillness, in ms, before Sound and End rest. */
 const CONTROLS_REST_MS = 4000;
+/** Untouched, in ms, before the line of sounds closes itself. */
+const SOUND_REST_MS = 3000;
 /** How long *End the sitting now?* waits before it takes itself back. */
 const CONFIRM_MS = 6000;
 
@@ -48,10 +51,12 @@ export interface Sit {
  * the thing. When someone is on camera `Journey` frames them on the water
  * (`LiveLayer`); between two of them the line says when the next starts.
  *
- * Sound opens the tiles, without their Volume, in a sheet above the foot; the
- * caller raises the master when it opens, since a first-timer's graph was
- * built silent. Escape closes it and puts the keyboard back on *Sound*; a tap
- * anywhere outside it closes it and leaves the tap where it landed.
+ * Sound opens one line of words above the foot (`SoundLine`): tap one and it
+ * plays. The caller raises the master when it opens, since a first-timer's
+ * graph was built silent. It closes itself three seconds after the last
+ * touch, so changing the sound never becomes something to tend; Escape
+ * closes it and puts the keyboard back on *Sound*, and a tap anywhere
+ * outside it closes it and leaves the tap where it landed.
  *
  * THE CONTROLS REST
  * Sound, End, the mark and the clock are there when the
@@ -128,15 +133,27 @@ export default function Sitting({
   const foot = useRef<HTMLDivElement | null>(null);
   const sheet = useRef<HTMLDivElement | null>(null);
   const soundButton = useRef<HTMLButtonElement | null>(null);
+  const soundRest = useRef(0);
+  const touchSound = useCallback(() => {
+    window.clearTimeout(soundRest.current);
+    soundRest.current = window.setTimeout(() => {
+      // The keyboard would otherwise be left on a word that is gone.
+      if (sheet.current?.contains(document.activeElement)) soundButton.current?.focus();
+      setSoundOpen(false);
+    }, SOUND_REST_MS);
+  }, []);
 
-  // Open: the keyboard goes to the first tile. Escape closes and puts it
-  // back on *Sound*, since the tile it was on is about to unmount and
+  // Open: the keyboard goes to the word that is on. Escape closes and puts
+  // it back on *Sound*, since the word it was on is about to unmount and
   // without this the next Tab would start the page over. A press outside
   // closes too, without moving focus: whoever tapped elsewhere has already
   // put their attention there.
   useEffect(() => {
     if (!soundOpen) return;
-    sheet.current?.querySelector('button')?.focus();
+    sheet.current
+      ?.querySelector<HTMLButtonElement>('[aria-checked="true"]')
+      ?.focus({ preventScroll: true });
+    touchSound();
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       e.preventDefault();
@@ -151,8 +168,9 @@ export default function Sitting({
     return () => {
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('pointerdown', onDown);
+      window.clearTimeout(soundRest.current);
     };
-  }, [soundOpen]);
+  }, [soundOpen, touchSound]);
 
   // The bell may ring with the sheet open; it goes with the controls.
   useEffect(() => {
@@ -250,10 +268,8 @@ export default function Sitting({
         className="relative flex flex-col items-center gap-2 px-6 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:flex-row sm:items-end sm:px-14 lg:px-24"
       >
         {soundOpen && (
-          <div ref={sheet} className="absolute inset-x-0 bottom-full mx-auto w-full max-w-md px-4 pb-3 sm:right-10 sm:left-auto">
-            <div className="rounded-card border border-rule bg-surface/90 p-4 shadow-menu">
-              <Sounds mix={soundMix} onSound={onSound} tight volume={false} />
-            </div>
+          <div ref={sheet} className="absolute inset-x-0 bottom-full mx-auto w-full max-w-xl pb-3">
+            <SoundLine mix={soundMix} onSound={onSound} onTouch={touchSound} />
           </div>
         )}
         <p className="min-h-6 max-w-md text-center text-body text-balance text-ink-2 sm:flex-1 sm:max-w-none">

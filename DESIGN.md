@@ -542,10 +542,20 @@ sizes for nine declared roles, three of them under 12px.
   500ms after 4s without a tap or a key; any tap or key brings them back.
   Resting they take no pointer, so the waking tap never presses End. They
   stay while the sound sheet is open or focus is inside them.
-- **The Sound sheet lies over the earth.** `room` at 90% with a `room-edge`
-  hairline, card radius, absolute above Sound and End at `max-w-md`. It is
-  never in the layout, so the earth does not move when it opens; the earth
-  holds its frame behind it. Escape and a tap outside close it.
+- **End asks first.** Pressing End swaps Sound and End for *End the sitting
+  now?* (Newsreader, body size, ink) and two words, *Yes, end* in ink and
+  *Keep sitting*, in the same place. Focus lands on *Keep sitting*; Escape
+  keeps sitting and puts focus back on End; untouched, it takes itself
+  back after 6s. The controls do not rest while it is asked.
+- **Sound is one line of words.** `SoundLine`, since 30 September 2026:
+  the arrival sentence's own words (*silence*, *rain*, *a creek*…) in
+  Newsreader at answer size, ink-3, the one playing in ink with an ember
+  underline. No card, no border, no ground: the water shows through. One
+  row, absolute above Sound and End at `max-w-xl`, scrolling sideways with
+  a snap to each word and its ends fading out, opened with the one playing
+  in the middle. A tap plays that word at once. It closes itself 3s after
+  the last tap or scroll; Escape and a tap outside close it too. It is
+  never in the layout, so nothing moves when it opens.
 - **Home and the documents scroll.** Home is still a centred 28rem column —
   a page with a header, like the map's, rather than a panel on the rail:
   wordmark and menu in the header, greeting, the two doors, and the bar
@@ -565,9 +575,8 @@ doors. **The menu** is the one thing that floats — the guest's two doors,
 the account panel and the place list under the origin's line, all on
 `--shadow-menu`, the one shadow token — because it is the one thing that is
 over something else. The bowl's ripples are opacity, not shadow. On dusk
-there is no elevation at all: the Sound sheet mid-sitting is `room` at 90%
-with a hairline, laid over the foot of the earth, and the earth showing
-faintly through is the only sign it is over anything; the settings drawer is
+there is no elevation at all: the line of sounds mid-sitting is words
+straight on the water; the settings drawer is
 `room` with a hairline on its left and the scrim over Home, no shadow.
 
 ### Named rules
@@ -665,18 +674,13 @@ to hear nothing is the Silence tile. The per-tile faders went with the
 stacking, and with them the `h-11` spacer that kept a tile with no fader the
 same height as one with: the six are the height of a texture and a word.
 
-This is **one control in three places**, and since 20 September 2026 it is
-one component: the rail's Sound question, *Underneath* in the settings
-drawer, and the sheet the *Sound* button opens during a sitting. Before that
-the drawer had the tiles with no level on them and the sitting had five
-play-and-fader rows in the paper palette, so the mix you learned on the rail
-was a different instrument at both of the other doors. The only thing that
-varies is the wrap: in the sitting it is three across at every width
-(`tight`), because there it shares the screen with the earth, and it lies
-over the earth's foot rather than beside it, so the earth keeps its size.
-Since 30 September 2026 the sitting's sheet also leaves out *Volume*
-(`volume={false}`): mid-sitting the device's own buttons are the volume, and
-a slider over the water was one control too many.
+This is **one control in two places**: the rail's Sound question and
+*Underneath* in the settings drawer. From 20 September 2026 it was the
+sitting's sheet too; since 30 September 2026 the sitting has its own lighter
+control (`SoundLine`, above) — the arrival's words rather than tiles, one
+tap to change, no *Volume*, because mid-sitting the device's own buttons
+are the volume and the tiles in a card were the old rail's look over the
+water.
 
 ### Timer dial
 `TimerDial`, the with-others time question. A 14px ring in rule on a 280-unit

@@ -28,6 +28,7 @@ account.
 | Your sittings | Your browser; `sittings` if you sign in | Only if you sign in | Until you delete them |
 | Your email address | `auth.users` | **Yes** | Until you delete the account |
 | The name you gave | `auth.users` (`user_metadata.name`) | **Yes, if you gave a real one** | Until you delete the account |
+| Other email addresses you connect to your account | `account_emails`; a hashed six-digit code in `email_codes` for ten minutes while one is being connected or used to sign in | Yes | Until you remove the address or delete the account |
 | Whether you want email when the app is ready, and news | `profiles.email_updates` and `profiles.email_updates_at` (when you answered), if you sign in and tick it | Consent record for marketing email — needs an unsubscribe route before anything is sent | Until you change it or delete the account |
 | Where you said you are from, and whether you share it | Your browser (`mwm.profile`); `profiles.origin` and `profiles.share_label` if you sign in | **Yes, if you typed a real place** | Until you change or delete them |
 | "Name from Origin", shown to others | `heartbeats.label`, only while you sit with others with the switch on | **Yes, as much as the two above** | 2 days, with the row |

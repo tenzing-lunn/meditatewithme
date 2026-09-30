@@ -703,9 +703,9 @@ meditatewithme/
 │   ├── Sitting.tsx              # the dusk frame with the earth
 │   ├── Afterwards.tsx           # the ending
 │   ├── AccountCorner.tsx        # a member's corner: Account, Settings, Layout
-│   ├── Sounds.tsx               # the nine tiles and Volume; the rail, the
-│   │                            #   drawer and the sitting (no Volume) all
-│   │                            #   render this
+│   ├── Sounds.tsx               # the nine tiles and Volume; the rail and
+│   │                            #   the drawer render this
+│   ├── SoundLine.tsx            # the sitting's sounds: one line of words
 │   ├── Account.tsx, Practice.tsx, Switch.tsx, Wordmark.tsx
 │   ├── controls.ts              # the six control styles
 │   ├── use*.ts                  # every hook: auth, prefs, practice, mix, presence,
@@ -1291,11 +1291,11 @@ and pass `reduced`, and the earth stops or starts its loop on the prop.
 `startedAtWall`, `endsAt`, `together`, `withOthers` — plus the `room` and the
 toggle, and renders the frame in the room. Sound, End, the toggle and the clock rest
 (opacity 0, no pointer events) after 4s without a pointer-down or key on the
-frame, and not while the sound sheet is open or focus is inside them. The
-sheet is absolute against the Sound/End row, `bottom-full`, over the foot of
+frame, and not while the line of sounds is open or focus is inside them.
+The line closes itself 3s after its last tap or scroll. It is absolute against the Sound/End row, `bottom-full`, over the foot of
 the earth: opening it changes nothing in the layout, and `WorldMap` holds
-its last frame (`paused`) while it is open. It focuses its first tile on
-open; Escape closes it and returns focus to *Sound*; a pointer-down outside
+its last frame (`paused`) while it is open. It focuses the word that is playing
+on open; Escape closes it and returns focus to *Sound*; a pointer-down outside
 the row closes it and leaves focus where the tap put it. The audition levels
 the tiles remember (`remembered`) live in a ref in `Sitting`, not in
 `Sounds`, because the sheet unmounts on close. **With others:** `WorldMap` with a `you` prop, the viewer's own cell
@@ -1497,6 +1497,26 @@ either path starts (Google's redirect reloads the page), and
 once there is a user and forgets it. A yes always lands; a no only over
 null, so a second-device sign-in unsubscribes nobody. A trigger stamps
 `email_updates_at` with the server's clock as the consent record.
+
+**More than one email.** A Supabase user has one address, and signing in
+with any other makes a new user. So further addresses live in
+`account_emails` (RLS on, no policies: service role only) and every sign-in
+asks `/api/signin` first. For an ordinary address it answers `account` and
+the client carries on with Supabase's code, exactly as before; if that route
+fails, the client falls through to Supabase too, so a fault there never
+stops sign-in. For a connected address it sends the site's own code through
+Resend (`app/api/_email/codes.ts`), and on the right code returns a
+`generateLink` `hashed_token` for the account's main address, which the
+browser trades with `verifyOtp` for an ordinary session. The account page
+connects addresses and removes them through `/api/account/emails`, always
+on the account the bearer token proves. Removing the main address makes the
+newest connected one main (`admin.updateUserById`, confirmed, since its code
+already proved it). `email_owner()` checks both `auth.users` and
+`account_emails`, so no address can belong to two accounts. Codes are
+HMAC-hashed with the service-role key, last ten minutes, allow five tries
+and one send a minute. **Not covered:** *Continue with Google* with a Google
+account whose address is a connected one still makes a new account, because
+Supabase matches Google by its own identity, not our table.
 
 Which screen you get at `/` is decided by one fact: whether you are signed in.
 

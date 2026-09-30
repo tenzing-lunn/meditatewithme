@@ -129,7 +129,9 @@ and your stone is thrown from the button: it skims
 across the water, slowing, and sinks at the centre, leaving its shadow and
 its rings — then now and then a soft ring, never on a beat. The sitting's
 words fade in once it has settled: the faint mark and the time left above,
-the company line and *Sound* and *End* below. At the bell the other stones
+the company line and *Sound* and *End* below. *End* asks first — *End the
+sitting now?* with *Yes, end* and *Keep sitting* in the same place, taking
+itself back after six seconds untouched. At the bell the other stones
 go and one soft train of wide rings leaves yours; *Come back.* comes into
 focus with it and is held for ten seconds, then the sitting fades and
 *N minutes.* rises into the same line, with *The water is still again.* and
@@ -188,7 +190,13 @@ me when the app is ready* (*And now and then, news of the site.*), which
 applies to Google and the email code alike and lands in
 `profiles.email_updates` once signed in. Nothing sends mail to that list,
 there is no unsubscribe yet, and the privacy notice that has to cover it
-is still unpublished; Jonny has not been asked. Signed
+is still unpublished; Jonny has not been asked. The Account page's email
+is a list, not a field: *Connect another email* sends a six-digit code to
+the new address and, once it is typed back, that address signs in to the
+same account too; any address can be removed while one is left. An address
+that already has its own account is refused with *That email already has
+its own account here.* It needs `RESEND_API_KEY` set in Vercel before it
+works (`plans/connected-emails.md`). Signed
 in, the corner is your first name; pressing it fades the name and slides
 *Account · Settings · Layout* out of its place (on a phone the wordmark and
 clock fade for them), and pressing elsewhere slides them back. *Account*:
@@ -327,8 +335,8 @@ slide left to right. The questions, in order:
    **Rebuilt 17 September 2026** from a lone switch that revealed a card of
    pills and a second page called *Adjust levels*. Since **20 September
    2026** it is the same control in all three places it appears — here, in
-   *Underneath* in the settings drawer, and in the sheet during a sitting —
-   where before, the drawer's tiles had no level on them at all and the
+   *Underneath* in the settings drawer, and (until 30 September 2026) in
+   the sheet during a sitting — where before, the drawer's tiles had no level on them at all and the
    sitting had a different mixer again.
 7. *When you are ready.* — a drawn singing bowl over the line of what the
    sitting will be (*Until 12:55 · singing bowl · rain*) with *Change* beside
@@ -368,8 +376,10 @@ the first here this hour*, or nothing when the count could not be read — never
 a guess. Names are only the ones people chose to share, at most three per
 place and sixty in all, and when there are several they take turns every
 twenty seconds. The clock is small in the top right. At the foot, *Sound*
-(opens the same tiles as the sound question, without its *Volume*, as a sheet
-laid over the foot of the earth; Escape or a tap outside closes it) and
+(since 30 September 2026, one line of the arrival's words above the foot —
+*silence, rain, wind, a creek…* — scrolling sideways; tap one and it plays;
+no volume; it closes itself three seconds after the last touch, and Escape
+or a tap outside closes it too) and
 *End*. *By yourself:* the same room, no
 earth, no line, the bowl faintly centred, the same clock and the same two
 controls. Sound, End, the dawn or dusk switch and the clock fade after four

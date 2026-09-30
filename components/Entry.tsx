@@ -39,7 +39,6 @@ export default function Entry() {
     signOut,
     deleteAccount,
     updateName,
-    updateEmail,
   } = useAuth();
   const { prefs, update, replace, loaded } = usePreferences();
 
@@ -139,7 +138,6 @@ export default function Entry() {
         signOut={signOut}
         deleteAccount={deleteAccount}
         updateName={updateName}
-        updateEmail={updateEmail}
       />
     </>
   );

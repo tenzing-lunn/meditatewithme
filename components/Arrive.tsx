@@ -34,7 +34,7 @@ const BELL_WORDS: Record<BellKind, string> = {
   'struck-bell': 'a struck bell',
 };
 
-const SOUND_WORDS: Record<TrackSlug | 'silence', string> = {
+export const SOUND_WORDS: Record<TrackSlug | 'silence', string> = {
   silence: 'silence',
   rain: 'rain',
   wind: 'wind',
