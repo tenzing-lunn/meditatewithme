@@ -1,9 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { browserClient } from '@/lib/supabase';
-import { SERVICE_UNREACHABLE, authErrorMessage } from '@/lib/authErrors';
+import { GMAIL_USES_GOOGLE, SERVICE_UNREACHABLE, authErrorMessage, emailReasonMessage } from '@/lib/authErrors';
+import { isGoogleMail } from '@/lib/emailCode';
 import { readLinkError } from '@/lib/authRedirect';
 
 /**
@@ -244,6 +245,12 @@ export function useAuth() {
   }, []);
 
   /**
+   * Addresses the site sent its own code to — connected ones, which Supabase
+   * does not know (`app/api/signin`) — so `verify` knows where to take it.
+   */
+  const connected = useRef(new Set<string>());
+
+  /**
    * Send the email that makes an account.
    *
    * No password means no password to choose, forget, reset, or reuse from
@@ -266,6 +273,25 @@ export function useAuth() {
    */
   const signIn = useCallback(
     async (email: string, name?: string): Promise<string | null> => {
+      // Gmail goes through the Google button only; see `isGoogleMail`.
+      if (isGoogleMail(email)) return GMAIL_USES_GOOGLE;
+      // A connected address first: Supabase would make it a new account.
+      // If the route cannot be reached, fall through to Supabase rather than
+      // let a fault here stop everybody signing in.
+      try {
+        const response = await fetch('/api/signin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+        const reply = await response.json();
+        if (reply.kind === 'connected') {
+          connected.current.add(email.trim().toLowerCase());
+          return reply.ok ? null : emailReasonMessage(reply.reason);
+        }
+      } catch {
+        // Supabase's own path below.
+      }
       try {
         const { error } = await (await browserClient()).auth.signInWithOtp({
           email,
@@ -332,6 +358,24 @@ export function useAuth() {
    */
   const verify = useCallback(
     async (email: string, token: string): Promise<string | null> => {
+      if (connected.current.has(email.trim().toLowerCase())) {
+        try {
+          const response = await fetch('/api/signin', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, code: token }),
+          });
+          const reply = await response.json();
+          if (!reply.ok) return emailReasonMessage(reply.reason);
+          const { error } = await (await browserClient()).auth.verifyOtp({
+            token_hash: reply.tokenHash,
+            type: 'magiclink',
+          });
+          return error ? authErrorMessage(error.code, error.message) : null;
+        } catch {
+          return SERVICE_UNREACHABLE;
+        }
+      }
       try {
         const { error } = await (await browserClient()).auth.verifyOtp({
           email,
@@ -433,27 +477,6 @@ export function useAuth() {
     }
   }, []);
 
-  /**
-   * Change the address. Supabase does not switch it at once: it emails a
-   * confirmation link (to both addresses, with secure email change on), and
-   * the account's email only moves once that is followed. An error string,
-   * or null once the email has gone.
-   */
-  const updateEmail = useCallback(async (email: string): Promise<string | null> => {
-    try {
-      const { error } = await (await browserClient()).auth.updateUser(
-        { email: email.trim() },
-        { emailRedirectTo: `${window.location.origin}/` },
-      );
-      if (!error) return null;
-      return error.status === 429
-        ? 'Too many emails just now. Wait a minute and try again.'
-        : 'That address could not be used. Check it and try again.';
-    } catch {
-      return 'Could not reach the server. Please try again.';
-    }
-  }, []);
-
   return {
     state,
     linkError,
@@ -463,7 +486,6 @@ export function useAuth() {
     signOut,
     deleteAccount,
     updateName,
-    updateEmail,
   };
 }
 

@@ -13,10 +13,15 @@ import { mmss, remainingMs } from '@/lib/timer';
 import BackChevron from './BackChevron';
 import Brand from './Brand';
 import { WORD } from './controls';
-import Sounds, { type MixPatch } from './Sounds';
+import SoundLine from './SoundLine';
+import type { MixPatch } from './Sounds';
 
 /** Stillness, in ms, before Sound and End rest. */
 const CONTROLS_REST_MS = 4000;
+/** Untouched, in ms, before the line of sounds closes itself. */
+const SOUND_REST_MS = 3000;
+/** How long *End the sitting now?* waits before it takes itself back. */
+const CONFIRM_MS = 6000;
 
 export interface Sit {
   /** Its own id, minted at the strike. Carried into the practice log so a
@@ -46,10 +51,12 @@ export interface Sit {
  * the thing. When someone is on camera `Journey` frames them on the water
  * (`LiveLayer`); between two of them the line says when the next starts.
  *
- * Sound opens the six tiles and their Volume in a sheet above the foot; the
- * caller raises the master when it opens, since a first-timer's graph was
- * built silent. Escape closes it and puts the keyboard back on *Sound*; a tap
- * anywhere outside it closes it and leaves the tap where it landed.
+ * Sound opens one line of words above the foot (`SoundLine`): tap one and it
+ * plays. The caller raises the master when it opens, since a first-timer's
+ * graph was built silent. It closes itself three seconds after the last
+ * touch, so changing the sound never becomes something to tend; Escape
+ * closes it and puts the keyboard back on *Sound*, and a tap anywhere
+ * outside it closes it and leaves the tap where it landed.
  *
  * THE CONTROLS REST
  * Sound, End, the mark and the clock are there when the
@@ -58,6 +65,13 @@ export interface Sit {
  * sound sheet is open and while focus is inside them, so a keyboard never
  * tabs onto something it cannot see; resting, they cannot be pressed, and
  * the tap that wakes them lands on the sitting instead.
+ *
+ * END ASKS FIRST
+ * End does not end: it turns the two words into *End the sitting now?* with
+ * *Yes, end* and *Keep sitting*, in the same place. The keyboard lands on
+ * *Keep sitting*, Escape is the same as pressing it, and left alone for six
+ * seconds the question takes itself back, so a stray tap in the dark never
+ * costs a sitting.
  *
  * ENDED
  * With `ended` the bell has rung and this is the held beat before the
@@ -102,6 +116,7 @@ export default function Sitting({
   onBack?: () => void;
 }) {
   const [soundOpen, setSoundOpen] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [awake, setAwake] = useState(true);
   const [focusInside, setFocusInside] = useState(false);
   const rest = useRef(0);
@@ -118,15 +133,27 @@ export default function Sitting({
   const foot = useRef<HTMLDivElement | null>(null);
   const sheet = useRef<HTMLDivElement | null>(null);
   const soundButton = useRef<HTMLButtonElement | null>(null);
+  const soundRest = useRef(0);
+  const touchSound = useCallback(() => {
+    window.clearTimeout(soundRest.current);
+    soundRest.current = window.setTimeout(() => {
+      // The keyboard would otherwise be left on a word that is gone.
+      if (sheet.current?.contains(document.activeElement)) soundButton.current?.focus();
+      setSoundOpen(false);
+    }, SOUND_REST_MS);
+  }, []);
 
-  // Open: the keyboard goes to the first tile. Escape closes and puts it
-  // back on *Sound*, since the tile it was on is about to unmount and
+  // Open: the keyboard goes to the word that is on. Escape closes and puts
+  // it back on *Sound*, since the word it was on is about to unmount and
   // without this the next Tab would start the page over. A press outside
   // closes too, without moving focus: whoever tapped elsewhere has already
   // put their attention there.
   useEffect(() => {
     if (!soundOpen) return;
-    sheet.current?.querySelector('button')?.focus();
+    sheet.current
+      ?.querySelector<HTMLButtonElement>('[aria-checked="true"]')
+      ?.focus({ preventScroll: true });
+    touchSound();
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       e.preventDefault();
@@ -141,15 +168,47 @@ export default function Sitting({
     return () => {
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('pointerdown', onDown);
+      window.clearTimeout(soundRest.current);
     };
-  }, [soundOpen]);
+  }, [soundOpen, touchSound]);
 
   // The bell may ring with the sheet open; it goes with the controls.
   useEffect(() => {
-    if (ended) setSoundOpen(false);
+    if (ended) {
+      setSoundOpen(false);
+      setConfirming(false);
+    }
   }, [ended]);
 
-  const shown = !ended && (awake || soundOpen || focusInside);
+  const endButton = useRef<HTMLButtonElement | null>(null);
+  const keepButton = useRef<HTMLButtonElement | null>(null);
+  const refocusEnd = useRef(false);
+  const keep = useCallback(() => {
+    refocusEnd.current = true;
+    setConfirming(false);
+  }, []);
+  useEffect(() => {
+    if (!confirming) {
+      // Back on *End*, now that it is there again.
+      if (refocusEnd.current) endButton.current?.focus({ preventScroll: true });
+      refocusEnd.current = false;
+      return;
+    }
+    keepButton.current?.focus({ preventScroll: true });
+    const timer = window.setTimeout(() => setConfirming(false), CONFIRM_MS);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.preventDefault();
+      keep();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [confirming, keep]);
+
+  const shown = !ended && (awake || soundOpen || confirming || focusInside);
   const controls = `transition-opacity duration-500 motion-reduce:transition-none ${
     shown ? 'opacity-100' : 'pointer-events-none opacity-0'
   }`;
@@ -209,10 +268,8 @@ export default function Sitting({
         className="relative flex flex-col items-center gap-2 px-6 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:flex-row sm:items-end sm:px-14 lg:px-24"
       >
         {soundOpen && (
-          <div ref={sheet} className="absolute inset-x-0 bottom-full mx-auto w-full max-w-md px-4 pb-3 sm:right-10 sm:left-auto">
-            <div className="rounded-card border border-rule bg-surface/90 p-4 shadow-menu">
-              <Sounds mix={soundMix} onSound={onSound} tight />
-            </div>
+          <div ref={sheet} className="absolute inset-x-0 bottom-full mx-auto w-full max-w-xl pb-3">
+            <SoundLine mix={soundMix} onSound={onSound} onTouch={touchSound} />
           </div>
         )}
         <p className="min-h-6 max-w-md text-center text-body text-balance text-ink-2 sm:flex-1 sm:max-w-none">
@@ -223,21 +280,45 @@ export default function Sitting({
           inert={ended}
           {...holdWhileFocused}
         >
-          <button
-            ref={soundButton}
-            type="button"
-            onClick={() => {
-              if (!soundOpen) onSoundOpen();
-              setSoundOpen((v) => !v);
-            }}
-            aria-expanded={soundOpen}
-            className={WORD}
-          >
-            Sound
-          </button>
-          <button type="button" onClick={onEnd} className={WORD}>
-            End
-          </button>
+          {confirming ? (
+            <div role="group" aria-label="End the sitting now?" className="flex flex-col items-center gap-1 sm:flex-row sm:gap-4">
+              <p className="font-display text-body text-ink">End the sitting now?</p>
+              <div className="flex gap-4">
+                <button type="button" onClick={onEnd} className={`${WORD} text-ink`}>
+                  Yes, end
+                </button>
+                <button ref={keepButton} type="button" onClick={keep} className={WORD}>
+                  Keep sitting
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <button
+                ref={soundButton}
+                type="button"
+                onClick={() => {
+                  if (!soundOpen) onSoundOpen();
+                  setSoundOpen((v) => !v);
+                }}
+                aria-expanded={soundOpen}
+                className={WORD}
+              >
+                Sound
+              </button>
+              <button
+                ref={endButton}
+                type="button"
+                onClick={() => {
+                  setSoundOpen(false);
+                  setConfirming(true);
+                }}
+                className={WORD}
+              >
+                End
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

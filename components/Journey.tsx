@@ -197,7 +197,6 @@ export interface JourneyProps {
   signOut: () => void;
   deleteAccount: () => Promise<string | null>;
   updateName: (name: string) => Promise<string | null>;
-  updateEmail: (email: string) => Promise<string | null>;
 }
 
 export default function Journey({
@@ -216,7 +215,6 @@ export default function Journey({
   signOut,
   deleteAccount,
   updateName,
-  updateEmail,
 }: JourneyProps) {
   const { now, mono } = useClock();
   const { profile, setProfile } = useProfile({
@@ -540,7 +538,6 @@ export default function Journey({
       profile={profile}
       onProfile={setProfile}
       updateName={updateName}
-      updateEmail={updateEmail}
       signOut={signOut}
       deleteAccount={deleteAccount}
     />

@@ -14,6 +14,18 @@ and §3's history says what it replaced.
 
 ## 1. Live status
 
+**30 September 2026 (evening): sign-in email, connected addresses, and the
+sound line go live.** Tenzing asked for all of `dev` to be merged: the
+unticked *Email me when the app is ready* switch at sign-in, several email
+addresses per account (*Connect another email*, codes through Resend), Gmail
+signing in through Google only, and — swept into two of those commits by
+mistake from another session's work in progress — the sitting's Sound sheet
+replaced by a single line of sound words (`SoundLine`). Known defect shipped
+with it: the line closes itself after three seconds unless you tap, scroll
+or press an arrow, so a keyboard or screen-reader user can lose it mid-read.
+The two-inbox run of connected addresses had not been done. **Jonny had not
+seen any of it.** Rollback: redeploy `48eab12`.
+
 **29 September 2026: How you sit, and the fish, go live.** Tenzing asked
 for `dev` to be merged into `main` (release commit `Release: How you sit,
 and the fish`) ahead of his own user tests, putting live everything in §2's
@@ -129,7 +141,9 @@ and your stone is thrown from the button: it skims
 across the water, slowing, and sinks at the centre, leaving its shadow and
 its rings — then now and then a soft ring, never on a beat. The sitting's
 words fade in once it has settled: the faint mark and the time left above,
-the company line and *Sound* and *End* below. At the bell the other stones
+the company line and *Sound* and *End* below. *End* asks first — *End the
+sitting now?* with *Yes, end* and *Keep sitting* in the same place, taking
+itself back after six seconds untouched. At the bell the other stones
 go and one soft train of wide rings leaves yours; *Come back.* comes into
 focus with it and is held for ten seconds, then the sitting fades and
 *N minutes.* rises into the same line, with *The water is still again.* and
@@ -175,13 +189,27 @@ doors, which have not been changed and do not offer the guided sitting
 yet. Production shows none of it until `dev` is merged, and even then no
 video until its env names a video server.
 
-**The account corner, on `dev` since 30 September 2026, not live and not
-shown to Jonny** (`plans/account-corner.md`). The old Home is gone:
+**The account corner, live since 30 September 2026 (`48eab12`, merged so a
+friend of Tenzing's could test the flow), not shown to Jonny** (`plans/account-corner.md`). The old Home is gone:
 everybody, signed in or not, lands on the pond, and the only difference is
 the top-right corner. A guest sees *Sign in* there, which opens the panel
 straight away — *Continue with Google* (live since the same day, under
 Tenzing's Google account), or an email code — with *Don't have an account?
-Create one* at its foot turning it to *Create account*, name first. Signed
+Create one* at its foot turning it to *Create account*, name first. **On
+`dev` since 30 September 2026**, both that panel and *Would you like to be
+remembered?* carry an unticked switch above *Continue with Google*, *Email
+me when the app is ready* (*And now and then, news of the site.*), which
+applies to Google and the email code alike and lands in
+`profiles.email_updates` once signed in. Nothing sends mail to that list,
+there is no unsubscribe yet, and the privacy notice that has to cover it
+is still unpublished; Jonny has not been asked. The Account page's email
+is a list, not a field: *Connect another email* sends a six-digit code to
+the new address and, once it is typed back, that address signs in to the
+same account too; any address can be removed while one is left. An address
+that already has its own account is refused with *That email already has
+its own account here.* A Gmail address cannot be signed in or connected by
+code; it is told to use *Continue with Google*. It needs `RESEND_API_KEY` set in Vercel before it
+works (`plans/connected-emails.md`). Signed
 in, the corner is your first name; pressing it fades the name and slides
 *Account · Settings · Layout* out of its place (on a phone the wordmark and
 clock fade for them), and pressing elsewhere slides them back. *Account*:
@@ -190,8 +218,7 @@ your name and email (a new address is confirmed by email), your practice,
 from and whether others see your name while you sit with them; animations,
 sound and your own sounds to come. *Layout*: themes, coming soon. A
 sitting's *Done* returns everybody to the pond. The descriptions of Home,
-its doors and its drawer below are what production still shows until this
-is merged.
+its doors and its drawer below are history: production no longer shows them.
 
 **Rebuilt on 14 September 2026** (`docs/ui-rebuild.md`, on `ui-warm`). The
 photographic room, the landing word, the settings panel and the ring are gone;
@@ -321,8 +348,8 @@ slide left to right. The questions, in order:
    **Rebuilt 17 September 2026** from a lone switch that revealed a card of
    pills and a second page called *Adjust levels*. Since **20 September
    2026** it is the same control in all three places it appears — here, in
-   *Underneath* in the settings drawer, and in the sheet during a sitting —
-   where before, the drawer's tiles had no level on them at all and the
+   *Underneath* in the settings drawer, and (until 30 September 2026) in
+   the sheet during a sitting — where before, the drawer's tiles had no level on them at all and the
    sitting had a different mixer again.
 7. *When you are ready.* — a drawn singing bowl over the line of what the
    sitting will be (*Until 12:55 · singing bowl · rain*) with *Change* beside
@@ -362,8 +389,10 @@ the first here this hour*, or nothing when the count could not be read — never
 a guess. Names are only the ones people chose to share, at most three per
 place and sixty in all, and when there are several they take turns every
 twenty seconds. The clock is small in the top right. At the foot, *Sound*
-(opens the same six tiles and *Volume* as the sound question, as a sheet
-laid over the foot of the earth; Escape or a tap outside closes it) and
+(since 30 September 2026, one line of the arrival's words above the foot —
+*silence, rain, wind, a creek…* — scrolling sideways; tap one and it plays;
+no volume; it closes itself three seconds after the last touch, and Escape
+or a tap outside closes it too) and
 *End*. *By yourself:* the same room, no
 earth, no line, the bowl faintly centred, the same clock and the same two
 controls. Sound, End, the dawn or dusk switch and the clock fade after four
@@ -599,8 +628,8 @@ clips. Re-measured after: 0.12 dB apart, worst peak 0.933.
 steel tongue drum (CC0), and three beds were swapped — the waterfall for a
 small creek (CC BY 4.0, kevp888), the sea for long rolling swells (CC0,
 bassimat) and the crickets for a park in the evening, birds and insects
-(CC BY 4.0, klankbeeld). **The two CC BY recordings need a visible credit
-before they reach `main`**: `/credits` exists and is built from
+(CC BY 4.0, klankbeeld). **The two CC BY recordings reached `main` on 30
+September 2026 without a visible credit, and are owed one**: `/credits` exists and is built from
 `lib/beds.ts`, but nothing links to it yet, same as the privacy notice and
 the terms. The creek is very quiet at source and was raised about 27 dB, so
 listen for hiss. Not listened to by an agent; Jonny has not heard any of it.

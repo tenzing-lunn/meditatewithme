@@ -6,6 +6,7 @@ import {
   RATE_LIMITED,
   SERVICE_UNREACHABLE,
   authErrorMessage,
+  emailReasonMessage,
 } from '../lib/authErrors.ts';
 
 /** The exact strings the auth server sends with these codes today. */
@@ -45,5 +46,19 @@ describe('authErrorMessage', () => {
       assert.ok(!/security purposes|\d+ seconds|token/i.test(out), out);
       assert.ok([RATE_LIMITED, CODE_REJECTED, SERVICE_UNREACHABLE].includes(out));
     }
+  });
+});
+
+describe('emailReasonMessage', () => {
+  test('an address on another account says so', () => {
+    assert.equal(emailReasonMessage('taken'), 'That email already has its own account here.');
+  });
+  test('code and rate reasons share the sign-in sentences', () => {
+    assert.equal(emailReasonMessage('wrong'), CODE_REJECTED);
+    assert.equal(emailReasonMessage('dead'), CODE_REJECTED);
+    assert.equal(emailReasonMessage('wait'), RATE_LIMITED);
+  });
+  test('anything unknown is the unreachable sentence', () => {
+    assert.equal(emailReasonMessage(undefined), SERVICE_UNREACHABLE);
   });
 });

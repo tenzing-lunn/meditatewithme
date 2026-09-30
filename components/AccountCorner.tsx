@@ -6,6 +6,7 @@ import { NAME_MAX, ORIGIN_MAX, composeLabel } from '@/lib/label';
 import { humanMinutes, type PracticeEntry } from '@/lib/practice';
 import Brand from './Brand';
 import Practice from './Practice';
+import Emails from './Emails';
 import Switch from './Switch';
 import { CHIP, CHIP_ON, FIELD, PRIMARY, QUIET, WORD } from './controls';
 import type { Profile } from '@/lib/label';
@@ -37,7 +38,6 @@ export default function AccountCorner({
   profile,
   onProfile,
   updateName,
-  updateEmail,
   signOut,
   deleteAccount,
 }: {
@@ -48,7 +48,6 @@ export default function AccountCorner({
   profile: Profile;
   onProfile: (patch: Partial<Profile>) => void;
   updateName: (name: string) => Promise<string | null>;
-  updateEmail: (email: string) => Promise<string | null>;
   signOut: () => void;
   deleteAccount: () => Promise<string | null>;
 }) {
@@ -162,7 +161,6 @@ export default function AccountCorner({
               entries={entries}
               now={now}
               updateName={updateName}
-              updateEmail={updateEmail}
               signOut={signOut}
               deleteAccount={deleteAccount}
             />
@@ -228,7 +226,6 @@ function AccountPage({
   entries,
   now,
   updateName,
-  updateEmail,
   signOut,
   deleteAccount,
 }: {
@@ -237,14 +234,11 @@ function AccountPage({
   entries: PracticeEntry[];
   now: number | null;
   updateName: (name: string) => Promise<string | null>;
-  updateEmail: (email: string) => Promise<string | null>;
   signOut: () => void;
   deleteAccount: () => Promise<string | null>;
 }) {
   const nameId = useId();
-  const emailId = useId();
   const [nameDraft, setNameDraft] = useState(name ?? '');
-  const [emailDraft, setEmailDraft] = useState(email ?? '');
   const [saving, setSaving] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
@@ -252,7 +246,6 @@ function AccountPage({
   const [error, setError] = useState<string | null>(null);
 
   const nameChanged = nameDraft.trim() !== (name ?? '');
-  const emailChanged = emailDraft.trim() !== '' && emailDraft.trim() !== (email ?? '');
 
   return (
     <div className="flex flex-col gap-10">
@@ -260,19 +253,12 @@ function AccountPage({
         className="flex flex-col gap-4"
         onSubmit={async (e) => {
           e.preventDefault();
-          if (!nameChanged && !emailChanged) return;
+          if (!nameChanged) return;
           setSaving(true);
           setNote(null);
-          const nameError = nameChanged ? await updateName(nameDraft) : null;
-          const emailError = !nameError && emailChanged ? await updateEmail(emailDraft) : null;
+          const nameError = await updateName(nameDraft);
           setSaving(false);
-          setNote(
-            nameError ??
-              emailError ??
-              (emailChanged
-                ? `We have sent a link to ${emailDraft.trim()}. The address changes once you follow it.`
-                : 'Saved.'),
-          );
+          setNote(nameError ?? 'Saved.');
         }}
       >
         <div>
@@ -290,23 +276,8 @@ function AccountPage({
             className={FIELD}
           />
         </div>
-        <div>
-          <label htmlFor={emailId} className="mb-1.5 block text-caption text-ink-3">
-            Email
-          </label>
-          <input
-            id={emailId}
-            type="email"
-            autoComplete="email"
-            spellCheck={false}
-            autoCapitalize="none"
-            value={emailDraft}
-            onChange={(e) => setEmailDraft(e.target.value)}
-            className={FIELD}
-          />
-        </div>
         <div className="flex items-center gap-3">
-          <button type="submit" disabled={saving || (!nameChanged && !emailChanged)} className={PRIMARY}>
+          <button type="submit" disabled={saving || !nameChanged} className={PRIMARY}>
             {saving ? 'Save…' : 'Save'}
           </button>
           <p role="status" className="text-caption leading-relaxed text-ink-3">
@@ -314,6 +285,11 @@ function AccountPage({
           </p>
         </div>
       </form>
+
+      <div className="flex flex-col gap-4">
+        <Heading>Email</Heading>
+        <Emails email={email} />
+      </div>
 
       <div className="flex flex-col gap-4">
         <Heading>Your practice</Heading>

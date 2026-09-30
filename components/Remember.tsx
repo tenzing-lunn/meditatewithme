@@ -10,6 +10,8 @@ import OriginScreen from './OriginScreen';
 import Rail from './Rail';
 import Screen from './Screen';
 import GoogleSignIn from './GoogleSignIn';
+import Switch from './Switch';
+import { askEmailUpdates } from './useEmailUpdates';
 
 const STEPS = ['ask', 'name', 'place', 'email', 'code'] as const;
 type Step = typeof STEPS[number];
@@ -34,6 +36,7 @@ export default function Remember({ profile, onProfile, signIn, signInWithGoogle,
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resent, setResent] = useState(false);
+  const [updates, setUpdates] = useState(false);
   const pending = useRef(false);
   const id = useId();
 
@@ -51,6 +54,7 @@ export default function Remember({ profile, onProfile, signIn, signInWithGoogle,
     setBusy(true);
     setError(null);
     setResent(false);
+    askEmailUpdates(updates);
     try {
       const message = await signIn(email.trim(), cleanText(name, NAME_MAX) ?? undefined);
       if (message) setError(message);
@@ -102,7 +106,11 @@ export default function Remember({ profile, onProfile, signIn, signInWithGoogle,
         if (screen === 'ask') return (
           <Screen current={current} align="center" title="Would you like to be remembered?" lede="Keep your practice and settings with you.">
             <div className="mx-auto mb-5 w-full max-w-xs">
-              <GoogleSignIn signIn={signInWithGoogle} disabled={busy} onBusyChange={setBusy} onError={setError} />
+              <div className="mb-4">
+                <Switch checked={updates} onChange={setUpdates} label="Email me when the app is ready"
+                  description="And now and then, news of the site." />
+              </div>
+              <GoogleSignIn signIn={() => { askEmailUpdates(updates); return signInWithGoogle(); }} disabled={busy} onBusyChange={setBusy} onError={setError} />
               <p className="mt-3 text-caption text-ink-3">You’ll stay signed in on this browser.</p>
               <p role="alert" className="mt-3 text-caption text-ember">{error}</p>
             </div>

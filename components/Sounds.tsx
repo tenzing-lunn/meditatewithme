@@ -32,7 +32,9 @@ import { DEFAULT_MASTER, MASTER_KEY, TRACKS, type TrackSlug } from './mix';
  * the *Sound* button opens during a sitting. Until 20 September 2026 those
  * were three different controls, so somebody who learned the mix on the rail
  * met a different instrument at every other door. The rail's is the one that
- * stayed, and this is it.
+ * stayed, and this is it — on the rail and in the drawer. Since 30 September
+ * 2026 the sitting has its own, lighter control (`SoundLine`): one line of
+ * words, no volume, because mid-sitting the device's own buttons are that.
  *
  * WHAT IS ALLOWED TO BE HEARD
  * Nothing here builds an audio graph or raises a master on its own. Every
@@ -94,7 +96,6 @@ export default function Sounds({
   mix,
   onSound,
   onFirst,
-  tight = false,
 }: {
   mix: Record<string, number>;
   /**
@@ -107,15 +108,6 @@ export default function Sounds({
   onSound: (patch: MixPatch) => void;
   /** The first bed of the session is going on. The rail raises the master. */
   onFirst?: () => void;
-  /**
-   * Three across at every width, for the sheet during a sitting. The same six
-   * tiles, wrapped differently because they are not alone on the screen:
-   * two-across on a phone made the grid three rows, and at 375×667 that left
-   * the earth 52 pixels tall while the sheet was open. Everywhere else the
-   * question has the screen to itself and the tiles stay two-across, which is
-   * the size a thumb wants.
-   */
-  tight?: boolean;
 }) {
   const prefix = useId();
   const tiles = useRef<(HTMLButtonElement | null)[]>([]);
@@ -154,7 +146,7 @@ export default function Sounds({
   return (
     <div className="flex flex-col gap-3 sm:gap-4">
       <div
-        className={`grid gap-2 sm:gap-2.5 ${tight ? 'grid-cols-3' : 'grid-cols-2 sm:grid-cols-3'}`}
+        className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-2.5"
         role="radiogroup"
         aria-label="Sounds"
       >
