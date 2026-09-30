@@ -1,6 +1,7 @@
 'use client';
 
 import { DEFAULT_BELL, type BellKind } from '@/lib/types';
+import { DRUM_SOURCE } from '@/lib/beds';
 import { fillNoise } from '@/lib/noise';
 
 export type { BellKind };
@@ -142,16 +143,26 @@ interface Strike {
  * its lowest mode. The three numbers here are unchanged, and deliberately —
  * this work was meant to change what the bells sound like, not what they play.
  */
-export const BELLS: Record<
-  BellKind,
-  {
-    label: string;
-    fundamental: number;
-    decay: number;
-    strike: Strike;
-    modes: readonly Mode[];
-  }
-> = {
+interface SynthBell {
+  label: string;
+  fundamental: number;
+  decay: number;
+  strike: Strike;
+  modes: readonly Mode[];
+}
+
+/**
+ * A bell that is a recording. `decay` is its length in seconds, and it plays
+ * through `strike()` on the same schedule as the synthesised ones, so the
+ * opening bell, the ending and the preview treat it identically.
+ */
+interface RecordedBell {
+  label: string;
+  decay: number;
+  recording: string;
+}
+
+export const BELLS: Record<BellKind, SynthBell | RecordedBell> = {
   /**
    * Few modes, widely spaced, and beating hard. The old shared ratios were
    * these, which is why the bowl was always the one that worked — it is kept
@@ -175,52 +186,16 @@ export const BELLS: Record<
   },
 
   /**
-   * Dense, clustered and blooming — and the ratios must not form a chord.
-   *
-   * A tam-tam is not a large bowl. Its modes are packed close together rather
-   * than spread wide, there are many more of them, and the upper ones arrive
-   * *after* the beater rather than with it. That last part is the bloom, and
-   * it is why a gong seems to grow before it fades.
-   *
-   * THE RATIOS BELOW ARE IRREGULAR ON PURPOSE, AND THE PREVIOUS SET WAS NOT.
-   * It ran 1, 1.19, 1.41, 1.68, 2.13, 2.61, 3.24, 3.97, 4.81, 5.92 — every step
-   * between three and 3.7 semitones, which is a ladder of minor thirds. Ten
-   * partials on that ladder is a diminished seventh chord two and a half
-   * octaves tall, and the bloom then arpeggiated it upward. It did not sound
-   * like a gong; it sounded like a chord being played, because it was one.
-   *
-   * A tam-tam has no pitch to speak of, so no interval here may be a
-   * recognisable one. Every pair of these is at least sixteen cents off the
-   * nearest octave, fifth, fourth, third or sixth, and the steps run anywhere
-   * from 0.9 to 4.3 semitones, so nothing in the set lines up with anything
-   * else. Three of the partials over the fundamental sit inside two semitones
-   * of each other — that cluster beats against itself, and roughness down in
-   * the low mids is what a big sheet of bronze actually does.
-   *
-   * Nudging a ratio is therefore not free. Move one and check what it lands on.
+   * A steel tongue drum, a recording (CC0, see `DRUM_SOURCE` in lib/beds.ts).
+   * It replaced the synthesised gong on 29 September 2026 at Tenzing's ask;
+   * the key stays `gong` because it is stored in preferences and in a CHECK
+   * constraint. A run of notes and then a long ring, about twenty-seven
+   * seconds in all.
    */
   gong: {
-    label: 'Gong',
-    fundamental: 174,
-    decay: 22,
-    // A heavy beater on a big sheet: long, dark contact.
-    strike: { duration: 0.09, hz: 500, gain: 0.16 },
-    modes: [
-      { ratio: 1, gain: 0.9, decay: 1, beat: 0.4 },
-      { ratio: 1.23, gain: 0.62, decay: 0.9, beat: 0.7 },
-      { ratio: 1.35, gain: 0.7, decay: 0.88, beat: 0.9 },
-      { ratio: 1.42, gain: 0.58, decay: 0.82, beat: 1.2 },
-      { ratio: 1.515, gain: 0.5, decay: 0.76, beat: 1.5 },
-      { ratio: 1.73, gain: 0.44, decay: 0.66, beat: 1.9, delay: 0.2 },
-      { ratio: 2.22, gain: 0.36, decay: 0.55, beat: 2.4, delay: 0.4 },
-      { ratio: 2.62, gain: 0.32, decay: 0.46, beat: 2.9, delay: 0.6 },
-      { ratio: 3.23, gain: 0.28, decay: 0.38, beat: 3.5, delay: 0.85 },
-      { ratio: 4.09, gain: 0.24, decay: 0.3, beat: 4.2, delay: 1.1 },
-      { ratio: 4.72, gain: 0.2, decay: 0.24, delay: 1.35 },
-      { ratio: 5.3, gain: 0.16, decay: 0.19, delay: 1.6 },
-      { ratio: 6.23, gain: 0.12, decay: 0.15, delay: 1.9 },
-      { ratio: 7.6, gain: 0.08, decay: 0.11, delay: 2.2 },
-    ],
+    label: 'Tongue drum',
+    decay: DRUM_SOURCE.seconds,
+    recording: '/sounds/drum.mp3',
   },
 
   /**
@@ -303,6 +278,68 @@ export const BELLS: Record<
  */
 const PEAK = 0.9;
 
+/**
+ * One fetch and one decode per recording per page, as the beds do in mix.ts.
+ * A failed fetch is forgotten so the next strike tries again.
+ */
+const recordings = new Map<string, Promise<AudioBuffer>>();
+
+function loadRecording(context: AudioContext, url: string): Promise<AudioBuffer> {
+  let pending = recordings.get(url);
+  if (!pending) {
+    pending = fetch(url)
+      .then((r) => {
+        if (!r.ok) throw new Error(`${url}: ${r.status}`);
+        return r.arrayBuffer();
+      })
+      .then((bytes) => context.decodeAudioData(bytes));
+    pending.catch(() => recordings.delete(url));
+    recordings.set(url, pending);
+  }
+  return pending;
+}
+
+/** How much of a shortened recording's end is a fade rather than the recording. */
+const RECORDING_FADE_SECONDS = 2;
+
+/**
+ * Ring a recorded bell at `when`, for at most `seconds`.
+ *
+ * Scheduled on the audio clock like the synthesised ones. If the file has not
+ * arrived by `when` it starts as soon as it does: the closing bell is scheduled
+ * a sitting ahead, so it is nearly always there, and an opening bell on a slow
+ * connection is late rather than missing. A file that never arrives is a
+ * silent bell, the same degradation as no audio at all. A recording cut short
+ * by `seconds` — the preview, the opening bell — is faded over its last
+ * seconds, not stopped.
+ */
+function playRecording(
+  context: AudioContext,
+  when: number,
+  out: GainNode,
+  url: string,
+  seconds: number,
+) {
+  loadRecording(context, url)
+    .then((buffer) => {
+      const at = Math.max(when, context.currentTime);
+      const ring = Math.min(seconds, buffer.duration);
+      const fade = Math.min(RECORDING_FADE_SECONDS, ring / 2);
+
+      const src = context.createBufferSource();
+      src.buffer = buffer;
+      const env = context.createGain();
+      env.gain.setValueAtTime(1, at);
+      env.gain.setValueAtTime(1, at + ring - fade);
+      env.gain.linearRampToValueAtTime(0, at + ring);
+
+      src.connect(env).connect(out);
+      src.start(at);
+      src.stop(at + ring + 0.05);
+    })
+    .catch(() => {});
+}
+
 function strike(
   context: AudioContext,
   when: number,
@@ -312,6 +349,11 @@ function strike(
 ) {
   const bell = BELLS[kind];
   const decay = bell.decay * decayScale;
+
+  if ('recording' in bell) {
+    playRecording(context, when, gainNode, bell.recording, decay);
+    return;
+  }
 
   mallet(context, when, gainNode, bell.strike);
 
@@ -420,7 +462,7 @@ function mallet(
 
 export interface ScheduledBell {
   /** Silence a bell that has not rung yet. */
-  cancel: () => void;
+  cancel: (immediate?: boolean) => void;
 }
 
 /**
@@ -456,8 +498,13 @@ export function scheduleBell(
   );
 
   return {
-    cancel: () => {
+    cancel: (immediate = false) => {
       try {
+        if (immediate) {
+          // Disconnect also silences recordings that finish loading later.
+          master.disconnect();
+          return;
+        }
         // Ramp rather than disconnect — cutting a ringing bell dead produces
         // an audible click.
         master.gain.cancelScheduledValues(context.currentTime);
@@ -522,6 +569,14 @@ export function openingBell(
  * compares them, that would be three bowls ringing over each other for a minute.
  * You can tell a gong from a struck bell in four seconds.
  */
+let preview: ScheduledBell | null = null;
+
+export function stopPreviewBell(): void {
+  preview?.cancel(true);
+  preview = null;
+}
+
 export function previewBell(kind: BellKind = DEFAULT_BELL): void {
-  scheduleBell(0, kind, 0.32);
+  stopPreviewBell();
+  preview = scheduleBell(0, kind, 0.32);
 }

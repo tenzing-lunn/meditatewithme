@@ -15,6 +15,7 @@ import {
   nextSharedBellAt,
 } from '@/lib/timer';
 import type { UserPreferences } from '@/lib/types';
+import AccountCorner from './AccountCorner';
 import Afterwards, { COOLDOWN_MS } from './Afterwards';
 import Arrive from './Arrive';
 import Pond, { type PondHandle, type Stone } from './Pond';
@@ -22,7 +23,7 @@ import Rail from './Rail';
 import type { Sit } from './Sitting';
 import type { MixPatch } from './Sounds';
 import { openingBell, previewBell, scheduleBell, unlockAudio, type ScheduledBell } from './audio';
-import { ICON, WORD } from './controls';
+import { WORD } from './controls';
 import { displayName, type AuthState } from './useAuth';
 import { useClock } from './useClock';
 import { useFullscreen } from './useFullscreen';
@@ -90,6 +91,8 @@ import { useWorld } from './useWorld';
  * below means the current one is never the one waiting.
  */
 const CHUNKS = {
+  remember: () => import('./Remember'),
+  again: () => import('./AgainSetup'),
   account: () => import('./Account'),
   name: () => import('./NameScreen'),
   origin: () => import('./OriginScreen'),
@@ -99,6 +102,8 @@ const CHUNKS = {
 
 const nothing = () => null;
 const Account = dynamic(CHUNKS.account, { loading: nothing });
+const AgainSetup = dynamic(CHUNKS.again, { loading: nothing });
+const Remember = dynamic(CHUNKS.remember, { loading: nothing });
 const NameScreen = dynamic(CHUNKS.name, { loading: nothing });
 const OriginScreen = dynamic(CHUNKS.origin, { loading: nothing });
 const Sitting = dynamic(CHUNKS.sitting, { loading: nothing });
@@ -186,15 +191,13 @@ export interface JourneyProps {
   auth: AuthState;
   sync: SyncStatus;
   signIn: (email: string, name?: string) => Promise<string | null>;
+  signInWithGoogle: () => Promise<string | null>;
   verify: (email: string, code: string) => Promise<string | null>;
   linkError?: string | null;
   signOut: () => void;
-  /**
-   * Present when signed in, and it carries the whole difference: Escape on
-   * the arrival goes here, and Done at the end goes here. Absent for a
-   * guest, whose way out is the arrival.
-   */
-  home?: () => void;
+  deleteAccount: () => Promise<string | null>;
+  updateName: (name: string) => Promise<string | null>;
+  updateEmail: (email: string) => Promise<string | null>;
 }
 
 export default function Journey({
@@ -207,10 +210,13 @@ export default function Journey({
   auth,
   sync,
   signIn,
+  signInWithGoogle,
   verify,
   linkError,
   signOut,
-  home,
+  deleteAccount,
+  updateName,
+  updateEmail,
 }: JourneyProps) {
   const { now, mono } = useClock();
   const { profile, setProfile } = useProfile({
@@ -222,7 +228,7 @@ export default function Journey({
   const fullscreen = useFullscreen();
   const wakeLock = useWakeLock();
   const reduced = useReducedMotion();
-  const signedIn = Boolean(home);
+  const signedIn = auth.status === 'signed-in';
 
   // The chunks for everything past the arrival. See `warm` above.
   useEffect(warm, []);
@@ -253,6 +259,9 @@ export default function Journey({
    * the air; the sitting's own words arrive once it has settled.
    */
   const [landed, setLanded] = useState(true);
+  const [again, setAgain] = useState(false);
+  const [rememberSkipped, setRememberSkipped] = useState(false);
+  const [repeatThrow, setRepeatThrow] = useState(false);
   const thrownAt = stage.kind === 'sitting' ? stage.thrown : null;
   useEffect(() => {
     if (thrownAt === null || reduced) {
@@ -280,6 +289,11 @@ export default function Journey({
   const world = useWorld(withOthersNow || atArrive);
   /** *By yourself* or *with a guide*, chosen in the arrival's sentence. */
   const [guidedPick, setGuidedPick] = useState(false);
+  const chooseGuided = useCallback((guided: boolean) => {
+    setGuidedPick(guided);
+    // By yourself is among the fish, as the door was.
+    if (!guided) update({ showCount: true });
+  }, [update]);
   const labels = world.points.flatMap((p) => p.labels ?? []);
   const ownLabel = profile.share ? composeLabel(profile.name, profile.origin) : null;
 
@@ -315,13 +329,12 @@ export default function Journey({
     [screens],
   );
 
-  /** Back off the first screen: home for somebody signed in, nothing for a guest. */
+  /** Back a screen; off the first there is nowhere further back. */
   const back = useCallback(() => {
     const s = stageRef.current;
     if (s.kind !== 'rail') return;
-    if (step(screens, s.at, -1) === null) home?.();
-    else go(-1);
-  }, [screens, go, home]);
+    if (step(screens, s.at, -1) !== null) go(-1);
+  }, [screens, go]);
 
   /**
    * A guest coming back to the arrival after a sitting is starting a new
@@ -329,6 +342,8 @@ export default function Journey({
    * the name and place are asked, once, and never twice.
    */
   const restart = useCallback(() => {
+    setAgain(false);
+    setRepeatThrow(false);
     const next = decide();
     setScreens(next);
     setStage({ kind: 'rail', at: next[0]!, dir: -1 });
@@ -362,6 +377,10 @@ export default function Journey({
   }, [back]);
 
   const begin = useCallback((thrown: Thrown, guided = false) => {
+    setRememberSkipped(false);
+    setLanded(thrown === null || reduced);
+    setRepeatThrow(stageRef.current.kind === 'finished');
+    setAgain(false);
     // Inside the click, all of it. The context, the graph, the stored mix,
     // and full screen if it was asked for: none of them start any other way.
     unlockAudio();
@@ -405,7 +424,7 @@ export default function Journey({
     });
     // Presence never delays the ritual.
     void recordBegin();
-  }, [prefs, now, mix, fullscreen, wakeLock, recordBegin]);
+  }, [prefs, now, mix, fullscreen, wakeLock, recordBegin, reduced]);
 
   const endEarly = useCallback(() => {
     const s = stageRef.current;
@@ -427,9 +446,8 @@ export default function Journey({
     }
     fullscreen.exit();
     wakeLock.release();
-    if (home) home();
-    else restart();
-  }, [mix, record, fullscreen, wakeLock, home, restart]);
+    restart();
+  }, [mix, record, fullscreen, wakeLock, restart]);
 
   // The bell rings itself, on the audio clock. This only moves the UI on.
   useEffect(() => {
@@ -513,19 +531,29 @@ export default function Journey({
     else next();
   }, [screens, begin, next, guidedPick]);
 
-  const menu = signedIn ? (
-    <button type="button" onClick={home} className={WORD}>
-      Home
-    </button>
+  const menu = auth.status === 'signed-in' ? (
+    <AccountCorner
+      name={displayName(auth.user)}
+      email={auth.user.email}
+      entries={entries}
+      now={now}
+      profile={profile}
+      onProfile={setProfile}
+      updateName={updateName}
+      updateEmail={updateEmail}
+      signOut={signOut}
+      deleteAccount={deleteAccount}
+    />
   ) : (
     <Account
       state={auth}
       sync={sync}
       signIn={signIn}
+      signInWithGoogle={signInWithGoogle}
       verify={verify}
       linkError={linkError}
       signOut={signOut}
-      className={ICON}
+      className={WORD}
     />
   );
 
@@ -551,7 +579,7 @@ export default function Journey({
         <Pond
           ref={pond}
           stones={showStones ? stones : []}
-          you={stage.kind !== 'rail'}
+          you={stage.kind !== 'rail' && !again}
           throwFrom={thrown}
           bellAt={finished ? stage.endedAt : null}
           reduced={reduced}
@@ -562,22 +590,32 @@ export default function Journey({
 
       {finished && !held && (
         <div className="absolute inset-0">
-          <Afterwards
+          {!signedIn && !rememberSkipped ? <Remember
+            profile={profile}
+            suggestion={origin.suggestion}
+            onProfile={setProfile}
+            signIn={signIn}
+            signInWithGoogle={signInWithGoogle}
+            verify={verify}
+            onSkip={() => setRememberSkipped(true)}
+          /> : again ? <AgainSetup
+            prefs={prefs}
+            update={update}
+            guided={guidedPick}
+            onGuided={chooseGuided}
+            now={now}
+            onTaste={mix.taste}
+            onHush={mix.hush}
+            onBegin={(at) => begin({ at, t: performance.now() }, guidedPick)}
+            onCancel={() => setAgain(false)}
+          /> : <Afterwards
             minutes={stage.minutes}
-            onAgain={() => begin(null, guidedPick)}
-            onDone={
-              home
-                ? () => {
-                    fullscreen.exit();
-                    home();
-                  }
-                : undefined
-            }
+            onAgain={() => setAgain(true)}
             onFinish={() => {
               fullscreen.exit();
               restart();
             }}
-          />
+          />}
         </div>
       )}
 
@@ -611,7 +649,7 @@ export default function Journey({
         </div>
       )}
 
-      {(stage.kind === 'rail' || !landed) && (
+      {(stage.kind === 'rail' || (!landed && !repeatThrow)) && (
         <div className="absolute inset-0" inert={stage.kind !== 'rail'}>
           <Rail
             screens={screens}
@@ -648,11 +686,7 @@ export default function Journey({
                       onWater={(at) => pond.current?.flick(at)}
                       guided={guidedPick}
                       guide={guideLine}
-                      onGuided={(g) => {
-                        setGuidedPick(g);
-                        // By yourself is among the fish, as the door was.
-                        if (!g) update({ showCount: true });
-                      }}
+                      onGuided={chooseGuided}
                       onPreviewBell={(kind) => {
                         unlockAudio();
                         previewBell(kind);

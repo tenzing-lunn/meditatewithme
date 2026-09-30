@@ -157,30 +157,43 @@ export function trainAt(a: number, s: Train): Ring[] {
  * ring, never on a beat. The gaps are drawn from a slow random process,
  * seeded, so the same sitting always breathes the same way: short at first
  * while the water is still unsettled from the landing, stretching over the
- * first minute or so to about one every twelve seconds, sometimes six,
- * sometimes twenty. Two gaps in a row are never nearly the same length.
+ * first minute or so. The barely visible tail is removed before a brief
+ * quiet pause, so there is only one ring at a time. Two pauses
+ * in a row are never nearly the same length.
  */
 export const BREATH = {
   /** Seconds after the landing of the first breath, at the earliest. */
-  first: 5.5,
-  /** The mean gap just after the landing, and where it settles. */
-  early: 4.5,
-  settled: 12,
+  first: 10,
+  /** The mean quiet pause after a ring, initially and once settled. */
+  early: 0.35,
+  settled: 0.6,
   /** Seconds over which the gaps stretch from `early` towards `settled`. */
   tau: 22,
   /** Seconds a breath's ring lasts, and how long it takes to come up. */
   life: 10,
   rise: 1.4,
+  /** End the faint tail at roughly two percent opacity. */
+  visibleFloor: 0.02,
   /** How faint it is beside the landing (0..1), at most. */
   strength: 0.34,
   /** How far off the stone's centre a breath can come up, in pixels. */
   drift: 4,
 } as const;
 
-/** The gap after the breath at `s` seconds, the `k`th, following a gap of `prev`. */
+/** Visible lifetime, accounting for each ring's strength and its fading tail.
+ * At the end of the expansion, spreading reduces opacity by this factor.
+ * Use the same cutoff for scheduling and removal, including after a resize.
+ */
+export function breathDuration(seed: number, k: number): number {
+  const strength = BREATH.strength * (0.6 + 0.4 * unit(seed, 4 * k + 3));
+  const spread = Math.sqrt(TRAIN.spread / (TRAIN.spread + 1));
+  return BREATH.life * (1 - (BREATH.visibleFloor / (strength * spread)) ** (1 / 1.3));
+}
+
+/** Quiet pause after the breath at `s` seconds, following a pause of `prev`. */
 function breathGap(seed: number, k: number, s: number, prev: number): number {
   const m = BREATH.settled - (BREATH.settled - BREATH.early) * Math.exp(-s / BREATH.tau);
-  // Half the mean plus an exponential part, capped: never two at once, never a long silence.
+  // Half the mean plus an exponential part, capped to avoid a long silence.
   const x = Math.min(1.5, -0.5 * Math.log(1 - unit(seed, 4 * k)));
   const g = m * (0.5 + x);
   // Nearly the gap before it would start to sound like a beat: move it well off.
@@ -201,8 +214,8 @@ export function breathTimes(until: number, seed: number): number[] {
   while (s[s.length - 1]! <= until) {
     const k = s.length;
     const last = s[k - 1]!;
-    const prev = k > 1 ? last - s[k - 2]! : 0;
-    s.push(last + breathGap(seed, k, last, prev));
+    const prev = k > 1 ? last - s[k - 2]! - breathDuration(seed, k - 2) : 0;
+    s.push(last + breathDuration(seed, k - 1) + breathGap(seed, k, last, prev));
   }
   return s;
 }
@@ -221,6 +234,7 @@ export function breathsAt(since: number, at: Point, reach: number, seed: number)
     else hi = mid;
   }
   for (let k = lo; k < times.length && times[k]! <= since; k++) {
+    if (since >= times[k]! + breathDuration(seed, k)) continue;
     out.push(
       ...trainAt(since - times[k]!, {
         x: at.x + (unit(seed, 4 * k + 1) - 0.5) * 2 * BREATH.drift,
@@ -309,15 +323,15 @@ export function skimConfig(from: Point, to: Point, width: number, height: number
   return {
     from,
     to,
-    n: phone ? 8 : 10,
+    n: phone ? 5 : 6,
     ratio: 0.8,
     T: phone ? 4.4 : 5,
     hops: 0.74,
     k: 2.2,
-    H: phone ? 6 : 8,
+    H: phone ? 10 : 12,
     bend: Math.min(60, 0.04 * (width + height)),
     sink: 1.1,
-    spin: 110,
+    spin: 38,
   };
 }
 

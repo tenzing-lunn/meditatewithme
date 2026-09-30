@@ -97,7 +97,7 @@ export interface Mix {
    * play button beside a sound in its wheel. Nothing is written; the stored
    * beds come back at `hush` or `restore`.
    */
-  taste: (slug: TrackSlug) => void;
+  taste: (slug: TrackSlug, gain?: number) => void;
   /** Stop a taste now, quickly, and put the stored beds back underneath. */
   hush: () => void;
 }
@@ -202,31 +202,24 @@ export function useMix(soundMix: Record<string, number>): Mix {
     handle.current?.audition(latest.current[MASTER_KEY] ?? DEFAULT_MASTER);
   }, []);
 
-  const hushTimer = useRef(0);
-
-  const taste = useCallback((slug: TrackSlug) => {
-    window.clearTimeout(hushTimer.current);
+  const taste = useCallback((slug: TrackSlug, gain?: number) => {
     muted.current = true;
     let mix = handle.current;
     if (!mix) mix = handle.current = startMix({ ...latest.current, [MASTER_KEY]: 0 });
     else unlockAudio();
     // No audio in this browser at all: nothing to taste.
     if (!mix) return;
+    mix.fadeOut(0);
     for (const s of TRACK_SLUGS) mix.set(s, s === slug ? 1 : 0);
-    mix.audition(latest.current[MASTER_KEY] ?? DEFAULT_MASTER);
+    mix.audition(gain ?? latest.current[MASTER_KEY] ?? DEFAULT_MASTER);
   }, []);
 
   const hush = useCallback(() => {
     const mix = handle.current;
     if (!mix) return;
     muted.current = true;
-    mix.fadeOut(0.25);
-    // Once it is quiet, not before: swapping beds under a sounding master
-    // would be heard as a cut.
-    window.clearTimeout(hushTimer.current);
-    hushTimer.current = window.setTimeout(() => {
-      for (const s of TRACK_SLUGS) mix.set(s, latest.current[s] ?? 0);
-    }, 350);
+    mix.fadeOut(0);
+    for (const s of TRACK_SLUGS) mix.set(s, latest.current[s] ?? 0);
   }, []);
 
   return { ensure, unmute, fadeOut, restore, audition, taste, hush };

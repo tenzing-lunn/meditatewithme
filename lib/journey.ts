@@ -43,6 +43,12 @@ export function screensFor(f: JourneyFacts): Screen[] {
   return out;
 }
 
+/** The two sitting choices, shared by arrival and repeat setup. */
+export const SITTING_OPTIONS = [
+  { value: 'alone', label: 'by yourself' },
+  { value: 'guided', label: 'with a guide' },
+] as const;
+
 export type Mode = 'together' | 'alone';
 
 /**

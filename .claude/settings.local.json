@@ -230,7 +230,9 @@
       "Bash(sed -i '' 's/^const AUDITION = 0.55;/export const AUDITION = 0.55;/; s/^function Texture\\(/export function Texture\\(/' components/SoundScreen.tsx)",
       "Bash(awk '{d=$1; if\\(d!=p\\){print \"\"; print \"== \" d; p=d} print \"   \" $0}')",
       "Bash(sed -i '' 's/prompt=\"Enter your town\"/prompt=\"Enter your city\"/g; s/lede=\"Type a town or a country, then choose it/lede=\"Type a city or a country, then choose it/' components/OriginScreen.tsx)",
-      "Bash(sed -i '' 's/\\\\*Enter your town\\\\*/*Enter your city*/' DESIGN.md context/PRODUCT.md)"
+      "Bash(sed -i '' 's/\\\\*Enter your town\\\\*/*Enter your city*/' DESIGN.md context/PRODUCT.md)",
+      "Bash(ffmpeg -v error -i ~/Downloads/868787__signaturesoundsorg__steel_tongue_drum_sfx_05-2.wav -ac 1 -ar 44100 -f f32le -)",
+      "WebFetch(domain:freesound.org)"
     ]
   },
   "hooks": {

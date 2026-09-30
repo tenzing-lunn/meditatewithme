@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useImperativeHandle, useRef, type Ref } from 'react';
+import { FLICK_PEBBLE_PATH, PEBBLE_DARK, PEBBLE_FACET_PATH, PEBBLE_LIGHT, PEBBLE_MID, PEBBLE_PATH, PEBBLE_TOP_PATH, SKIPPING_STONE_SRC } from '@/lib/pebble';
 
 import {
   alarmAt,
@@ -32,6 +33,7 @@ import {
   type Point,
   type Ring,
   type SkimConfig,
+  type SkimFrame,
   type Train,
 } from '@/lib/pond';
 
@@ -109,8 +111,8 @@ const FISH = '#7a868d';
 const ACCENT = '#3e4c55';
 const SHADOW = '47,59,66';
 const LABEL = '#5a656c';
-/** The flicked pebble: pale, so it is yours to play with and not a person. */
-const PALE = '#f6f8f9';
+/** Flicked stones are a lighter, matte slate than the meditation's pebble. */
+const PALE = '#87939a';
 
 export default function Pond({
   stones,
@@ -202,6 +204,13 @@ export default function Pond({
      */
     const drawn = new Map<string, FishState>();
     let last = 0;
+    // Decode once; both kinds of throw use the same photographic stone.
+    const stoneImage = new Image();
+    stoneImage.src = SKIPPING_STONE_SRC;
+    const pebbleShape = new Path2D(PEBBLE_PATH);
+    const flickShape = new Path2D(FLICK_PEBBLE_PATH);
+    const pebbleTop = new Path2D(PEBBLE_TOP_PATH);
+    const pebbleFacet = new Path2D(PEBBLE_FACET_PATH);
 
     const fit = () => {
       const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -240,15 +249,68 @@ export default function Pond({
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(rot);
+      ctx.scale(pw / 24, ph / 16);
       ctx.globalAlpha = alpha;
-      ctx.fillStyle = fill;
-      ctx.beginPath();
-      // A little lopsided, like the CSS pebble in the wireframes.
-      ctx.ellipse(0, 0, pw / 2, ph / 2, 0.08, 0, Math.PI * 2);
-      ctx.fill();
-      if (edge) {
-        ctx.strokeStyle = edge;
+      if (stoneImage.complete && stoneImage.naturalWidth > 0) {
+        ctx.drawImage(stoneImage, -12, -8, 24, 16);
+        ctx.restore();
+        return;
+      }
+      const flicked = fill === PALE;
+      if (flicked) {
+        const light = ctx.createLinearGradient(-5, -7, 5, 7);
+        light.addColorStop(0, '#9aa4a9');
+        light.addColorStop(0.45, PALE);
+        light.addColorStop(1, '#65727b');
+        ctx.fillStyle = light;
+        ctx.fill(flickShape);
+      } else {
+        ctx.fillStyle = PEBBLE_DARK;
+        ctx.fill(pebbleShape);
+        ctx.fillStyle = PEBBLE_MID;
+        ctx.fill(pebbleTop);
+        ctx.fillStyle = PEBBLE_LIGHT;
+        ctx.fill(pebbleFacet);
+        ctx.beginPath();
+        ctx.moveTo(1, -4);
+        ctx.lineTo(4, -3);
+        ctx.moveTo(-5, -1);
+        ctx.lineTo(-3, -0.5);
+        ctx.strokeStyle = 'rgba(102,103,95,0.35)';
+        ctx.lineWidth = 0.5;
+        ctx.lineCap = 'round';
         ctx.stroke();
+      }
+      ctx.lineWidth = 0.5;
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = edge ?? (flicked ? 'rgba(52,67,76,0.35)' : PEBBLE_DARK);
+      ctx.stroke(flicked ? flickShape : pebbleShape);
+      ctx.restore();
+    };
+
+    // A brief, low spray at contact, quieter with every skip. These remain
+    // attached to the water while the stone flies on to the next touch.
+    const splash = (q: SkimFrame['touches'][number]) => {
+      const life = 0.42;
+      if (q.age <= 0 || q.age >= life || q.k < 0.25) return;
+      const f = q.age / life;
+      const strength = q.k * Math.sin(Math.PI * f) * (1 - f);
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = `rgba(255,255,255,${strength * 0.85})`;
+      ctx.beginPath();
+      ctx.ellipse(q.x, q.y, 3 + 10 * f * q.k, 1 + 3 * f * q.k, 0, Math.PI, Math.PI * 2);
+      ctx.stroke();
+      for (let i = 0; i < 3; i++) {
+        const side = i - 1;
+        const lift = (i === 1 ? 9 : 5) * q.k * 4 * f * (1 - f);
+        const x = q.x + side * (3 + 9 * f) * q.k;
+        const y = q.y - lift;
+        ctx.fillStyle = `rgba(99,113,122,${strength * 0.55})`;
+        ctx.beginPath();
+        ctx.ellipse(x, y, 0.7, 1.1, side * 0.4, 0, Math.PI * 2);
+        ctx.fill();
       }
       ctx.restore();
     };
@@ -370,6 +432,7 @@ export default function Pond({
       for (const k of drawn.keys()) if (!here.has(k)) drawn.delete(k);
 
       const rings: Ring[] = [];
+      const splashes: SkimFrame['touches'] = [];
 
       // Your stone: thrown, settling, or simply there.
       let stone: Flying | null = null;
@@ -386,6 +449,7 @@ export default function Pond({
         if (frame) {
           stone = frame.stone;
           rings.push(...touchRings(frame.touches));
+          splashes.push(...frame.touches);
         }
         const landed = frame ? since - frame.stopAt : Infinity;
         if (p.reduced) {
@@ -422,12 +486,14 @@ export default function Pond({
         if (since > end) return false;
         const frame = skimAt(since, f.cfg);
         rings.push(...touchRings(frame.touches, 0.7));
+        splashes.push(...frame.touches);
         rings.push(...trainAt(since - f.cfg.T, { x: f.cfg.to.x, y: f.cfg.to.y, yours: false, ...SETTLE }));
         if (frame.stone.sunk < 1) flying.push(frame.stone);
         return true;
       });
 
       for (const r of rings) ring(r);
+      for (const q of splashes) splash(q);
       ctx.lineWidth = 1;
 
       for (const f of flying) {
@@ -437,10 +503,10 @@ export default function Pond({
         const up = f.h / 4;
         const so = f.sunk > 0 ? 0.2 * (1 - sk) : (0.22 - up * 0.07) * f.o;
         shadow(f.x, f.y + 1, (11 + sk * 3) * (1 - up * 0.1), (4.5 + sk * 3) * (1 - up * 0.1), so);
-        const size = (1 + up * 0.06) * (1 - 0.2 * sk);
+        const size = (1 - 0.25 * Math.min(1, f.spin / 70)) * (1 - 0.2 * sk);
         pebble(
-          f.x, f.y - f.h - 2 + sk * 2, 12 * size, 9 * size, (f.spin - 8) * (Math.PI / 180), PALE, f.o,
-          `rgba(${INK},${(0.35 * f.o).toFixed(3)})`,
+          f.x, f.y - f.h - 2 + sk * 2, 15 * size, 7 * size, (f.spin * 0.22 - 5) * (Math.PI / 180), PALE, f.o,
+          `rgba(${INK},0.25)`,
         );
       }
 
@@ -465,15 +531,16 @@ export default function Pond({
           // settles into the water, a little smaller and fading as it goes,
           // and its shadow becomes the one the settled stone keeps.
           const sk = smooth(stone.sunk);
-          const up = stone.h / 8;
-          const sw = (12 + sk * 4) * (1 - up * 0.18);
-          const sh = (5 + sk * 4) * (1 - up * 0.18);
+          const up = stone.h / 12;
+          const distance = 1 - 0.38 * Math.min(1, stone.spin / 38);
+          const sw = (23 * distance + sk * 2) * (1 + up * 0.25);
+          const sh = (8 * distance + sk * 2) * (1 + up * 0.25);
           const so = stone.sunk > 0 ? 0.24 - 0.08 * sk : (0.26 - up * 0.1) * Math.max(stone.o, sk);
           shadow(stone.x, stone.y + 1, sw, sh, so);
-          const size = (1 + up * 0.08) * (1 - 0.25 * sk);
+          const size = distance * (1 - 0.25 * sk);
           pebble(
-            stone.x, stone.y - stone.h - 2 + sk * 2.5, 13 * size, 10 * size,
-            (stone.spin - 8) * (Math.PI / 180), ACCENT, stone.o,
+            stone.x, stone.y - stone.h + sk * 2.5, 28 * size, 10 * size,
+            stone.spin * 0.22 * (Math.PI / 180), ACCENT, stone.o,
           );
         } else {
           // Settled: only the shadow of the stone under the water.

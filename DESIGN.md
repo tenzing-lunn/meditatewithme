@@ -422,6 +422,30 @@ sizes for nine declared roles, three of them under 12px.
 
 ## Layout
 
+- **Geometry is what makes it feel balanced, so things line up — by their
+  ink, not their boxes.** Tenzing's rule, 30 September 2026, after the
+  corners of the front page were caught out: the wordmark sat 3px above the
+  clock and *Sign in*, and *Sign in*'s ink ended 8px inside the right gutter
+  while the mark's began exactly on the left one. Nobody names a misalignment
+  like that, but everybody feels the page tilt. So:
+  - **Opposite corners mirror.** The left ink starts on the gutter; the right
+    ink ends on it. A word control's `px-2` is hit area, not margin — pull it
+    back into the gutter (`-mr-2`, `-ml-2`) so the letters, not the padding,
+    touch the line. Begin's stone and the sentence above it start on the same
+    x for the same reason.
+  - **A row shares a baseline.** Text of different sizes in one row aligns
+    on its baseline, not on the centre of its box; `items-center` is right
+    only for things of one size or without text. The front page's header is
+    measured, not assumed: the clock and the corner word are both the serif
+    at body size (`Arrive`, since 30 September 2026, so the row is one voice
+    with the 20px wordmark), and their baseline sits within half a pixel of
+    the wordmark's at 375px and 1280px.
+  - **Measure, don't eyeball.** Check a change against the lines it should
+    sit on — left edge, right edge, baseline — from the rendered page
+    (bounding rects of the text ranges), at a phone width and a laptop width,
+    before calling it done. A wrapper added for some other reason (a fade,
+    a group) is the usual way alignment breaks: an inline wrapper around a
+    flex child puts it on a line box and shifts it.
 - **One left margin, and everything on the rail hangs from it.** The gutter
   grows with the window — 1.5rem on a phone, 6rem on a wide laptop. A
   question's measure is still 28rem, because a field wider than that is
@@ -479,6 +503,11 @@ sizes for nine declared roles, three of them under 12px.
   `inert`, `aria-hidden`, and `visibility: hidden` once the leaving one has
   faded. **A guest's menu is not on a panel**: `Journey` pins it top right
   over the rail, so it stays in place on every question until the strike.
+  **Since 30 September 2026 (on `dev`) the corner is a word, not a menu**:
+  *Sign in* for a guest (`WORD`), the first name for a member. Pressing the
+  name fades it and slides *Account · Settings · Layout* out from its place
+  (transform and opacity, 300ms, 40ms apart); on a phone the wordmark and
+  the clock fade while they are out. Each opens a paper page over the pond.
 - **The front page is the room.** A guest lands on the doors, on this
   hour's earth, with the wordmark where the question would be and the usual
   as one quiet line and a switch in the foot. There is no paper title page
@@ -797,12 +826,17 @@ usual on the front page is deliberately **not** a card — a bordered box made
 last time's settings the second-loudest thing on the page the site opens
 with, so it is a line of type and the switch beside it.
 
-### Menu
-Signed in, the three lines open the drawer above. Guest (`Account.tsx`): the
-icon trigger opens a surface panel under it, right-aligned, control radius,
-with the one shadow. Items are 44px, ink-2 600, ember-soft on hover and
-focus. Up and Down wrap, Home and End, Escape closes and returns focus:
-Create account, Sign in.
+### Sign in
+Guest (`Account.tsx`): *Sign in* opens a surface panel under it,
+right-aligned, control radius, with the one shadow, 160ms in. Everything in
+it is left-aligned, the way the account pages are: the serif heading
+(*Sign in.* / *Create account.* / *Check your email.*), *Continue with
+Google*, a hairline *or*, the field with its caption label above it, the
+primary button, and a caption under it. The foot is ruled off with one
+`WORD` — *Don't have an account? Create one*, *Already have one? Sign in*,
+or *Send it again* — its ink on the fields' left edge. Nothing is reserved:
+an error takes space only when there is one. Only the six-digit code is
+centred. Escape and a press outside close it and keep the flow.
 
 ### How you sit, and the fish
 

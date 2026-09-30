@@ -2,12 +2,15 @@
 
 import { useState, type CSSProperties, type ReactNode } from 'react';
 
+import { SITTING_OPTIONS } from '@/lib/journey';
 import { TIMER_STOPS } from '@/lib/timer';
 import { BELL_KINDS, type BellKind, type UserPreferences } from '@/lib/types';
 import type { Point } from '@/lib/pond';
 import Brand from './Brand';
-import { FOCUS } from './controls';
+import { stopPreviewBell } from './audio';
+import { FOCUS, POND_ACTION } from './controls';
 import Picker from './Picker';
+import Pebble from './Pebble';
 import { TRACKS, type TrackSlug } from './mix';
 import type { MixPatch } from './Sounds';
 
@@ -27,7 +30,7 @@ import type { MixPatch } from './Sounds';
 
 const BELL_WORDS: Record<BellKind, string> = {
   'singing-bowl': 'a singing bowl',
-  gong: 'a gong',
+  gong: 'a tongue drum',
   'struck-bell': 'a struck bell',
 };
 
@@ -35,13 +38,13 @@ const SOUND_WORDS: Record<TrackSlug | 'silence', string> = {
   silence: 'silence',
   rain: 'rain',
   wind: 'wind',
-  waterfall: 'a waterfall',
+  waterfall: 'a creek',
   ocean: 'the sea',
   fire: 'a fire',
   hum: 'a low hum',
   chimes: 'wind chimes',
   bowl: 'a humming bowl',
-  night: 'night sounds',
+  night: 'evening sounds',
 };
 
 /** Everything but the sentence, on Begin: it goes quietly, before the words. */
@@ -168,11 +171,20 @@ export default function Arrive({
         onWater?.({ x: e.clientX, y: e.clientY });
       }}
     >
-      <header className={`flex items-center justify-between ${fade}`}>
-        <Brand />
-        <div className="flex items-center gap-3 text-caption text-ink-3">
-          {clock && <span className="tabular-nums">{clock}</span>}
-          {menu}
+      <header className={`group/head flex items-center justify-between ${fade}`}>
+        {/* On a phone the open account words need the wordmark's room too. */}
+        <span className="flex transition-opacity duration-200 motion-reduce:transition-none max-sm:group-has-[[data-corner-open]]/head:pointer-events-none max-sm:group-has-[[data-corner-open]]/head:opacity-0">
+          <Brand />
+        </span>
+        <div className="group flex items-center gap-3 font-display text-body leading-none text-ink-3 [&_button[aria-expanded]]:font-display [&_button[aria-expanded]]:text-body [&_button[aria-expanded]]:font-normal [&_nav_button]:font-display [&_nav_button]:text-body [&_nav_button]:font-normal">
+          {clock && (
+            <span className="tabular-nums transition-opacity duration-200 group-has-[[data-corner-open]]:opacity-0 motion-reduce:transition-none">
+              {clock}
+            </span>
+          )}
+          {/* The word's own padding pulled back into the gutter, so its ink
+              ends on the same line the wordmark's ink starts from. */}
+          <div className="-mr-2">{menu}</div>
         </div>
       </header>
 
@@ -195,16 +207,18 @@ export default function Arrive({
             const r = e.currentTarget.querySelector('[data-stone]')?.getBoundingClientRect();
             onBegin(r ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : { x: 0, y: 0 });
           }}
-          className={`mt-10 inline-flex min-h-12 items-center gap-3 rounded-sm pr-2 text-answer text-ink transition-opacity duration-200 hover:opacity-80 disabled:opacity-40 motion-reduce:transition-none ${FOCUS}`}
+          className={`mt-10 -ml-2 ${POND_ACTION}`}
         >
           {/* The pebble in your hand: it hands over to the thrown one, which
               fades up out of the same spot over the same fifth of a second. */}
           <span
             data-stone
-            className={`block h-2.5 w-3 rounded-[52%_46%_50%_48%/56%_50%_47%_44%] bg-ember transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none ${
-              leaving ? 'scale-75 opacity-0' : ''
+            className={`block transition-opacity duration-200 ease-out motion-reduce:transition-none ${
+              leaving ? 'opacity-0' : ''
             }`}
-          />
+          >
+            <Pebble />
+          </span>
           <span className={fade}>Begin</span>
         </button>
       </div>
@@ -213,10 +227,7 @@ export default function Arrive({
         <Picker
           title="How you sit"
           value={guided ? 'guided' : 'alone'}
-          options={[
-            { value: 'alone', label: 'by yourself' },
-            { value: 'guided', label: 'with a guide' },
-          ]}
+          options={SITTING_OPTIONS}
           onConfirm={(v) => {
             onGuided(v === 'guided');
             setOpen(null);
@@ -250,6 +261,7 @@ export default function Arrive({
           }}
           onCancel={() => setOpen(null)}
           onPlay={(v) => onPreviewBell(v as BellKind)}
+          onStop={stopPreviewBell}
           playMs={4000}
         />
       )}

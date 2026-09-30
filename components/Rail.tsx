@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
-import type { Screen } from '@/lib/journey';
 
 /**
  * The screens, stacked in one frame, and the switch between them.
@@ -25,7 +24,7 @@ import type { Screen } from '@/lib/journey';
  *
  * Under reduced motion `--rail-ms` is zero and the screens swap.
  */
-export default function Rail({
+export default function Rail<Screen extends string>({
   screens,
   at,
   dir,

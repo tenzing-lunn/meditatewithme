@@ -19,6 +19,11 @@ export interface BedSource {
   freesoundId: number;
   title: string;
   author: string;
+  /**
+   * Absent means CC0. Anything else must be credited where a visitor can
+   * read it, which is `app/credits/page.tsx`, built from this list.
+   */
+  license?: 'CC BY 4.0';
   /** Seconds into the recording where the loop starts. */
   start: number;
   /**
@@ -62,21 +67,28 @@ export const BED_SOURCES: readonly BedSource[] = [
     loop: 108,
   },
   {
+    // Replaced 29 September 2026 (Tenzing's own download): a small creek in
+    // place of the Estonian waterfall. The slug stays `waterfall`, because it
+    // is stored in people's preferences; only the label and the words say
+    // creek. The recording is very quiet at source (about -48 dB RMS), so the
+    // build raises it about 28 dB and its hiss with it.
     slug: 'waterfall',
-    freesoundId: 321886,
-    title: 'Waterfall',
-    author: 'nsmusic',
-    start: 0.5,
-    loop: 60,
+    freesoundId: 872280,
+    title: '260816_113717_FR_Small-creek_in_nature',
+    author: 'kevp888',
+    license: 'CC BY 4.0',
+    start: 416,
+    loop: 108,
   },
   {
     // Replaced 23 September 2026: the Baltic recording sounded like being
-    // on a boat. This is waves breaking softly and washing up sand.
+    // on a boat. This was waves breaking softly and washing up sand.
+    // Replaced again 29 September 2026 with long rolling swells (CC0).
     slug: 'ocean',
-    freesoundId: 470648,
-    title: 'Waves On The Beach (Sand Wash)',
-    author: 'ralph.whitehead',
-    start: 51,
+    freesoundId: 867643,
+    title: 'Rolling Ocean Waves – Long Relaxing Swells',
+    author: 'bassimat',
+    start: 33,
     loop: 108,
   },
   {
@@ -117,13 +129,30 @@ export const BED_SOURCES: readonly BedSource[] = [
     loop: 108,
   },
   {
-    // Starts at 0:25, as omarchy-ambient's cut does: the first seconds
-    // carry handling noise, and an engine passes at 4:40.
+    // Replaced 29 September 2026: the crickets gave way to a park at 8:53 in
+    // the evening, birds and insects. The slug stays `night` (stored in
+    // preferences); the label says evening.
     slug: 'night',
-    freesoundId: 476672,
-    title: 'Crickets (close recording)',
-    author: 'felix.blume',
-    start: 25,
+    freesoundId: 872374,
+    title: 'birds insects - park estate De Pettelaar - Sint Michielsgestel Netherlands 853 pm 250621_1147',
+    author: 'klankbeeld',
+    license: 'CC BY 4.0',
+    start: 83,
     loop: 108,
   },
 ];
+
+/**
+ * The one recorded bell: a steel tongue drum, in place of the synthesised
+ * gong since 29 September 2026. The bell's key stays `gong` — it is stored in
+ * preferences and in a CHECK constraint — while its label says what it is.
+ * CC0. `scripts/build-sounds.mjs` cuts `public/sounds/drum.mp3` from it: the
+ * first `seconds` of the recording, peak-matched, its last seconds faded.
+ */
+export const DRUM_SOURCE = {
+  freesoundId: 868787,
+  title: 'Steel_Tongue_Drum_SFX_05-2',
+  author: 'SignatureSoundsOrg',
+  /** The recording is 44.7 s but has gone silent by 27.9 s; keep the ring, drop the rest. */
+  seconds: 27,
+} as const;

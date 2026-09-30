@@ -1,33 +1,19 @@
 'use client';
 
-import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useState, type ComponentType } from 'react';
 
-import { doorPatch, type Mode } from '@/lib/journey';
 import type { MixPatch } from './Sounds';
-import { unlockAudio } from './audio';
 import Journey from './Journey';
 
-/**
- * Home is the signed-in half of the site and no guest ever sees it — nor the
- * settings drawer, the practice log or the account panel it carries. It was
- * in the first chunk of the landing page all the same. Warmed below while the
- * account question is being answered, so somebody who does have one is not
- * made to wait for it twice over.
- */
-const Home = dynamic(() => import('./Home'), { loading: () => null });
-import { displayName, hasStoredSession, useAuth } from './useAuth';
+import { hasStoredSession, useAuth } from './useAuth';
 import { useMix } from './useMix';
 import { usePractice } from './usePractice';
 import { usePreferences } from './usePreferences';
 import { useSyncPreferences } from './useSyncPreferences';
 
 /**
- * What is at the root, and which of the two things you get.
- *
- * A guest gets the journey, from its doors. Somebody signed in gets
- * their home, and the journey from a door on it. Which one is decided here,
- * by exactly one fact: whether they are signed in.
+ * What is at the root: the journey, for everybody. Signed in or not only
+ * changes its corner — *Sign in*, or your name (`AccountCorner`).
  *
  * WHY EVERY SHARED HOOK IS CALLED HERE AND NOWHERE ELSE
  * Both screens read the practice log, both write preferences, and both need
@@ -47,10 +33,12 @@ export default function Entry() {
     state: auth,
     linkError,
     signIn,
+    signInWithGoogle,
     verify,
     signOut,
     deleteAccount,
     updateName,
+    updateEmail,
   } = useAuth();
   const { prefs, update, replace, loaded } = usePreferences();
 
@@ -82,31 +70,6 @@ export default function Entry() {
 
   /** See the gate below: whether this browser has an account to wait for. */
   const [waitForAuth] = useState(hasStoredSession);
-
-  // A browser with a session stored is going to land on Home; start fetching
-  // it now rather than after Supabase has finished confirming that.
-  useEffect(() => {
-    if (waitForAuth) void import('./Home');
-  }, [waitForAuth]);
-
-  /** Signed in: at home, or through a door. Settings is a drawer on Home. */
-  const [view, setView] = useState<'home' | 'journey'>('home');
-  const goHome = useCallback(() => setView('home'), []);
-
-  /**
-   * A door on Home. The graph is built silent inside this click so that the
-   * Bell and Sound screens have a context to play through; the bowl is what
-   * raises it. The door's answer is written here, in the same click.
-   */
-  const openDoor = useCallback(
-    (mode: Mode) => {
-      unlockAudio();
-      mix.ensure({ silent: true });
-      update(doorPatch(mode, prefs));
-      setView('journey');
-    },
-    [mix, update, prefs],
-  );
 
   /**
    * A sound fader moved, or a bed was pressed, or five were silenced at once
@@ -155,7 +118,7 @@ export default function Entry() {
     return <main className="h-dvh bg-room" aria-busy />;
   }
 
-  const journey = (
+  return (
     <>
       <h1 className="sr-only">Meditate with me</h1>
       <Journey
@@ -168,29 +131,14 @@ export default function Entry() {
         auth={auth}
         sync={sync}
         signIn={signIn}
+        signInWithGoogle={signInWithGoogle}
         verify={verify}
         linkError={linkError}
         signOut={signOut}
-        home={auth.status === 'signed-in' ? goHome : undefined}
+        deleteAccount={deleteAccount}
+        updateName={updateName}
+        updateEmail={updateEmail}
       />
     </>
-  );
-
-  if (auth.status !== 'signed-in') return journey;
-  if (view !== 'home') return journey;
-
-  return (
-    <Home
-      prefs={prefs}
-      update={update}
-      entries={entries}
-      userId={auth.user.id}
-      email={auth.user.email}
-      name={displayName(auth.user)}
-      onDoor={openDoor}
-      signOut={signOut}
-      deleteAccount={deleteAccount}
-      updateName={updateName}
-    />
   );
 }

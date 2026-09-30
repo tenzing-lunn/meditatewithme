@@ -69,16 +69,9 @@ export default function Picker({
   const stop = () => {
     window.clearTimeout(playTimer.current);
     if (playingRef.current !== null) onStop?.();
+    playingRef.current = null;
     setPlaying(null);
   };
-
-  // Another row in the middle: whatever was playing stops.
-  const last = useRef(cur);
-  useEffect(() => {
-    if (last.current !== cur) stop();
-    last.current = cur;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cur]);
 
   // Closing stops it too, whichever way it closes.
   const stopRef = useRef(onStop);
@@ -95,6 +88,7 @@ export default function Picker({
 
   const goTo = (i: number) => {
     const j = Math.max(0, Math.min(options.length - 1, i));
+    if (j !== cur) stop();
     wheel.current?.scrollTo({ top: j * ROW, behavior: reduced ? 'auto' : 'smooth' });
   };
 
@@ -108,8 +102,9 @@ export default function Picker({
     }
     window.clearTimeout(playTimer.current);
     onPlay?.(o.value);
+    playingRef.current = o.value;
     setPlaying(o.value);
-    playTimer.current = window.setTimeout(() => setPlaying(null), playMs);
+    playTimer.current = window.setTimeout(stop, playMs);
   };
 
   const centre = options[cur];
@@ -139,7 +134,10 @@ export default function Picker({
           tabIndex={0}
           onScroll={(e) => {
             const i = Math.round(e.currentTarget.scrollTop / ROW);
-            if (i !== cur && i >= 0 && i < options.length) setCur(i);
+            if (i !== cur && i >= 0 && i < options.length) {
+              stop();
+              setCur(i);
+            }
           }}
           onKeyDown={(e) => {
             if (e.key === 'ArrowDown') goTo(cur + 1);

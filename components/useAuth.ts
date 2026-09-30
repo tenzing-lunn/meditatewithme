@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { browserClient } from '@/lib/supabase';
 import { SERVICE_UNREACHABLE, authErrorMessage } from '@/lib/authErrors';
+import { readLinkError } from '@/lib/authRedirect';
 
 /**
  * Who is signed in, if anyone.
@@ -44,30 +45,9 @@ export type AuthState =
  * `onAuthStateChange` never fires and `getSession()` just returns null. So the
  * fragment is read here, first-hand.
  *
- * Both the fragment and the query string, because the parameters move between
- * the two depending on flow and Supabase version, and looking in both costs a
- * line.
+ * Both the fragment and query string are checked by lib/authRedirect, which
+ * also handles cancelled Google consent without calling it an expired email.
  */
-function readLinkError(hash: string, search: string): string | null {
-  const params = new URLSearchParams(
-    (hash.startsWith('#') ? hash.slice(1) : hash) || search.replace(/^\?/, ''),
-  );
-
-  const code = params.get('error_code');
-  const description = params.get('error_description');
-  if (!code && !description && !params.get('error')) return null;
-
-  // The overwhelmingly common one, and the stock wording for it — "invalid or
-  // has expired" — is wrong about the usual cause often enough to send somebody
-  // looking for a broken clock. A magic link is single-use, and requesting a
-  // new one kills the last, so "already used" is the answer far more often than
-  // "too old".
-  if (code === 'otp_expired' || code === 'access_denied') {
-    return 'That link had already been used, or a newer email replaced it. Each one works once — send yourself a fresh one.';
-  }
-
-  return description ?? 'That link did not work. Send yourself a fresh one.';
-}
 
 /**
  * Whether this browser might already be signed in — answered synchronously,
@@ -309,6 +289,29 @@ export function useAuth() {
     [],
   );
 
+  const signInWithGoogle = useCallback(async (): Promise<string | null> => {
+    try {
+      // Check before leaving the app: a disabled provider otherwise lands the
+      // visitor on a raw JSON error page at the authorization endpoint.
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/settings`, {
+        headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY! },
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (!response.ok) return SERVICE_UNREACHABLE;
+      const settings = await response.json();
+      if (!settings.external?.google) {
+        return 'Google sign-in is not available yet. You can use an email code below.';
+      }
+      const { error } = await (await browserClient()).auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${window.location.origin}/` },
+      });
+      return error ? 'Could not start Google sign-in. Try again, or use an email code.' : null;
+    } catch {
+      return SERVICE_UNREACHABLE;
+    }
+  }, []);
+
   /**
    * Finish it here, without leaving the room.
    *
@@ -430,7 +433,38 @@ export function useAuth() {
     }
   }, []);
 
-  return { state, linkError, signIn, verify, signOut, deleteAccount, updateName };
+  /**
+   * Change the address. Supabase does not switch it at once: it emails a
+   * confirmation link (to both addresses, with secure email change on), and
+   * the account's email only moves once that is followed. An error string,
+   * or null once the email has gone.
+   */
+  const updateEmail = useCallback(async (email: string): Promise<string | null> => {
+    try {
+      const { error } = await (await browserClient()).auth.updateUser(
+        { email: email.trim() },
+        { emailRedirectTo: `${window.location.origin}/` },
+      );
+      if (!error) return null;
+      return error.status === 429
+        ? 'Too many emails just now. Wait a minute and try again.'
+        : 'That address could not be used. Check it and try again.';
+    } catch {
+      return 'Could not reach the server. Please try again.';
+    }
+  }, []);
+
+  return {
+    state,
+    linkError,
+    signIn,
+    signInWithGoogle,
+    verify,
+    signOut,
+    deleteAccount,
+    updateName,
+    updateEmail,
+  };
 }
 
 /**
