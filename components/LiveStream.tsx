@@ -78,7 +78,10 @@ export default function LiveStream({ src, onState, playRef, className }: Props) 
           // hls.js never catches up by default: each stall adds a second
           // and there is no ceiling, so after a few drops the candle is
           // minutes old. More than six segments behind, it jumps to live.
-          hls = new Hls({ capLevelToPlayerSize: true, liveMaxLatencyDurationCount: 6 });
+          // hls.js throws on liveMaxLatencyDurationCount unless
+          // liveSyncDurationCount is given too, even at its default of 3 —
+          // and a throw here is a player that never loads (30 Sep 2026).
+          hls = new Hls({ capLevelToPlayerSize: true, liveSyncDurationCount: 3, liveMaxLatencyDurationCount: 6 });
           hls.on(Hls.Events.ERROR, (_e, data) => {
             if (data.fatal) fail();
           });
