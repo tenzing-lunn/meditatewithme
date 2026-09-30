@@ -14,6 +14,18 @@ and §3's history says what it replaced.
 
 ## 1. Live status
 
+**30 September 2026 (evening): sign-in email, connected addresses, and the
+sound line go live.** Tenzing asked for all of `dev` to be merged: the
+unticked *Email me when the app is ready* switch at sign-in, several email
+addresses per account (*Connect another email*, codes through Resend), Gmail
+signing in through Google only, and — swept into two of those commits by
+mistake from another session's work in progress — the sitting's Sound sheet
+replaced by a single line of sound words (`SoundLine`). Known defect shipped
+with it: the line closes itself after three seconds unless you tap, scroll
+or press an arrow, so a keyboard or screen-reader user can lose it mid-read.
+The two-inbox run of connected addresses had not been done. **Jonny had not
+seen any of it.** Rollback: redeploy `48eab12`.
+
 **29 September 2026: How you sit, and the fish, go live.** Tenzing asked
 for `dev` to be merged into `main` (release commit `Release: How you sit,
 and the fish`) ahead of his own user tests, putting live everything in §2's
