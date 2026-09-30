@@ -16,7 +16,7 @@ Owed before it works:
       sign out, sign in with it, remove the first, sign in again with the
       second. Then check `account_emails` is empty and `auth.users.email` is
       the second address.
-- [ ] Decide whether *Continue with Google* with a connected address should
-      be caught (today it makes a separate account).
+- [x] Gmail signs in through Google only, so a connected address cannot be
+      a Gmail one. Left open: a Google Workspace address on its own domain.
 
 Then `git mv` this to `docs/`.

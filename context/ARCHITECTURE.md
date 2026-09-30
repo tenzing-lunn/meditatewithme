@@ -1514,9 +1514,14 @@ newest connected one main (`admin.updateUserById`, confirmed, since its code
 already proved it). `email_owner()` checks both `auth.users` and
 `account_emails`, so no address can belong to two accounts. Codes are
 HMAC-hashed with the service-role key, last ten minutes, allow five tries
-and one send a minute. **Not covered:** *Continue with Google* with a Google
-account whose address is a connected one still makes a new account, because
-Supabase matches Google by its own identity, not our table.
+and one send a minute. **Gmail signs in through Google only** (`isGoogleMail`, Tenzing's
+call): the code path refuses a Gmail address, in `useAuth.signIn` and in
+the connect route, because Google sign-in matches by Google's identity, not
+our table, and would make a second account for a connected Gmail address.
+An existing account made by code with a Gmail address is not stranded:
+Supabase links the Google identity to the account holding the same
+verified address. Still open: a Google Workspace address on its own domain,
+connected here, then used with the Google button.
 
 Which screen you get at `/` is decided by one fact: whether you are signed in.
 

@@ -22,6 +22,17 @@ export function normalizeEmail(input: unknown): string | null {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null;
 }
 
+/**
+ * A Gmail address, which signs in only through *Continue with Google*
+ * (Tenzing, 30 September 2026). Google sign-in finds an account by Google's
+ * own identity, not by our `account_emails`, so a Gmail address connected or
+ * signed in by code would sooner or later meet a second account made for it
+ * by the Google button. Taking Gmail out of the code path removes that.
+ */
+export function isGoogleMail(email: string): boolean {
+  return /@(gmail|googlemail)\.com$/i.test(email.trim());
+}
+
 export function isCode(input: unknown): input is string {
   return typeof input === 'string' && /^[0-9]{6}$/.test(input);
 }

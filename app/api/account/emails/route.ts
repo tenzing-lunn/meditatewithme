@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { serviceClient } from '@/lib/supabase';
-import { isCode, normalizeEmail } from '@/lib/emailCode';
+import { isCode, isGoogleMail, normalizeEmail } from '@/lib/emailCode';
 import { callerOf, checkCode, issueCode, ownerOf } from '../../_email/codes';
 
 /**
@@ -59,6 +59,7 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const email = normalizeEmail(body?.email);
   if (!email) return answer({ ok: false, reason: 'invalid' }, 400);
+  if (isGoogleMail(email)) return answer({ ok: false, reason: 'gmail' }, 400);
   try {
     const owner = await ownerOf(s.db, email);
     if (owner === s.user.id) return answer({ ok: false, reason: 'yours' }, 409);

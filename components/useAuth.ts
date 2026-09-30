@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { browserClient } from '@/lib/supabase';
-import { SERVICE_UNREACHABLE, authErrorMessage, emailReasonMessage } from '@/lib/authErrors';
+import { GMAIL_USES_GOOGLE, SERVICE_UNREACHABLE, authErrorMessage, emailReasonMessage } from '@/lib/authErrors';
+import { isGoogleMail } from '@/lib/emailCode';
 import { readLinkError } from '@/lib/authRedirect';
 
 /**
@@ -272,6 +273,8 @@ export function useAuth() {
 
   const signIn = useCallback(
     async (email: string, name?: string): Promise<string | null> => {
+      // Gmail goes through the Google button only; see `isGoogleMail`.
+      if (isGoogleMail(email)) return GMAIL_USES_GOOGLE;
       // A connected address first: Supabase would make it a new account.
       // If the route cannot be reached, fall through to Supabase rather than
       // let a fault here stop everybody signing in.

@@ -195,7 +195,8 @@ is a list, not a field: *Connect another email* sends a six-digit code to
 the new address and, once it is typed back, that address signs in to the
 same account too; any address can be removed while one is left. An address
 that already has its own account is refused with *That email already has
-its own account here.* It needs `RESEND_API_KEY` set in Vercel before it
+its own account here.* A Gmail address cannot be signed in or connected by
+code; it is told to use *Continue with Google*. It needs `RESEND_API_KEY` set in Vercel before it
 works (`plans/connected-emails.md`). Signed
 in, the corner is your first name; pressing it fades the name and slides
 *Account · Settings · Layout* out of its place (on a phone the wordmark and

@@ -26,6 +26,9 @@ export const RATE_LIMITED = 'Give it a minute, then ask again.';
 export const CODE_REJECTED =
   'That code did not match, or it has expired. Send yourself a fresh one.';
 
+/** A Gmail address typed where only Continue with Google takes one. */
+export const GMAIL_USES_GOOGLE = 'A Gmail address signs in with Continue with Google instead.';
+
 /** No usable answer from the service at all. */
 export const SERVICE_UNREACHABLE =
   'Could not reach the sign-in service. Please try again.';
@@ -57,6 +60,7 @@ export function authErrorMessage(
  */
 export function emailReasonMessage(reason: unknown): string {
   switch (reason) {
+    case 'gmail': return GMAIL_USES_GOOGLE;
     case 'taken': return 'That email already has its own account here.';
     case 'yours': return 'That email is already on your account.';
     case 'invalid': return 'That does not look like an email address.';

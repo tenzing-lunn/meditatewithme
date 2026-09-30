@@ -8,6 +8,7 @@ import {
   canResend,
   codeUsable,
   isCode,
+  isGoogleMail,
   normalizeEmail,
 } from '../lib/emailCode.ts';
 
@@ -22,6 +23,18 @@ describe('normalizeEmail', () => {
   });
   test('refuses an address longer than the column', () => {
     assert.equal(normalizeEmail(`${'a'.repeat(250)}@b.co`), null);
+  });
+});
+
+describe('isGoogleMail', () => {
+  test('gmail and googlemail, any case', () => {
+    assert.equal(isGoogleMail('a@gmail.com'), true);
+    assert.equal(isGoogleMail(' A@GoogleMail.com '), true);
+  });
+  test('nothing else, not even lookalikes', () => {
+    assert.equal(isGoogleMail('a@fordham.edu'), false);
+    assert.equal(isGoogleMail('a@gmail.com.evil.io'), false);
+    assert.equal(isGoogleMail('a@notgmail.com'), false);
   });
 });
 
