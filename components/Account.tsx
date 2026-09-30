@@ -268,7 +268,7 @@ export default function Account({
     step === 'name'
       ? 'Every sitting is already logged on this device. An account carries it to your others.'
       : step === 'email'
-        ? 'Use Google or an email code. You’ll stay signed in on this browser.'
+        ? 'You’ll stay signed in on this browser.'
         : `We have sent a six-digit code to ${email.trim()}. The link in that email works too.`;
 
   return (
@@ -308,35 +308,30 @@ export default function Account({
               entered ? 'translate-y-0 opacity-100' : '-translate-y-1.5 opacity-0'
             }`}
           >
-            <form onSubmit={onSubmit} className="flex flex-col gap-3">
+            <form onSubmit={onSubmit} className="flex flex-col gap-4">
               <h2 className="font-display text-section font-bold leading-tight text-ink">
                 {heading}
               </h2>
 
+              {/* The email step's hint sits under its button instead. */}
+              {step !== 'email' && (
+                <p className="text-caption leading-relaxed break-words text-ink-3">{hint}</p>
+              )}
+
               {step !== 'code' && <>
                 <GoogleSignIn signIn={signInWithGoogle} disabled={busy} onError={setError} onBusyChange={setBusy} />
-                <p className="text-center text-caption text-ink-3">or continue with email</p>
+                <div aria-hidden className="flex items-center gap-3 text-caption text-ink-3">
+                  <span className="h-px flex-1 bg-rule" />
+                  or
+                  <span className="h-px flex-1 bg-rule" />
+                </div>
               </>}
 
-              {/* Reserved at three lines, which is the longest of the three
-                  hints — the last one has an email address in it, and a long
-                  address wraps to a third line. Sized for the worst case rather
-                  than the common one so that the field and the button below
-                  never move as the flow advances. The panel not moving is the
-                  point of the whole rewrite; it would be a poor joke to fix the
-                  entrance and leave it jumping between steps.
-
-                  `break-words` because an address long enough to overflow a
-                  280px line has no space in it to break at. */}
-              <p className="min-h-[3.75rem] text-left text-caption leading-relaxed break-words text-ink-3">
-                {hint}
-              </p>
-
               {step === 'name' && (
-                <>
+                <div className="flex flex-col gap-1.5">
                   <label
                     htmlFor={nameId}
-                    className="text-center text-caption text-ink-2"
+                    className="text-caption text-ink-3"
                   >
                     What should we call you?
                   </label>
@@ -360,16 +355,16 @@ export default function Account({
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Your name"
-                    className={`${FIELD} text-center`}
+                    className={FIELD}
                   />
-                </>
+                </div>
               )}
 
               {step === 'email' && (
-                <>
+                <div className="flex flex-col gap-1.5">
                   <label
                     htmlFor={emailId}
-                    className="text-center text-caption text-ink-2"
+                    className="text-caption text-ink-3"
                   >
                     {name.trim()
                       ? `And your email, ${name.trim()}?`
@@ -387,16 +382,16 @@ export default function Account({
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className={`${FIELD} text-center`}
+                    className={FIELD}
                   />
-                </>
+                </div>
               )}
 
               {step === 'code' && (
-                <>
+                <div className="flex flex-col gap-1.5">
                   <label
                     htmlFor={codeId}
-                    className="text-center text-caption text-ink-2"
+                    className="text-caption text-ink-3"
                   >
                     The code
                   </label>
@@ -432,7 +427,7 @@ export default function Account({
                     style={{ textIndent: '0.4em' }}
                     className={`${FIELD} text-center text-clock tracking-[0.4em] tabular-nums`}
                   />
-                </>
+                </div>
               )}
 
               {/* Busy keeps the label and adds the ellipsis, so the button
@@ -446,15 +441,15 @@ export default function Account({
                 {busy && '…'}
               </button>
 
-              {/* Reserved too, for the same reason the hint is. */}
-              <p
-                role="alert"
-                className="min-h-4 text-center text-caption text-ember"
-              >
-                {error ?? (resent ? 'Sent again.' : '')}
-              </p>
+              {step === 'email' && <p className="-mt-2 text-caption text-ink-3">{hint}</p>}
 
-              <div className="flex justify-center">
+              {(error || resent) && (
+                <p role="alert" className={`text-caption ${error ? 'text-ember' : 'text-ink-3'}`}>
+                  {error ?? 'Sent again.'}
+                </p>
+              )}
+
+              <div className="flex border-t border-rule pt-2">
                 {step === 'name' && (
                   <button
                     type="button"
@@ -463,7 +458,7 @@ export default function Account({
                       setName('');
                       setStep('email');
                     }}
-                    className={WORD}
+                    className={`${WORD} -ml-2`}
                   >
                     Already have one? Sign in
                   </button>
@@ -476,7 +471,7 @@ export default function Account({
                       setError(null);
                       setStep('name');
                     }}
-                    className={WORD}
+                    className={`${WORD} -ml-2`}
                   >
                     {creating ? 'Back' : 'Don’t have an account? Create one'}
                   </button>
@@ -489,7 +484,7 @@ export default function Account({
                     onClick={async () => {
                       if (await send(name.trim() || undefined)) setResent(true);
                     }}
-                    className={WORD}
+                    className={`${WORD} -ml-2`}
                   >
                     Send it again
                   </button>

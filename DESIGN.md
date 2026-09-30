@@ -433,10 +433,13 @@ sizes for nine declared roles, three of them under 12px.
     back into the gutter (`-mr-2`, `-ml-2`) so the letters, not the padding,
     touch the line. Begin's stone and the sentence above it start on the same
     x for the same reason.
-  - **A row shares a baseline.** Text of different sizes in one row (the
-    serif wordmark, the caption clock, the corner word) aligns on its
-    baseline, not on the centre of its box; `items-center` is right only for
-    things of one size or without text.
+  - **A row shares a baseline.** Text of different sizes in one row aligns
+    on its baseline, not on the centre of its box; `items-center` is right
+    only for things of one size or without text. The front page's header is
+    measured, not assumed: the clock and the corner word are both the serif
+    at body size (`Arrive`, since 30 September 2026, so the row is one voice
+    with the 20px wordmark), and their baseline sits within half a pixel of
+    the wordmark's at 375px and 1280px.
   - **Measure, don't eyeball.** Check a change against the lines it should
     sit on — left edge, right edge, baseline — from the rendered page
     (bounding rects of the text ranges), at a phone width and a laptop width,
@@ -823,12 +826,17 @@ usual on the front page is deliberately **not** a card — a bordered box made
 last time's settings the second-loudest thing on the page the site opens
 with, so it is a line of type and the switch beside it.
 
-### Menu
-Signed in, the three lines open the drawer above. Guest (`Account.tsx`): the
-icon trigger opens a surface panel under it, right-aligned, control radius,
-with the one shadow. Items are 44px, ink-2 600, ember-soft on hover and
-focus. Up and Down wrap, Home and End, Escape closes and returns focus:
-Create account, Sign in.
+### Sign in
+Guest (`Account.tsx`): *Sign in* opens a surface panel under it,
+right-aligned, control radius, with the one shadow, 160ms in. Everything in
+it is left-aligned, the way the account pages are: the serif heading
+(*Sign in.* / *Create account.* / *Check your email.*), *Continue with
+Google*, a hairline *or*, the field with its caption label above it, the
+primary button, and a caption under it. The foot is ruled off with one
+`WORD` — *Don't have an account? Create one*, *Already have one? Sign in*,
+or *Send it again* — its ink on the fields' left edge. Nothing is reserved:
+an error takes space only when there is one. Only the six-digit code is
+centred. Escape and a press outside close it and keep the flow.
 
 ### How you sit, and the fish
 

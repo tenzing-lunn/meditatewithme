@@ -176,7 +176,7 @@ export default function Arrive({
         <span className="flex transition-opacity duration-200 motion-reduce:transition-none max-sm:group-has-[[data-corner-open]]/head:pointer-events-none max-sm:group-has-[[data-corner-open]]/head:opacity-0">
           <Brand />
         </span>
-        <div className="group flex items-baseline gap-3 text-caption text-ink-3">
+        <div className="group flex items-center gap-3 font-display text-body leading-none text-ink-3 [&_button[aria-expanded]]:font-display [&_button[aria-expanded]]:text-body [&_button[aria-expanded]]:font-normal [&_nav_button]:font-display [&_nav_button]:text-body [&_nav_button]:font-normal">
           {clock && (
             <span className="tabular-nums transition-opacity duration-200 group-has-[[data-corner-open]]:opacity-0 motion-reduce:transition-none">
               {clock}
