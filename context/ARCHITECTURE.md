@@ -726,6 +726,8 @@ meditatewithme/
 │   ├── practice.ts              # the log and its summary
 │   ├── authErrors.ts            # the three sentences said when Supabase says no
 │   └── supabase.ts
+├── mobile/                      # the iPhone app (Expo), since 2 October 2026;
+│                                #   reads ../lib through Metro — plans/iphone-app.md
 ├── public/earth/                # land.json + relief.jpg — 273KB
 ├── supabase/migrations/
 ├── context/                     # standing project knowledge

@@ -731,7 +731,10 @@ build) and native features now, and there will be **no paid group
 sittings**, so Apple's in-app purchase rule for one-to-many live classes
 does not arise. What the App Store asks of it is in
 `plans/launch-readiness.md` (*The iPhone app*), from the reading of Apple's
-guidelines in `plans/apple-guidelines.md`. Still **not mentioned to Jonny**
+guidelines in `plans/apple-guidelines.md`. Building started the same day
+in `mobile/` (Expo, sharing `lib/`): first the bell-on-a-locked-phone test
+the paragraph below asks for, runnable in Expo Go — `plans/iphone-app.md`.
+Still **not mentioned to Jonny**
 as far as this file knows — it would be a new commercial arrangement, not a
 v1 remainder, and it does not fit inside the 55 hours.
 

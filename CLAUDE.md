@@ -90,12 +90,14 @@ commit until the next piece of work lands on `dev`.
   are pure and unit-tested; keep them that way.
 - `supabase/migrations/` — SQL, forward-only
 - `tests/` — mirrors `lib/`
+- `mobile/` — the iPhone app (Expo), since 2 October 2026. Its own
+  `package.json`; it reads `lib/` in place through Metro. `plans/iphone-app.md`.
 
-## An iPhone app is possible one day — keep `lib/` portable
+## The iPhone app — keep `lib/` portable
 
-Raised 6 September 2026, **not decided and not scoped**; see `PRODUCT.md` §5.
-The web app is the work. Nothing is being built for iOS and no plan exists,
-but one rule applies to every commit from now on:
+Raised 6 September 2026; **being made since 2 October 2026**, in `mobile/`
+(Expo), which imports `lib/` directly — see `plans/iphone-app.md` and
+`PRODUCT.md` §5. One rule applies to every commit:
 
 **Never put a browser-only global in `lib/`.** No `window`, `document`,
 `localStorage`, `navigator`, `AudioContext`. `tests/portability.test.ts` fails

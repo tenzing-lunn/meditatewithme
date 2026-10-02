@@ -1,0 +1,11 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    // lib/ imports its siblings as `./types.ts`, as the web app's tests run
+    // it straight through Node.
+    "allowImportingTsExtensions": true,
+    "noEmit": true
+  }
+}
