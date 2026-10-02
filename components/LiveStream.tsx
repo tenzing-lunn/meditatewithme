@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { liveVideo } from './liveVideo';
 
 /**
  * A live stream, silent, filling its box. No controls, no sound, ever.
@@ -20,8 +21,9 @@ import { useEffect, useRef } from 'react';
  * is.
  *
  * Autoplay is muted and inline, which iOS allows — except in Low Power Mode,
- * where it refuses; `play()` is exposed through `playRef` so a tap the page
- * already has (the bowl strike) can start it.
+ * where it refuses. So it plays in the shared element Begin already played
+ * inside its tap (`liveVideo`), which iOS then lets play; `playRef` stays as
+ * a second chance for any later tap.
  */
 
 export type LiveState = 'playing' | 'stalled';
@@ -40,13 +42,16 @@ const LIVE_BEHIND_S = 20;
 const LIVE_EDGE_S = 6;
 
 export default function LiveStream({ src, onState, playRef, className }: Props) {
-  const video = useRef<HTMLVideoElement>(null);
+  const box = useRef<HTMLDivElement>(null);
   const report = useRef(onState);
   report.current = onState;
 
   useEffect(() => {
-    const el = video.current;
-    if (!el) return;
+    const holder = box.current;
+    if (!holder) return;
+    const el = liveVideo();
+    el.className = 'h-full w-full';
+    holder.appendChild(el);
 
     let hls: import('hls.js').default | null = null;
     let cancelled = false;
@@ -152,19 +157,9 @@ export default function LiveStream({ src, onState, playRef, className }: Props) 
       el.removeEventListener('error', fail);
       el.removeEventListener('ended', fail);
       unload();
+      el.remove();
     };
   }, [src, playRef]);
 
-  return (
-    <video
-      ref={video}
-      className={className}
-      muted
-      playsInline
-      autoPlay
-      disablePictureInPicture
-      aria-hidden="true"
-      style={{ objectFit: 'cover' }}
-    />
-  );
+  return <div ref={box} className={className} />;
 }

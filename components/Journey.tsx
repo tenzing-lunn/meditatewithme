@@ -28,6 +28,7 @@ import { displayName, type AuthState } from './useAuth';
 import { useClock } from './useClock';
 import { useFullscreen } from './useFullscreen';
 import { useLive } from './useLive';
+import { primeLiveVideo } from './liveVideo';
 import { useWakeLock } from './useWakeLock';
 import type { Mix } from './useMix';
 import { useOrigin } from './useOrigin';
@@ -297,8 +298,9 @@ export default function Journey({
 
   // Whoever is on camera, framed on the water, in a guided sitting — and
   // on the arrival, for the line under the sentence. Low Power Mode
-  // refuses to autoplay even muted video; a tap on the sitting is a gesture
-  // it accepts, so any tap starts it (`livePlay`).
+  // refuses to autoplay even muted video; Begin primes the player inside
+  // its tap (`primeLiveVideo`), and any later tap is a second chance
+  // (`livePlay`).
   const onCamera = useLive(guidedNow || atArrive);
   const livePlay = useRef<(() => void) | null>(null);
 
@@ -384,6 +386,8 @@ export default function Journey({
     unlockAudio();
     mix.ensure();
     mix.restore();
+    // The live video too, so a phone in Low Power Mode plays it unasked.
+    if (guided) primeLiveVideo();
     if (fullscreen.supported && fullscreen.wanted) fullscreen.enter();
     // And the screen stays on: a phone that locks mid-sitting suspends the
     // audio graph, and the bell is late.
