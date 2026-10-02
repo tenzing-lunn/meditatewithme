@@ -196,10 +196,11 @@ the top-right corner. A guest sees *Sign in* there, which opens the panel
 straight away — *Continue with Google* (live since the same day, under
 Tenzing's Google account), or an email code — with *Don't have an account?
 Create one* at its foot turning it to *Create account*, name first. **On
-`dev` since 30 September 2026**, both that panel and *Would you like to be
-remembered?* carry an unticked switch above *Continue with Google*, *Email
-me when the app is ready* (*And now and then, news of the site.*), which
-applies to Google and the email code alike and lands in
+`dev` since 30 September 2026**, that panel carries an unticked switch
+above *Continue with Google*, *Email me when the app is ready* (*And now
+and then, news of the site.*), and the after-sitting ask carries the same
+opt-in as an unticked checkbox, *Email me when the app launches*, under its
+two buttons. Either applies to Google and the email code alike and lands in
 `profiles.email_updates` once signed in. Nothing sends mail to that list,
 there is no unsubscribe yet, and the privacy notice that has to cover it
 is still unpublished; Jonny has not been asked. The Account page's email
@@ -470,10 +471,15 @@ Nothing is asked for that is not used: the name is *Hello, Ana* and, if you
 chose to be seen, the name on the earth. Signing in once is enough; the
 session renews itself. `Sign out` ends it on that device only.
 
-After a guest's sitting, before Again/Done, a centered question asks
-*Would you like to be remembered?* Yes opens name → place → email →
-six-digit confirmation, one question at a time, then the signed-in Home.
-No (or *Not now* during the questions) continues to Again/Done. The
+After a guest's sitting, before Again/Done, a screen asks them to *Keep
+your practice* (*Your sittings and sounds, on any device.*), revised on `dev`
+2 October 2026 from *Would you like to be remembered?*. The heading sits
+mid-screen; at its foot, full width where a thumb is on a phone, a filled
+*Continue with Google*, an outlined *Continue with email*, and the unticked
+*Email me when the app launches* box; *Not now* sits in the top corner. On
+a laptop the same column is centred. *Continue with email* opens name →
+place → email → six-digit confirmation, one question at a time.
+*Not now* (there or during the questions) continues to Again/Done. The
 place is saved with the profile; creating an account does not change the
 visitor's choice about sharing their name and place.
 
