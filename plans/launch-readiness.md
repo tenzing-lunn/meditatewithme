@@ -317,6 +317,71 @@ invoice you weren't expecting" promise forbids.
 - [ ] Re-run typecheck, unit tests, and production build on `dev`; review the
   Vercel preview; ask before merging `dev` into `main`.
 
+## Before it is finished — the last pass
+
+Checked when the site, and the iPhone app, are being finished and polished.
+Each is small; each is easy to forget because nothing breaks without it.
+
+- [ ] **A contact email, published.** Fill `[CONTACT EMAIL]` (and
+  `[CONTROLLER]`) in `app/privacy/page.tsx` and `app/terms/page.tsx`, and
+  make the address findable from the site itself, not only the notice.
+  Apple 1.2 asks for published contact information wherever people see
+  each other's words, and 5.1.1(i) for it in the privacy policy. Waits on
+  Jonny's legal-entity answer (above).
+- [ ] **A way to report.** A quiet *Report* link under the live window, and
+  one beside the names on the water, that writes to that address (a
+  `mailto:` with the hour and the guide's slug is enough to start).
+  Apple 1.2: a way to report objectionable content, answered in good time.
+  Same wait as the contact email.
+- [ ] **How long the video server keeps addresses in its logs**
+  (`plans/privacy-data-inventory.md`, the live-video row), read off the
+  Hetzner box before the notice is published.
+- [ ] **An unsubscribe route** before anything is sent to the *email me*
+  list.
+
+## The iPhone app — what the App Store asks
+
+Being made, Tenzing, 2 October 2026 (`context/PRODUCT.md` §5). From
+Apple's App Review Guidelines, read the same day (`plans/apple-guidelines.md`
+has the sources and what the website already meets). **No paid group
+sittings**, so the in-app purchase rule for one-to-many live classes
+(3.1.3(d)) does not apply; if anything is ever sold inside the app, read 3.1
+again first.
+
+- [ ] **Sign in with Apple (4.8).** Google is a third-party login, so an
+  equivalent must sit beside it: name and email only, the address
+  hideable, no ad tracking. Tenzing is building it. It needs an Apple
+  Developer account, a Services ID and key, and the Apple provider turned
+  on in Supabase Auth; on the web too, so an account made on the phone
+  signs in on a laptop.
+- [ ] **Native features, not a wrapped website (4.2)** — needed now.
+  Native video (AVPlayer, with Picture in Picture and AirPlay; the
+  *Audio, AirPlay, and Picture in Picture* background mode), the beds
+  playing on with the screen locked, a reminder for the shared hour, and
+  the bell rung by the phone itself (the first spike: does it ring on a
+  locked phone forty-five minutes later?). `lib/` stays portable for
+  exactly this (`tests/portability.test.ts`).
+- [ ] **Account deletion inside the app (5.1.1(v)).** The web has it; the
+  app must have it too, and a way to revoke the Google and Apple sign-ins.
+- [ ] **The privacy policy linked** in App Store Connect and inside the app
+  (5.1.1(i)) — the same notice, once its gaps are filled.
+- [ ] **The App Privacy label.** Name, email, coarse location, user ID,
+  product interaction (the practice log, presence). No tracking, so no
+  App Tracking Transparency prompt (5.1.2).
+- [ ] **The age-rating questionnaire.** User-generated content and social
+  items; check in App Store Connect whether it now asks about
+  livestreaming (not confirmed from Apple's own pages).
+- [ ] **Names on the water (1.2).** Typed by people and shown to strangers:
+  a filter on what can be typed, the report link above, and blocking if
+  people can ever reach each other.
+- [ ] **A guide streaming from inside the app (2.5.14),** if that is ever
+  built: camera and microphone purpose strings that say why, consent, and
+  a clear indicator while live.
+- [ ] **The stream to Apple's HLS spec** for the native player:
+  `EXT-X-PROGRAM-DATE-TIME`, segments nearer 6s (ours are 2s, for
+  latency — `infra/mediamtx/mediamtx.yml`), a low-bitrate rung, captions
+  where there are words.
+
 ## Completed plans
 
 - `docs/ui-ux-fixes.md` with `docs/audit-2026-09-21.md` — the UI/UX audit

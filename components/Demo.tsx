@@ -68,6 +68,7 @@ export default function Demo({ which }: { which: string }) {
       {live && !params.has('between') && (
         <LiveLayer
           src={src}
+          guide={params.get('guide')}
           picture={
             src ? undefined : (
               // A candle in a dark room, near enough to judge the wash by.

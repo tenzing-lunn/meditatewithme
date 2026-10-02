@@ -97,6 +97,37 @@ export function hlsUrl(base: string, slug: string): string {
 }
 
 /**
+ * Where a guide sends their stream: the same addresses
+ * `scripts/live-key.mjs` prints, for the account page to show. RTMPS on 1936
+ * anywhere but this Mac, where it is plain RTMP on 1935.
+ */
+export function ingest(
+  host: string,
+  slug: string,
+  key: string,
+): { server: string; streamKey: string; url: string } {
+  const server =
+    host === 'localhost' ? `rtmp://${host}:1935/live` : `rtmps://${host}:1936/live`;
+  const streamKey = `${slug}?key=${key}`;
+  return { server, streamKey, url: `${server}/${streamKey}` };
+}
+
+/**
+ * The host guides stream to, from `LIVE_INGEST_HOST` or else the HLS base's
+ * own host — one server takes streams in and sends them out. Null if neither
+ * is set or the base is not a URL.
+ */
+export function ingestHost(explicit: string | undefined, hlsBase: string | undefined): string | null {
+  if (explicit) return explicit;
+  if (!hlsBase) return null;
+  try {
+    return new URL(hlsBase).hostname || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Who is on air: one collaborator per hour, handovers only on the hour.
  *
  * The hour belongs to whoever held it first — claimed by the first request

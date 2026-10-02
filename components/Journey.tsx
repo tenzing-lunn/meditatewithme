@@ -565,7 +565,9 @@ export default function Journey({
   const guided = stage.kind !== 'rail' && stage.sit.guided;
   const showStones = !guided && (stage.kind === 'rail' || (sit?.withOthers ?? false) || finished);
   const guideLine = onCamera.live
-    ? 'Live now'
+    ? onCamera.live.name
+      ? `Live now with ${onCamera.live.name}`
+      : 'Live now'
     : onCamera.next !== null
       ? `The next session starts at ${localTime(onCamera.next)}`
       : 'Nobody is guiding right now';
@@ -587,7 +589,7 @@ export default function Journey({
         />
       </div>
 
-      {guidedNow && <LiveLayer src={onCamera.live?.hls ?? null} playRef={livePlay} />}
+      {guidedNow && <LiveLayer src={onCamera.live?.hls ?? null} guide={onCamera.live?.name ?? null} playRef={livePlay} />}
 
       {finished && !held && (
         <div className="absolute inset-0">

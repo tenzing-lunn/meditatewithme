@@ -717,11 +717,19 @@ of the preparation and it is worth having whether or not the house happens —
 it costs one number and it is the kind of thing that is expensive to retrofit
 once people have habits built on a bell at :00. Nothing else should be built
 ahead of the decision: no rota, no lighter accounts, no handover UI.
+(Overtaken 2 October 2026 for the accounts: at Tenzing's word an account he
+approves finds its own stream key under *Account · Streaming*, and chooses
+whether viewers see its name — `plans/live-video.md`.)
 
-**An iPhone app, possibly.** Raised 6 September 2026. Not decided, not
-planned, not scoped, and **not mentioned to Jonny** — it would be a new
-commercial arrangement, not a v1 remainder, and it does not fit inside the 55
-hours. The web app remains the work.
+**An iPhone app.** Raised 6 September 2026 as a possibility. **On 2 October
+2026 Tenzing said it is being made**: it needs Sign in with Apple (his to
+build) and native features now, and there will be **no paid group
+sittings**, so Apple's in-app purchase rule for one-to-many live classes
+does not arise. What the App Store asks of it is in
+`plans/launch-readiness.md` (*The iPhone app*), from the reading of Apple's
+guidelines in `plans/apple-guidelines.md`. Still **not mentioned to Jonny**
+as far as this file knows — it would be a new commercial arrangement, not a
+v1 remainder, and it does not fit inside the 55 hours.
 
 One thing was done about it and it is the only thing worth doing yet:
 `tests/portability.test.ts` fails the build if a browser-only global reaches

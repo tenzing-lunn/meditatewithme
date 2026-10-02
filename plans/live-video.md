@@ -339,6 +339,21 @@ pattern. How to run it again: `infra/mediamtx/README.md`.
       `db query`, on Tenzing's word.
 - [x] `npm run live:key -- new | list | revoke` — the key is shown once and
       never stored.
+- [x] **Guides with accounts, 2 October 2026** (Tenzing's call). `npm run
+      live:key -- approve <email> "Name"` ties a key to an account; its
+      owner finds the server, key and Moblin address under *Account ·
+      Streaming*, whenever they need it, and can make a new key there. The
+      key is still never stored: it is derived from the slug and
+      `key_version` with the service-role key (`accountKey` in
+      `app/api/live/secret.ts`), only its hash is kept, and
+      `/api/live/auth` is unchanged. Deleting the account revokes the key
+      (trigger on `profiles`). Tested end to end with a throwaway
+      `example.invalid` account: approve, show, publish, rename, renew (old
+      key refused), delete (key refused).
+- [x] **The guide's name, if they choose.** *Show my name to viewers* in
+      the same section sets `stream_keys.show_name` (off by default);
+      `/api/live` then sends `name`, and viewers read *Ana is guiding.*
+      under the window and *Live now with Ana* on the arrival.
 - [x] `/api/live/auth` (MediaMTX's `authHTTPAddress`; its secret arrives
       as Basic auth, never in a logged URL), `/api/live/hook` (bearer
       secret), `/api/live` (public: who is live and the HLS address, never

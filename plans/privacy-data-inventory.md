@@ -33,6 +33,7 @@ account. (It said "eight things" until 2 October 2026, and had outgrown it.)
 | Where you said you are from, and whether you share it | Your browser (`mwm.profile`); `profiles.origin` and `profiles.share_label` if you sign in | **Yes, if you typed a real place** | Until you change or delete them |
 | "Name from Origin", shown to others | `heartbeats.label`, only while you sit with others with the switch on | **Yes, as much as the two above** | 2 days, with the row |
 | What Google says about you, if you sign in with Google | `auth.identities` (email, name, picture URL, Google's id for you) | **Yes** | Until you delete the account |
+| If you guide: the name given to your stream, whether viewers see it, and when you were live | `stream_keys` (`user_id`, `name`, `show_name`, `live_since`, `live_seen`), `live_hours` — the key itself is never stored, only its hash | **Yes** — and the name is shown to every viewer if you turn that on | Until revoked; revoked, not deleted, when the account is deleted (`live_hours` keeps the slug) |
 | Your internet address, while you watch someone live | The video server (MediaMTX on Hetzner, behind a proxy) — in its working logs only; nothing is recorded (`record` unset, `playback: false`) | Yes, as any IP address | **Not yet read** — check the box's log retention before the notice is published |
 
 **The last two rows are from 14 September 2026.** They are the first thing

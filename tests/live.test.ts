@@ -6,6 +6,8 @@ import {
   GRACE_MS,
   HOUR_MS,
   hlsUrl,
+  ingest,
+  ingestHost,
   keyFrom,
   onAir,
   sinceFrom,
@@ -99,6 +101,33 @@ describe('hlsUrl', () => {
   test('joins base and path, with or without a trailing slash', () => {
     assert.equal(hlsUrl('https://a.example/', 'abcd1234'), 'https://a.example/live/abcd1234/index.m3u8');
     assert.equal(hlsUrl('http://localhost:8888', 'abcd1234'), 'http://localhost:8888/live/abcd1234/index.m3u8');
+  });
+});
+
+describe('ingest', () => {
+  test('RTMPS on 1936 for a real host, the key after the slug', () => {
+    assert.deepEqual(ingest('live.example', 'abcd1234', KEY), {
+      server: 'rtmps://live.example:1936/live',
+      streamKey: `abcd1234?key=${KEY}`,
+      url: `rtmps://live.example:1936/live/abcd1234?key=${KEY}`,
+    });
+  });
+  test('plain RTMP on 1935 on this Mac', () => {
+    assert.equal(ingest('localhost', 'abcd1234', KEY).server, 'rtmp://localhost:1935/live');
+  });
+});
+
+describe('ingestHost', () => {
+  test('the explicit host wins', () => {
+    assert.equal(ingestHost('in.example', 'https://out.example/'), 'in.example');
+  });
+  test('else the HLS base\'s host', () => {
+    assert.equal(ingestHost(undefined, 'https://2-28-224-143.sslip.io'), '2-28-224-143.sslip.io');
+    assert.equal(ingestHost('', 'http://localhost:8888'), 'localhost');
+  });
+  test('nothing usable is null', () => {
+    assert.equal(ingestHost(undefined, undefined), null);
+    assert.equal(ingestHost(undefined, 'not a url'), null);
   });
 });
 

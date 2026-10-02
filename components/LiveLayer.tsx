@@ -13,8 +13,9 @@ import LiveStream from './LiveStream';
  * water, the rings and the sitting's words around it, where they stay
  * readable.
  *
- * Under the window, one line says what it is — live, not recorded, and
- * nobody watching back — and, if a stream that was playing drops, that it
+ * Under the window, one line says what it is — who is guiding, if they
+ * chose to be named, live, not recorded, and nobody watching back — and,
+ * if a stream that was playing drops, that it
  * will come back by itself, so the window never just vanishes unexplained
  * (`plans/apple-guidelines.md`).
  *
@@ -23,10 +24,12 @@ import LiveStream from './LiveStream';
  */
 export default function LiveLayer({
   src,
+  guide = null,
   playRef,
   picture,
 }: {
   src: string | null;
+  guide?: string | null;
   playRef?: MutableRefObject<(() => void) | null>;
   picture?: React.ReactNode;
 }) {
@@ -37,7 +40,7 @@ export default function LiveLayer({
   const shown = picture !== undefined || (src !== null && playing === src);
   const dropped = !shown && src !== null && seen === src;
   const line = shown
-    ? 'Live, and not recorded. Nobody can see or hear you.'
+    ? `${guide ? `${guide} is guiding. ` : ''}Live, and not recorded. Nobody can see or hear you.`
     : dropped
       ? 'The picture dropped. It will come back by itself.'
       : null;

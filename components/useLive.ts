@@ -15,7 +15,8 @@ import { useEffect, useState } from 'react';
  * A failed poll changes nothing — it is not "nobody is live".
  */
 
-export type OnCamera = { slug: string; hls: string };
+/** `name` only when the guide chose to be named. */
+export type OnCamera = { slug: string; hls: string; name?: string };
 
 const POLL_MS = 10_000;
 const HOLD_MS = 20_000;
@@ -39,7 +40,9 @@ export function useLive(on: boolean): { live: OnCamera | null; next: number | nu
         if (stop) return;
         if (body.live) {
           seenAt = Date.now();
-          setLive((prev) => (prev?.hls === body.live!.hls ? prev : body.live));
+          setLive((prev) =>
+            prev?.hls === body.live!.hls && prev.name === body.live!.name ? prev : body.live,
+          );
           setNext(null);
         } else {
           if (Date.now() - seenAt >= HOLD_MS) setLive(null);

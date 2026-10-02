@@ -954,7 +954,8 @@ people on camera it is gone and the company line says when the next
 session starts.
 
 Under the window, centred, one caption line in `ink-3` (since 2 October
-2026): *Live, and not recorded. Nobody can see or hear you.* while frames
+2026): *Live, and not recorded. Nobody can see or hear you.*, led by *Ana is
+guiding.* if the guide chose to be named, while frames
 play, and *The picture dropped. It will come back by itself.* while a
 stream that was playing has stalled — so the window never vanishes
 unexplained. Before the first frame, and once the stream is gone, the line

@@ -7,6 +7,7 @@ import { humanMinutes, type PracticeEntry } from '@/lib/practice';
 import Brand from './Brand';
 import Practice from './Practice';
 import Emails from './Emails';
+import Streaming from './Streaming';
 import Switch from './Switch';
 import { CHIP, CHIP_ON, FIELD, PRIMARY, QUIET, WORD } from './controls';
 import type { Profile } from '@/lib/label';
@@ -290,6 +291,8 @@ function AccountPage({
         <Heading>Email</Heading>
         <Emails email={email} />
       </div>
+
+      <Streaming heading={<Heading>Streaming</Heading>} />
 
       <div className="flex flex-col gap-4">
         <Heading>Your practice</Heading>

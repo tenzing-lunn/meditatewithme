@@ -9,7 +9,8 @@ import { HOUR_MS, LIVE_STALE_MS, hlsUrl, hourOf, onAir, type LiveStream } from '
  * between sessions — someone is waiting and goes on at `next`, the top of
  * the hour; `{ live: null }` when nobody is live — and also when anything
  * fails, so the page falls back to the earth rather than showing an error.
- * The collaborator's name is not sent.
+ * The guide's name is sent only if they turned that on in their account
+ * (`stream_keys.show_name`); otherwise `name` is absent.
  *
  * One collaborator holds each hour and handovers happen on the hour; the
  * rules are `onAir` in lib/live.ts. This route claims the hour for them in
@@ -33,7 +34,7 @@ export async function GET() {
     const now = Date.now();
     const { data: rows, error } = await supabase
       .from('stream_keys')
-      .select('slug, live_since')
+      .select('slug, name, show_name, live_since')
       .is('revoked_at', null)
       .not('live_since', 'is', null)
       .gt('live_seen', new Date(now - LIVE_STALE_MS).toISOString());
@@ -79,9 +80,16 @@ export async function GET() {
       air = onAir(streams, holder, now);
     }
 
+    const named = rows.find((r) => r.slug === (air.kind === 'live' ? air.slug : null));
     const body =
       air.kind === 'live'
-        ? { live: { slug: air.slug, hls: hlsUrl(base, air.slug) } }
+        ? {
+            live: {
+              slug: air.slug,
+              hls: hlsUrl(base, air.slug),
+              ...(named?.show_name ? { name: named.name } : {}),
+            },
+          }
         : air.kind === 'between'
           ? { live: null, next: new Date(air.next).toISOString() }
           : { live: null };

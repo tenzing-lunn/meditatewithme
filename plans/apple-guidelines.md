@@ -48,46 +48,32 @@ guideline numbers.
   codes through Resend, and the live video (watching sends your address to
   the video server, as any website does; nothing is recorded).
 
+- [x] **The guide's name on screen, if they choose** (2 October 2026).
+  Each guide decides under *Account · Streaming*; off by default, so
+  nobody already on camera is named without saying so
+  (`plans/live-video.md`).
+
 ## Owed, but not ours to decide
 
-- **A published contact, and a way to report (1.2, 5.1.1(i)).** The notice
-  has `[CONTACT EMAIL]` and `[CONTROLLER]` waiting on Jonny's legal-entity
-  answer (`plans/launch-readiness.md`). A report link in the sitting needs
-  the same address. When it arrives, it goes in the notice and as a quiet
-  link under the live window.
-- **The guide's name on screen.** `/api/live` deliberately does not send
-  the collaborator's name (`app/api/live/route.ts`). Showing it is a change
-  to what the people on camera agreed to; ask them, and Jonny, first.
+- **A published contact, and a way to report (1.2, 5.1.1(i)).** Now a
+  launch check in `plans/launch-readiness.md` (*Before it is finished*),
+  so it is looked at when the site and the app are finished and polished.
+  The notice has `[CONTACT EMAIL]` and `[CONTROLLER]` waiting on Jonny's
+  legal-entity answer; the report link under the live window needs the
+  same address.
 - **An unsubscribe route** before anything is sent to the *email me* list
   (already noted in the inventory).
 - **How long the video server's own logs keep addresses.** MediaMTX runs at
   `logLevel: info` behind a proxy; the retention of those logs on the
   Hetzner box has not been read. Check before the notice is published.
 
-## Only for an App Store submission — not built
+## For the iPhone app
 
-Written down so the iPhone question starts from them, not from scratch.
-
-1. **Paid group sittings must use in-app purchase.** 3.1.3(d) exempts
-   only real-time services between two people; one-to-many must use IAP
-   (3.1.1). A one-to-one session may be paid outside. This changes any
-   price put to Jonny for an app.
-2. **A second login beside Google (4.8)** that limits data to name and
-   email and lets people hide their address — Sign in with Apple.
-3. **Not a wrapped website (4.2).** Native playback (AVPlayer, Picture in
-   Picture, AirPlay), the beds in the background, a reminder for the
-   shared hour. `lib/` staying portable is what makes this affordable.
-4. **The App Privacy label:** name, email, coarse location, user ID,
-   product interaction; purchases once paid; no tracking.
-5. **The age-rating questionnaire.** Answer the user-generated-content and
-   social items; whether there is a livestreaming item was not confirmed
-   from Apple's own pages — read it in App Store Connect.
-6. **A guide broadcasting from inside the app (2.5.14):** camera and
-   microphone purpose strings, consent, and an indicator while live.
-7. **The stream to Apple's spec.** The spec asks for ~6s segments and
-   `EXT-X-PROGRAM-DATE-TIME`; ours are 2s for latency
-   (`hlsSegmentDuration`). A native player would also want a low rung for
-   weak connections. Revisit with the app, not before.
+Moved, 2 October 2026, into the large plan where it will be worked from:
+`plans/launch-readiness.md`, *The iPhone app*. Tenzing's decisions that
+day: the app is being made; Sign in with Apple is his to build; native
+features are needed now; **no paid group sittings**, so 3.1.3(d)'s rule
+that one-to-many live classes use in-app purchase does not apply.
 
 Not confirmed from a primary source: a livestreaming item in the age
 questionnaire; whether a single chosen guide counts as user-generated
