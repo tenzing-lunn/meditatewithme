@@ -1,15 +1,17 @@
 'use client';
 
-import { useEffect, useId, useState, type ReactNode } from 'react';
+import { useEffect, useId, useState, type FormEvent, type ReactNode } from 'react';
 import { SERVICE_UNREACHABLE } from '@/lib/authErrors';
 import { browserClient } from '@/lib/supabase';
 import Switch from './Switch';
-import { CHIP, CHIP_ON, FIELD, QUIET_SM, WORD } from './controls';
+import { CHIP, CHIP_ON, FIELD, PRIMARY, QUIET_SM, WORD } from './controls';
 
 type Stream = { name: string; showName: boolean; server: string; streamKey: string; url: string };
 
 /** One call to `app/api/account/stream`, with this session's token. */
-async function call(method: string, body?: object): Promise<{ ok: boolean; approved?: boolean } & Partial<Stream>> {
+type Reply = { ok: boolean; approved?: boolean; admin?: boolean; application?: 'pending' | 'declined' | null; reason?: string };
+
+async function call(method: string, body?: object): Promise<Reply & Partial<Stream>> {
   const client = await browserClient();
   const token = (await client.auth.getSession()).data.session?.access_token;
   if (!token) return { ok: false };
@@ -25,31 +27,135 @@ const whole = (r: Partial<Stream>): r is Stream =>
   typeof r.server === 'string' && typeof r.streamKey === 'string' && typeof r.url === 'string';
 
 /**
- * Where an approved guide streams to, under Account.
+ * Guiding, under Account.
  *
- * Nothing at all — not even the heading — for an account that is not
- * approved; approving is `npm run live:key -- approve`, never asked for
- * here. For one that is: the server and key for most apps, the one-line
- * address Moblin takes, whether viewers are told their name, and a way to
- * make a new key if the old one got out.
+ * For a guide: where they stream to (`GuideKey`). For anyone else: a short
+ * application — the name to be known by and a few words — which an admin
+ * accepts or declines at `/admin`; once sent it says it is with us, and if
+ * declined it says so plainly and lets them ask again. For an admin, a way
+ * to `/admin` as well. Nothing shows until the first answer arrives.
  */
 export default function Streaming({ heading }: { heading: ReactNode }) {
+  const [reply, setReply] = useState<(Reply & Partial<Stream>) | null>(null);
+
+  useEffect(() => {
+    void call('GET')
+      .then((r) => r.ok && setReply(r))
+      .catch(() => {});
+  }, []);
+
+  if (!reply) return null;
+  const adminLink = reply.admin && (
+    <a href="/admin" className={`${WORD} self-start`}>
+      Admin: guides, and who is on air
+    </a>
+  );
+
+  if (reply.approved && whole(reply)) {
+    return (
+      <div className="flex flex-col gap-4">
+        <GuideKey heading={heading} initial={{ ...reply, name: reply.name ?? '', showName: reply.showName === true }} />
+        {adminLink}
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-4">
+      {heading}
+      <Apply application={reply.application ?? null} />
+      {adminLink}
+    </div>
+  );
+}
+
+function Apply({ application }: { application: 'pending' | 'declined' | null }) {
   const id = useId();
-  const [stream, setStream] = useState<Stream | null>(null);
+  const [status, setStatus] = useState(application);
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [about, setAbout] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+
+  if (status === 'pending') {
+    return (
+      <p className="text-body leading-relaxed text-ink-2">
+        Your request to guide is with us. If it is accepted you will get an email, and
+        your server and key will appear here.
+      </p>
+    );
+  }
+
+  const send = async (e: FormEvent) => {
+    e.preventDefault();
+    if (busy) return;
+    setBusy(true);
+    setNote(null);
+    try {
+      const r = await call('PUT', { name, about });
+      if (r.ok) setStatus('pending');
+      else setNote(r.reason === 'empty' ? 'Both are needed.' : SERVICE_UNREACHABLE);
+    } catch {
+      setNote(SERVICE_UNREACHABLE);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="text-body leading-relaxed text-ink-2">
+        {status === 'declined'
+          ? 'Your last request to guide was not taken up this time. You are welcome to ask again.'
+          : 'Lead sittings on camera, for everyone who chooses to sit with a guide.'}
+      </p>
+      {!open ? (
+        <button type="button" className={`${QUIET_SM} self-start`} onClick={() => setOpen(true)}>
+          Ask to guide
+        </button>
+      ) : (
+        <form onSubmit={send} className="flex flex-col gap-4">
+          <div>
+            <label htmlFor={`${id}-name`} className="mb-1.5 block text-caption text-ink-3">
+              The name viewers would know you by
+            </label>
+            <input id={`${id}-name`} type="text" maxLength={60} required value={name}
+              onChange={(e) => setName(e.target.value)} className={FIELD} autoFocus />
+          </div>
+          <div>
+            <label htmlFor={`${id}-about`} className="mb-1.5 block text-caption text-ink-3">
+              Your practice, and how you would stream
+            </label>
+            <textarea id={`${id}-about`} maxLength={1000} required rows={5} value={about}
+              onChange={(e) => setAbout(e.target.value)} className={`${FIELD} py-3`} />
+          </div>
+          <div className="flex items-center gap-3">
+            <button type="submit" disabled={busy} className={PRIMARY}>
+              {busy ? 'Send…' : 'Send'}
+            </button>
+            <button type="button" disabled={busy} className={WORD} onClick={() => setOpen(false)}>
+              Cancel
+            </button>
+          </div>
+          <p role="status" className="min-h-4 text-caption leading-relaxed text-ink-3">{note ?? ''}</p>
+        </form>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Where an approved guide streams to: the server and key for most apps,
+ * the one-line address Moblin takes, whether viewers are told their name,
+ * and a way to make a new key if the old one got out.
+ */
+function GuideKey({ heading, initial }: { heading: ReactNode; initial: Stream }) {
+  const id = useId();
+  const [stream, setStream] = useState<Stream>(initial);
   const [reveal, setReveal] = useState(false);
   const [renewing, setRenewing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
-
-  useEffect(() => {
-    void call('GET')
-      .then((r) => {
-        if (r.ok && r.approved && whole(r)) setStream({ ...r, name: r.name ?? '', showName: r.showName === true });
-      })
-      .catch(() => {});
-  }, []);
-
-  if (!stream) return null;
 
   const copy = async (what: string, text: string) => {
     try {

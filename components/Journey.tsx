@@ -568,9 +568,11 @@ export default function Journey({
     ? onCamera.live.name
       ? `Live now with ${onCamera.live.name}`
       : 'Live now'
-    : onCamera.next !== null
-      ? `The next session starts at ${localTime(onCamera.next)}`
-      : 'Nobody is guiding right now';
+    : onCamera.stopped
+      ? 'This session was stopped. It will be back soon'
+      : onCamera.next !== null
+        ? `The next session starts at ${localTime(onCamera.next)}`
+        : 'Nobody is guiding right now';
 
   return (
     <main id="main" className="relative h-dvh overflow-clip bg-paper text-ink">
@@ -589,7 +591,12 @@ export default function Journey({
         />
       </div>
 
-      {guidedNow && <LiveLayer src={onCamera.live?.hls ?? null} guide={onCamera.live?.name ?? null} playRef={livePlay} />}
+      {guidedNow && <LiveLayer
+          src={onCamera.live?.hls ?? null}
+          guide={onCamera.live?.name ?? null}
+          stopped={onCamera.stopped}
+          playRef={livePlay}
+        />}
 
       {finished && !held && (
         <div className="absolute inset-0">

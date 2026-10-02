@@ -25,11 +25,14 @@ import LiveStream from './LiveStream';
 export default function LiveLayer({
   src,
   guide = null,
+  stopped = false,
   playRef,
   picture,
 }: {
   src: string | null;
   guide?: string | null;
+  /** An admin shut the stream off; say it will be back. */
+  stopped?: boolean;
   playRef?: MutableRefObject<(() => void) | null>;
   picture?: React.ReactNode;
 }) {
@@ -41,9 +44,11 @@ export default function LiveLayer({
   const dropped = !shown && src !== null && seen === src;
   const line = shown
     ? `${guide ? `${guide} is guiding. ` : ''}Live, and not recorded. Nobody can see or hear you.`
-    : dropped
-      ? 'The picture dropped. It will come back by itself.'
-      : null;
+    : stopped
+      ? 'This session was stopped. It will be back soon.'
+      : dropped
+        ? 'The picture dropped. It will come back by itself.'
+        : null;
 
   return (
     <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-6 pb-24 pt-16">

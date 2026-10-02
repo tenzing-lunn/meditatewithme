@@ -13,6 +13,9 @@ import { useEffect, useState } from 'react';
  * as far as the server knows, so a stream that disappears is held for
  * HOLD_MS before `live` lets go of it: a blip never flashes the pond in.
  * A failed poll changes nothing — it is not "nobody is live".
+ *
+ * `stopped` is an admin having shut a stream off in the last fifteen
+ * minutes, so the page can say it will be back.
  */
 
 /** `name` only when the guide chose to be named. */
@@ -21,14 +24,16 @@ export type OnCamera = { slug: string; hls: string; name?: string };
 const POLL_MS = 10_000;
 const HOLD_MS = 20_000;
 
-export function useLive(on: boolean): { live: OnCamera | null; next: number | null } {
+export function useLive(on: boolean): { live: OnCamera | null; next: number | null; stopped: boolean } {
   const [live, setLive] = useState<OnCamera | null>(null);
   const [next, setNext] = useState<number | null>(null);
+  const [stopped, setStopped] = useState(false);
 
   useEffect(() => {
     if (!on) {
       setLive(null);
       setNext(null);
+      setStopped(false);
       return;
     }
     let stop = false;
@@ -36,8 +41,9 @@ export function useLive(on: boolean): { live: OnCamera | null; next: number | nu
     const poll = async () => {
       try {
         const res = await fetch('/api/live', { cache: 'no-store' });
-        const body = (await res.json()) as { live: OnCamera | null; next?: string };
+        const body = (await res.json()) as { live: OnCamera | null; next?: string; stopped?: boolean };
         if (stop) return;
+        setStopped(body.stopped === true);
         if (body.live) {
           seenAt = Date.now();
           setLive((prev) =>
@@ -45,7 +51,9 @@ export function useLive(on: boolean): { live: OnCamera | null; next: number | nu
           );
           setNext(null);
         } else {
-          if (Date.now() - seenAt >= HOLD_MS) setLive(null);
+          // A shut-off lets go at once: holding it would show a stream the
+          // admin just stopped.
+          if (body.stopped || Date.now() - seenAt >= HOLD_MS) setLive(null);
           setNext(body.next ? Date.parse(body.next) : null);
         }
       } catch {
@@ -60,5 +68,5 @@ export function useLive(on: boolean): { live: OnCamera | null; next: number | nu
     };
   }, [on]);
 
-  return { live, next };
+  return { live, next, stopped };
 }

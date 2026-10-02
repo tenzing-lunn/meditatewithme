@@ -9,7 +9,11 @@ import {
   ingest,
   ingestHost,
   keyFrom,
+  makeSlug,
+  mayShow,
   onAir,
+  recentlyStopped,
+  STOPPED_NOTICE_MS,
   sinceFrom,
   slugFromPath,
 } from '../lib/live.ts';
@@ -101,6 +105,38 @@ describe('hlsUrl', () => {
   test('joins base and path, with or without a trailing slash', () => {
     assert.equal(hlsUrl('https://a.example/', 'abcd1234'), 'https://a.example/live/abcd1234/index.m3u8');
     assert.equal(hlsUrl('http://localhost:8888', 'abcd1234'), 'http://localhost:8888/live/abcd1234/index.m3u8');
+  });
+});
+
+describe('makeSlug', () => {
+  test('eight of the alphabet, matching SLUG_RE', () => {
+    assert.equal(makeSlug(() => 0), 'aaaaaaaa');
+    assert.equal(makeSlug((n) => n - 1), '99999999');
+    assert.ok(slugFromPath(`live/${makeSlug((n) => Math.floor(Math.random() * n))}`));
+  });
+});
+
+describe('mayShow', () => {
+  const now = Date.parse('2026-10-02T15:20:00Z');
+  test('a guide who goes on air alone is shown', () => {
+    assert.equal(mayShow({ on_air_alone: true, cleared_until: null }, now), true);
+  });
+  test('one who waits is shown only while the go-ahead lasts', () => {
+    assert.equal(mayShow({ on_air_alone: false, cleared_until: null }, now), false);
+    assert.equal(mayShow({ on_air_alone: false, cleared_until: '2026-10-02T16:00:00Z' }, now), true);
+    assert.equal(mayShow({ on_air_alone: false, cleared_until: '2026-10-02T15:00:00Z' }, now), false);
+  });
+});
+
+describe('recentlyStopped', () => {
+  const now = Date.parse('2026-10-02T15:20:00Z');
+  test('a shut-off is told for a while, then forgotten', () => {
+    assert.equal(recentlyStopped(null, now), false);
+    assert.equal(recentlyStopped('2026-10-02T15:19:00Z', now), true);
+    assert.equal(recentlyStopped(new Date(now - STOPPED_NOTICE_MS).toISOString(), now), false);
+  });
+  test('a time in the future is not a stop', () => {
+    assert.equal(recentlyStopped('2026-10-02T15:30:00Z', now), false);
   });
 });
 

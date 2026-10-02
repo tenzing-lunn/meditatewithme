@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { serviceClient } from '@/lib/supabase';
-import { HOUR_MS, LIVE_STALE_MS, hlsUrl, hourOf, onAir, type LiveStream } from '@/lib/live';
+import { HOUR_MS, LIVE_STALE_MS, STOPPED_NOTICE_MS, hlsUrl, hourOf, mayShow, onAir, recentlyStopped, type LiveStream } from '@/lib/live';
 
 /**
  * Who is on air right now, and where to watch.
@@ -11,6 +11,11 @@ import { HOUR_MS, LIVE_STALE_MS, hlsUrl, hourOf, onAir, type LiveStream } from '
  * fails, so the page falls back to the earth rather than showing an error.
  * The guide's name is sent only if they turned that on in their account
  * (`stream_keys.show_name`); otherwise `name` is absent.
+ *
+ * A guide who waits for a go-ahead is connected but left out until an
+ * admin puts them on air (`mayShow`). With nobody on air, `stopped: true`
+ * says an admin shut a stream off in the last fifteen minutes, so viewers
+ * are told it will be back rather than left looking at the water.
  *
  * One collaborator holds each hour and handovers happen on the hour; the
  * rules are `onAir` in lib/live.ts. This route claims the hour for them in
@@ -32,13 +37,14 @@ export async function GET() {
   try {
     const supabase = await serviceClient();
     const now = Date.now();
-    const { data: rows, error } = await supabase
+    const { data: connected, error } = await supabase
       .from('stream_keys')
-      .select('slug, name, show_name, live_since')
+      .select('slug, name, show_name, live_since, on_air_alone, cleared_until')
       .is('revoked_at', null)
       .not('live_since', 'is', null)
       .gt('live_seen', new Date(now - LIVE_STALE_MS).toISOString());
     if (error) return none();
+    const rows = connected.filter((r) => mayShow(r, now));
 
     // The hours held since the earliest of these sessions began, and the
     // current one: enough to know who holds this hour and who has had a turn.
@@ -81,6 +87,18 @@ export async function GET() {
     }
 
     const named = rows.find((r) => r.slug === (air.kind === 'live' ? air.slug : null));
+    let stopped = false;
+    if (air.kind !== 'live') {
+      const { data: last } = await supabase
+        .from('stream_keys')
+        .select('stopped_at')
+        .gt('stopped_at', new Date(now - STOPPED_NOTICE_MS).toISOString())
+        .order('stopped_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      stopped = recentlyStopped(last?.stopped_at ?? null, now);
+    }
+
     const body =
       air.kind === 'live'
         ? {
@@ -91,8 +109,8 @@ export async function GET() {
             },
           }
         : air.kind === 'between'
-          ? { live: null, next: new Date(air.next).toISOString() }
-          : { live: null };
+          ? { live: null, next: new Date(air.next).toISOString(), ...(stopped ? { stopped } : {}) }
+          : { live: null, ...(stopped ? { stopped } : {}) };
     return NextResponse.json(body, {
       headers: {
         'Cache-Control': 'public, max-age=0, must-revalidate',

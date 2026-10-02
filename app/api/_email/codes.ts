@@ -68,20 +68,30 @@ export async function issueCode(
   if (error) throw error;
 
   const lead = purpose === 'connect' ? 'To connect this address to your account' : 'To sign in';
+  await sendMail(
+    email,
+    'Your code for Meditate With Me',
+    `${lead}, enter this code:\n\n${code}\n\nIt works for ten minutes. If you did not ask for it, you can ignore this email.`,
+    `<p>${lead}, enter this code:</p><p style="font-size:32px;letter-spacing:6px;font-weight:bold">${code}</p><p>It works for ten minutes. If you did not ask for it, you can ignore this email.</p>`,
+  );
+  return 'sent';
+}
+
+/**
+ * One email through Resend, from the sign-in sender. Throws if it was not
+ * accepted, or if there is no key — callers that can live without the
+ * email catch it.
+ */
+export async function sendMail(to: string, subject: string, text: string, html: string): Promise<void> {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) throw new Error('No RESEND_API_KEY');
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      from: SENDER,
-      to: email,
-      subject: 'Your code for Meditate With Me',
-      text: `${lead}, enter this code:\n\n${code}\n\nIt works for ten minutes. If you did not ask for it, you can ignore this email.`,
-      html: `<p>${lead}, enter this code:</p><p style="font-size:32px;letter-spacing:6px;font-weight:bold">${code}</p><p>It works for ten minutes. If you did not ask for it, you can ignore this email.</p>`,
-    }),
+    body: JSON.stringify({ from: SENDER, to, subject, text, html }),
     signal: AbortSignal.timeout(10_000),
   });
   if (!response.ok) throw new Error(`Resend ${response.status}`);
-  return 'sent';
 }
 
 /**

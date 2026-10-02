@@ -118,7 +118,15 @@ The account and the server are made by a person.
    *Protection Bypass for Automation* (created 27 September 2026, note
    "live-a MediaMTX server"). Revoking it in Project Settings → Deployment
    Protection cuts the server off from `dev`. Production needs no bypass.
-9. **Updates:** `unattended-upgrades` for the OS; MediaMTX only by changing
+9. **The API, on this machine only** (since 2 October 2026):
+   `mediamtx.yml` turns it on at `127.0.0.1:9997` and leaves it out of the
+   HTTP auth. `ufw` already refuses 9997 from outside. `hook.sh` uses it to
+   cut a stream the site answers 410 for — an admin's *Shut off* at
+   `/admin`, or a revoked key — at its next 30-second beat. Copy both files
+   into `/opt/mediamtx/`; MediaMTX reloads the config by itself and reads
+   `hook.sh` afresh for every new stream, so no restart. Check with
+   `curl -s http://127.0.0.1:9997/v3/paths/list` on the box.
+10. **Updates:** `unattended-upgrades` for the OS; MediaMTX only by changing
    the pinned version here and redeploying, after reading its changelog —
    HLS sessions regressed in several releases from 1.18 to 1.21.0, and
    1.21.1 (20 September 2026) is the first with the fix. Retest on an iPhone

@@ -4,6 +4,9 @@
 //   npm run live:key -- approve <email> "Anna"
 //                                       let an account stream; they find
 //                                       their key under Account, Streaming
+//   npm run live:key -- admin <email>   let an account use /admin (Jonny,
+//                                       Tenzing): applications, guides, and
+//                                       who is on air
 //   npm run live:key -- list            everyone, and who is live
 //   npm run live:key -- revoke <slug>   stop a key working at its next publish
 //
@@ -96,6 +99,23 @@ ${name} (${email}) can stream. Tell them: sign in, open Account, and their
 server and key are under Streaming. Their name is not shown to viewers
 unless they turn that on there.
 `);
+} else if (command === 'admin') {
+  const email = (arg ?? '').trim().toLowerCase();
+  if (!email.includes('@')) {
+    console.error('Usage: npm run live:key -- admin <email>');
+    process.exit(1);
+  }
+  const { data: userId, error: ownerError } = await db.rpc('email_owner', { addr: email });
+  if (ownerError || !userId) {
+    console.error(ownerError?.message ?? `No account has ${email}. They sign in on the site once first.`);
+    process.exit(1);
+  }
+  const { error } = await db.from('admins').upsert({ user_id: userId });
+  if (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
+  console.log(`${email} is an admin. Signed in, they find Admin under Account, or go to /admin.`);
 } else if (command === 'list') {
   const { data, error } = await db
     .from('stream_keys')
@@ -137,6 +157,6 @@ unless they turn that on there.
       : `No active key ${arg}.`,
   );
 } else {
-  console.error('Usage: npm run live:key -- new "Name" | approve <email> "Name" | list | revoke <slug>');
+  console.error('Usage: npm run live:key -- new "Name" | approve <email> "Name" | admin <email> | list | revoke <slug>');
   process.exit(1);
 }

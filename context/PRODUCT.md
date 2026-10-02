@@ -717,9 +717,13 @@ of the preparation and it is worth having whether or not the house happens —
 it costs one number and it is the kind of thing that is expensive to retrofit
 once people have habits built on a bell at :00. Nothing else should be built
 ahead of the decision: no rota, no lighter accounts, no handover UI.
-(Overtaken 2 October 2026 for the accounts: at Tenzing's word an account he
-approves finds its own stream key under *Account · Streaming*, and chooses
-whether viewers see its name — `plans/live-video.md`.)
+(Overtaken 2 October 2026 for the accounts, at Tenzing's word: anyone
+signed in can ask to guide under *Account · Guiding*; Jonny and Tenzing, as
+admins, accept or decline, add guides by email, decide who goes on air
+alone and who waits for their go-ahead, and can shut a stream off from
+`/admin`; a guide finds their own key in their account and chooses whether
+viewers see their name — `plans/live-video.md`. **Jonny has not seen it**,
+and is not yet an admin: he needs an account first.)
 
 **An iPhone app.** Raised 6 September 2026 as a possibility. **On 2 October
 2026 Tenzing said it is being made**: it needs Sign in with Apple (his to

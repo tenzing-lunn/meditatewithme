@@ -350,6 +350,27 @@ pattern. How to run it again: `infra/mediamtx/README.md`.
       (trigger on `profiles`). Tested end to end with a throwaway
       `example.invalid` account: approve, show, publish, rename, renew (old
       key refused), delete (key refused).
+- [x] **Becoming a guide, and running the guides, 2 October 2026**
+      (Tenzing's call; Jonny has not seen it). Anyone signed in can *Ask to
+      guide* under *Account · Guiding* (`guide_applications`). Admins
+      (`admins`; `npm run live:key -- admin <email>` — Tenzing so far,
+      Jonny once he has an account) work from `/admin`: who is connected
+      now, on air or waiting, with a silent preview, *Put on air* and *Shut
+      off*; requests to accept or decline; *Add a guide* by email; and every
+      guide, with *Goes on air by themselves* (`on_air_alone`; new guides
+      wait, everyone from before goes alone), *New key* and *Remove*.
+      Accepting emails the guide that their key is in their account.
+      *Put on air* is good to the end of the hour (`cleared_until`); a
+      waiting guide holds no hour (`mayShow`). *Shut off* revokes the key,
+      `/api/live` answers `stopped` for fifteen minutes so viewers read
+      *This session was stopped. It will be back soon.*, and the hook's next
+      beat is answered 410, on which `hook.sh` kicks the connection through
+      MediaMTX's API on 127.0.0.1 only. Tested end to end, 27/27, with two
+      throwaway accounts. **The server half is not deployed**: the new
+      `hook.sh` and `mediamtx.yml` must be copied to `/opt/mediamtx/` on
+      `live-a` (Tenzing; the copy was refused to Claude). Until then a shut
+      off guide disappears for viewers at once and cannot reconnect, but
+      their running connection is not cut.
 - [x] **The guide's name, if they choose.** *Show my name to viewers* in
       the same section sets `stream_keys.show_name` (off by default);
       `/api/live` then sends `name`, and viewers read *Ana is guiding.*

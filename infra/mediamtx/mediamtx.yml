@@ -11,15 +11,18 @@ logLevel: info
 
 # Everyone who publishes is checked by our own route against Supabase.
 # Reading is public (the HLS stream is what the site shows), so reads never
-# wait on Vercel. The API, metrics and pprof are off, so nothing else needs
-# checking.
+# wait on Vercel. The API listens on this machine only — hook.sh uses it to
+# cut off a stream an admin shut off — so it is not asked about either;
+# metrics and pprof are off.
 authMethod: http
 authHTTPAddress: http://localhost:3000/api/live/auth
 authHTTPExclude:
   - action: read
   - action: playback
+  - action: api
 
-api: false
+api: true
+apiAddress: 127.0.0.1:9997
 metrics: false
 pprof: false
 playback: false

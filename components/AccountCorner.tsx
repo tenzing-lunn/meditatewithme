@@ -292,7 +292,7 @@ function AccountPage({
         <Emails email={email} />
       </div>
 
-      <Streaming heading={<Heading>Streaming</Heading>} />
+      <Streaming heading={<Heading>Guiding</Heading>} />
 
       <div className="flex flex-col gap-4">
         <Heading>Your practice</Heading>

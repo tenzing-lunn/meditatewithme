@@ -962,6 +962,18 @@ unexplained. Before the first frame, and once the stream is gone, the line
 is empty but keeps its height. It is a `status` region; the picture itself
 stays `aria-hidden`.
 
+### The admin page
+`/admin`, since 2 October 2026, for Jonny and Tenzing only: the account
+sheet's measure and grammar on its own page — the brand and *Back*, *Guides*
+at the question size, then four sections under serif `answer-sm` headings
+(*On now*, *Asking to guide*, *Add a guide*, *Everyone who can guide*),
+rows ruled off with a `rule` hairline, `QUIET_SM` for the everyday acts
+and `WORD` for the ones that ask first; *Shut off*, *New key* and *Remove*
+confirm in place with the delete-account card (*Keep it* emphasised). A
+silent 16:9 preview opens inside a row. A `status` line under the title
+says what the last act did. Under *Account*, the *Guiding* section is an
+*Ask to guide* button that opens two fields, or a guide's server and key.
+
 ### The bowl
 A 12rem drawn bowl inside a button labelled *Strike the bowl and begin*,
 with the settings line under it. (A caption, *Strike the bowl to begin.*,

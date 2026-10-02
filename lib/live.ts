@@ -16,6 +16,13 @@
 /** Eight lowercase letters and digits. Public; appears in the HLS address. */
 export const SLUG_RE = /^[a-z0-9]{8}$/;
 
+const SLUG_ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789';
+
+/** A new slug, from a source of random integers below `n` (`randomInt`). */
+export function makeSlug(random: (n: number) => number): string {
+  return Array.from({ length: 8 }, () => SLUG_ALPHABET[random(SLUG_ALPHABET.length)]).join('');
+}
+
 /** URL-safe base64 of 32 random bytes is 43 characters; allow some slack. */
 export const KEY_RE = /^[A-Za-z0-9_-]{32,64}$/;
 
@@ -27,6 +34,28 @@ export const KEY_RE = /^[A-Za-z0-9_-]{32,64}$/;
  * on its own: three missed reports, and the site stops showing it.
  */
 export const LIVE_STALE_MS = 90_000;
+
+/** How long viewers are told a stream was stopped and will be back. */
+export const STOPPED_NOTICE_MS = 15 * 60_000;
+
+/**
+ * Whether a connected guide may be shown: one who goes on air by themselves,
+ * or one an admin has put on air this hour. A guide waiting for a go-ahead
+ * is connected but nobody sees them, and they hold no hour.
+ */
+export function mayShow(
+  row: { on_air_alone: boolean; cleared_until: string | null },
+  now: number,
+): boolean {
+  return row.on_air_alone || (row.cleared_until !== null && Date.parse(row.cleared_until) > now);
+}
+
+/** Whether an admin's shut-off is recent enough to tell viewers about. */
+export function recentlyStopped(stoppedAt: string | null, now: number): boolean {
+  if (stoppedAt === null) return false;
+  const t = Date.parse(stoppedAt);
+  return t <= now && now - t < STOPPED_NOTICE_MS;
+}
 
 export function pathFor(slug: string): string {
   return `live/${slug}`;

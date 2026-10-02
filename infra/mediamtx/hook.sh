@@ -13,6 +13,10 @@
 # when a collaborator reconnects and the old stream's `offline` lands after the
 # new stream's `online`, the new stream stays live.
 #
+# If the site answers 410 — an admin shut this stream off, or its key was
+# revoked — the stream is cut here, through MediaMTX's API on this machine
+# only (mediamtx.yml), and the script waits for MediaMTX to say `offline`.
+#
 # Needs LIVE_HOOK_URL, LIVE_HOOK_SECRET and LIVE_SERVER_NAME in MediaMTX's
 # environment; MediaMTX adds MTX_PATH.
 
@@ -20,28 +24,44 @@ since=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
 post() {
   # The secret goes to curl on stdin, not in its arguments, so `ps` never
-  # shows it.
+  # shows it. Prints the HTTP status, 000 if the site could not be reached.
   printf 'header = "Authorization: Bearer %s"\n' "$LIVE_HOOK_SECRET" |
-    curl -fsS -m 10 -X POST --config - \
+    curl -sS -m 10 -X POST --config - -o /dev/null -w '%{http_code}' \
       -H 'Content-Type: application/json' \
       -d "{\"path\":\"$MTX_PATH\",\"state\":\"$1\",\"since\":\"$since\",\"server\":\"$LIVE_SERVER_NAME\"}" \
-      "$LIVE_HOOK_URL" >/dev/null || true
+      "$LIVE_HOOK_URL" 2>/dev/null || true
 }
 
-trap 'post offline; exit 0' INT TERM
+# Cut whoever is publishing to this path: ask the API what the source is
+# (`"source":{"type":"rtmpConn","id":"…"}`) and kick that connection.
+kick() {
+  src=$(curl -s -m 5 "http://127.0.0.1:9997/v3/paths/get/$MTX_PATH")
+  type=$(printf '%s' "$src" | sed -n 's/.*"source":{"type":"\([A-Za-z]*\)","id":"\([^"]*\)".*/\1/p')
+  id=$(printf '%s' "$src" | sed -n 's/.*"source":{"type":"\([A-Za-z]*\)","id":"\([^"]*\)".*/\2/p')
+  case "$type" in
+    rtmpConn) kind=rtmpconns ;;
+    rtmpsConn) kind=rtmpsconns ;;
+    srtConn) kind=srtconns ;;
+    *) return ;;
+  esac
+  curl -s -m 5 -X POST "http://127.0.0.1:9997/v3/$kind/kick/$id" >/dev/null
+}
+
+trap 'post offline >/dev/null; exit 0' INT TERM
 
 # If MediaMTX itself is killed outright, nobody sends SIGINT and this script
 # would carry on saying `seen` for a server that no longer exists. So each
 # beat first checks that the MediaMTX that started it is still there.
 server=$PPID
 
-post online
+status=$(post online)
 while :; do
+  if [ "$status" = 410 ]; then kick; fi
   sleep 30 &
   wait $!
   if ! kill -0 "$server" 2>/dev/null; then
-    post offline
+    post offline >/dev/null
     exit 0
   fi
-  post seen
+  status=$(post seen)
 done

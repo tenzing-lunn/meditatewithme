@@ -12,6 +12,10 @@ import { bearer, secretMatches } from '../secret';
  * write, and `offline` only clears a row that still holds its own `since` —
  * so a reconnect's late `offline` cannot wipe the stream that replaced it.
  *
+ * A revoked key answers 410 to `online` and `seen` and is not marked live:
+ * that is how an admin's shut-off reaches the server, which then cuts the
+ * connection itself (`hook.sh`). `offline` is always recorded.
+ *
  * Guarded by a bearer secret only the server holds.
  */
 
@@ -45,20 +49,24 @@ export async function POST(request: Request) {
   try {
     const supabase = await serviceClient();
     const rows = supabase.from('stream_keys');
-    const { error } =
-      state === 'offline'
-        ? await rows
-            .update({ live_since: null, live_seen: null, live_server: null })
-            .eq('slug', slug)
-            .eq('live_since', since)
-        : await rows
-            .update({
-              live_since: since,
-              live_seen: new Date().toISOString(),
-              live_server: server,
-            })
-            .eq('slug', slug);
-    return new Response(null, { status: error ? 500 : 204 });
+    if (state === 'offline') {
+      const { error } = await rows
+        .update({ live_since: null, live_seen: null, live_server: null })
+        .eq('slug', slug)
+        .eq('live_since', since);
+      return new Response(null, { status: error ? 500 : 204 });
+    }
+    const { data, error } = await rows
+      .update({
+        live_since: since,
+        live_seen: new Date().toISOString(),
+        live_server: server,
+      })
+      .eq('slug', slug)
+      .is('revoked_at', null)
+      .select('slug');
+    if (error) return new Response(null, { status: 500 });
+    return new Response(null, { status: data.length ? 204 : 410 });
   } catch {
     return new Response(null, { status: 500 });
   }

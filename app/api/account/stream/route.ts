@@ -1,17 +1,20 @@
 import { NextResponse } from 'next/server';
 import { serviceClient } from '@/lib/supabase';
 import { ingest, ingestHost } from '@/lib/live';
+import { cleanText } from '@/lib/label';
 import { callerOf } from '../../_email/codes';
 import { accountKey, hashKey } from '../../live/secret';
 
 /**
  * The caller's stream key, if they are approved to stream.
  *
- * Approval is Tenzing's, by `npm run live:key -- approve`; this route only
- * ever reads and changes the caller's own row, found by the account the
- * access token proves (`callerOf`) — never an id from the body. A caller
- * with no working key gets `{ approved: false }`, and the account page
- * shows nothing about streaming at all.
+ * Approval is an admin's (`/admin`, or `npm run live:key -- approve`); this
+ * route only ever reads and changes the caller's own row, found by the
+ * account the access token proves (`callerOf`) — never an id from the
+ * body. A caller with no working key gets `{ approved: false }` and where
+ * their application stands (`application`: null, `pending`, `declined`);
+ * PUT is applying. Every answer says whether the caller is an admin, so
+ * the account page can show the way to `/admin`.
  *
  * GET shows the server, the key and the one-line address; the key is
  * worked out, not stored (`accountKey`), and if the stored hash does not
@@ -38,6 +41,12 @@ async function start(request: Request) {
   }
 }
 
+async function isAdmin(db: Awaited<ReturnType<typeof serviceClient>>, userId: string): Promise<boolean> {
+  const { data, error } = await db.from('admins').select('user_id').eq('user_id', userId).maybeSingle();
+  if (error) throw error;
+  return data !== null;
+}
+
 async function rowOf(db: Awaited<ReturnType<typeof serviceClient>>, userId: string): Promise<Row | null> {
   const { data, error } = await db
     .from('stream_keys')
@@ -61,8 +70,16 @@ export async function GET(request: Request) {
   const s = await start(request);
   if (!s) return answer({ ok: false }, 401);
   try {
-    const row = await rowOf(s.db, s.user.id);
-    if (!row) return answer({ ok: true, approved: false });
+    const [row, admin] = await Promise.all([rowOf(s.db, s.user.id), isAdmin(s.db, s.user.id)]);
+    if (!row) {
+      const { data: app, error } = await s.db
+        .from('guide_applications')
+        .select('status')
+        .eq('user_id', s.user.id)
+        .maybeSingle();
+      if (error) throw error;
+      return answer({ ok: true, approved: false, admin, application: app?.status ?? null });
+    }
     const host = hostNow();
     if (!host) return answer({ ok: false, reason: 'unavailable' }, 503);
     const hash = hashKey(accountKey(row.slug, row.key_version));
@@ -70,7 +87,32 @@ export async function GET(request: Request) {
       const { error } = await s.db.from('stream_keys').update({ key_hash: hash }).eq('slug', row.slug);
       if (error) throw error;
     }
-    return answer(shown(row, host));
+    return answer({ ...shown(row, host), admin });
+  } catch {
+    return answer({ ok: false }, 500);
+  }
+}
+
+/** Apply to guide: a name to be known by and a few words. Again replaces. */
+export async function PUT(request: Request) {
+  const s = await start(request);
+  if (!s) return answer({ ok: false }, 401);
+  const body = await request.json().catch(() => null);
+  const name = cleanText(body?.name, 60);
+  const about = typeof body?.about === 'string' ? body.about.trim().slice(0, 1000) : '';
+  if (!name || !about) return answer({ ok: false, reason: 'empty' }, 400);
+  try {
+    if (await rowOf(s.db, s.user.id)) return answer({ ok: false, reason: 'already' }, 409);
+    const { error } = await s.db.from('guide_applications').upsert({
+      user_id: s.user.id,
+      name,
+      about,
+      status: 'pending',
+      created_at: new Date().toISOString(),
+      decided_at: null,
+    });
+    if (error) throw error;
+    return answer({ ok: true, application: 'pending' });
   } catch {
     return answer({ ok: false }, 500);
   }
