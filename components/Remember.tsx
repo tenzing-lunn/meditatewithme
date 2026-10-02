@@ -2,7 +2,7 @@
 
 import { useId, useRef, useState, type FormEvent } from 'react';
 import { cleanText, NAME_MAX, ORIGIN_MAX, type Profile } from '@/lib/label';
-import { POND_CHOICE, WORD } from './controls';
+import { FOCUS, QUIET, WORD } from './controls';
 import LineActions from './LineActions';
 import LineField from './LineField';
 import NameScreen from './NameScreen';
@@ -10,7 +10,6 @@ import OriginScreen from './OriginScreen';
 import Rail from './Rail';
 import Screen from './Screen';
 import GoogleSignIn from './GoogleSignIn';
-import Switch from './Switch';
 import { askEmailUpdates } from './useEmailUpdates';
 
 const STEPS = ['ask', 'name', 'place', 'email', 'code'] as const;
@@ -103,22 +102,34 @@ export default function Remember({ profile, onProfile, signIn, signInWithGoogle,
       <Rail screens={STEPS} at={step} dir={dir} render={(screen, current) => {
         const position = STEPS.indexOf(screen);
         const progress = { step: position, steps: 4 };
+        // The ask is the shape every sign-in screen worth copying shares: the
+        // ways in stacked full width at the foot, where a thumb is on a phone,
+        // one of them filled; the opt-in a small box under them; and the way
+        // out in the corner rather than set level with the ways in.
         if (screen === 'ask') return (
-          <Screen current={current} align="center" title="Would you like to be remembered?" lede="Keep your practice and settings with you.">
-            <div className="mx-auto mb-5 w-full max-w-xs">
-              <div className="mb-4">
-                <Switch checked={updates} onChange={setUpdates} label="Email me when the app is ready"
-                  description="And now and then, news of the site." />
+          <section className="relative flex h-full w-full flex-col overflow-y-auto px-6 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:px-10">
+            <div className="absolute top-[calc(0.875rem+env(safe-area-inset-top))] right-4 sm:right-10">
+              <button type="button" disabled={busy} className={WORD} onClick={onSkip}>Not now</button>
+            </div>
+            <div className="mx-auto flex w-full max-w-sm flex-1 flex-col sm:justify-center">
+              <div className="flex flex-1 flex-col justify-center sm:flex-none">
+                <h2 tabIndex={-1} className="font-display text-question font-bold leading-[1.15] text-ink text-balance outline-none sm:text-question-sm">
+                  Keep your practice
+                </h2>
+                <p className="mt-3 text-body leading-relaxed text-ink-2">Your sittings and sounds, on any device.</p>
               </div>
-              <GoogleSignIn signIn={() => { askEmailUpdates(updates); return signInWithGoogle(); }} disabled={busy} onBusyChange={setBusy} onError={setError} />
-              <p className="mt-3 text-caption text-ink-3">You’ll stay signed in on this browser.</p>
-              <p role="alert" className="mt-3 text-caption text-ember">{error}</p>
+              <div className="sm:mt-10">
+                <GoogleSignIn primary signIn={() => { askEmailUpdates(updates); return signInWithGoogle(); }} disabled={busy} onBusyChange={setBusy} onError={setError} />
+                <button type="button" disabled={busy} className={`${QUIET} mt-3 w-full`} onClick={() => move('name')}>Continue with email</button>
+                <label className="mt-4 flex min-h-11 cursor-pointer items-center gap-3 text-caption text-ink-2">
+                  <input type="checkbox" checked={updates} onChange={(e) => setUpdates(e.target.checked)}
+                    className={`size-5 shrink-0 cursor-pointer rounded accent-ember ${FOCUS}`} />
+                  Email me when the app launches
+                </label>
+                <p role="alert" className="min-h-4 text-caption text-ember">{error}</p>
+              </div>
             </div>
-            <div className="flex justify-center gap-6">
-              <button type="button" disabled={busy} className={POND_CHOICE} onClick={() => move('name')}>Use email</button>
-              <button type="button" disabled={busy} className={POND_CHOICE} onClick={onSkip}>Not now</button>
-            </div>
-          </Screen>
+          </section>
         );
         if (screen === 'name') return (
           <NameScreen current={current} onChange={setName} onBack={back} onNext={() => move('place')}

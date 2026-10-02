@@ -845,6 +845,15 @@ or *Send it again* — its ink on the fields' left edge. Nothing is reserved:
 an error takes space only when there is one. Only the six-digit code is
 centred. Escape and a press outside close it and keep the flow.
 
+After a guest's sitting (`Remember.tsx`), the ask is a whole screen, not a
+panel, and it is shaped like the sign-in screens people already know: the
+question heading and one line of body mid-screen, left-aligned; at the foot,
+full width, `GoogleSignIn primary` (the one `PRIMARY` here, the mark on a
+white disc) over a `QUIET` *Continue with email*; under them the opt-in as a
+native checkbox in `accent-ember`, caption size; *Not now* a `WORD` in the
+top-right corner, never level with the ways in. From `sm` the column is
+`max-w-sm` and centred in the window, buttons under the heading.
+
 ### How you sit, and the fish
 
 On `dev` from 27–28 September 2026, live since 29 September. There is no separate page for the
