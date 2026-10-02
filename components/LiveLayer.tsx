@@ -13,6 +13,11 @@ import LiveStream from './LiveStream';
  * water, the rings and the sitting's words around it, where they stay
  * readable.
  *
+ * Under the window, one line says what it is — live, not recorded, and
+ * nobody watching back — and, if a stream that was playing drops, that it
+ * will come back by itself, so the window never just vanishes unexplained
+ * (`plans/apple-guidelines.md`).
+ *
  * `picture` is for the demo: something to stand in for a stream, so the
  * wash can be judged without anyone live.
  */
@@ -27,27 +32,41 @@ export default function LiveLayer({
 }) {
   // Which stream is playing, so a new one is not shown on the old one's word.
   const [playing, setPlaying] = useState<string | null>(null);
+  // Which stream has played at all, so a drop is told apart from a start.
+  const [seen, setSeen] = useState<string | null>(null);
   const shown = picture !== undefined || (src !== null && playing === src);
+  const dropped = !shown && src !== null && seen === src;
+  const line = shown
+    ? 'Live, and not recorded. Nobody can see or hear you.'
+    : dropped
+      ? 'The picture dropped. It will come back by itself.'
+      : null;
 
   return (
-    <div
-      aria-hidden="true"
-      className={`pointer-events-none absolute inset-0 flex items-center justify-center px-6 pb-24 pt-16 transition-opacity duration-1000 motion-reduce:transition-none ${
-        shown ? 'opacity-100' : 'opacity-0'
-      }`}
-    >
-      <div className="relative aspect-video w-full max-w-4xl overflow-hidden rounded-card border border-rule bg-scrim">
+    <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-6 pb-24 pt-16">
+      <div
+        aria-hidden="true"
+        className={`relative aspect-video w-full max-w-4xl overflow-hidden rounded-card border border-rule bg-scrim transition-opacity duration-1000 motion-reduce:transition-none ${
+          shown ? 'opacity-100' : 'opacity-0'
+        }`}
+      >
       {picture ??
         (src !== null && (
           <LiveStream
             key={src}
             src={src}
-            onState={(s) => setPlaying(s === 'playing' ? src : null)}
+            onState={(s) => {
+              setPlaying(s === 'playing' ? src : null);
+              if (s === 'playing') setSeen(src);
+            }}
             playRef={playRef}
             className="absolute inset-0 h-full w-full"
           />
         ))}
       </div>
+      <p role="status" className="mt-3 min-h-6 text-center text-caption text-ink-3">
+        {line}
+      </p>
     </div>
   );
 }

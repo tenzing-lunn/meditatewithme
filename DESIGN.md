@@ -950,6 +950,14 @@ it simply appears. Silent, no controls, never full-bleed. Between two
 people on camera it is gone and the company line says when the next
 session starts.
 
+Under the window, centred, one caption line in `ink-3` (since 2 October
+2026): *Live, and not recorded. Nobody can see or hear you.* while frames
+play, and *The picture dropped. It will come back by itself.* while a
+stream that was playing has stalled — so the window never vanishes
+unexplained. Before the first frame, and once the stream is gone, the line
+is empty but keeps its height. It is a `status` region; the picture itself
+stays `aria-hidden`.
+
 ### The bowl
 A 12rem drawn bowl inside a button labelled *Strike the bowl and begin*,
 with the settings line under it. (A caption, *Strike the bowl to begin.*,

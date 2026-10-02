@@ -33,11 +33,11 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <Document title="What this site stores" changed="22 September 2026">
+    <Document title="What this site stores" changed="2 October 2026">
       <p className="mt-6">
-        Eight things are stored anywhere, and five of them only exist if you
-        make an account. This page says what each one is, where it goes, how
-        long it stays, and how to have it removed.
+        A few things are stored, and most of them only exist if you make an
+        account. This page says what each one is, where it goes, how long it
+        stays, and how to have it removed.
       </p>
       <p className="mt-4">
         There is no third-party analytics, no advertising, no tracking pixel,
@@ -131,11 +131,41 @@ export default function PrivacyPage() {
 
       <Section title="Signing in">
         <p>
-          We sign you in with a code, or a link, sent to your email address.
+          You sign in with Google, or with a code sent to your email address.
           There is no password, so there is nothing for us to store and nothing
-          for you to reuse from somewhere else. Your address is used to send
-          you that email and for nothing else — no newsletter, and we do not
-          pass it to anybody.
+          for you to reuse from somewhere else. If you use Google, Google tells
+          us your email address and the name and picture on your Google
+          account; they are kept with your account, and only the address is
+          used. A Gmail address always signs in through Google.
+        </p>
+        <p>
+          You can connect more than one email address to your account, and
+          sign in with any of them. Each is proved by a six-digit code that we
+          send through our email provider, Resend; only a scrambled copy of the
+          code is kept, for ten minutes. Addresses stay until you remove them
+          or delete the account.
+        </p>
+        <p>
+          Your address is used to sign you in. When you sign in there is a
+          switch, off unless you turn it on, asking whether we may email you
+          when the app is ready and now and then with news of the site. We
+          keep your answer and when you gave it; nothing has been sent to
+          anybody yet, and every email that is will let you stop them. We do
+          not pass your address to anybody.
+        </p>
+      </Section>
+
+      <Section title="Watching someone live">
+        <p>
+          When you sit with a guide, the video of whoever is guiding comes
+          from our own video server. Like any website, it sees your internet
+          address in order to send you the picture. It sees nothing else
+          about you: not your name, your email or your account.
+        </p>
+        <p>
+          The video only goes one way. Nobody can see or hear you, and the
+          site never asks for your camera or microphone. Nothing is recorded:
+          the picture is passed on as it arrives and is not kept.
         </p>
       </Section>
 

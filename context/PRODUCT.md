@@ -181,7 +181,10 @@ skimmed pebble scatters them where it lands. *By yourself* leads to the
 sentence and Begin as before, and the sitting is your stone among the
 fish. *Guided meditation* starts the sitting in the click: whoever is on
 camera, framed on the water (fading in only once it plays, held through a
-blip of under 20 seconds, started by any tap in Low Power Mode), no fish,
+blip of under 20 seconds, and since 2 October started by Begin's own tap
+even in an iPhone's Low Power Mode), with one line under it — *Live, and
+not recorded. Nobody can see or hear you.*, or *The picture dropped. It
+will come back by itself.* while it stalls — no fish,
 ending with everyone at the shared bell at :55; between two people on
 camera the line says when the next session starts, and with nobody live
 it is the water. A member still reaches the sitting through Home's older

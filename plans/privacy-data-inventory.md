@@ -17,8 +17,8 @@ added, not the week of launch.
 
 ## The whole inventory
 
-Eight things are stored anywhere, and five of them only exist if you make an
-account.
+Everything stored anywhere is below; most of it only exists if you make an
+account. (It said "eight things" until 2 October 2026, and had outgrown it.)
 
 | What | Where | Identifies you? | Kept for |
 |---|---|---|---|
@@ -32,6 +32,8 @@ account.
 | Whether you want email when the app is ready, and news | `profiles.email_updates` and `profiles.email_updates_at` (when you answered), if you sign in and tick it | Consent record for marketing email — needs an unsubscribe route before anything is sent | Until you change it or delete the account |
 | Where you said you are from, and whether you share it | Your browser (`mwm.profile`); `profiles.origin` and `profiles.share_label` if you sign in | **Yes, if you typed a real place** | Until you change or delete them |
 | "Name from Origin", shown to others | `heartbeats.label`, only while you sit with others with the switch on | **Yes, as much as the two above** | 2 days, with the row |
+| What Google says about you, if you sign in with Google | `auth.identities` (email, name, picture URL, Google's id for you) | **Yes** | Until you delete the account |
+| Your internet address, while you watch someone live | The video server (MediaMTX on Hetzner, behind a proxy) — in its working logs only; nothing is recorded (`record` unset, `playback: false`) | Yes, as any IP address | **Not yet read** — check the box's log retention before the notice is published |
 
 **The last two rows are from 14 September 2026.** They are the first thing
 the site has ever shown one stranger about another. Both are opt-in twice
