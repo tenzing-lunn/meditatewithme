@@ -838,8 +838,11 @@ Guest (`Account.tsx`): *Sign in* opens a surface panel under it,
 right-aligned, control radius, with the one shadow, 160ms in. Everything in
 it is left-aligned, the way the account pages are: the serif heading
 (*Sign in.* / *Create account.* / *Check your email.*), *Continue with
-Google*, a hairline *or*, the field with its caption label above it, the
-primary button, and a caption under it. The foot is ruled off with one
+Google* filled (`GoogleSignIn primary`), a hairline *or*, the field with its
+caption label above it, its button outlined (`QUIET`) so Google stays the one
+fill, and the opt-in as an unticked checkbox under it. On the code step,
+Google gone, *Confirm and enter* is the fill. The panel sets `font-sans` on
+itself: the header it hangs from is serif, and it used to inherit that. The foot is ruled off with one
 `WORD` — *Don't have an account? Create one*, *Already have one? Sign in*,
 or *Send it again* — its ink on the fields' left edge. Nothing is reserved:
 an error takes space only when there is one. Only the six-digit code is

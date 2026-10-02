@@ -2,11 +2,10 @@
 
 import { useEffect, useId, useRef, useState } from 'react';
 import { NAME_MAX } from '@/lib/label';
-import { FIELD, PRIMARY, WORD } from './controls';
+import { FIELD, FOCUS, PRIMARY, QUIET, WORD } from './controls';
 import type { AuthState } from './useAuth';
 import type { SyncStatus } from './useSyncPreferences';
 import GoogleSignIn from './GoogleSignIn';
-import Switch from './Switch';
 import { askEmailUpdates } from './useEmailUpdates';
 
 /**
@@ -272,7 +271,7 @@ export default function Account({
     step === 'name'
       ? 'Every sitting is already logged on this device. An account carries it to your others.'
       : step === 'email'
-        ? 'You’ll stay signed in on this browser.'
+        ? null
         : `We have sent a six-digit code to ${email.trim()}. The link in that email works too.`;
 
   return (
@@ -308,7 +307,10 @@ export default function Account({
             // because the panel has not far to come and nothing to explain;
             // anything slower and the press and the arrival stop feeling like
             // one event.
-            className={`rounded-control w-[min(20rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-6rem)] overflow-y-auto overscroll-contain border border-rule bg-surface shadow-menu p-5 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none ${
+            // `font-sans leading-normal text-ink` because the header this hangs
+            // from sets its clock and *Sign in* in the serif, and every word in
+            // the panel inherited it until 2 October 2026.
+            className={`font-sans leading-normal text-ink rounded-control w-[min(20rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-6rem)] overflow-y-auto overscroll-contain border border-rule bg-surface shadow-menu p-5 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none ${
               entered ? 'translate-y-0 opacity-100' : '-translate-y-1.5 opacity-0'
             }`}
           >
@@ -317,15 +319,15 @@ export default function Account({
                 {heading}
               </h2>
 
-              {/* The email step's hint sits under its button instead. */}
-              {step !== 'email' && (
-                <p className="text-caption leading-relaxed break-words text-ink-3">{hint}</p>
+              {hint && (
+                <p className="-mt-2 text-caption leading-relaxed break-words text-ink-3">{hint}</p>
               )}
 
+              {/* Google is the one filled button while it is offered, so the
+                  address's button below it is outlined; on the code step,
+                  with Google gone, Confirm and enter takes the fill. */}
               {step !== 'code' && <>
-                <Switch checked={updates} onChange={setUpdates} label="Email me when the app is ready"
-                  description="And now and then, news of the site." />
-                <GoogleSignIn signIn={() => { askEmailUpdates(updates); return signInWithGoogle(); }} disabled={busy} onError={setError} onBusyChange={setBusy} />
+                <GoogleSignIn primary signIn={() => { askEmailUpdates(updates); return signInWithGoogle(); }} disabled={busy} onError={setError} onBusyChange={setBusy} />
                 <div aria-hidden className="flex items-center gap-3 text-caption text-ink-3">
                   <span className="h-px flex-1 bg-rule" />
                   or
@@ -438,7 +440,7 @@ export default function Account({
 
               {/* Busy keeps the label and adds the ellipsis, so the button
                   says what it is still doing rather than swapping words. */}
-              <button type="submit" disabled={busy} className={`${PRIMARY} w-full`}>
+              <button type="submit" disabled={busy} className={`${step === 'code' ? PRIMARY : QUIET} w-full`}>
                 {step === 'name'
                   ? 'Continue'
                   : step === 'email'
@@ -447,7 +449,13 @@ export default function Account({
                 {busy && '…'}
               </button>
 
-              {step === 'email' && <p className="-mt-2 text-caption text-ink-3">{hint}</p>}
+              {step !== 'code' && (
+                <label className="-my-1 flex min-h-11 cursor-pointer items-center gap-3 text-caption text-ink-2">
+                  <input type="checkbox" checked={updates} onChange={(e) => setUpdates(e.target.checked)}
+                    className={`size-5 shrink-0 cursor-pointer rounded accent-ember ${FOCUS}`} />
+                  Email me when the app launches
+                </label>
+              )}
 
               {(error || resent) && (
                 <p role="alert" className={`text-caption ${error ? 'text-ember' : 'text-ink-3'}`}>

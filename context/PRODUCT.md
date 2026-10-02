@@ -199,11 +199,10 @@ the top-right corner. A guest sees *Sign in* there, which opens the panel
 straight away — *Continue with Google* (live since the same day, under
 Tenzing's Google account), or an email code — with *Don't have an account?
 Create one* at its foot turning it to *Create account*, name first. **On
-`dev` since 30 September 2026**, that panel carries an unticked switch
-above *Continue with Google*, *Email me when the app is ready* (*And now
-and then, news of the site.*), and the after-sitting ask carries the same
-opt-in as an unticked checkbox, *Email me when the app launches*, under its
-two buttons. Either applies to Google and the email code alike and lands in
+`dev` since 30 September 2026** (revised 2 October), that panel and the
+after-sitting ask both carry an unticked checkbox, *Email me when the app
+launches*, under their buttons. In the panel *Continue with Google* is the
+filled button and the email's *Send me a code* is outlined. Either applies to Google and the email code alike and lands in
 `profiles.email_updates` once signed in. Nothing sends mail to that list,
 there is no unsubscribe yet, and the privacy notice that has to cover it
 is still unpublished; Jonny has not been asked. The Account page's email
