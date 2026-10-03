@@ -20,7 +20,13 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -33,6 +39,12 @@
         }
       ],
       "expo-asset"
-    ]
+    ],
+    "owner": "meditatewithme",
+    "extra": {
+      "eas": {
+        "projectId": "6238f066-b53e-4809-bc59-31f5dd35b421"
+      }
+    }
   }
 }
