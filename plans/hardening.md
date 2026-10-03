@@ -65,9 +65,18 @@ Tried from the agent on 3 October 2026, with these results:
 3. **Vercel → Deployment Protection**: require passing checks before a
    production deployment is promoted. With `main` locked (above), nothing
    reaches `main` without a green run, so this adds little; skip with (2).
-4. **An uptime monitor** (Better Stack or UptimeRobot, free) on
-   `https://meditatewithme.vercel.app/api/health`, expecting 200, every
-   minute or five, alerting an inbox that is read.
+4. ~~An uptime monitor~~ — done 3 October 2026: UptimeRobot (free, signed
+   in with Tenzing's GitHub) checks the live site every 5 minutes and
+   emails 10zinglunn@gmail.com when it stops answering 200.
+   dashboard.uptimerobot.com; the monitor is still *named*
+   `meditatewithme.vercel.app/api/health` from its first minute, though its
+   URL is below — rename it when the edit page is next open. One-minute
+   checks are a paid tier; five is enough for a site with no uptime terms.
+   **It watches `/api/count` for now**, which exists on `main` and touches
+   the database; `/api/health` is only on `dev` and answered 404 live.
+   **When `dev` is merged to `main`, change the monitor's URL to
+   `https://meditatewithme.vercel.app/api/health`** (Edit → URL to monitor)
+   so a missing table or env var is caught too, not only a dead site.
 5. **Optional, when wanted:** a Sentry DSN — `_report.ts` is the one place
    to add it for the routes; client errors need `@sentry/nextjs`.
 6. **Healthchecks.io** ping from `infra/mediamtx/hook.sh` so a silent box is
