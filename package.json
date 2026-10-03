@@ -9,7 +9,9 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "contrast": "node scripts/contrast.mjs",
-    "test": "node --test --experimental-strip-types \"tests/*.test.ts\"",
+    "test": "npm run test:unit && npm run test:api",
+    "test:unit": "node --test --experimental-strip-types \"tests/*.test.ts\"",
+    "test:api": "node --test --experimental-strip-types --import ./tests/api/_register.mjs \"tests/api/*.test.ts\"",
     "timelog": "node scripts/timelog.mjs",
     "live:key": "node --env-file=.env.local scripts/live-key.mjs"
   },
