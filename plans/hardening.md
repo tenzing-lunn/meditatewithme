@@ -41,7 +41,9 @@ can do (dashboards and repository settings), and what is deliberately left.
   3 October 2026 (branch protection is not offered on a free private repo)
   and the rule was set the same day: the `check` job from
   `.github/workflows/ci.yml` must have passed on the commit, the branch
-  must be up to date, no force-pushes, no deletion. A fast-forward of `dev`
+  must be up to date, no force-pushes, no deletion, and it binds the
+  repository's owner too (*enforce for administrators*, switched on 3 October
+  2026 after a push went through while the check was still running). A fast-forward of `dev`
   onto `main` carries `dev`'s green run with it; a merge *commit* would not,
   so merge fast-forward or through a pull request. (5.4)
 

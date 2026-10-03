@@ -73,9 +73,9 @@ The rules:
 - Typecheck, lint, tests and `npm run build` all pass on `dev` before it goes
   near `main`. `.github/workflows/ci.yml` runs the same four on every push,
   and since 3 October 2026 GitHub refuses a push to `main` whose commit has
-  not passed that run. Fast-forward `dev` onto `main` so the green run
+  not passed that run, the owner's pushes included. Fast-forward `dev` onto `main` so the green run
   travels with the commit; a merge commit has no run of its own and is
-  refused. `plans/hardening.md` has the rest.
+  refused. So: push `dev`, wait for CI to go green, then `git push origin dev:main`. `plans/hardening.md` has the rest.
 - Merging `dev` → `main` is a deliberate act that puts something live. **Ask
   Tenzing first, every time**; don't fold it into a commit that was about
   something else.
