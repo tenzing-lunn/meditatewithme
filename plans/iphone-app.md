@@ -6,6 +6,26 @@ made (`context/PRODUCT.md` §5). What the App Store asks of it is in
 built. **Jonny has not been told**, as far as the repo knows — it is new
 work outside v1 and the 55 hours.
 
+## 3 October 2026: the site first, wrapped, then native piece by piece
+
+Tenzing's call, after seeing the first build: the app shows the real
+Meditate With Me *now*, by opening `www.meditatewithme.online` full screen
+in a web view (`mobile/App.tsx`), and its parts are replaced with native
+ones one at a time — the sitting and the bell first — **before** anything
+goes to App Store review. A site in a wrapper alone is refused (4.2), and it
+keeps the site's limits: Web Audio stops when the phone locks, so the
+locked-phone bell is still unsolved until the sitting is native.
+
+Known in the wrapper today:
+- **Google sign-in will be refused inside it.** Google blocks its sign-in
+  page in embedded web views (`disallowed_useragent`). Email codes and
+  Apple work. Fixed when sign-in goes native (step 2 below), not before.
+- Links off the site (mail, credits, other sites) open in the phone's own
+  apps, not in the frame.
+- The user agent ends in `MeditateWithMeApp`, so the site can tell it is
+  inside the app when a page needs to behave differently.
+- The bell test is still there: `EXPO_PUBLIC_BELL_TEST=1 npx expo start`.
+
 ## The route
 
 **Expo, in `mobile/`, beside the website, in the same repo.** Same
