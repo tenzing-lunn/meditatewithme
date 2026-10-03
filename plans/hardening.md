@@ -40,16 +40,28 @@ can do (dashboards and repository settings), and what is deliberately left.
 
 ## Tenzing's, outside the repository
 
-In the order they matter:
+Tried from the agent on 3 October 2026, with these results:
 
-1. **GitHub → Settings → Branches → `main`**: require the `CI / check` status
-   to pass before merging. This is the gate; the workflow alone is a report.
-2. **Vercel → Project → Firewall**: rate-limit rules — `/api/heartbeat`
-   120/min per IP, `/api/signin` and `/api/account/emails` 5/min per IP.
-   The in-code limits are per warm instance; these are the wall. Do this
-   before the first announced guided hour (9 November).
+1. **Require CI before anything reaches `main`.** `gh api` was refused:
+   *"Upgrade to GitHub Pro or make this repository public to enable this
+   feature"* — branch protection is not available on a private repo on the
+   free plan. Options: make the repo public (the code is already read by a
+   client; `.env*` is gitignored and the secret scan of the tree was clean),
+   or GitHub Pro (US$4/month), or keep the rule as it is — CI *reports* on
+   every push and `CLAUDE.md` asks for a green run before merging. Until one
+   of the first two, the gate is a habit, not a lock.
+2. **Vercel Firewall rate-limit rules** — `/api/heartbeat` 120/min per IP,
+   `/api/signin` and `/api/account/emails` 5/min per IP. The Vercel MCP tool
+   rejected every rate-limit payload (its schema is mislabeled) and the
+   firewall config does not exist until it is switched on once in the
+   dashboard. Clicks: vercel.com → *meditatewithme* → **Firewall** →
+   *Configure* → *Add rule*: name, *If* path equals `/api/heartbeat` and
+   method equals POST, *Then* **Rate limit**, 120 requests per 60 s per IP,
+   action Deny → Save. Repeat for the other two paths with 5 per 60 s.
+   **Publish** the config. Rate limiting may need the Pro plan; if the
+   option is greyed out, the in-code limits stand alone and that is known.
 3. **Vercel → Deployment Protection**: require passing checks before a
-   production deployment is promoted, once (1) exists.
+   production deployment is promoted — only meaningful once (1) exists.
 4. **An uptime monitor** (Better Stack or UptimeRobot, free) on
    `https://meditatewithme.vercel.app/api/health`, expecting 200, every
    minute or five, alerting an inbox that is read.
