@@ -66,17 +66,13 @@ Tried from the agent on 3 October 2026, with these results:
    production deployment is promoted. With `main` locked (above), nothing
    reaches `main` without a green run, so this adds little; skip with (2).
 4. ~~An uptime monitor~~ — done 3 October 2026: UptimeRobot (free, signed
-   in with Tenzing's GitHub) checks the live site every 5 minutes and
-   emails 10zinglunn@gmail.com when it stops answering 200.
-   dashboard.uptimerobot.com; the monitor is still *named*
-   `meditatewithme.vercel.app/api/health` from its first minute, though its
-   URL is below — rename it when the edit page is next open. One-minute
-   checks are a paid tier; five is enough for a site with no uptime terms.
-   **It watches `/api/count` for now**, which exists on `main` and touches
-   the database; `/api/health` is only on `dev` and answered 404 live.
-   **When `dev` is merged to `main`, change the monitor's URL to
-   `https://meditatewithme.vercel.app/api/health`** (Edit → URL to monitor)
-   so a missing table or env var is caught too, not only a dead site.
+   in with Tenzing's GitHub) checks `https://meditatewithme.vercel.app/api/health`
+   every 5 minutes and emails 10zinglunn@gmail.com when it stops answering
+   200 — so a missing table or env var is caught too, not only a dead site.
+   dashboard.uptimerobot.com, monitor `804164830`. It watched `/api/count`
+   for its first hour, until the release that afternoon put the health
+   route on `main`. One-minute checks are a paid tier; five is enough for a
+   site with no uptime terms.
 5. **Optional, when wanted:** a Sentry DSN — `_report.ts` is the one place
    to add it for the routes; client errors need `@sentry/nextjs`.
 6. **Healthchecks.io** ping from `infra/mediamtx/hook.sh` so a silent box is

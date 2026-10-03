@@ -14,6 +14,26 @@ and §3's history says what it replaced.
 
 ## 1. Live status
 
+**3 October 2026: the guides' side, the hardening, and Apple sign-in's
+button go live.** Tenzing asked for `dev` to be merged into `main`. Live
+from it: the caption under the live window and the privacy notice brought
+up to date with Google, connected addresses and the video; approved guides
+finding their stream key under Account and choosing whether viewers see
+their name; anyone able to ask to guide, and admins accepting, putting on
+air and shutting off from `/admin`; *Continue with Apple* under Google on
+both sign-in screens, shown only once Supabase has the provider on; and
+the hardening — every route reporting its errors, `/api/health`, per-address
+rate limits on the heartbeat and code routes, and the beds ending when a
+sitting stops. The two migrations it depends on (`stream_key_accounts`,
+`guides_admin`) were already applied: the live health check named their
+tables and answered `ok`. Whether Jonny had seen any of it is not recorded.
+**This release changed how releases happen**: `main` had been a line of
+single-parent *Release:* commits that `dev` never contained, so it could not
+fast-forward; `dev` first merged `main`'s history in without changing its
+tree (`981610e`), and `main` is now the same commit as `dev` (`b2afd81`)
+and will fast-forward from here, as the branch protection requires.
+Rollback: redeploy `27e7a30`, or promote its Vercel deployment again.
+
 **30 September 2026 (evening): sign-in email, connected addresses, and the
 sound line go live.** Tenzing asked for all of `dev` to be merged: the
 unticked *Email me when the app is ready* switch at sign-in, several email
