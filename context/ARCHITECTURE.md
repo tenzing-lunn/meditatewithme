@@ -412,7 +412,7 @@ logged out    → falls back to localStorage, nothing breaks
 
 This ordering is deliberate and it is what makes step 7 of the build genuinely cuttable. The account layer is a **sync mechanism bolted onto a working app**, not a foundation the app sits on. If week three disappears into coursework, we ship without it and nothing is missing except cross-device sync.
 
-Cuttable is enforced, not just intended: `components/useAuth.ts`, `components/useSyncPreferences.ts`, `components/useProfile.ts`'s pull and push, `components/Account.tsx`, `components/Home.tsx` and the `home` branch in `Entry.tsx` are the entire feature. Delete them and the rail is unchanged. `usePreferences` has no idea accounts exist.
+Cuttable is enforced, not just intended: `components/useAuth.ts`, `components/useSyncPreferences.ts`, `components/useProfile.ts`'s pull and push, `components/Account.tsx` and `components/AccountCorner.tsx` — the corner `Journey.tsx` shows a signed-in visitor in place of *Sign in* — are the entire feature. Delete them and the rail is unchanged. `usePreferences` has no idea accounts exist.
 
 **`show_count` means the mode**, since 14 September 2026: `true` is *with others* (the earth, presence, the shared bell offered), `false` is *by yourself* (a private timer, nobody shown, no heartbeat). It was the switch that hid the room's count and it kept its name and column; no migration, and the sync is unchanged. `until_bell` is only ever true under with-others.
 
@@ -681,55 +681,64 @@ The heartbeat table is the first thing to break, and it is a contained problem w
 
 ## 12. Repo layout
 
+Corrected against the tree on 3 October 2026; `tests/docs.test.ts` fails if a
+path named in `context/` stops existing, so this list should stay true.
+
 ```
 meditatewithme/
 ├── app/
-│   ├── page.tsx                 # renders <Entry> — the rail, or Home
-│   ├── privacy/, terms/         # the documents (unlinked until filled)
-│   ├── layout.tsx               # Comfortaa + Nunito, light colour scheme
+│   ├── page.tsx                 # renders <Entry> — the rail, or the signed-in home
+│   ├── layout.tsx               # fonts, the room decided before first paint
+│   ├── admin/, credits/, privacy/, terms/, live-test/
 │   └── api/
 │       ├── time/route.ts        # server clock, no-store
 │       ├── count/route.ts       # cached 10s
 │       ├── world/route.ts       # cells, counts and shared labels, cached 10s
 │       ├── origin/route.ts      # the edge's city/country, to suggest; no-store
-│       ├── heartbeat/route.ts   # upsert, service role, stamps the cell, takes a label
-│       └── account/route.ts     # delete
+│       ├── heartbeat/route.ts   # upsert, service role, stamps the cell, takes a label; rate-limited
+│       ├── health/route.ts      # env names, database, every table — 200 or 503
+│       ├── account/route.ts     # delete; account/emails, account/stream
+│       ├── signin/route.ts      # the site's own codes for connected addresses
+│       ├── admin/route.ts       # guides: accept, invite, on air, shut off
+│       ├── live/route.ts        # who is on air; live/auth, live/hook for MediaMTX
+│       ├── session/route.ts     # unused — the `sessions` seam §9 did not take
+│       ├── _email/codes.ts      # server only: codes and Resend
+│       ├── _report.ts           # every catch reports here
+│       └── _ip.ts               # the address, as a rate-limit key
 ├── components/
 │   ├── Entry.tsx                # auth branch; owns every shared hook
 │   ├── Journey.tsx              # the stage machine: rail | sitting | finished
-│   ├── Rail.tsx, Screen.tsx     # the track, and one screen's shape
-│   ├── *Screen.tsx              # Name, Origin, Mode, Time, Bell, Sound, Bowl
-│   ├── Bowl.tsx                 # the drawn bowl and its strike
-│   ├── Sitting.tsx              # the dusk frame with the earth
-│   ├── Afterwards.tsx           # the ending
-│   ├── AccountCorner.tsx        # a member's corner: Account, Settings, Layout
-│   ├── Sounds.tsx               # the nine tiles and Volume; the rail and
-│   │                            #   the drawer render this
-│   ├── SoundLine.tsx            # the sitting's sounds: one line of words
-│   ├── Account.tsx, Practice.tsx, Switch.tsx, Wordmark.tsx
-│   ├── controls.ts              # the six control styles
+│   ├── Rail.tsx, RailBar.tsx, Screen.tsx, Steps.tsx
+│   ├── Arrive.tsx, NameScreen.tsx, OriginScreen.tsx, Picker.tsx, AgainSetup.tsx
+│   ├── Pond.tsx, Pebble.tsx, BowlMark.tsx, FlameMark.tsx, Brand.tsx
+│   ├── Sitting.tsx, Afterwards.tsx, Remember.tsx
+│   ├── LiveLayer.tsx, LiveStream.tsx, liveVideo.ts
+│   ├── AccountCorner.tsx, Account.tsx, Emails.tsx, Streaming.tsx, Admin.tsx, Practice.tsx
+│   ├── Sounds.tsx, SoundLine.tsx, Switch.tsx, LineField.tsx, LineActions.tsx, Document.tsx
+│   ├── audio.ts, mix.ts         # the one AudioContext, and the graph of beds
+│   ├── controls.ts, settingsLine.ts
 │   ├── use*.ts                  # every hook: auth, prefs, practice, mix, presence,
-│   │                            #   world, count, session, clock, profile, origin,
+│   │                            #   world, live, clock, profile, origin, places,
 │   │                            #   usual, fullscreen, wake lock, reduced motion
-│   └── Demo.tsx                 # dev-only: /?demo=sitting, /?demo=finished[&settled]
+│   └── Demo.tsx, worldDemo.ts   # dev-only: /?demo=sitting, /?demo=finished[&settled]
 ├── scripts/
-│   └── contrast.mjs             # every palette pair against its threshold
-├── lib/
-│   ├── session.ts               # hourStart, resolveSession
-│   ├── clock.ts                 # syncClock, serverNow
-│   ├── timer.ts                 # TIMER_STOPS, clampMinutes, nextSharedBellAt
-│   ├── journey.ts               # screensFor, step, usualFingerprint
-│   ├── label.ts                 # cleanText, composeLabel, Profile
-│   ├── company.ts               # "Ana from Lisbon is meditating with you"
-│   ├── geo.ts                   # snapToCell, subsolarPoint
-│   ├── projection.ts            # Equal Earth
-│   ├── practice.ts              # the log and its summary
-│   ├── authErrors.ts            # the three sentences said when Supabase says no
+│   ├── contrast.mjs             # every palette pair against its threshold
+│   └── build-land.mjs, build-sounds.mjs, places.mjs, live-key.mjs, timelog.mjs
+├── lib/                         # pure; tested file-for-file in tests/
+│   ├── session.ts, clock.ts, timer.ts, journey.ts
+│   ├── label.ts, company.ts, places.ts, format.ts
+│   ├── geo.ts, projection.ts, pond.ts, fish.ts, pebble.ts, noise.ts, beds.ts
+│   ├── practice.ts, preferences.ts, authErrors.ts, authRedirect.ts, emailCode.ts
+│   ├── live.ts, limit.ts, room.ts, types.ts
+│   ├── candle.ts, dial.ts, earthView.ts   # from the ring deleted 22 September; no importers
 │   └── supabase.ts
+├── tests/                       # mirrors lib/; tests/api/ runs the route handlers
 ├── mobile/                      # the iPhone app (Expo), since 2 October 2026;
 │                                #   reads ../lib through Metro — plans/iphone-app.md
+├── infra/mediamtx/              # the live video server, by hand
 ├── public/earth/                # land.json + relief.jpg — 273KB
 ├── supabase/migrations/
+├── .github/workflows/ci.yml     # typecheck, lint, tests, build on every push
 ├── context/                     # standing project knowledge
 ├── plans/                       # active plans
 └── docs/                        # finished writing
@@ -979,6 +988,32 @@ migration at a time and check the result with a follow-up query — see CLAUDE.m
 `supabase migration repair --status applied <version>` would reconcile the two
 and restore `db push`. It is the right fix and it has not been done, because it
 writes to production metadata and that is a decision, not a side effect.
+
+**What stands between a merge and a visitor, since 3 October 2026.**
+`.github/workflows/ci.yml` runs typecheck, lint, both test suites and the
+build on every push to `dev` and `main` and on every pull request; it needs
+no secrets, because every route is `force-dynamic` and the clients are built
+per call. Making `main` refuse a merge until it passes is a repository
+setting, not a file, and is listed in `plans/hardening.md` until it is done.
+
+**Knowing it is working.** Every route handler's `catch` still answers
+calmly — a null count, an empty earth, `{ ok: false }` — and now also calls
+`app/api/_report.ts`, which `console.error`s into Vercel's function logs;
+until then nothing was logged at all, and a wrong service key looked exactly
+like an empty room. `GET /api/health` answers 200 or 503 with what failed by
+name — a missing variable, the database, a table a route depends on that was
+never migrated — for an uptime monitor to poll (none is set yet; the plan
+lists it). The route tests in `tests/api/` import the handlers directly
+through a resolver (`tests/api/_hooks.mjs`) that stands a fake database in
+for `lib/supabase.ts`, so every refusal — no token, non-admin, revoked key,
+wrong code — is asserted rather than tried by hand.
+
+**Rate limits.** `/api/heartbeat` refuses an address past 120 beats a minute
+or 50 distinct anon ids an hour; `/api/signin` and `/api/account/emails`
+refuse past five code requests a minute. `lib/limit.ts` is pure and tested;
+the counts live in memory per function instance, which makes them a speed
+bump rather than a wall — the wall is Vercel's Firewall rate-limit rules,
+set in the dashboard, also listed in the plan.
 
 ---
 

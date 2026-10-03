@@ -27,7 +27,6 @@ export default function AppleIcon() {
           background: WATER,
         }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img width={150} height={150} alt="" src={`data:image/svg+xml,${encodeURIComponent(bowlSvg())}`} />
       </div>
     ),

@@ -1,6 +1,6 @@
 import { test, describe, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { useDb } from './_db.ts';
+import { fakeDb } from './_db.ts';
 import { fromIp, request } from './_request.ts';
 import { POST } from '../../app/api/heartbeat/route.ts';
 
@@ -9,7 +9,7 @@ const beat = (body: unknown, headers: Record<string, string> = fromIp()) =>
   POST(request('/api/heartbeat', { body, headers }));
 
 describe('/api/heartbeat', () => {
-  beforeEach(() => useDb({ tables: { heartbeats: { error: null, count: 3 } } }));
+  beforeEach(() => fakeDb({ tables: { heartbeats: { error: null, count: 3 } } }));
 
   test('refuses a body that is not JSON', async () => {
     const res = await POST(request('/api/heartbeat', { method: 'POST', raw: 'nope', headers: fromIp() }));
@@ -35,14 +35,14 @@ describe('/api/heartbeat', () => {
   });
 
   test('a database failure is a calm 200, not an error', async () => {
-    useDb({ tables: { heartbeats: { error: { message: 'down' } } } });
+    fakeDb({ tables: { heartbeats: { error: { message: 'down' } } } });
     const res = await beat({ anonId: ID });
     assert.equal(res.status, 200);
     assert.deepEqual(await res.json(), { ok: false });
   });
 
   test('the label is cleaned and capped, and null clears it', async () => {
-    const db = useDb();
+    const db = fakeDb();
     await beat({ anonId: ID, label: ' Ana\u0000 from Lisbon ' });
     assert.ok(db.calls.some((c) => c.includes('"label":"Ana from Lisbon"')), db.calls.join('\n'));
     await beat({ anonId: ID, label: null });

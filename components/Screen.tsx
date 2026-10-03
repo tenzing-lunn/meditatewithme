@@ -44,7 +44,6 @@ export default function Screen({
   titleClassName,
   lede,
   children,
-  current,
   menu,
   onBack,
   backLabel = 'Back',

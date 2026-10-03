@@ -1,6 +1,6 @@
 import { test, describe, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { useDb } from './_db.ts';
+import { fakeDb } from './_db.ts';
 import { GET } from '../../app/api/health/route.ts';
 import { GET as count } from '../../app/api/count/route.ts';
 
@@ -12,7 +12,7 @@ beforeEach(() => {
 
 describe('/api/health', () => {
   test('everything wired is 200', async () => {
-    useDb();
+    fakeDb();
     const res = await GET();
     assert.equal(res.status, 200);
     assert.deepEqual(await res.json(), { ok: true, failed: [] });
@@ -20,7 +20,7 @@ describe('/api/health', () => {
 
   test('a missing variable is named, and the database is not asked', async () => {
     delete process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const db = useDb();
+    const db = fakeDb();
     const res = await GET();
     assert.equal(res.status, 503);
     assert.deepEqual(await res.json(), { ok: false, failed: ['env:SUPABASE_SERVICE_ROLE_KEY'] });
@@ -28,7 +28,7 @@ describe('/api/health', () => {
   });
 
   test('a table that does not answer is named', async () => {
-    useDb({ tables: { live_hours: { error: { message: 'relation does not exist' } } } });
+    fakeDb({ tables: { live_hours: { error: { message: 'relation does not exist' } } } });
     const res = await GET();
     assert.equal(res.status, 503);
     assert.deepEqual(await res.json(), { ok: false, failed: ['table:live_hours'] });
@@ -39,7 +39,7 @@ describe('/api/count — degrades, and now says so', () => {
   test('a database failure is a 200 with null counts and no caching', async (t) => {
     const errors: unknown[][] = [];
     t.mock.method(console, 'error', (...args: unknown[]) => void errors.push(args));
-    useDb({ tables: { heartbeats: { error: { message: 'down' } } } });
+    fakeDb({ tables: { heartbeats: { error: { message: 'down' } } } });
     const res = await count();
     assert.equal(res.status, 200);
     const body = await res.json();

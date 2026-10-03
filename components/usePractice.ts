@@ -183,7 +183,6 @@ export function usePractice(userId: string | null) {
       cancelled = true;
     };
     // Runs once per sign-in. New sittings are handled by the effect below.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, loaded, write]);
 
   // Push anything recorded after the initial sync.

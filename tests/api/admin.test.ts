@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { useDb } from './_db.ts';
+import { fakeDb } from './_db.ts';
 import { bearer, request } from './_request.ts';
 import { GET, POST } from '../../app/api/admin/route.ts';
 
@@ -8,17 +8,17 @@ const ADMIN = { id: 'admin-1', email: 'jonny@example.com' };
 
 /** A database where `admins` holds the caller and nothing else is set up. */
 const asAdmin = (extra: Record<string, { data?: unknown; error?: unknown }> = {}) =>
-  useDb({ user: ADMIN, tables: { admins: { data: { user_id: ADMIN.id } }, guide_applications: { data: [] }, stream_keys: { data: [] }, ...extra } });
+  fakeDb({ user: ADMIN, tables: { admins: { data: { user_id: ADMIN.id } }, guide_applications: { data: [] }, stream_keys: { data: [] }, ...extra } });
 
 describe('/api/admin — who may act', () => {
   test('no token is 403', async () => {
-    useDb({ user: null });
+    fakeDb({ user: null });
     assert.equal((await GET(request('/api/admin'))).status, 403);
     assert.equal((await POST(request('/api/admin', { body: { action: 'remove', slug: 'abcd1234' } }))).status, 403);
   });
 
   test('a valid token for someone who is not an admin is 403', async () => {
-    const db = useDb({ user: { id: 'u2' }, tables: { admins: { data: null } } });
+    const db = fakeDb({ user: { id: 'u2' }, tables: { admins: { data: null } } });
     const res = await POST(request('/api/admin', { body: { action: 'remove', slug: 'abcd1234' }, headers: bearer('t') }));
     assert.equal(res.status, 403);
     // The decision was taken before any write.
@@ -26,7 +26,7 @@ describe('/api/admin — who may act', () => {
   });
 
   test('a database failure while checking is 403, not 500 — fails closed', async () => {
-    useDb({ user: ADMIN, tables: { admins: { error: { message: 'down' } } } });
+    fakeDb({ user: ADMIN, tables: { admins: { error: { message: 'down' } } } });
     assert.equal((await GET(request('/api/admin', { headers: bearer('t') }))).status, 403);
   });
 
@@ -71,7 +71,7 @@ describe('/api/admin POST — actions', () => {
   });
 
   test('inviting an address with no account is 404', async () => {
-    useDb({ user: ADMIN, tables: { admins: { data: { user_id: ADMIN.id } } }, rpc: { data: null, error: null } });
+    fakeDb({ user: ADMIN, tables: { admins: { data: { user_id: ADMIN.id } } }, rpc: { data: null, error: null } });
     const res = await act({ action: 'invite', email: 'new@example.com', name: 'New' });
     assert.equal(res.status, 404);
     assert.deepEqual(await res.json(), { ok: false, reason: 'no-account' });

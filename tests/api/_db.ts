@@ -36,7 +36,7 @@ export type Fake = {
 let current: Fake | null = null;
 
 /** Build a fake from a fixture and make it what `serviceClient()` returns. */
-export function useDb(fixture: Fixture = {}): Fake {
+export function fakeDb(fixture: Fixture = {}): Fake {
   const calls: string[] = [];
   const tables = fixture.tables ?? {};
 
@@ -95,7 +95,7 @@ export function clearDb(): void {
 }
 
 export async function serviceClient(): Promise<unknown> {
-  if (!current) throw new Error('tests/api: no fake database — call useDb() first');
+  if (!current) throw new Error('tests/api: no fake database — call fakeDb() first');
   return current.client;
 }
 

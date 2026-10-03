@@ -124,9 +124,9 @@ describe('trainAt', () => {
   });
 
   test('every ring spreads, slowing, and thins as it goes', () => {
-    let last: number[] = [];
-    let lastStep: number[] = [];
-    let lastW: number[] = [];
+    const last: number[] = [];
+    const lastStep: number[] = [];
+    const lastW: number[] = [];
     for (let a = 1.2; a < 8; a += 0.1) {
       const rs = trainAt(a, big);
       rs.forEach((r, j) => {

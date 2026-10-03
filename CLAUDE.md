@@ -70,8 +70,10 @@ The rules:
 
 - Start every piece of work on `dev` (`git checkout dev`). Branch off `dev` for
   anything long-running, and merge back into `dev`, not `main`.
-- Typecheck, tests and `npm run build` all pass on `dev` before it goes near
-  `main`.
+- Typecheck, lint, tests and `npm run build` all pass on `dev` before it goes
+  near `main`. `.github/workflows/ci.yml` runs the same four on every push;
+  `plans/hardening.md` says what still has to be set in GitHub and Vercel for
+  that to *block* a merge rather than report on one.
 - Merging `dev` → `main` is a deliberate act that puts something live. **Ask
   Tenzing first, every time**; don't fold it into a commit that was about
   something else.
@@ -89,7 +91,8 @@ commit until the next piece of work lands on `dev`.
 - `lib/` — no React, no I/O beyond explicit fetches. `session.ts` and `clock.ts`
   are pure and unit-tested; keep them that way.
 - `supabase/migrations/` — SQL, forward-only
-- `tests/` — mirrors `lib/`
+- `tests/` — mirrors `lib/`; `tests/api/` imports the route handlers directly
+  with a fake database stood in for `lib/supabase.ts` (`tests/api/_hooks.mjs`)
 - `mobile/` — the iPhone app (Expo), since 2 October 2026. Its own
   `package.json`; it reads `lib/` in place through Metro. `plans/iphone-app.md`.
 

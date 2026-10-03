@@ -1,0 +1,34 @@
+# What must be true before anything reaches main. Until 3 October 2026 the
+# only gate was a sentence in CLAUDE.md asking for these to be run by hand;
+# main auto-deploys, so a merge is a release whether or not they were.
+#
+# Protecting `main` so this check must pass is a repository setting, not a
+# file — see plans/hardening.md.
+name: CI
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      # The build needs no secrets: every route is force-dynamic and the
+      # clients are built per call, so missing keys fail a request, not the
+      # build. The public URL and anon key are placeholders for the same reason.
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder

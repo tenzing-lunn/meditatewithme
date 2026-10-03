@@ -76,9 +76,9 @@ cache entry serves the whole world. Full reasoning in ARCHITECTURE.md §5.
 **The screens are a rail.** `components/Journey.tsx` owns which questions a
 visitor sees (`lib/journey.ts` decides, and is tested), `Rail.tsx` slides them
 in from the right one at a time, and the bowl at the end is the only thing that
-starts a sitting. `Sitting.tsx` is the dusk frame with the earth; `Home.tsx` is
-the signed-in page with the two doors. ARCHITECTURE.md §16 has the rules and
-DESIGN.md the visual system.
+starts a sitting. `Sitting.tsx` is the dusk frame with the earth. Signed in,
+the same rail is shown, with `AccountCorner.tsx` in its corner in place of
+*Sign in*. ARCHITECTURE.md §16 has the rules and DESIGN.md the visual system.
 
 **Nothing shows an error screen.** Every failure hides a control or degrades
 quietly. Supabase down still leaves you a working candle, timer, and sound mix.
