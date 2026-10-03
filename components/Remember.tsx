@@ -9,18 +9,19 @@ import NameScreen from './NameScreen';
 import OriginScreen from './OriginScreen';
 import Rail from './Rail';
 import Screen from './Screen';
-import GoogleSignIn from './GoogleSignIn';
+import GoogleSignIn, { AppleSignIn } from './GoogleSignIn';
 import { askEmailUpdates } from './useEmailUpdates';
 
 const STEPS = ['ask', 'name', 'place', 'email', 'code'] as const;
 type Step = typeof STEPS[number];
 
 /** The guest account flow uses the same rail and questions as the arrival. */
-export default function Remember({ profile, onProfile, signIn, signInWithGoogle, verify, onSkip, suggestion }: {
+export default function Remember({ profile, onProfile, signIn, signInWithGoogle, signInWithApple, verify, onSkip, suggestion }: {
   profile: Profile;
   onProfile: (patch: Partial<Profile>) => void;
   signIn: (email: string, name?: string) => Promise<string | null>;
   signInWithGoogle: () => Promise<string | null>;
+  signInWithApple: () => Promise<string | null>;
   verify: (email: string, code: string) => Promise<string | null>;
   onSkip: () => void;
   suggestion?: string | null;
@@ -120,6 +121,9 @@ export default function Remember({ profile, onProfile, signIn, signInWithGoogle,
               </div>
               <div className="sm:mt-10">
                 <GoogleSignIn primary signIn={() => { askEmailUpdates(updates); return signInWithGoogle(); }} disabled={busy} onBusyChange={setBusy} onError={setError} />
+                <div className="mt-3 empty:hidden">
+                  <AppleSignIn signIn={() => { askEmailUpdates(updates); return signInWithApple(); }} disabled={busy} onBusyChange={setBusy} onError={setError} />
+                </div>
                 <button type="button" disabled={busy} className={`${QUIET} mt-3 w-full`} onClick={() => move('name')}>Continue with email</button>
                 <label className="mt-4 flex min-h-11 cursor-pointer items-center gap-3 text-caption text-ink-2">
                   <input type="checkbox" checked={updates} onChange={(e) => setUpdates(e.target.checked)}

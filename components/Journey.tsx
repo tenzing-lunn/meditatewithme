@@ -193,6 +193,7 @@ export interface JourneyProps {
   sync: SyncStatus;
   signIn: (email: string, name?: string) => Promise<string | null>;
   signInWithGoogle: () => Promise<string | null>;
+  signInWithApple: () => Promise<string | null>;
   verify: (email: string, code: string) => Promise<string | null>;
   linkError?: string | null;
   signOut: () => void;
@@ -211,6 +212,7 @@ export default function Journey({
   sync,
   signIn,
   signInWithGoogle,
+  signInWithApple,
   verify,
   linkError,
   signOut,
@@ -551,6 +553,7 @@ export default function Journey({
       sync={sync}
       signIn={signIn}
       signInWithGoogle={signInWithGoogle}
+      signInWithApple={signInWithApple}
       verify={verify}
       linkError={linkError}
       signOut={signOut}
@@ -606,6 +609,7 @@ export default function Journey({
             onProfile={setProfile}
             signIn={signIn}
             signInWithGoogle={signInWithGoogle}
+            signInWithApple={signInWithApple}
             verify={verify}
             onSkip={() => setRememberSkipped(true)}
           /> : again ? <AgainSetup

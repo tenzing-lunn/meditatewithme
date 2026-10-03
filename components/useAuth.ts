@@ -315,7 +315,13 @@ export function useAuth() {
     [],
   );
 
-  const signInWithGoogle = useCallback(async (): Promise<string | null> => {
+  /**
+   * Google or Apple: the same round trip through Supabase, which brings the
+   * tab back here signed in. Apple since 3 October 2026 (`online.meditatewithme.web`,
+   * its secret from `scripts/apple-secret.mjs` — it expires every six months).
+   */
+  const signInWithProvider = useCallback(async (provider: 'google' | 'apple'): Promise<string | null> => {
+    const name = provider === 'google' ? 'Google' : 'Apple';
     try {
       // Check before leaving the app: a disabled provider otherwise lands the
       // visitor on a raw JSON error page at the authorization endpoint.
@@ -325,18 +331,20 @@ export function useAuth() {
       });
       if (!response.ok) return SERVICE_UNREACHABLE;
       const settings = await response.json();
-      if (!settings.external?.google) {
-        return 'Google sign-in is not available yet. You can use an email code below.';
+      if (!settings.external?.[provider]) {
+        return `${name} sign-in is not available yet. You can use an email code below.`;
       }
       const { error } = await (await browserClient()).auth.signInWithOAuth({
-        provider: 'google',
+        provider,
         options: { redirectTo: `${window.location.origin}/` },
       });
-      return error ? 'Could not start Google sign-in. Try again, or use an email code.' : null;
+      return error ? `Could not start ${name} sign-in. Try again, or use an email code.` : null;
     } catch {
       return SERVICE_UNREACHABLE;
     }
   }, []);
+  const signInWithGoogle = useCallback(() => signInWithProvider('google'), [signInWithProvider]);
+  const signInWithApple = useCallback(() => signInWithProvider('apple'), [signInWithProvider]);
 
   /**
    * Finish it here, without leaving the room.
@@ -482,6 +490,7 @@ export function useAuth() {
     linkError,
     signIn,
     signInWithGoogle,
+    signInWithApple,
     verify,
     signOut,
     deleteAccount,

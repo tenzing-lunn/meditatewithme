@@ -348,7 +348,16 @@ sittings**, so the in-app purchase rule for one-to-many live classes
 (3.1.3(d)) does not apply; if anything is ever sold inside the app, read 3.1
 again first.
 
-- [ ] **Sign in with Apple (4.8).** Google is a third-party login, so an
+- [ ] **Sign in with Apple (4.8).** *3 October 2026:* App ID
+  `online.meditatewithme.app`, Services ID `online.meditatewithme.web`
+  (domain and return URL on Supabase's callback), key `33YYYM96R4`, email
+  relay verified for `meditatewithme.online` (SPF). The secret is made by
+  `node scripts/apple-secret.mjs <the .p8>` and **expires 4 April 2027** —
+  remake it before then. The web button is built and appears only once
+  Supabase has the Apple provider on; **it was not on** when last checked.
+  Still to do: that, a real sign-in end to end, and the app's native sign-in
+  (client ID `online.meditatewithme.app`).
+  Was: Google is a third-party login, so an
   equivalent must sit beside it: name and email only, the address
   hideable, no ad tracking. Tenzing is building it. It needs an Apple
   Developer account, a Services ID and key, and the Apple provider turned

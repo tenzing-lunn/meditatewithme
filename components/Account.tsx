@@ -5,7 +5,7 @@ import { NAME_MAX } from '@/lib/label';
 import { FIELD, FOCUS, PRIMARY, QUIET, WORD } from './controls';
 import type { AuthState } from './useAuth';
 import type { SyncStatus } from './useSyncPreferences';
-import GoogleSignIn from './GoogleSignIn';
+import GoogleSignIn, { AppleSignIn } from './GoogleSignIn';
 import { askEmailUpdates } from './useEmailUpdates';
 
 /**
@@ -70,6 +70,7 @@ export default function Account({
   sync,
   signIn,
   signInWithGoogle,
+  signInWithApple,
   verify,
   linkError,
   signOut,
@@ -80,6 +81,7 @@ export default function Account({
   /** Sends the email. `name` only lands if the address is new — see `useAuth`. */
   signIn: (email: string, name?: string) => Promise<string | null>;
   signInWithGoogle: () => Promise<string | null>;
+  signInWithApple: () => Promise<string | null>;
   /** Six digits, checked here rather than in an inbox. */
   verify: (email: string, code: string) => Promise<string | null>;
   /**
@@ -328,6 +330,7 @@ export default function Account({
                   with Google gone, Confirm and enter takes the fill. */}
               {step !== 'code' && <>
                 <GoogleSignIn primary signIn={() => { askEmailUpdates(updates); return signInWithGoogle(); }} disabled={busy} onError={setError} onBusyChange={setBusy} />
+                <AppleSignIn signIn={() => { askEmailUpdates(updates); return signInWithApple(); }} disabled={busy} onError={setError} onBusyChange={setBusy} />
                 <div aria-hidden className="flex items-center gap-3 text-caption text-ink-3">
                   <span className="h-px flex-1 bg-rule" />
                   or

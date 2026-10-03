@@ -46,6 +46,12 @@ const BUTTON = `${BUTTON_SHAPE} min-h-12 px-7 text-control`;
 export const PRIMARY = `${BUTTON} bg-ember text-white hover:brightness-90 ${FOCUS}`;
 
 /**
+ * Sign in with Apple's own button: black with white, as Apple's guidelines
+ * require, at the primary button's size. The one place black is used.
+ */
+export const APPLE = `${BUTTON} bg-black text-white hover:bg-neutral-800 ${FOCUS}`;
+
+/**
  * The foot of a question — Back, Skip, Next — a size down.
  *
  * The question and its answer are what a screen is for, so the way on is

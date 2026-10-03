@@ -35,6 +35,7 @@ export default function Entry() {
     linkError,
     signIn,
     signInWithGoogle,
+    signInWithApple,
     verify,
     signOut,
     deleteAccount,
@@ -133,6 +134,7 @@ export default function Entry() {
         sync={sync}
         signIn={signIn}
         signInWithGoogle={signInWithGoogle}
+        signInWithApple={signInWithApple}
         verify={verify}
         linkError={linkError}
         signOut={signOut}
