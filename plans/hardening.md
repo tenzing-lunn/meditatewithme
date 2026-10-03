@@ -27,6 +27,12 @@ can do (dashboards and repository settings), and what is deliberately left.
   the React Compiler rules, deliberately warnings (see the config). (4.6)
 - **`stop()` ends the looping beds** instead of leaving them rendering into a
   detached graph. `components/mix.ts`. (1.2, 6.4)
+- **Dead code gone.** `lib/candle.ts`, `lib/dial.ts`, `lib/earthView.ts`
+  and their tests (the ring deleted 22 September), `components/useSession.ts`
+  and `app/api/session/route.ts` (the `sessions` seam §9 did not take).
+  Verified by grep that nothing imported them, including `mobile/`.
+  `lib/room.ts` stays: `app/layout.tsx` inlines its rule and
+  `tests/room.test.ts` guards the pair. (1.8, 4.4)
 - **The docs name files that exist.** `tests/docs.test.ts` checks every
   backticked path in `CLAUDE.md`, `DESIGN.md`, `README.md` and `context/`;
   §12 of `ARCHITECTURE.md` was rewritten from the tree and two `Home.tsx`
@@ -54,16 +60,6 @@ In the order they matter:
 
 ## Not done, and why
 
-- **Deleting the dead code** — `lib/candle.ts`, `lib/dial.ts`,
-  `lib/earthView.ts` and their tests, `components/useSession.ts`,
-  `app/api/session/route.ts`. Nothing imports them (verified by grep); the
-  agent's `git rm` was refused by its permission classifier as irreversible,
-  so this is one command for Tenzing:
-  `git rm lib/candle.ts lib/dial.ts lib/earthView.ts tests/candle.test.ts tests/dial.test.ts tests/earthView.test.ts components/useSession.ts app/api/session/route.ts`
-  — then drop the two lines §12 gives them and the `TimeScreen`/`coverFit`
-  paragraph in §16 that describes the deleted ring. `lib/room.ts` is *not*
-  dead: `app/layout.tsx` inlines its rule and `tests/room.test.ts` guards the
-  pair. (1.8, 4.4)
 - **Splitting `Journey.tsx`** (741 lines) — the right next piece of work, and
   a two-day one with the preview open; not something to land in the same
   batch as security changes, where a regression could not be bisected. The
@@ -79,6 +75,6 @@ In the order they matter:
 - **`supabase migration repair`** — Tenzing's call, as `CLAUDE.md` says.
 - **Security headers** (2.7) and an **admin audit table** (2.4).
 
-When the six dashboard items are done and the dead code is gone, move this
+When the six dashboard items are done, move this
 file to `docs/` and fold what remains into `context/ARCHITECTURE.md` §15,
 which already describes the parts that are built.

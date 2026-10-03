@@ -701,7 +701,6 @@ meditatewithme/
 │       ├── signin/route.ts      # the site's own codes for connected addresses
 │       ├── admin/route.ts       # guides: accept, invite, on air, shut off
 │       ├── live/route.ts        # who is on air; live/auth, live/hook for MediaMTX
-│       ├── session/route.ts     # unused — the `sessions` seam §9 did not take
 │       ├── _email/codes.ts      # server only: codes and Resend
 │       ├── _report.ts           # every catch reports here
 │       └── _ip.ts               # the address, as a rate-limit key
@@ -730,7 +729,6 @@ meditatewithme/
 │   ├── geo.ts, projection.ts, pond.ts, fish.ts, pebble.ts, noise.ts, beds.ts
 │   ├── practice.ts, preferences.ts, authErrors.ts, authRedirect.ts, emailCode.ts
 │   ├── live.ts, limit.ts, room.ts, types.ts
-│   ├── candle.ts, dial.ts, earthView.ts   # from the ring deleted 22 September; no importers
 │   └── supabase.ts
 ├── tests/                       # mirrors lib/; tests/api/ runs the route handlers
 ├── mobile/                      # the iPhone app (Expo), since 2 October 2026;
@@ -1224,8 +1222,9 @@ laptop window is not half empty; the time, bell and sound screens use it. `TimeS
 behind one name: `CandleTime`
 for by-yourself on the rail — a sentence, `usePresence`'s count less one as
 company, and `Candle`, a vertical `role="slider"` over minutes whose wax
-height is `waxHeight` in `lib/candle.ts` (proportional to the minutes above a
-stub; `minutesAtHeight` reads a dragged height back onto the stops, tested).
+height was `waxHeight` in lib/candle.ts (proportional to the minutes above a
+stub; `minutesAtHeight` read a dragged height back onto the stops, tested;
+the file and its test were deleted on 3 October 2026 with the rest of the ring's code).
 The candle has no frame loop at all: held, the rim follows the finger
 relative to where it was grabbed and the height transition is off; let go,
 it is the stop's height with a CSS `height` transition on the rail's ease.
@@ -1234,7 +1233,7 @@ all off under reduced motion. The lights are a count and nothing more —
 placed from their index, not from anybody's location. And
 `JoinTime` when `showCount` is on — a sentence
 built from `usePresence`'s count less one and `nextSharedBellAt`, turned by
-`TimerDial`. The dial's stops come from `joinStops` in `lib/dial.ts`, which
+`TimerDial`. The dial's stops came from `joinStops` in lib/dial.ts (deleted 3 October 2026), which
 places the bell among the lengths where it falls in time, and which stop an
 angle means is `stopAt` there too, tested, including the gap at twelve
 o'clock that holds the hand at the nearer end instead of flinging it round.
@@ -1254,7 +1253,7 @@ the screen stays mounted, and the slider's hooks must not appear and vanish. The
 `ModeScreen.tsx`. `EarthScene` mounts the same `WorldMap` the sitting uses,
 through `next/dynamic`, only while `earth` is true (the mode screen is
 current; Home with no panel open), with `fit="cover"` and `waiting`. Cover is
-`coverFit` in `lib/earthView.ts`, tested: the larger of the full width and 72%
+`coverFit` in lib/earthView.ts (deleted 3 October 2026), tested: the larger of the full width and 72%
 of the height, slid so `you` is centred and clamped so no dusk shows beside
 the map. Until `useOrigin` has a cell — and on localhost, where it never
 does — the centre is `longitudeFromOffset(getTimezoneOffset())`, computed in
