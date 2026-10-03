@@ -4,6 +4,7 @@ import { ingest, ingestHost } from '@/lib/live';
 import { cleanText } from '@/lib/label';
 import { callerOf } from '../../_email/codes';
 import { accountKey, hashKey } from '../../live/secret';
+import { report } from '../../_report';
 
 /**
  * The caller's stream key, if they are approved to stream.
@@ -36,7 +37,8 @@ async function start(request: Request) {
     const db = await serviceClient();
     const user = await callerOf(request, db);
     return user ? { db, user } : null;
-  } catch {
+  } catch (err) {
+    report('account/stream', err);
     return null;
   }
 }
@@ -88,7 +90,8 @@ export async function GET(request: Request) {
       if (error) throw error;
     }
     return answer({ ...shown(row, host), admin });
-  } catch {
+  } catch (err) {
+    report('account/stream', err);
     return answer({ ok: false }, 500);
   }
 }
@@ -113,7 +116,8 @@ export async function PUT(request: Request) {
     });
     if (error) throw error;
     return answer({ ok: true, application: 'pending' });
-  } catch {
+  } catch (err) {
+    report('account/stream', err);
     return answer({ ok: false }, 500);
   }
 }
@@ -133,7 +137,8 @@ export async function PATCH(request: Request) {
     if (error) throw error;
     if (!data.length) return answer({ ok: false }, 404);
     return answer({ ok: true, showName: body.showName });
-  } catch {
+  } catch (err) {
+    report('account/stream', err);
     return answer({ ok: false }, 500);
   }
 }
@@ -153,7 +158,8 @@ export async function POST(request: Request) {
       .eq('slug', row.slug);
     if (error) throw error;
     return answer(shown({ ...row, key_version: version }, host));
-  } catch {
+  } catch (err) {
+    report('account/stream', err);
     return answer({ ok: false }, 500);
   }
 }

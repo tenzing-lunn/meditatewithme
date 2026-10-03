@@ -7,6 +7,7 @@ import { normalizeEmail } from '@/lib/emailCode';
 import { HOUR_MS, LIVE_STALE_MS, hlsUrl, hourOf, makeSlug, mayShow } from '@/lib/live';
 import { callerOf, ownerOf, sendMail } from '../_email/codes';
 import { accountKey, hashKey } from '../live/secret';
+import { report } from '../_report';
 
 /**
  * The guides, for an admin (`admins`): Jonny and Tenzing.
@@ -44,7 +45,8 @@ async function admin(request: Request) {
     if (!user) return null;
     const { data } = await db.from('admins').select('user_id').eq('user_id', user.id).maybeSingle();
     return data ? { db, user } : null;
-  } catch {
+  } catch (err) {
+    report('admin', err);
     return null;
   }
 }
@@ -66,7 +68,8 @@ async function welcome(to: string | null, name: string): Promise<boolean> {
       `<p>Hello ${name},</p><p>You can now guide on Meditate With Me. Sign in at <a href="${SITE}">${SITE.replace('https://', '')}</a>, open <b>Account</b>, and your server and stream key are under <b>Streaming</b>.</p><p>Point your streaming app at them and you are on the water for everyone sitting with a guide.</p>`,
     );
     return true;
-  } catch {
+  } catch (err) {
+    report('admin/welcome', err);
     return false;
   }
 }
@@ -123,7 +126,8 @@ export async function GET(request: Request) {
       }),
     );
     return answer({ ok: true, applications, guides });
-  } catch {
+  } catch (err) {
+    report('admin', err);
     return answer({ ok: false }, 500);
   }
 }
@@ -200,7 +204,8 @@ export async function POST(request: Request) {
       default:
         return answer({ ok: false }, 400);
     }
-  } catch {
+  } catch (err) {
+    report('admin', err);
     return answer({ ok: false }, 500);
   }
 }

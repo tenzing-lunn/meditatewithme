@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { serviceClient } from '@/lib/supabase';
 import { hourStart } from '@/lib/session';
 import type { WorldPoint } from '@/lib/geo';
+import { report } from '../_report';
 
 /**
  * Where this hour's candles are, by grid cell.
@@ -132,10 +133,11 @@ export async function GET() {
         },
       },
     );
-  } catch {
+  } catch (err) {
     // Degrade silently, like everything else here. An earth with no lights on
     // it is a truthful thing to look at when the count is unavailable; an error
     // banner is not something this product shows anybody.
+    report('world', err);
     return NextResponse.json(
       { points: [], placed: null, hourStart: start.toISOString() },
       { status: 200, headers: { 'Cache-Control': 'no-store' } },

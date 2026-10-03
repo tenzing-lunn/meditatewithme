@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { serviceClient } from '@/lib/supabase';
 import { HOUR_MS, LIVE_STALE_MS, STOPPED_NOTICE_MS, hlsUrl, hourOf, mayShow, onAir, recentlyStopped, type LiveStream } from '@/lib/live';
+import { report } from '../_report';
 
 /**
  * Who is on air right now, and where to watch.
@@ -117,7 +118,8 @@ export async function GET() {
         'CDN-Cache-Control': 'public, s-maxage=5',
       },
     });
-  } catch {
+  } catch (err) {
+    report('live', err);
     return none();
   }
 }

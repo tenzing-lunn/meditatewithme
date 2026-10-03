@@ -158,6 +158,10 @@ export function startMix(initial: Record<string, number>): MixHandle | null {
 
   const gains = new Map<TrackSlug, GainNode>();
   const started = new Set<TrackSlug>();
+  // Every looping source, so `stop()` can end them. Disconnecting the master
+  // alone left them rendering into a detached graph for the life of the
+  // shared context — silent, but CPU on a phone, once per Entry remount.
+  const sources = new Set<AudioBufferSourceNode>();
   let stopped = false;
 
   /**
@@ -180,6 +184,7 @@ export function startMix(initial: Record<string, number>): MixHandle | null {
         src.loopEnd = PAD_SECONDS + (LOOP_SECONDS.get(slug) ?? buffer.duration - 2 * PAD_SECONDS);
         src.connect(gain);
         src.start(0, PAD_SECONDS);
+        sources.add(src);
       })
       // Offline, or the file is missing: this bed is silent, and choosing it
       // again tries again. A silent sitting is degraded, not broken.
@@ -225,10 +230,19 @@ export function startMix(initial: Record<string, number>): MixHandle | null {
 
     stop() {
       stopped = true;
+      for (const src of sources) {
+        try {
+          src.stop();
+          src.disconnect();
+        } catch {
+          // Already ended. Nothing here is worth an error on the way out.
+        }
+      }
+      sources.clear();
       try {
         master.disconnect();
       } catch {
-        // Already gone. Nothing here is worth an error on the way out.
+        // Already gone.
       }
     },
   };

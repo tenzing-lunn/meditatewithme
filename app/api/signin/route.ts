@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 import { serviceClient } from '@/lib/supabase';
 import { isCode, normalizeEmail } from '@/lib/emailCode';
+import { rateLimiter } from '@/lib/limit';
 import { checkCode, issueCode } from '../_email/codes';
+import { clientIp } from '../_ip';
+import { report } from '../_report';
 
 /**
  * Signing in with a connected address (`account_emails`).
@@ -28,7 +31,16 @@ export const dynamic = 'force-dynamic';
 const NO_STORE = { 'Cache-Control': 'no-store' };
 const answer = (body: object, status = 200) => NextResponse.json(body, { status, headers: NO_STORE });
 
+/**
+ * `canResend` holds each address to one email a minute; this holds each
+ * caller to a handful of addresses a minute, so a list of connected
+ * addresses and a loop is not a way to spend the sender's reputation. See
+ * `lib/limit.ts` for the limits of an in-memory count.
+ */
+const asks = rateLimiter(5, 60_000);
+
 export async function POST(request: Request) {
+  if (!asks.allow(clientIp(request), Date.now())) return answer({ kind: 'connected', ok: false, reason: 'wait' }, 429);
   const body = await request.json().catch(() => null);
   const email = normalizeEmail(body?.email);
   if (!email) return answer({ kind: 'account' });
@@ -40,7 +52,8 @@ export async function POST(request: Request) {
     const sent = await issueCode(db, email, 'sign-in', data.user_id);
     if (sent !== 'sent') return answer({ kind: 'connected', ok: false, reason: sent }, sent === 'wait' ? 429 : 503);
     return answer({ kind: 'connected', ok: true });
-  } catch {
+  } catch (err) {
+    report('signin', err);
     return answer({ ok: false }, 500);
   }
 }
@@ -61,7 +74,8 @@ export async function PUT(request: Request) {
     });
     if (linkError) throw linkError;
     return answer({ ok: true, tokenHash: link.properties.hashed_token });
-  } catch {
+  } catch (err) {
+    report('signin', err);
     return answer({ ok: false }, 500);
   }
 }

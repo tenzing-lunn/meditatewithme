@@ -1,6 +1,7 @@
 import { serviceClient } from '@/lib/supabase';
 import { sinceFrom, slugFromPath } from '@/lib/live';
 import { bearer, secretMatches } from '../secret';
+import { report } from '../../_report';
 
 /**
  * MediaMTX says a stream came online, is still online, or went offline.
@@ -67,7 +68,8 @@ export async function POST(request: Request) {
       .select('slug');
     if (error) return new Response(null, { status: 500 });
     return new Response(null, { status: data.length ? 204 : 410 });
-  } catch {
+  } catch (err) {
+    report('live/hook', err);
     return new Response(null, { status: 500 });
   }
 }

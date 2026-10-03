@@ -1,6 +1,7 @@
 import { serviceClient } from '@/lib/supabase';
 import { authCheck, type AuthRequest } from '@/lib/live';
 import { basicPassword, hashKey, secretMatches } from '../secret';
+import { report } from '../../_report';
 
 /**
  * MediaMTX's `authHTTPAddress`. Called every time someone tries to publish.
@@ -42,7 +43,8 @@ export async function POST(request: Request) {
       .maybeSingle();
     if (error || !data) return deny();
     return new Response(null, { status: 204 });
-  } catch {
+  } catch (err) {
+    report('live/auth', err);
     return deny();
   }
 }

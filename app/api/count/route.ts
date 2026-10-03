@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { serviceClient } from '@/lib/supabase';
 import { hourStart } from '@/lib/session';
+import { report } from '../_report';
 
 /**
  * Participant count for the current session.
@@ -63,9 +64,10 @@ export async function GET() {
         },
       },
     );
-  } catch {
+  } catch (err) {
     // Degrade silently. The UI hides the count rather than showing an error —
     // somebody sitting down to meditate should never see a red banner.
+    report('count', err);
     return NextResponse.json(
       { count: null, litCount: null, hourStart: start.toISOString() },
       { status: 200, headers: { 'Cache-Control': 'no-store' } },

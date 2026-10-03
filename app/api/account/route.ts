@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { serviceClient } from '@/lib/supabase';
+import { report } from '../_report';
 
 /**
  * Delete the calling user's account, and everything the account holds.
@@ -57,9 +58,10 @@ export async function DELETE(request: Request) {
   let supabase;
   try {
     supabase = await serviceClient();
-  } catch {
+  } catch (err) {
     // No service key configured. Nothing can be deleted, and saying so as a 500
     // is honest — this is not a request the caller got wrong.
+    report('account', err);
     return NextResponse.json({ ok: false }, { status: 500 });
   }
 
@@ -86,11 +88,12 @@ export async function DELETE(request: Request) {
       { ok: true },
       { headers: { 'Cache-Control': 'no-store' } },
     );
-  } catch {
+  } catch (err) {
     // Deliberately no detail. This one is worth surfacing to the caller as a
     // failure — unlike the heartbeat, a deletion that quietly does nothing is
     // the worst possible outcome — but the reason belongs in the server log,
     // not in a response to an unauthenticated-for-all-we-know client.
+    report('account', err);
     return NextResponse.json(
       { ok: false },
       { status: 500, headers: { 'Cache-Control': 'no-store' } },

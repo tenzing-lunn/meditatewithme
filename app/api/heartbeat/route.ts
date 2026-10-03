@@ -3,6 +3,9 @@ import { serviceClient } from '@/lib/supabase';
 import { hourStart } from '@/lib/session';
 import { snapToCell, type Cell } from '@/lib/geo';
 import { LABEL_MAX, cleanText } from '@/lib/label';
+import { distinctLimiter, rateLimiter } from '@/lib/limit';
+import { clientIp } from '../_ip';
+import { report } from '../_report';
 
 /**
  * Record that an anonymous participant is present in the current session.
@@ -51,6 +54,17 @@ function cellFrom(request: Request): Cell | null {
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Per address: how many beats, and how many *different* people. A browser
+ * beats twice a minute per tab; a household or a retreat hall behind one
+ * address is a few dozen people at most. A loop that invents a UUID per
+ * request is what inflates the count, and the second limit is what stops
+ * it. In-memory per instance — see `lib/limit.ts` for what that does and
+ * does not promise; the Firewall rule is the wall.
+ */
+const beats = rateLimiter(120, 60_000);
+const people = distinctLimiter(50, 3_600_000);
+
 export async function POST(request: Request) {
   let anonId: unknown;
   let began = false;
@@ -86,6 +100,15 @@ export async function POST(request: Request) {
   // of distinct rows and both inflate the count and bloat the table.
   if (typeof anonId !== 'string' || !UUID_RE.test(anonId)) {
     return NextResponse.json({ ok: false }, { status: 400 });
+  }
+
+  const ip = clientIp(request);
+  const at = Date.now();
+  if (!beats.allow(ip, at) || !people.allow(ip, anonId, at)) {
+    return NextResponse.json(
+      { ok: false },
+      { status: 429, headers: { 'Cache-Control': 'no-store' } },
+    );
   }
 
   try {
@@ -142,9 +165,10 @@ export async function POST(request: Request) {
       { ok: true },
       { headers: { 'Cache-Control': 'no-store' } },
     );
-  } catch {
+  } catch (err) {
     // Non-fatal by design. A failed heartbeat means this person isn't counted
     // for 30 seconds. It must never interrupt their session.
+    report('heartbeat', err);
     return NextResponse.json(
       { ok: false },
       { status: 200, headers: { 'Cache-Control': 'no-store' } },

@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 import { serviceClient } from '@/lib/supabase';
 import { isCode, isGoogleMail, normalizeEmail } from '@/lib/emailCode';
+import { rateLimiter } from '@/lib/limit';
 import { callerOf, checkCode, issueCode, ownerOf } from '../../_email/codes';
+import { clientIp } from '../../_ip';
+import { report } from '../../_report';
 
 /**
  * The addresses on the caller's account: list, connect (send a code, then
@@ -36,7 +39,8 @@ async function start(request: Request) {
     const db = await serviceClient();
     const user = await callerOf(request, db);
     return user ? { db, user } : null;
-  } catch {
+  } catch (err) {
+    report('account/emails', err);
     return null;
   }
 }
@@ -47,15 +51,20 @@ export async function GET(request: Request) {
   if (!s) return answer({ ok: false }, 401);
   try {
     return answer({ ok: true, main: s.user.email, others: await others(s.db, s.user.id) });
-  } catch {
+  } catch (err) {
+    report('account/emails', err);
     return answer({ ok: false }, 500);
   }
 }
+
+/** Codes sent per caller per minute — the same reason as `/api/signin`. */
+const asks = rateLimiter(5, 60_000);
 
 /** Send a code to an address to be connected. */
 export async function POST(request: Request) {
   const s = await start(request);
   if (!s) return answer({ ok: false }, 401);
+  if (!asks.allow(clientIp(request), Date.now())) return answer({ ok: false, reason: 'wait' }, 429);
   const body = await request.json().catch(() => null);
   const email = normalizeEmail(body?.email);
   if (!email) return answer({ ok: false, reason: 'invalid' }, 400);
@@ -67,7 +76,8 @@ export async function POST(request: Request) {
     const sent = await issueCode(s.db, email, 'connect', s.user.id);
     if (sent !== 'sent') return answer({ ok: false, reason: sent }, sent === 'wait' ? 429 : 503);
     return answer({ ok: true });
-  } catch {
+  } catch (err) {
+    report('account/emails', err);
     return answer({ ok: false }, 500);
   }
 }
@@ -91,7 +101,8 @@ export async function PUT(request: Request) {
       if (error) throw error;
     }
     return answer({ ok: true, main: s.user.email, others: await others(s.db, s.user.id) });
-  } catch {
+  } catch (err) {
+    report('account/emails', err);
     return answer({ ok: false }, 500);
   }
 }
@@ -123,7 +134,8 @@ export async function DELETE(request: Request) {
     const { error } = await s.db.from('account_emails').delete().eq('email', email).eq('user_id', s.user.id);
     if (error) throw error;
     return answer({ ok: true, main: s.user.email, others: list.filter((e) => e !== email) });
-  } catch {
+  } catch (err) {
+    report('account/emails', err);
     return answer({ ok: false }, 500);
   }
 }
