@@ -71,9 +71,11 @@ The rules:
 - Start every piece of work on `dev` (`git checkout dev`). Branch off `dev` for
   anything long-running, and merge back into `dev`, not `main`.
 - Typecheck, lint, tests and `npm run build` all pass on `dev` before it goes
-  near `main`. `.github/workflows/ci.yml` runs the same four on every push;
-  `plans/hardening.md` says what still has to be set in GitHub and Vercel for
-  that to *block* a merge rather than report on one.
+  near `main`. `.github/workflows/ci.yml` runs the same four on every push,
+  and since 3 October 2026 GitHub refuses a push to `main` whose commit has
+  not passed that run. Fast-forward `dev` onto `main` so the green run
+  travels with the commit; a merge commit has no run of its own and is
+  refused. `plans/hardening.md` has the rest.
 - Merging `dev` → `main` is a deliberate act that puts something live. **Ask
   Tenzing first, every time**; don't fold it into a commit that was about
   something else.

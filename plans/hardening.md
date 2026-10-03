@@ -37,19 +37,19 @@ can do (dashboards and repository settings), and what is deliberately left.
   backticked path in `CLAUDE.md`, `DESIGN.md`, `README.md` and `context/`;
   §12 of `ARCHITECTURE.md` was rewritten from the tree and two `Home.tsx`
   references corrected. (4.3)
+- **`main` is locked behind CI.** Tenzing made the repository public on
+  3 October 2026 (branch protection is not offered on a free private repo)
+  and the rule was set the same day: the `check` job from
+  `.github/workflows/ci.yml` must have passed on the commit, the branch
+  must be up to date, no force-pushes, no deletion. A fast-forward of `dev`
+  onto `main` carries `dev`'s green run with it; a merge *commit* would not,
+  so merge fast-forward or through a pull request. (5.4)
 
 ## Tenzing's, outside the repository
 
 Tried from the agent on 3 October 2026, with these results:
 
-1. **Require CI before anything reaches `main`.** `gh api` was refused:
-   *"Upgrade to GitHub Pro or make this repository public to enable this
-   feature"* — branch protection is not available on a private repo on the
-   free plan. Options: make the repo public (the code is already read by a
-   client; `.env*` is gitignored and the secret scan of the tree was clean),
-   or GitHub Pro (US$4/month), or keep the rule as it is — CI *reports* on
-   every push and `CLAUDE.md` asks for a green run before merging. Until one
-   of the first two, the gate is a habit, not a lock.
+1. ~~Require CI before `main`~~ — done, above.
 2. **Vercel Firewall rate-limit rules** — `/api/heartbeat` 120/min per IP,
    `/api/signin` and `/api/account/emails` 5/min per IP. The Vercel MCP tool
    rejected every rate-limit payload (its schema is mislabeled) and the
@@ -58,10 +58,13 @@ Tried from the agent on 3 October 2026, with these results:
    *Configure* → *Add rule*: name, *If* path equals `/api/heartbeat` and
    method equals POST, *Then* **Rate limit**, 120 requests per 60 s per IP,
    action Deny → Save. Repeat for the other two paths with 5 per 60 s.
-   **Publish** the config. Rate limiting may need the Pro plan; if the
-   option is greyed out, the in-code limits stand alone and that is known.
+   **Publish** the config. Rate limiting needs the Pro plan. **Decided
+   3 October 2026: not yet.** The in-code limits stand alone; the trigger
+   for Pro is 429s or abuse in the logs, a paying client with uptime terms,
+   or the custom domain carrying real traffic. None is true today.
 3. **Vercel → Deployment Protection**: require passing checks before a
-   production deployment is promoted — only meaningful once (1) exists.
+   production deployment is promoted. With `main` locked (above), nothing
+   reaches `main` without a green run, so this adds little; skip with (2).
 4. **An uptime monitor** (Better Stack or UptimeRobot, free) on
    `https://meditatewithme.vercel.app/api/health`, expecting 200, every
    minute or five, alerting an inbox that is read.
