@@ -366,8 +366,11 @@ again first.
   `node scripts/apple-secret.mjs <the .p8>` and **expires 4 April 2027** —
   remake it before then. The web button is built and appears only once
   Supabase has the Apple provider on; **it was not on** when last checked.
-  Still to do: that, a real sign-in end to end, and the app's native sign-in
-  (client ID `online.meditatewithme.app`).
+  *4 October 2026:* the provider is on, and the app's native sign-in is
+  built (`mobile/auth.ts`, `plans/iphone-app.md`); it needs the bundle ID
+  `online.meditatewithme.app` in the provider's Client IDs, and the deep
+  link `meditatewithme://**` in the redirect allow list. Still to do: those
+  two, and a real sign-in end to end on a phone.
   Was: Google is a third-party login, so an
   equivalent must sit beside it: name and email only, the address
   hideable, no ad tracking. Tenzing is building it. It needs an Apple

@@ -1,8 +1,13 @@
 import { StatusBar } from 'expo-status-bar';
+import type { Session } from '@supabase/supabase-js';
 import { useState } from 'react';
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
+import { SITE, handoff } from './auth';
 import BellTest from './BellTest';
+import Onboarding from './Onboarding';
+import './supabase';
 
 /**
  * The iPhone app, for now: the website, full screen.
@@ -18,12 +23,18 @@ import BellTest from './BellTest';
  * adds no insets of its own. The user agent ends in `MeditateWithMeApp`, so
  * the site can tell when it is inside the app.
  *
+ * The first launch is native (`Onboarding.tsx`, since 4 October 2026):
+ * three breaths, then the sign-in as full screens, and the session is handed
+ * to the site in the address's fragment (`handoff`). Once through it, by
+ * signing in or by *Just sit*, the app opens straight on the site.
+ *
  * `EXPO_PUBLIC_BELL_TEST=1 npx expo start` shows the bell-on-a-locked-phone
- * test instead (`BellTest.tsx`).
+ * test instead (`BellTest.tsx`); `EXPO_PUBLIC_ONBOARDING=1` replays the
+ * first launch every start.
  */
 
-const SITE = 'https://www.meditatewithme.online/';
 const PAPER = '#e5e9ec';
+const ONBOARDED_KEY = 'mwm.app.onboarded';
 
 // Pages the app may show inside itself: the site, and the sign-in round trip.
 const INSIDE = [
@@ -44,10 +55,33 @@ function inside(url: string): boolean {
 
 export default function App() {
   if (process.env.EXPO_PUBLIC_BELL_TEST === '1') return <BellTest />;
-  return <Site />;
+  return (
+    <SafeAreaProvider>
+      <Root />
+    </SafeAreaProvider>
+  );
 }
 
-function Site() {
+function Root() {
+  const [onboarded, setOnboarded] = useState(
+    () => process.env.EXPO_PUBLIC_ONBOARDING !== '1' && localStorage.getItem(ONBOARDED_KEY) === '1',
+  );
+  const [uri, setUri] = useState(SITE);
+  if (!onboarded) {
+    return (
+      <Onboarding
+        onDone={(session: Session | null) => {
+          localStorage.setItem(ONBOARDED_KEY, '1');
+          setUri(handoff(session));
+          setOnboarded(true);
+        }}
+      />
+    );
+  }
+  return <Site uri={uri} />;
+}
+
+function Site({ uri }: { uri: string }) {
   const [failed, setFailed] = useState(false);
   // Try again mounts a fresh web view rather than calling reload(): after a
   // first load that never arrived, WKWebView has no page to reload.
@@ -73,7 +107,7 @@ function Site() {
       ) : null}
       <WebView
         key={attempt}
-        source={{ uri: SITE }}
+        source={{ uri }}
         style={s.web}
         // Hide the whole container, not just the page: the web view draws its
         // own grey error page in there, which would show under the one above.
