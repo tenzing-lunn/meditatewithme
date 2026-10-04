@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import BellTest from './BellTest';
@@ -48,8 +48,10 @@ export default function App() {
 }
 
 function Site() {
-  const web = useRef<WebView>(null);
   const [failed, setFailed] = useState(false);
+  // Try again mounts a fresh web view rather than calling reload(): after a
+  // first load that never arrived, WKWebView has no page to reload.
+  const [attempt, setAttempt] = useState(0);
 
   return (
     <View style={s.screen}>
@@ -61,7 +63,7 @@ function Site() {
           <Pressable
             onPress={() => {
               setFailed(false);
-              web.current?.reload();
+              setAttempt((n) => n + 1);
             }}
             style={({ pressed }) => [s.retry, pressed && { opacity: 0.6 }]}
           >
@@ -70,10 +72,12 @@ function Site() {
         </View>
       ) : null}
       <WebView
-        ref={web}
+        key={attempt}
         source={{ uri: SITE }}
-        style={[s.web, failed && s.hidden]}
-        containerStyle={{ backgroundColor: PAPER }}
+        style={s.web}
+        // Hide the whole container, not just the page: the web view draws its
+        // own grey error page in there, which would show under the one above.
+        containerStyle={[{ backgroundColor: PAPER }, failed && s.hidden]}
         contentInsetAdjustmentBehavior="never"
         automaticallyAdjustContentInsets={false}
         bounces={false}
