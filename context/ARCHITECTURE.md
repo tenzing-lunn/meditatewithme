@@ -1526,13 +1526,11 @@ journey; being signed in changes only its corner — `Account` (*Sign in*) or
 over the pond). The table below is production until that is merged. Google
 sign-in: `context/GOOGLE_SIGN_IN.md`.
 
-**The email opt-in.** Google's consent screen cannot ask it, so the sign-in
-screens do: `askEmailUpdates` holds the switch in `mwm.emailUpdates` as
-either path starts (Google's redirect reloads the page), and
-`useEmailUpdates`, called in `Entry`, writes it to `profiles.email_updates`
-once there is a user and forgets it. A yes always lands; a no only over
-null, so a second-device sign-in unsubscribes nobody. A trigger stamps
-`email_updates_at` with the server's clock as the consent record.
+**The email opt-in, removed 4 October 2026.** The sign-in screens carried
+an unticked *Email me when the app launches* box from 30 September; Tenzing
+took it out of both. `profiles.email_updates` and `email_updates_at`, and the
+trigger that stamps the second, are still in the database
+(`20260930120000_email_updates.sql`), and nothing writes or reads them now.
 
 **More than one email.** A Supabase user has one address, and signing in
 with any other makes a new user. So further addresses live in

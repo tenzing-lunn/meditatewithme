@@ -2,7 +2,7 @@
 
 import { useId, useRef, useState, type FormEvent } from 'react';
 import { cleanText, NAME_MAX, ORIGIN_MAX, type Profile } from '@/lib/label';
-import { FOCUS, QUIET, WORD } from './controls';
+import { QUIET, WORD } from './controls';
 import LineActions from './LineActions';
 import LineField from './LineField';
 import NameScreen from './NameScreen';
@@ -10,7 +10,6 @@ import OriginScreen from './OriginScreen';
 import Rail from './Rail';
 import Screen from './Screen';
 import GoogleSignIn, { AppleSignIn } from './GoogleSignIn';
-import { askEmailUpdates } from './useEmailUpdates';
 
 const STEPS = ['ask', 'name', 'place', 'email', 'code'] as const;
 type Step = typeof STEPS[number];
@@ -36,7 +35,6 @@ export default function Remember({ profile, onProfile, signIn, signInWithGoogle,
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resent, setResent] = useState(false);
-  const [updates, setUpdates] = useState(false);
   const pending = useRef(false);
   const id = useId();
 
@@ -54,7 +52,6 @@ export default function Remember({ profile, onProfile, signIn, signInWithGoogle,
     setBusy(true);
     setError(null);
     setResent(false);
-    askEmailUpdates(updates);
     try {
       const message = await signIn(email.trim(), cleanText(name, NAME_MAX) ?? undefined);
       if (message) setError(message);
@@ -105,8 +102,8 @@ export default function Remember({ profile, onProfile, signIn, signInWithGoogle,
         const progress = { step: position, steps: 4 };
         // The ask is the shape every sign-in screen worth copying shares: the
         // ways in stacked full width at the foot, where a thumb is on a phone,
-        // one of them filled; the opt-in a small box under them; and the way
-        // out in the corner rather than set level with the ways in.
+        // one of them filled; and the way out in the corner rather than set
+        // level with the ways in.
         if (screen === 'ask') return (
           <section className="relative flex h-full w-full flex-col overflow-y-auto px-6 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:px-10">
             <div className="absolute top-[calc(0.875rem+env(safe-area-inset-top))] right-4 sm:right-10">
@@ -120,17 +117,12 @@ export default function Remember({ profile, onProfile, signIn, signInWithGoogle,
                 <p className="mt-3 text-body leading-relaxed text-ink-2">Your sittings and sounds, on any device.</p>
               </div>
               <div className="sm:mt-10">
-                <GoogleSignIn primary signIn={() => { askEmailUpdates(updates); return signInWithGoogle(); }} disabled={busy} onBusyChange={setBusy} onError={setError} />
+                <GoogleSignIn primary signIn={signInWithGoogle} disabled={busy} onBusyChange={setBusy} onError={setError} />
                 <div className="mt-3 empty:hidden">
-                  <AppleSignIn signIn={() => { askEmailUpdates(updates); return signInWithApple(); }} disabled={busy} onBusyChange={setBusy} onError={setError} />
+                  <AppleSignIn signIn={signInWithApple} disabled={busy} onBusyChange={setBusy} onError={setError} />
                 </div>
                 <button type="button" disabled={busy} className={`${QUIET} mt-3 w-full`} onClick={() => move('name')}>Continue with email</button>
-                <label className="mt-4 flex min-h-11 cursor-pointer items-center gap-3 text-caption text-ink-2">
-                  <input type="checkbox" checked={updates} onChange={(e) => setUpdates(e.target.checked)}
-                    className={`size-5 shrink-0 cursor-pointer rounded accent-ember ${FOCUS}`} />
-                  Email me when the app launches
-                </label>
-                <p role="alert" className="min-h-4 text-caption text-ember">{error}</p>
+                <p role="alert" className="mt-4 min-h-4 text-caption text-ember">{error}</p>
               </div>
             </div>
           </section>

@@ -218,14 +218,11 @@ everybody, signed in or not, lands on the pond, and the only difference is
 the top-right corner. A guest sees *Sign in* there, which opens the panel
 straight away — *Continue with Google* (live since the same day, under
 Tenzing's Google account), or an email code — with *Don't have an account?
-Create one* at its foot turning it to *Create account*, name first. **On
-`dev` since 30 September 2026** (revised 2 October), that panel and the
-after-sitting ask both carry an unticked checkbox, *Email me when the app
-launches*, under their buttons. In the panel *Continue with Google* is the
-filled button and the email's *Send me a code* is outlined. Either applies to Google and the email code alike and lands in
-`profiles.email_updates` once signed in. Nothing sends mail to that list,
-there is no unsubscribe yet, and the privacy notice that has to cover it
-is still unpublished; Jonny has not been asked. The Account page's email
+Create one* at its foot turning it to *Create account*, name first. **Removed on `dev` 4 October 2026:** the unticked *Email me when the app
+launches* box that panel and the after-sitting ask carried from 30
+September; nobody is asked for email updates any more. In the panel
+*Continue with Google* is the filled button and the email's *Send me a
+code* is outlined. The Account page's email
 is a list, not a field: *Connect another email* sends a six-digit code to
 the new address and, once it is typed back, that address signs in to the
 same account too; any address can be removed while one is left. An address
@@ -497,8 +494,8 @@ After a guest's sitting, before Again/Done, a screen asks them to *Keep
 your practice* (*Your sittings and sounds, on any device.*), revised on `dev`
 2 October 2026 from *Would you like to be remembered?*. The heading sits
 mid-screen; at its foot, full width where a thumb is on a phone, a filled
-*Continue with Google*, an outlined *Continue with email*, and the unticked
-*Email me when the app launches* box; *Not now* sits in the top corner. On
+*Continue with Google* and an outlined *Continue with email*; *Not now* sits
+in the top corner. On
 a laptop the same column is centred. *Continue with email* opens name →
 place → email → six-digit confirmation, one question at a time.
 *Not now* (there or during the questions) continues to Again/Done. The

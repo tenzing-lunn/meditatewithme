@@ -2,11 +2,10 @@
 
 import { useEffect, useId, useRef, useState } from 'react';
 import { NAME_MAX } from '@/lib/label';
-import { FIELD, FOCUS, PRIMARY, QUIET, WORD } from './controls';
+import { FIELD, PRIMARY, QUIET, WORD } from './controls';
 import type { AuthState } from './useAuth';
 import type { SyncStatus } from './useSyncPreferences';
 import GoogleSignIn, { AppleSignIn } from './GoogleSignIn';
-import { askEmailUpdates } from './useEmailUpdates';
 
 /**
  * The account offer, as a panel that drops from the control that opened it.
@@ -119,7 +118,6 @@ export default function Account({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(linkError ?? null);
   const [resent, setResent] = useState(false);
-  const [updates, setUpdates] = useState(false);
 
   const wrap = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -213,7 +211,6 @@ export default function Account({
   }
 
   const send = async (withName: string | undefined) => {
-    askEmailUpdates(updates);
     setBusy(true);
     setError(null);
     const message = await signIn(email.trim(), withName);
@@ -329,8 +326,8 @@ export default function Account({
                   address's button below it is outlined; on the code step,
                   with Google gone, Confirm and enter takes the fill. */}
               {step !== 'code' && <>
-                <GoogleSignIn primary signIn={() => { askEmailUpdates(updates); return signInWithGoogle(); }} disabled={busy} onError={setError} onBusyChange={setBusy} />
-                <AppleSignIn signIn={() => { askEmailUpdates(updates); return signInWithApple(); }} disabled={busy} onError={setError} onBusyChange={setBusy} />
+                <GoogleSignIn primary signIn={signInWithGoogle} disabled={busy} onError={setError} onBusyChange={setBusy} />
+                <AppleSignIn signIn={signInWithApple} disabled={busy} onError={setError} onBusyChange={setBusy} />
                 <div aria-hidden className="flex items-center gap-3 text-caption text-ink-3">
                   <span className="h-px flex-1 bg-rule" />
                   or
@@ -451,14 +448,6 @@ export default function Account({
                     : 'Confirm and enter'}
                 {busy && '…'}
               </button>
-
-              {step !== 'code' && (
-                <label className="-my-1 flex min-h-11 cursor-pointer items-center gap-3 text-caption text-ink-2">
-                  <input type="checkbox" checked={updates} onChange={(e) => setUpdates(e.target.checked)}
-                    className={`size-5 shrink-0 cursor-pointer rounded accent-ember ${FOCUS}`} />
-                  Email me when the app launches
-                </label>
-              )}
 
               {(error || resent) && (
                 <p role="alert" className={`text-caption ${error ? 'text-ember' : 'text-ink-3'}`}>
