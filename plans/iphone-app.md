@@ -43,12 +43,22 @@ are the first launch (`mobile/Onboarding.tsx`, `mobile/auth.ts`,
   Metro as always): Gmail goes through Google, a connected address is
   asked of the site's `/api/signin` first, a name only takes on the
   request that creates the account.
-- **Where are you sitting**, with the share switch off, written to
-  `profiles` (origin, share_label) the way the site does; typed as is,
-  without the site's 33,000-town list for now. **Shall we tell you before
-  the bell**: our own ask, then the phone's permission dialog only on
-  *Remind me*; the answer is kept under `mwm.app.remind`. **Nothing is
-  scheduled yet** — the reminder itself is the next native piece.
+- **The site's own questions after a first sign-in** (Tenzing, the same
+  evening, after walking the v1: "a good v1, but use the whole name, place
+  flow"). *What should we call you?*, only when the account has no name
+  yet (Apple, Google and *Sign in* by code arrive without one), Skip under
+  the line and Next once something is typed, saved to `user_metadata.name`.
+  *Where are you sitting?* as `OriginScreen` has it: typed, then chosen —
+  the connection's guess as *near you* when the line is empty
+  (`/api/origin` on the site), the matches from the site's own
+  `places.txt` searched on the phone through `lib/places.ts`, *Looking up
+  places…* while the list is on its way, *Keep "…" as you typed it* last;
+  the share switch appears under the line once something is typed, off,
+  with the site's words; written to `profiles` (origin, share_label).
+  **Shall we tell you before the bell**: our own ask, then the phone's
+  permission dialog only on *Remind me*; the answer is kept under
+  `mwm.app.remind`. **Nothing is scheduled yet** — the reminder itself is
+  the next native piece.
 - **The handoff.** The session is handed to the site once, in the
   fragment of the address the web view loads (`handoff`), which the
   site's client reads as it reads a magic link. From then on the site
@@ -78,8 +88,9 @@ Authentication → URL Configuration, and → Providers → Apple):
    browser round trip through the Services ID, which works but is not the
    native sheet.
 
-Checked: typecheck, and `expo export --platform ios` bundles. Not yet run
-on a phone. Not built: Expo Router (`mobile/AGENTS.md` asks for it; one
+Checked: typecheck, and `expo export --platform ios` bundles; the v1 was
+walked on Tenzing's iPhone in Expo Go on 4 October 2026 (email codes;
+Google and Apple wait on the two settings above). Not built: Expo Router (`mobile/AGENTS.md` asks for it; one
 `step` state was enough for nine screens and nothing else navigates yet).
 
 ## The route
