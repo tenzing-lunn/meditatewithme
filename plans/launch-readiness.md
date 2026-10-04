@@ -197,6 +197,17 @@ invoice you weren't expecting" promise forbids.
   Jonny's licensed imagery, if it comes, is a different question now: what,
   if anything, sits behind the sitting besides the earth. `context/PRODUCT.md` §5.
 
+## Later — paid, deferred
+
+- [ ] **A sign-in domain of our own on Supabase.** Google's sign-in page says
+  *continue to qcwgquwjazhsettuemgt.supabase.co*, the raw project address, on
+  the site and in the app (seen in the simulator, 4 October 2026). A custom
+  domain (`auth.meditatewithme.online` or similar) puts our name there
+  instead. It is a [$10/month add-on](https://supabase.com/docs/guides/platform/custom-domains)
+  that needs a paid plan, and the project is on Free, so it is **$35 a month**
+  in all ($25 Pro + $10). Deferred by Tenzing on 4 October 2026, not for now.
+  When it is done, Google's and Apple's redirect URLs move to the new domain.
+
 ## Remaining launch work
 
 - [ ] Obtain the legal entity/data-controller name and minimum-age decision
