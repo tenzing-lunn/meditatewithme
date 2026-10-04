@@ -88,6 +88,43 @@ Authentication → URL Configuration, and → Providers → Apple):
    browser round trip through the Services ID, which works but is not the
    native sheet.
 
+**Rebuilt the same evening to look and move like the site.** Tenzing,
+after the keyboard pass: "the onboarding is fucked — you put in your
+simple wireframes and did not update it to match the app, it's just a
+bunch of still pictures". He was right: the v1 drew the wireframe's marks
+(grey dashes for fish, static circles for rings), cut hard between
+screens, used plain placeholders, Newsreader 400 and generic iOS blocks.
+Now:
+
+- **The pond is real** (`mobile/Pond.tsx`): the site's `Pond` on Skia
+  (`@shopify/react-native-skia`, in Expo Go), the same fish, swimming and
+  ring maths from `lib/fish.ts` and `lib/pond.ts`, the same photographed
+  stone (`mobile/assets/skipping-stone.webp`). Everyone sitting this hour
+  comes from the site's `/api/world` every fifteen seconds
+  (`mobile/world.ts`, the mapping `Journey` uses). It is drawn under every
+  screen, as on the site; your stone sits on it, breathing, on the third
+  breath and the reminder ask. One picture a frame from the JS thread into
+  a shared value, so React never renders for a frame. Its clock starts at
+  zero: counting breaths from the epoch hung the JS thread.
+- **The site's pieces** (`mobile/ui.tsx`): its tokens and type (Newsreader
+  700 at the question and sentence sizes, 15px semibold controls), the
+  ember pill / rule-outlined pill / Apple's black pill, the underlined
+  word, the 44px chevron disc, the mark and wordmark, the step marks; the
+  rail's switch (`Rail`: the leaving screen lifts and fades in 150ms, the
+  next rises 1.5rem into place over 300ms from 120ms in, the one curve);
+  the line a typed answer goes on (`LineField`: the 2px rule draws out
+  from the left while the prompt types itself at 55ms a letter with an
+  ember caret at the front, the real caret hidden until the first key,
+  ember when focused); Skip settling in after the typing and Next rising
+  once something is typed (`LineActions`). *Where are you sitting?* is
+  bare, as the site has it: the line is all there is.
+- **Running it** now needs Reanimated's Babel plugin, which
+  `babel-preset-expo` adds by itself once `react-native-worklets` is
+  installed (it is a devDependency now so the preset resolves from the
+  project), and a Metro started fresh (`npx expo start -c`): two Metros on
+  one project share a transform cache, and one started before the install
+  poisoned the other's with untransformed worklets.
+
 Checked: typecheck, and `expo export --platform ios` bundles; the v1 was
 walked on Tenzing's iPhone in Expo Go on 4 October 2026 (email codes;
 Google and Apple wait on the two settings above). Walked again the same
