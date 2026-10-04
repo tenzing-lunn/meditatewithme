@@ -18,14 +18,14 @@ import type { Session } from '@supabase/supabase-js';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
+  type NativeSyntheticEvent,
   Pressable,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
   TextInput,
+  type TargetedEvent,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -74,6 +74,14 @@ export default function Onboarding({ onDone }: { onDone: (session: Session | nul
   const [session, setSession] = useState<Session | null>(null);
   const insets = useSafeAreaInsets();
   const field = useRef<TextInput>(null);
+  const scroller = useRef<ScrollView>(null);
+
+  // A field that takes focus is scrolled clear of the keyboard, with `room`
+  // under it for the link or button that follows (the scroll view starts
+  // below the status bar, which the helper's sums do not know about).
+  const reveal = (room: number) => (e: NativeSyntheticEvent<TargetedEvent>) => {
+    scroller.current?.scrollResponderScrollNativeHandleToKeyboard(e.currentTarget, insets.top + 8 + room, true);
+  };
 
   // Where you are sitting: typed, then chosen.
   const [city, setCity] = useState('');
@@ -190,6 +198,16 @@ export default function Onboarding({ onDone }: { onDone: (session: Session | nul
   }, [index, typed, suggestion]);
   const looking = Boolean(typed) && index === null && !indexFailed;
   const listed = listOpen && (options.length > 0 || looking);
+  const rows = listed ? options.length + (looking ? 1 : 0) : 0;
+
+  // The list opens under the line: scroll the line up just enough for the
+  // rows to show above the keyboard, and no further, so the line stays
+  // on screen while typing. `field` is the city line on this step.
+  useEffect(() => {
+    if (rows && field.current) {
+      scroller.current?.scrollResponderScrollNativeHandleToKeyboard(field.current, insets.top + 8 + rows * 44 + 28, true);
+    }
+  }, [rows, insets.top]);
 
   const savePlace = (skip: boolean) => () => {
     if (!session) return setStep('remind');
@@ -279,7 +297,7 @@ export default function Onboarding({ onDone }: { onDone: (session: Session | nul
   );
 
   const back = (to: Step) => (
-    <Pressable onPress={go(to)} style={[s.back, { top: insets.top + 6 }]} hitSlop={8} accessibilityLabel="Back">
+    <Pressable onPress={go(to)} style={s.back} hitSlop={8} accessibilityLabel="Back">
       <View style={s.chevron} />
     </Pressable>
   );
@@ -310,58 +328,159 @@ export default function Onboarding({ onDone }: { onDone: (session: Session | nul
 
   const label = composeLabel(accountName(session) ?? name, city) ?? 'you';
 
+  // Every screen with a field scrolls: the keyboard (and the bar iOS puts
+  // above it) insets the scroll view rather than squeezing the column, so
+  // the footer row is the last thing in the content and never lands on a
+  // field. The back chevron scrolls with the page, so nothing runs under it.
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={[s.screen, pad]}>
-      {step === 'signin' && (
-        <>
-          {back('b3')}
-          <View style={s.body}>
-            <Text style={s.h1}>Sign in.</Text>
-            <Text style={s.p}>Your sittings go with you to your other devices, and you can be seen on the water if you like.</Text>
-            {providers()}
-            <TextInput
-              ref={field}
-              style={s.field}
-              placeholder="Enter your email"
-              placeholderTextColor={PROMPT}
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="email-address"
-              textContentType="emailAddress"
-              returnKeyType="send"
-              onSubmitEditing={sendCode(false)}
-            />
-            <View style={[s.row, { marginTop: 4 }]}>
-              <View />
-              <Pressable onPress={sendCode(false)} disabled={busy} hitSlop={8}>
-                <Text style={[s.word, s.wordInk]}>Send me a code</Text>
+    <View style={[s.screen, { paddingTop: insets.top + 8 }]}>
+      {step === 'remind' && <Rings />}
+      <ScrollView
+        ref={scroller}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 16 }}
+        automaticallyAdjustKeyboardInsets
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="none"
+        showsVerticalScrollIndicator={false}
+      >
+        {step === 'signin' && back('b3')}
+        {step === 'create' && back('signin')}
+        {step === 'code' && back(name.trim() ? 'create' : 'signin')}
+        {step === 'signin' && (
+          <>
+            <View style={s.body}>
+              <Text style={s.h1}>Sign in.</Text>
+              <Text style={s.p}>Your sittings go with you to your other devices, and you can be seen on the water if you like.</Text>
+              {providers()}
+              <TextInput
+                ref={field}
+                style={s.field}
+                placeholder="Enter your email"
+                placeholderTextColor={PROMPT}
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="email-address"
+                textContentType="emailAddress"
+                returnKeyType="send"
+                onFocus={reveal(56)}
+                onSubmitEditing={sendCode(false)}
+              />
+              <View style={[s.row, { marginTop: 4 }]}>
+                <View />
+                <Pressable onPress={sendCode(false)} disabled={busy} hitSlop={8}>
+                  <Text style={[s.word, s.wordInk]}>Send me a code</Text>
+                </Pressable>
+              </View>
+              {note()}
+            </View>
+            <View style={s.row}>
+              <Pressable onPress={() => onDone(null)} hitSlop={8}>
+                <Text style={s.word}>Not now</Text>
+              </Pressable>
+              <Pressable onPress={go('create')} hitSlop={8}>
+                <Text style={[s.word, s.wordInk]}>Don’t have an account? Create one</Text>
               </Pressable>
             </View>
-            {note()}
-          </View>
-          <View style={s.row}>
-            <Pressable onPress={() => onDone(null)} hitSlop={8}>
-              <Text style={s.word}>Not now</Text>
-            </Pressable>
-            <Pressable onPress={go('create')} hitSlop={8}>
-              <Text style={[s.word, s.wordInk]}>Don’t have an account? Create one</Text>
-            </Pressable>
-          </View>
-        </>
-      )}
+          </>
+        )}
 
-      {step === 'create' && (
-        <>
-          {back('signin')}
+        {step === 'create' && (
+          <>
+            <View style={s.body}>
+              <Text style={s.h1}>Create account.</Text>
+              <Text style={s.p}>Every sitting is already kept on this phone. An account carries it to your others.</Text>
+              {providers()}
+              <TextInput
+                ref={field}
+                style={s.field}
+                placeholder="Enter your name"
+                placeholderTextColor={PROMPT}
+                value={name}
+                onChangeText={setName}
+                autoCorrect={false}
+                autoCapitalize="words"
+                textContentType="givenName"
+                maxLength={NAME_MAX}
+                returnKeyType="next"
+                onFocus={reveal(56)}
+              />
+              <Text style={s.caption}>Your first name, if you’d like to be seen.</Text>
+              <TextInput
+                style={[s.field, { marginTop: 20 }]}
+                placeholder="Enter your email"
+                placeholderTextColor={PROMPT}
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="email-address"
+                textContentType="emailAddress"
+                returnKeyType="send"
+                onFocus={reveal(56)}
+                onSubmitEditing={sendCode(true)}
+              />
+              <View style={[s.row, { marginTop: 4 }]}>
+                <View />
+                <Pressable onPress={sendCode(true)} disabled={busy} hitSlop={8}>
+                  <Text style={[s.word, s.wordInk]}>Send me a code</Text>
+                </Pressable>
+              </View>
+              {note()}
+            </View>
+            <View style={[s.row, { justifyContent: 'flex-end' }]}>
+              <Pressable onPress={go('signin')} hitSlop={8}>
+                <Text style={[s.word, s.wordInk]}>Already have one? Sign in</Text>
+              </Pressable>
+            </View>
+          </>
+        )}
+
+        {step === 'code' && (
+          <>
+            <View style={s.body}>
+              <Text style={s.h1}>Check your email.</Text>
+              <Text style={s.p}>
+                We have sent a six-digit code to <Text style={{ color: INK }}>{email.trim()}</Text>. The link in that email works too.
+              </Text>
+              <Text style={[s.caption, { marginTop: 36 }]}>The six-digit code</Text>
+              <TextInput
+                ref={field}
+                style={[s.field, s.code]}
+                value={code}
+                onChangeText={(v) => setCode(v.replace(/\D/g, '').slice(0, 6))}
+                keyboardType="number-pad"
+                textContentType="oneTimeCode"
+                maxLength={6}
+                returnKeyType="done"
+                onFocus={reveal(140)}
+                onSubmitEditing={confirm}
+              />
+              <Pressable
+                onPress={confirm}
+                disabled={busy}
+                style={({ pressed }) => [s.btn, s.btnFill, { marginTop: 28 }, pressed && s.pressed]}
+              >
+                <Text style={s.btnFillText}>{busy ? 'Confirming…' : 'Confirm and enter'}</Text>
+              </Pressable>
+              <Pressable onPress={sendCode(name.trim() !== '')} disabled={busy} style={{ alignSelf: 'center', marginTop: 8 }} hitSlop={8}>
+                <Text style={s.word}>Send it again</Text>
+              </Pressable>
+              {error && <Text style={s.error}>{error}</Text>}
+            </View>
+            <Text style={s.caption}>If it is not there in a minute, look in the junk folder.</Text>
+          </>
+        )}
+
+        {step === 'name' && (
           <View style={s.body}>
-            <Text style={s.h1}>Create account.</Text>
-            <Text style={s.p}>Every sitting is already kept on this phone. An account carries it to your others.</Text>
-            {providers()}
+            <Text style={s.h1}>What should we call you?</Text>
+            <Text style={s.p}>Your first name, if you’d like to be seen.</Text>
             <TextInput
               ref={field}
-              style={s.field}
+              style={[s.field, { marginTop: 36 }]}
               placeholder="Enter your name"
               placeholderTextColor={PROMPT}
               value={name}
@@ -371,194 +490,107 @@ export default function Onboarding({ onDone }: { onDone: (session: Session | nul
               textContentType="givenName"
               maxLength={NAME_MAX}
               returnKeyType="next"
+              onFocus={reveal(56)}
+              onSubmitEditing={() => name.trim() && saveName()}
             />
-            <Text style={s.caption}>Your first name, if you’d like to be seen.</Text>
-            <TextInput
-              style={[s.field, { marginTop: 20 }]}
-              placeholder="Enter your email"
-              placeholderTextColor={PROMPT}
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="email-address"
-              textContentType="emailAddress"
-              returnKeyType="send"
-              onSubmitEditing={sendCode(true)}
-            />
-            <View style={[s.row, { marginTop: 4 }]}>
-              <View />
-              <Pressable onPress={sendCode(true)} disabled={busy} hitSlop={8}>
-                <Text style={[s.word, s.wordInk]}>Send me a code</Text>
-              </Pressable>
-            </View>
+            {lineActions(name.trim() !== '', go('place'), saveName)}
             {note()}
           </View>
-          <View style={[s.row, { justifyContent: 'flex-end' }]}>
-            <Pressable onPress={go('signin')} hitSlop={8}>
-              <Text style={[s.word, s.wordInk]}>Already have one? Sign in</Text>
-            </Pressable>
-          </View>
-        </>
-      )}
+        )}
 
-      {step === 'code' && (
-        <>
-          {back(name.trim() ? 'create' : 'signin')}
+        {step === 'place' && (
           <View style={s.body}>
-            <Text style={s.h1}>Check your email.</Text>
-            <Text style={s.p}>
-              We have sent a six-digit code to <Text style={{ color: INK }}>{email.trim()}</Text>. The link in that email works too.
-            </Text>
-            <Text style={[s.caption, { marginTop: 36 }]}>The six-digit code</Text>
-            <TextInput
-              ref={field}
-              style={[s.field, s.code]}
-              value={code}
-              onChangeText={(v) => setCode(v.replace(/\D/g, '').slice(0, 6))}
-              keyboardType="number-pad"
-              textContentType="oneTimeCode"
-              maxLength={6}
-              returnKeyType="done"
-              onSubmitEditing={confirm}
-            />
-            <Pressable
-              onPress={confirm}
-              disabled={busy}
-              style={({ pressed }) => [s.btn, s.btnFill, { marginTop: 28 }, pressed && s.pressed]}
-            >
-              <Text style={s.btnFillText}>{busy ? 'Confirming…' : 'Confirm and enter'}</Text>
-            </Pressable>
-            <Pressable onPress={sendCode(name.trim() !== '')} disabled={busy} style={{ alignSelf: 'center', marginTop: 8 }} hitSlop={8}>
-              <Text style={s.word}>Send it again</Text>
-            </Pressable>
-            {error && <Text style={s.error}>{error}</Text>}
-          </View>
-          <Text style={s.caption}>If it is not there in a minute, look in the junk folder.</Text>
-        </>
-      )}
-
-      {step === 'name' && (
-        <View style={s.body}>
-          <Text style={s.h1}>What should we call you?</Text>
-          <Text style={s.p}>Your first name, if you’d like to be seen.</Text>
-          <TextInput
-            ref={field}
-            style={[s.field, { marginTop: 36 }]}
-            placeholder="Enter your name"
-            placeholderTextColor={PROMPT}
-            value={name}
-            onChangeText={setName}
-            autoCorrect={false}
-            autoCapitalize="words"
-            textContentType="givenName"
-            maxLength={NAME_MAX}
-            returnKeyType="next"
-            onSubmitEditing={() => name.trim() && saveName()}
-          />
-          {lineActions(name.trim() !== '', go('place'), saveName)}
-          {note()}
-        </View>
-      )}
-
-      {step === 'place' && (
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ paddingTop: 72, paddingBottom: 24 }}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="none"
-        >
-          <Text style={s.h1}>Where are you sitting?</Text>
-          <Text style={s.p}>Type a city or a country, then choose it. Or skip it.</Text>
-          <View style={{ marginTop: 36, zIndex: 2 }}>
-            <TextInput
-              ref={field}
-              style={s.field}
-              placeholder="Enter your city"
-              placeholderTextColor={PROMPT}
-              value={city}
-              onChangeText={(v) => {
-                setCity(v);
-                setListOpen(true);
-              }}
-              onFocus={() => setListOpen(true)}
-              autoCorrect={false}
-              autoCapitalize="words"
-              textContentType="addressCity"
-              maxLength={ORIGIN_MAX}
-              returnKeyType="next"
-              onSubmitEditing={() => {
-                const first = options[0];
-                if (listed && first) {
-                  setCity(first.value);
-                  setListOpen(false);
-                } else if (typed) {
-                  savePlace(false)();
-                }
-              }}
-            />
-            {listed && (
-              <View style={s.list} accessibilityRole="list">
-                {looking && (
-                  <View style={s.option}>
-                    <Text style={[s.optionText, { color: INK3 }]}>Looking up places…</Text>
-                  </View>
-                )}
-                {options.map((o) => (
-                  <Pressable
-                    key={o.key}
-                    onPress={() => {
-                      setCity(o.value);
-                      setListOpen(false);
-                    }}
-                    style={({ pressed }) => [s.option, pressed && { backgroundColor: EMBER_SOFT }]}
-                  >
-                    <Text style={[s.optionText, { fontWeight: '600' }]}>{o.primary}</Text>
-                    {o.secondary && <Text style={[s.optionText, { color: INK3 }]}>{o.secondary}</Text>}
-                  </Pressable>
-                ))}
-              </View>
-            )}
-          </View>
-          {lineActions(Boolean(typed), savePlace(true), savePlace(false))}
-          {typed ? (
-            <>
-              <View style={s.switchRow}>
-                <Switch value={share} onValueChange={setShare} trackColor={{ true: EMBER, false: RULE }} />
-                <Text style={s.switchText}>
-                  Let others see <Text style={{ color: INK }}>{label}</Text> while you sit with them
+            <Text style={s.h1}>Where are you sitting?</Text>
+            <Text style={s.p}>Type a city or a country, then choose it. Or skip it.</Text>
+            <View style={{ marginTop: 36, zIndex: 2 }}>
+              <TextInput
+                ref={field}
+                style={s.field}
+                placeholder="Enter your city"
+                placeholderTextColor={PROMPT}
+                value={city}
+                onChangeText={(v) => {
+                  setCity(v);
+                  setListOpen(true);
+                }}
+                onFocus={() => setListOpen(true)}
+                autoCorrect={false}
+                autoCapitalize="words"
+                textContentType="addressCity"
+                maxLength={ORIGIN_MAX}
+                returnKeyType="next"
+                onSubmitEditing={() => {
+                  const first = options[0];
+                  if (listed && first) {
+                    setCity(first.value);
+                    setListOpen(false);
+                  } else if (typed) {
+                    savePlace(false)();
+                  }
+                }}
+              />
+              {listed && (
+                <View style={s.list} accessibilityRole="list">
+                  {looking && (
+                    <View style={s.option}>
+                      <Text style={[s.optionText, { color: INK3 }]}>Looking up places…</Text>
+                    </View>
+                  )}
+                  {options.map((o) => (
+                    <Pressable
+                      key={o.key}
+                      onPress={() => {
+                        setCity(o.value);
+                        setListOpen(false);
+                      }}
+                      style={({ pressed }) => [s.option, pressed && { backgroundColor: EMBER_SOFT }]}
+                    >
+                      <Text style={[s.optionText, { fontWeight: '600' }]}>{o.primary}</Text>
+                      {o.secondary && <Text style={[s.optionText, { color: INK3 }]}>{o.secondary}</Text>}
+                    </Pressable>
+                  ))}
+                </View>
+              )}
+            </View>
+            {lineActions(Boolean(typed), savePlace(true), savePlace(false))}
+            {typed ? (
+              <>
+                <View style={s.switchRow}>
+                  <Switch value={share} onValueChange={setShare} trackColor={{ true: EMBER, false: RULE }} />
+                  <Text style={s.switchText}>
+                    Let others see <Text style={{ color: INK }}>{label}</Text> while you sit with them
+                  </Text>
+                </View>
+                <Text style={[s.caption, { marginLeft: 66 }]}>
+                  Saved on this device, and to your account. Shown to others only while this is on.
                 </Text>
-              </View>
-              <Text style={[s.caption, { marginLeft: 66 }]}>
-                Saved on this device, and to your account. Shown to others only while this is on.
-              </Text>
-            </>
-          ) : null}
-          {note()}
-        </ScrollView>
-      )}
+              </>
+            ) : null}
+            {note()}
+          </View>
+        )}
 
-      {step === 'remind' && (
-        <>
-          <Rings />
-          <View style={s.body}>
-            <Text style={s.h1}>Shall we tell you before the bell?</Text>
-            <Text style={s.p}>
-              Everyone who sits <Text style={{ fontStyle: 'italic' }}>until the bell</Text> finishes together at five to the hour. A quiet note a few minutes before, so you can join them.
-            </Text>
-          </View>
-          <View style={{ gap: 12 }}>
-            <Pressable onPress={remind(true)} style={({ pressed }) => [s.btn, s.btnFill, pressed && s.pressed]}>
-              <Text style={s.btnFillText}>Remind me</Text>
-            </Pressable>
-            <Pressable onPress={remind(false)} style={({ pressed }) => [s.btn, s.btnLine, pressed && s.pressed]}>
-              <Text style={s.btnLineText}>Only when I ask</Text>
-            </Pressable>
-            <Text style={[s.caption, { textAlign: 'center' }]}>The phone will ask once to allow it. Nothing else is ever sent.</Text>
-          </View>
-        </>
-      )}
-    </KeyboardAvoidingView>
+        {step === 'remind' && (
+          <>
+            <View style={s.body}>
+              <Text style={s.h1}>Shall we tell you before the bell?</Text>
+              <Text style={s.p}>
+                Everyone who sits <Text style={{ fontStyle: 'italic' }}>until the bell</Text> finishes together at five to the hour. A quiet note a few minutes before, so you can join them.
+              </Text>
+            </View>
+            <View style={{ gap: 12 }}>
+              <Pressable onPress={remind(true)} style={({ pressed }) => [s.btn, s.btnFill, pressed && s.pressed]}>
+                <Text style={s.btnFillText}>Remind me</Text>
+              </Pressable>
+              <Pressable onPress={remind(false)} style={({ pressed }) => [s.btn, s.btnLine, pressed && s.pressed]}>
+                <Text style={s.btnLineText}>Only when I ask</Text>
+              </Pressable>
+              <Text style={[s.caption, { textAlign: 'center' }]}>The phone will ask once to allow it. Nothing else is ever sent.</Text>
+            </View>
+          </>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
@@ -629,7 +661,7 @@ const s = StyleSheet.create({
   word: { fontSize: 16, color: INK3, paddingVertical: 12, paddingHorizontal: 2 },
   wordInk: { color: INK },
   cornerWord: { position: 'absolute', right: 16 },
-  back: { position: 'absolute', left: 16, width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  back: { position: 'absolute', left: -8, top: -2, width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   chevron: { width: 12, height: 12, borderLeftWidth: 1.6, borderBottomWidth: 1.6, borderColor: INK3, transform: [{ rotate: '45deg' }], marginLeft: 6 },
   btn: { height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginTop: 12 },
   btnFill: { backgroundColor: INK },

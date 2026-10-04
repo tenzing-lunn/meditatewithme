@@ -90,7 +90,18 @@ Authentication → URL Configuration, and → Providers → Apple):
 
 Checked: typecheck, and `expo export --platform ios` bundles; the v1 was
 walked on Tenzing's iPhone in Expo Go on 4 October 2026 (email codes;
-Google and Apple wait on the two settings above). Not built: Expo Router (`mobile/AGENTS.md` asks for it; one
+Google and Apple wait on the two settings above). Walked again the same
+day in the iPhone 17 Pro simulator with the keyboard up on every screen
+with a field: *Create account* had its email line under the keyboard and
+the footer link drawn over it, so every screen past the breaths is now a
+scroll view that insets itself for the keyboard
+(`automaticallyAdjustKeyboardInsets`), with the footer the last thing in
+the content and a focused line scrolled clear of the keyboard with room
+for the link under it; the place list likewise. Two things the simulator
+showed that the phone would too: Hermes has no `Intl.DisplayNames`, so
+every country read as its code (*Lisbon PT*) — `mobile/countries.ts` is
+the English names, generated from Node's ICU; and the back chevron was
+fixed while the page scrolled under it, so it scrolls with the page now. Not built: Expo Router (`mobile/AGENTS.md` asks for it; one
 `step` state was enough for nine screens and nothing else navigates yet).
 
 ## The route

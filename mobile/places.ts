@@ -5,15 +5,16 @@
 // typed are not sent anywhere.
 import { buildIndex, parsePlaces, type PlaceIndex } from '../lib/places';
 import { SITE } from './auth';
+import { COUNTRIES } from './countries';
 
-/** "PT" to "Portugal", in English like the rest of the site. */
+/**
+ * "PT" to "Portugal", in English like the rest of the site. The site asks
+ * the browser (`Intl.DisplayNames`); Hermes has no such thing and would
+ * leave every country as its code, so the names are a table here.
+ */
 export function regionName(code: string | null): string | null {
   if (!code) return null;
-  try {
-    return new Intl.DisplayNames(['en'], { type: 'region' }).of(code) ?? code;
-  } catch {
-    return code;
-  }
+  return COUNTRIES[code.toUpperCase()] ?? code;
 }
 
 let index: Promise<PlaceIndex | null> | null = null;
