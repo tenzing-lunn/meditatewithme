@@ -3,18 +3,20 @@
 // rings are the same code (`lib/fish.ts`, `lib/pond.ts`, read through
 // Metro); only the strokes are Skia's. Everyone sitting right now is a grey
 // fish in their part of the world; your stone, when it is on the water,
-// breathes a soft ring now and then. A touch scatters the fish near it.
+// breathes a soft ring now and then. A touch on the water flicks a pale
+// pebble to it from the near bank, and the fish scatter where it lands.
+// Begin throws your stone: the site's skim (`skimConfig`, `skimAt`), its
+// touches, its landing and then its breaths.
 //
 // One picture a frame, recorded on the JS thread from the same maths the
 // site runs, handed to the canvas through a shared value so React never
-// re-renders for a frame. Nothing is thrown here yet: the throw is Begin's,
-// and Begin is still the site's.
+// re-renders for a frame.
 import { Canvas, Picture, Skia, PaintStyle, StrokeCap, TileMode, createPicture, matchFont, useImage, type SkCanvas, type SkPaint, type SkPicture } from '@shopify/react-native-skia';
 import { useEffect, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 import { alarmAt, fishAt, hash, lookFor, planFish, SCATTER_S, spawnFish, spine, swim, type FishPlan, type FishState, type Joint, type Look, type Spine, type Touch } from '../lib/fish';
-import { breathsAt, reachFor, type Ring } from '../lib/pond';
+import { breathsAt, flickConfig, reachFor, skimAt, skimConfig, smooth, touchRings, trainAt, type Point, type Ring, type SkimConfig, type SkimFrame } from '../lib/pond';
 
 export interface Stone {
   key: string;
@@ -27,6 +29,15 @@ export interface Stone {
 const YOU = { x: 0.5, y: 0.44 };
 /** Seconds of breathing already behind a stone that was simply there. */
 const SETTLED = 90;
+/** Your stone's landing, and a flicked pebble's stop: the site's trains. */
+const LANDING = { rings: 4, life: 9, strength: 0.6, width: 1.2, rise: 0.12 };
+const SETTLE = { rings: 3, life: 4.5, reach: 70, strength: 0.7, width: 1.1, rise: 0.1 };
+
+/** Where the throw left the hand, in the pond's own points, and when (`performance.now()`). */
+export interface Thrown {
+  at: Point;
+  t: number;
+}
 
 const INK = [62, 76, 86] as const;
 const FISH = '#7a868d';
@@ -36,12 +47,25 @@ const LABEL = '#5a656c';
 
 const rgba = (c: readonly [number, number, number], a: number) => Skia.Color(`rgba(${c[0]},${c[1]},${c[2]},${a})`);
 
-export default function Pond({ stones, you, onTouch }: { stones: readonly Stone[]; you: boolean; onTouch?: () => void }) {
+export default function Pond({
+  stones, you, throwFrom = null, water = false,
+}: {
+  stones: readonly Stone[];
+  /** Whether your stone is on the water (or on its way). */
+  you: boolean;
+  throwFrom?: Thrown | null;
+  /** Bare water can be touched: a pebble is flicked to the spot. */
+  water?: boolean;
+}) {
   const picture = useSharedValue<SkPicture>(createPicture(() => undefined, { x: 0, y: 0, width: 1, height: 1 }));
   const size = useRef({ w: 0, h: 0 });
-  const props = useRef({ stones, you });
-  props.current = { stones, you };
+  const props = useRef({ stones, you, throwFrom });
+  props.current = { stones, you, throwFrom };
   const touches = useRef<Touch[]>([]);
+  const flicks = useRef<{ cfg: SkimConfig; t0: number }[]>([]);
+  // The pond's own clock starts here: the breaths are counted up from zero,
+  // and a clock since the epoch would be counted for a very long time.
+  const start = useRef(performance.now());
   const stone = useImage(require('./assets/skipping-stone.webp'));
   const stoneRef = useRef(stone);
   stoneRef.current = stone;
@@ -90,6 +114,38 @@ export default function Pond({ stones, you, onTouch }: { stones: readonly Stone[
       c.scale(sw / 2, sh / 2);
       c.drawCircle(0, 0, 1, p);
       c.restore();
+    };
+
+    /** The stone image, centred, turned and faded. */
+    const pebble = (c: SkCanvas, x: number, y: number, pw: number, ph: number, deg: number, alpha: number) => {
+      const img = stoneRef.current;
+      if (!img || alpha <= 0) return;
+      c.save();
+      c.translate(x, y);
+      c.rotate(deg, 0, 0);
+      fill.setAlphaf(alpha);
+      c.drawImageRect(img, { x: 0, y: 0, width: img.width(), height: img.height() }, { x: -pw / 2, y: -ph / 2, width: pw, height: ph }, fill);
+      fill.setAlphaf(1);
+      c.restore();
+    };
+
+    // A brief, low spray at each touch, quieter with every skip.
+    const splash = (c: SkCanvas, q: SkimFrame['touches'][number]) => {
+      const life = 0.42;
+      if (q.age <= 0 || q.age >= life || q.k < 0.25) return;
+      const f = q.age / life;
+      const strength = q.k * Math.sin(Math.PI * f) * (1 - f);
+      const rx = 3 + 10 * f * q.k;
+      const ry = 1 + 3 * f * q.k;
+      stroke.setStrokeWidth(1);
+      stroke.setColor(Skia.Color(`rgba(255,255,255,${strength * 0.85})`));
+      c.drawArc({ x: q.x - rx, y: q.y - ry, width: rx * 2, height: ry * 2 }, 180, 180, false, stroke);
+      fill.setColor(Skia.Color(`rgba(99,113,122,${strength * 0.55})`));
+      for (let i = 0; i < 3; i++) {
+        const side = i - 1;
+        const lift = (i === 1 ? 9 : 5) * q.k * 4 * f * (1 - f);
+        c.drawOval({ x: q.x + side * (3 + 9 * f) * q.k - 0.7, y: q.y - lift - 1.1, width: 1.4, height: 2.2 }, fill);
+      }
     };
 
     /** One fish through its three joints, as the site draws it. */
@@ -173,8 +229,48 @@ export default function Pond({ stones, you, onTouch }: { stones: readonly Stone[
       });
       for (const k of drawn.keys()) if (!here.has(k)) drawn.delete(k);
 
+      const rings: Ring[] = [];
+      const splashes: SkimFrame['touches'] = [];
+
+      // Your stone: thrown, settling, or simply there.
+      let flying: SkimFrame['stone'] | null = null;
       if (p.you) {
-        for (const r of breathsAt(t + SETTLED, me, R * 1.2, 1)) ring(c, r);
+        const since = p.throwFrom ? (performance.now() - p.throwFrom.t) / 1000 : Infinity;
+        const frame = p.throwFrom ? skimAt(since, skimConfig(p.throwFrom.at, me, w, h)) : null;
+        if (frame) {
+          flying = frame.stone;
+          rings.push(...touchRings(frame.touches));
+          splashes.push(...frame.touches);
+          const landed = since - frame.stopAt;
+          rings.push(...trainAt(landed, { x: me.x, y: me.y, reach: R * 1.4, yours: true, ...LANDING }));
+          rings.push(...breathsAt(landed, me, R * 1.2, Math.floor(p.throwFrom!.t) >>> 0));
+        } else {
+          rings.push(...breathsAt(t + SETTLED, me, R * 1.2, 1));
+        }
+      }
+
+      // Flicked pebbles: their touches, and once sunk, a few rings of their own.
+      const pebbles: SkimFrame['stone'][] = [];
+      const clock = performance.now();
+      flicks.current = flicks.current.filter((f) => {
+        const since = (clock - f.t0) / 1000;
+        if (since > f.cfg.T + SETTLE.life + 1.5) return false;
+        const frame = skimAt(since, f.cfg);
+        rings.push(...touchRings(frame.touches, 0.7));
+        splashes.push(...frame.touches);
+        rings.push(...trainAt(since - f.cfg.T, { x: f.cfg.to.x, y: f.cfg.to.y, yours: false, ...SETTLE }));
+        if (frame.stone.sunk < 1) pebbles.push(frame.stone);
+        return true;
+      });
+
+      for (const r of rings) ring(c, r);
+      for (const q of splashes) splash(c, q);
+      for (const f of pebbles) {
+        const sk = smooth(f.sunk);
+        const up = f.h / 4;
+        shadow(c, f.x, f.y + 1, (11 + sk * 3) * (1 - up * 0.1), (4.5 + sk * 3) * (1 - up * 0.1), f.sunk > 0 ? 0.2 * (1 - sk) : (0.22 - up * 0.07) * f.o);
+        const sz = (1 - 0.25 * Math.min(1, f.spin / 70)) * (1 - 0.2 * sk);
+        pebble(c, f.x, f.y - f.h - 2 + sk * 2, 15 * sz, 7 * sz, f.spin * 0.22 - 5, f.o * 0.75);
       }
 
       fill.setColor(Skia.Color(LABEL));
@@ -189,28 +285,29 @@ export default function Pond({ stones, you, onTouch }: { stones: readonly Stone[
       }
 
       if (p.you) {
-        // Settled: the stone on the water over its shadow.
-        shadow(c, me.x, me.y + 1, 16, 9, 0.16);
-        const img = stoneRef.current;
-        if (img) {
-          c.drawImageRect(
-            img,
-            { x: 0, y: 0, width: img.width(), height: img.height() },
-            { x: me.x - 14, y: me.y - 5, width: 28, height: 10 },
-            fill,
-          );
+        if (flying) {
+          // In flight: the shadow on the water, the stone lifted off it by
+          // the hop; once it stops it settles in, smaller, fading as it goes,
+          // and its shadow becomes the one the settled stone keeps.
+          const sk = smooth(flying.sunk);
+          const up = flying.h / 12;
+          const distance = 1 - 0.38 * Math.min(1, flying.spin / 38);
+          const sw = (23 * distance + sk * 2) * (1 + up * 0.25);
+          const sh = (8 * distance + sk * 2) * (1 + up * 0.25);
+          shadow(c, flying.x, flying.y + 1, sw, sh, flying.sunk > 0 ? 0.24 - 0.08 * sk : (0.26 - up * 0.1) * Math.max(flying.o, sk));
+          const sz = distance * (1 - 0.25 * sk);
+          pebble(c, flying.x, flying.y - flying.h + sk * 2.5, 28 * sz, 10 * sz, flying.spin * 0.22, flying.o);
+        } else {
+          // Settled: only the shadow of the stone under the water, as on the site.
+          shadow(c, me.x, me.y + 1, 16, 9, 0.16);
         }
       }
     };
 
-    // The pond's own clock, from when it was first drawn: the breaths are
-    // counted up from zero, and a clock since the epoch would be counted for
-    // a very long time.
-    const t0 = performance.now();
     const loop = () => {
       const { w, h } = size.current;
       if (w && h) {
-        const nowMs = performance.now() - t0;
+        const nowMs = performance.now() - start.current;
         picture.value = createPicture((c) => draw(c, nowMs), { x: 0, y: 0, width: w, height: h });
       }
       raf = requestAnimationFrame(loop);
@@ -222,16 +319,23 @@ export default function Pond({ stones, you, onTouch }: { stones: readonly Stone[
   return (
     <View
       style={StyleSheet.absoluteFill}
-      pointerEvents={onTouch ? 'auto' : 'none'}
+      pointerEvents={water ? 'auto' : 'none'}
       onLayout={(e) => {
         const { width, height } = e.nativeEvent.layout;
         size.current = { w: width, h: height };
       }}
-      onStartShouldSetResponder={() => Boolean(onTouch)}
+      onStartShouldSetResponder={() => water}
       onResponderRelease={(e) => {
-        const { locationX, locationY } = e.nativeEvent;
-        touches.current = [...touches.current, { x: locationX, y: locationY, t: performance.now() / 1000 }].slice(-6);
-        onTouch?.();
+        // From just below the bottom edge, a little to one side, as if thrown
+        // from the near bank; the fish scatter where it lands.
+        const to = { x: e.nativeEvent.locationX, y: e.nativeEvent.locationY };
+        const { w, h } = size.current;
+        const side: 1 | -1 = Math.random() < 0.5 ? 1 : -1;
+        const from = { x: Math.max(-20, Math.min(w + 20, to.x - side * Math.min(180, w * 0.3))), y: h + 24 };
+        const cfg = flickConfig(from, to, side);
+        const t0 = performance.now();
+        flicks.current = [...flicks.current, { cfg, t0 }].slice(-12);
+        touches.current = [...touches.current, { ...to, t: (t0 - start.current) / 1000 + cfg.T }].slice(-6);
       }}
     >
       <Canvas style={StyleSheet.absoluteFill}>

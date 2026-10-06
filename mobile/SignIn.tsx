@@ -1,18 +1,15 @@
-// The first launch, on the water: three sentences over the pond, then the
-// sign-in as full screens, then the site's own name-and-place questions —
-// drawn the way the site draws them (DESIGN.md, Pale water). The pond
-// (`Pond.tsx`) is under every screen with everyone sitting right now swimming
-// on it, as on the site's arrival; the screens switch on the rail's own
-// move; a typed answer is a line whose prompt writes itself out; the one
-// filled control on a screen is ember. One component, one `step`.
+// *Sign in*, from the arrival's corner: the sign-in as full screens, then
+// the site's own name-and-place questions — drawn the way the site draws
+// them (DESIGN.md, Pale water), over the same pond as the arrival (the app
+// draws it, under this). The screens switch on the rail's own move; a typed
+// answer is a line whose prompt writes itself out; the one filled control on
+// a screen is ember. One component, one `step`.
 //
-// *Just sit* skips the account. After a first sign-in: *What should we call
-// you?* when the account has no name yet; *Where are you sitting?* as
-// `OriginScreen` has it, the line alone in the middle, the town list under
-// it, the share switch under that; then, the app's own, whether to be told
-// before the bell.
-import { Newsreader_700Bold } from '@expo-google-fonts/newsreader/700Bold';
-import { useFonts } from 'expo-font';
+// *Not now*, or Back off the first screen, goes back to the arrival. After a
+// first sign-in: *What should we call you?* when the account has no name
+// yet; *Where are you sitting?* as `OriginScreen` has it, the line alone in
+// the middle, the town list under it, the share switch under that; then, the
+// app's own, whether to be told before the bell.
 import * as Notifications from 'expo-notifications';
 import type { Session } from '@supabase/supabase-js';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -34,13 +31,11 @@ import { normalizeEmail } from '../lib/emailCode';
 import { searchPlaces, type PlaceIndex } from '../lib/places';
 import { saveOrigin, signInWithApple, signInWithEmail, signInWithGoogle, verifyCode } from './auth';
 import { loadPlaces, loadSuggestion } from './places';
-import Pond from './Pond';
 import { supabase } from './supabase';
-import { AppleMark, Back, Brand, Button, EMBER, EMBER_SOFT, GoogleMark, INK, INK3, LineActions, LineField, PAPER, RULE, Rail, Steps, SURFACE, Word, type } from './ui';
-import { useStones } from './world';
+import { AppleMark, Back, Button, EMBER, EMBER_SOFT, GoogleMark, INK, INK3, LineActions, LineField, RULE, Rail, SURFACE, Word, type } from './ui';
 
-type Step = 'b1' | 'b2' | 'b3' | 'signin' | 'code' | 'create' | 'name' | 'place' | 'remind';
-const ORDER: Step[] = ['b1', 'b2', 'b3', 'signin', 'create', 'code', 'name', 'place', 'remind'];
+type Step = 'signin' | 'code' | 'create' | 'name' | 'place' | 'remind';
+const ORDER: Step[] = ['signin', 'create', 'code', 'name', 'place', 'remind'];
 
 export const REMIND_KEY = 'mwm.app.remind';
 
@@ -56,15 +51,8 @@ function accountName(session: Session | null): string | null {
   return typeof n === 'string' && n.trim() ? n.trim() : null;
 }
 
-const BREATHS = [
-  'Everyone on this water is sitting right now.',
-  'Sit for as long as you like, or until the bell at five to, with everyone.',
-  'Nobody sees you unless you choose to be seen.',
-];
-
-export default function Onboarding({ onDone }: { onDone: (session: Session | null) => void }) {
-  const [fontsLoaded] = useFonts({ Newsreader_700Bold });
-  const [step, setStep] = useState<Step>('b1');
+export default function SignIn({ onDone, onClose }: { onDone: (session: Session) => void; onClose: () => void }) {
+  const [step, setStep] = useState<Step>('signin');
   const [dir, setDir] = useState<1 | -1>(1);
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
@@ -91,8 +79,6 @@ export default function Onboarding({ onDone }: { onDone: (session: Session | nul
   const [index, setIndex] = useState<PlaceIndex | null>(null);
   const [indexFailed, setIndexFailed] = useState(false);
   const [suggestion, setSuggestion] = useState<string | null>(null);
-
-  const stones = useStones(true);
 
   const go = (to: Step) => () => {
     setDir(ORDER.indexOf(to) >= ORDER.indexOf(step) ? 1 : -1);
@@ -122,9 +108,7 @@ export default function Onboarding({ onDone }: { onDone: (session: Session | nul
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
-  const asked = step !== 'b1' && step !== 'b2' && step !== 'b3';
   useEffect(() => {
-    if (!asked) return;
     let live = true;
     void loadPlaces().then((i) => {
       if (!live) return;
@@ -135,7 +119,7 @@ export default function Onboarding({ onDone }: { onDone: (session: Session | nul
     return () => {
       live = false;
     };
-  }, [asked]);
+  }, []);
 
   const run = async (fn: () => Promise<string | null>, then?: () => void) => {
     if (busy) return;
@@ -214,7 +198,8 @@ export default function Onboarding({ onDone }: { onDone: (session: Session | nul
     } else {
       localStorage.setItem(REMIND_KEY, 'no');
     }
-    onDone(session);
+    if (session) onDone(session);
+    else onClose();
   };
 
   // A line that takes focus is scrolled clear of the keyboard, with room
@@ -227,8 +212,6 @@ export default function Onboarding({ onDone }: { onDone: (session: Session | nul
       scroller.current?.scrollResponderScrollNativeHandleToKeyboard(placeField.current, insets.top + 16 + rows * 44 + 28, true);
     }
   }, [rows, insets.top]);
-
-  if (!fontsLoaded) return <View style={s.screen} />;
 
   const top = insets.top + 16;
   const bottom = insets.bottom + 32;
@@ -254,7 +237,7 @@ export default function Onboarding({ onDone }: { onDone: (session: Session | nul
   );
 
   /** A question's frame: Back in the corner, a column that scrolls only when the keyboard asks it to, the foot last. */
-  const frame = (back: Step | null, body: ReactNode, foot?: ReactNode) => (
+  const frame = (back: Step | 'close' | null, body: ReactNode, foot?: ReactNode) => (
     <ScrollView
       ref={scroller}
       style={{ flex: 1 }}
@@ -265,7 +248,7 @@ export default function Onboarding({ onDone }: { onDone: (session: Session | nul
       showsVerticalScrollIndicator={false}
     >
       {/* In the content, so the page never scrolls under it. */}
-      {back && <Back onPress={go(back)} style={{ position: 'absolute', left: 16, top: top - 4 }} />}
+      {back && <Back onPress={back === 'close' ? onClose : go(back)} style={{ position: 'absolute', left: 16, top: top - 4 }} />}
       <View style={{ flex: 1 }}>{body}</View>
       {foot}
     </ScrollView>
@@ -274,33 +257,9 @@ export default function Onboarding({ onDone }: { onDone: (session: Session | nul
   const render = (screen: Step): ReactNode => {
     const active = screen === step;
 
-    if (screen === 'b1' || screen === 'b2' || screen === 'b3') {
-      const k = screen === 'b1' ? 0 : screen === 'b2' ? 1 : 2;
-      return (
-        <View style={{ flex: 1, paddingTop: top, paddingBottom: bottom, paddingHorizontal: 24 }} pointerEvents="box-none">
-          <View style={s.row}>
-            <Brand />
-            {k < 2 ? <Word label="Skip" onPress={go('signin')} style={{ marginRight: -8 }} /> : <View />}
-          </View>
-          <View style={{ marginTop: 'auto' }} pointerEvents="box-none">
-            <View pointerEvents="none">
-              <Text style={type.sentence}>{BREATHS[k]}</Text>
-              <View style={{ marginTop: 24 }}>
-                <Steps step={k + 1} steps={3} />
-              </View>
-            </View>
-            <View style={[s.row, { marginTop: 28 }]}>
-              {k === 2 ? <Word label="Just sit" onPress={() => onDone(null)} style={{ marginLeft: -8 }} /> : <View />}
-              <Button small label={k === 2 ? 'Continue' : 'Next'} onPress={go(k === 0 ? 'b2' : k === 1 ? 'b3' : 'signin')} />
-            </View>
-          </View>
-        </View>
-      );
-    }
-
     if (screen === 'signin') {
       return frame(
-        'b3',
+        'close',
         <>
           <Text style={type.question}>Sign in.</Text>
           <Text style={[type.body, { marginTop: 12 }]}>Your sittings go with you to your other devices, and you can be seen on the water if you like.</Text>
@@ -323,7 +282,7 @@ export default function Onboarding({ onDone }: { onDone: (session: Session | nul
           {note}
         </>,
         <View style={[s.row, { marginTop: 24 }]}>
-          <Word label="Not now" onPress={() => onDone(null)} style={{ marginLeft: -8 }} />
+          <Word label="Not now" onPress={onClose} style={{ marginLeft: -8 }} />
           <Word label="Don’t have an account? Create one" onPress={go('create')} style={{ marginRight: -8 }} />
         </View>,
       );
@@ -521,17 +480,14 @@ export default function Onboarding({ onDone }: { onDone: (session: Session | nul
     );
   };
 
-  const onWater = step === 'b1' || step === 'b2' || step === 'b3';
   return (
-    <View style={s.screen}>
-      <Pond stones={stones} you={step === 'b3' || step === 'remind'} onTouch={onWater ? () => undefined : undefined} />
+    <View style={StyleSheet.absoluteFill}>
       <Rail at={step} dir={dir} render={render} />
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: PAPER },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   or: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 24, marginBottom: 4 },
   hair: { flex: 1, height: 1, backgroundColor: RULE },

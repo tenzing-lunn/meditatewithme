@@ -16,6 +16,8 @@ export const RULE = '#cdd4d9';
 export const EMBER = '#3e4c55';
 export const EMBER_SOFT = '#d5dde2';
 export const SERIF = 'Newsreader_700Bold';
+/** What the site says rather than asks: the wordmark, the sentence, the clock, the wheels. */
+export const SERIF_REGULAR = 'Newsreader_400Regular';
 
 /** The house easing: the rail, the settle, the draw. */
 export const EASE = Easing.bezier(0.22, 1, 0.36, 1);
@@ -121,9 +123,9 @@ export function Rail<S extends string>({ at, dir, render }: { at: S; dir: 1 | -1
 export const type = StyleSheet.create({
   /** The question: Newsreader 700, 1.75rem. */
   question: { fontFamily: SERIF, fontSize: 28, lineHeight: 32, color: INK },
-  /** A sentence on the water: 2.125rem. */
-  sentence: { fontFamily: SERIF, fontSize: 34, lineHeight: 38, color: INK },
-  masthead: { fontFamily: SERIF, fontSize: 20, lineHeight: 20, letterSpacing: -0.2, color: INK },
+  /** The sentence on the water: Newsreader regular, 1.75rem, leading 1.35, ink-2. */
+  sentence: { fontFamily: SERIF_REGULAR, fontSize: 28, lineHeight: 37.8, color: INK2 },
+  masthead: { fontFamily: SERIF_REGULAR, fontSize: 20, lineHeight: 24, letterSpacing: -0.2, color: INK },
   body: { fontSize: 16, lineHeight: 26, color: INK2 },
   caption: { fontSize: 13, lineHeight: 19.5, color: INK3 },
   /** What you press: 0.9375rem, semibold. */
@@ -219,17 +221,6 @@ export function GoogleMark() {
       <Path fill="#FBBC05" d="M6.4 13.92a6 6 0 0 1 0-3.84V7.49H3.05a10 10 0 0 0 0 9.02l3.35-2.59Z" />
       <Path fill="#EA4335" d="M12 5.96c1.47 0 2.79.5 3.82 1.5l2.87-2.87A9.6 9.6 0 0 0 12 2a10 10 0 0 0-8.95 5.49l3.35 2.59C7.19 7.72 9.4 5.96 12 5.96Z" />
     </Svg>
-  );
-}
-
-/** Where you are: one short mark per screen, the current one lit and longer. */
-export function Steps({ step, steps }: { step: number; steps: number }) {
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-      {Array.from({ length: steps }, (_, i) => (
-        <View key={i} style={{ height: 3, borderRadius: 2, width: i + 1 === step ? 20 : 10, backgroundColor: i + 1 === step ? EMBER : 'rgba(90,101,108,0.3)' }} />
-      ))}
-    </View>
   );
 }
 

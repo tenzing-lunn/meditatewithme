@@ -13,7 +13,7 @@ import { GMAIL_USES_GOOGLE, SERVICE_UNREACHABLE, authErrorMessage, emailReasonMe
 import { isGoogleMail } from '../lib/emailCode';
 import { supabase } from './supabase';
 
-export const SITE = 'https://www.meditatewithme.online/';
+export const SITE = process.env.EXPO_PUBLIC_SITE ?? 'https://www.meditatewithme.online/';
 
 WebBrowser.maybeCompleteAuthSession();
 

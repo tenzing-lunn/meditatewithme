@@ -751,6 +751,10 @@ does not arise. What the App Store asks of it is in
 guidelines in `plans/apple-guidelines.md`. Building started the same day
 in `mobile/` (Expo, sharing `lib/`): first the bell-on-a-locked-phone test
 the paragraph below asks for, runnable in Expo Go — `plans/iphone-app.md`.
+Since 6 October the app opens on the site's arrival drawn natively, with
+the site loaded behind it for the sitting; the only trace of that on the
+site is `components/useAppBridge.ts`, which does nothing unless the user
+agent says `MeditateWithMeApp` — a visitor in a browser sees no change.
 Still **not mentioned to Jonny**
 as far as this file knows — it would be a new commercial arrangement, not a
 v1 remainder, and it does not fit inside the 55 hours.

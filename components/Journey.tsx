@@ -24,6 +24,7 @@ import type { Sit } from './Sitting';
 import type { MixPatch } from './Sounds';
 import { openingBell, previewBell, scheduleBell, unlockAudio, type ScheduledBell } from './audio';
 import { WORD } from './controls';
+import { useAppBridge, useInApp } from './useAppBridge';
 import { displayName, type AuthState } from './useAuth';
 import { useClock } from './useClock';
 import { useFullscreen } from './useFullscreen';
@@ -576,6 +577,31 @@ export default function Journey({
       : onCamera.next !== null
         ? `The next session starts at ${localTime(onCamera.next)}`
         : 'Nobody is guiding right now';
+
+  // In the iPhone app the arrival is the phone's own, and Begin there asks
+  // this page to begin (`useAppBridge`): with the choices already written,
+  // so the sitting is begun a render later, once they are in `prefs`.
+  const inApp = useInApp();
+  const [appBegin, setAppBegin] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (appBegin === null) return;
+    setAppBegin(null);
+    if (stageRef.current.kind === 'rail') begin(null, appBegin);
+  }, [appBegin, begin]);
+  useAppBridge({
+    inApp,
+    atArrive,
+    sitting: stage.kind === 'sitting',
+    prefs,
+    guide: guideLine,
+    name: signedIn ? (displayName(auth.user) ?? null) : null,
+    update,
+    mix,
+    onBegin: (g) => {
+      setGuidedPick(g);
+      setAppBegin(g);
+    },
+  });
 
   return (
     <main id="main" className="relative h-dvh overflow-clip bg-paper text-ink">

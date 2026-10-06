@@ -141,6 +141,55 @@ the English names, generated from Node's ICU; and the back chevron was
 fixed while the page scrolled under it, so it scrolls with the page now. Not built: Expo Router (`mobile/AGENTS.md` asks for it; one
 `step` state was enough for nine screens and nothing else navigates yet).
 
+## 6 October 2026: the first launch is the site's arrival, native
+
+Tenzing, on the three breaths: "atrocious, has nothing to do with what we
+have built — and even the transitions between pages is awful". He chose
+(i) the app opens on **the site's own arrival, drawn natively**, with no
+slides, and (ii) **Begin hands off to the site's sitting**. So:
+
+- **The arrival** (`mobile/Arrive.tsx`): the mark and the wordmark, the
+  clock and *Sign in* (or your name), the pond with everyone sitting this
+  hour, *Each fish is someone sitting this hour.*, the sentence — *Sit [by
+  yourself] for [10 minutes], end with [a singing bowl], in [silence].* —
+  and Begin with the stone. Newsreader **regular** for the wordmark,
+  sentence, clock and wheels, as the site sets them (the v2's 700 was
+  wrong there; questions stay bold). Each phrase opens its wheel
+  (`mobile/Picker.tsx`, the site's `Picker`: snap rows, hairlines, faint
+  neighbours, play on the bell and the beds, Done, tap outside to cancel).
+  A tap on bare water flicks a pale pebble to it.
+- **Begin** sinks the sentence a word at a time (the site's `.sink`),
+  fades the rest, and throws the stone: the site's skim from `lib/pond.ts`
+  (`skimConfig`/`skimAt`, the touches, the landing train, the breaths) on
+  the Skia pond. At the same moment the app asks the site to begin.
+- **The site stays loaded behind it**, the whole time, and the two talk
+  (`components/useAppBridge.ts`, only ever when the user agent says
+  `MeditateWithMeApp`). The site posts `arrive` while its journey is at the
+  arrival — preferences, the guide's line, the signed-in name — and
+  `sitting` once a sitting has begun. The app calls `window.mwmApp`:
+  `update` for every choice on a wheel, `bell`/`taste` for the play buttons
+  (so the previews are the site's own sounds, synthesised bowl and all),
+  and `begin(guided, prefs)`. Once the stone has gone in (5.6 s) and the
+  site says it has begun, the native water fades over a second and the
+  site's sitting is what is left. When that sitting is over and the site is
+  back at its arrival (Finish, or End early), the native arrival comes back.
+- **Sign in** in the corner opens the native sign-in (`mobile/SignIn.tsx`,
+  the old `Onboarding.tsx` without the breaths; Back or *Not now* returns to
+  the arrival). A sign-in remounts the web view on the handoff fragment, and
+  the site's next `arrive` brings the name for the corner. **Signed in**,
+  the name opens the site's own account corner over its arrival, with a
+  native Back — the one part that leans on the site's markup
+  (`main header [aria-expanded]`), and not yet walked.
+- `EXPO_PUBLIC_SITE=http://localhost:3000/` points the app at a local `next
+  dev`; the live site has no bridge until the change reaches `main`.
+  `mwm.app.onboarded` and `EXPO_PUBLIC_ONBOARDING` are gone.
+
+**Not yet known:** whether WKWebView lets the site's audio context start
+with no gesture inside the page (the app's web view has
+`mediaPlaybackRequiresUserAction` off, which should be what allows it).
+Begin was not pressed in the simulator, so the handoff into the sitting —
+the opening bell, the reveal, and the way home — is still to be walked.
+
 ## The route
 
 **Expo, in `mobile/`, beside the website, in the same repo.** Same
