@@ -32,3 +32,24 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
+
+  # The iPhone app reads lib/ in place (mobile/metro.config.js), so a change
+  # to lib/ can break the app without touching mobile/. Its typecheck runs
+  # beside the site's rather than inside it, so the app's dependencies never
+  # slow the check main is protected by. Scripts are skipped: the native
+  # libraries' install steps fetch binaries a typecheck does not need.
+  app:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npx tsc --noEmit

@@ -751,10 +751,22 @@ does not arise. What the App Store asks of it is in
 guidelines in `plans/apple-guidelines.md`. Building started the same day
 in `mobile/` (Expo, sharing `lib/`): first the bell-on-a-locked-phone test
 the paragraph below asks for, runnable in Expo Go — `plans/iphone-app.md`.
-Since 6 October the app opens on the site's arrival drawn natively, with
-the site loaded behind it for the sitting; the only trace of that on the
-site is `components/useAppBridge.ts`, which does nothing unless the user
-agent says `MeditateWithMeApp` — a visitor in a browser sees no change.
+Since 6 October the app opens on the site's arrival drawn natively, and
+a sitting by yourself or among the fish is native too — its beds and bells
+on the phone's own audio, so they carry on with the phone locked, the timer
+on the site's clock, your fish on everyone's water — with the site loaded
+behind it for the account and for a guided sitting, which needs the live
+video. The traces of that on the site are `components/useAppBridge.ts` and
+one rule in `components/usePresence.ts` (no heartbeats from inside the app,
+which beats for itself); neither does anything unless the user agent says
+`MeditateWithMeApp` — a visitor in a browser sees no change.
+Since 7 October the bridge also says the word the site's own corner shows
+(`cornerWord` in `components/AccountCorner.tsx`, so an account with no name
+reads as the email's first part in the app too) and the questions the site
+would ask after Begin, and takes the answers into the site's profile, so a
+guest in the app is asked their name and place once, as on the site. A
+native sign-in is handed to the site by writing it into the site's own
+session storage before the page loads; the app keeps no copy.
 Still **not mentioned to Jonny**
 as far as this file knows — it would be a new commercial arrangement, not a
 v1 remainder, and it does not fit inside the 55 hours.

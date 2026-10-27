@@ -10,8 +10,9 @@ import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import type { Session } from '@supabase/supabase-js';
 import { GMAIL_USES_GOOGLE, SERVICE_UNREACHABLE, authErrorMessage, emailReasonMessage } from '../lib/authErrors';
+import { readLinkError } from '../lib/authRedirect';
 import { isGoogleMail } from '../lib/emailCode';
-import { supabase } from './supabase';
+import { SUPABASE_URL, supabase } from './supabase';
 
 export const SITE = process.env.EXPO_PUBLIC_SITE ?? 'https://www.meditatewithme.online/';
 
@@ -102,8 +103,9 @@ async function signInInBrowser(provider: 'google' | 'apple'): Promise<string | n
 async function sessionFromUrl(url: string, name: string): Promise<string | null> {
   const hash = url.split('#')[1] ?? '';
   const params = new URLSearchParams(hash);
-  const description = params.get('error_description');
-  if (description) return description.replace(/\+/g, ' ');
+  // The site's sentence, never the provider's own text (`lib/authRedirect.ts`).
+  const failed = readLinkError(hash, url.split('#')[0]?.split('?')[1] ?? '');
+  if (failed) return failed;
   const access_token = params.get('access_token');
   const refresh_token = params.get('refresh_token');
   if (!access_token || !refresh_token) return `${name} did not sign you in. Try again, or use an email code.`;
@@ -154,6 +156,19 @@ export async function signInWithApple(): Promise<string | null> {
   return null;
 }
 
+/**
+ * Whether the account was ever asked where it sits: the site asks once, and
+ * a skip is an answer (`share_label` false). Null when it cannot be told.
+ */
+export async function originAsked(userId: string): Promise<boolean | null> {
+  // Null when the profile cannot be read: the caller treats that as asked,
+  // so a Skip can never write over a place it could not see. The site asks
+  // again at Begin if it was not (`screensFor`).
+  const { data, error } = await supabase.from('profiles').select('share_label').eq('id', userId).maybeSingle();
+  if (error) return null;
+  return (data as { share_label: boolean | null } | null)?.share_label != null;
+}
+
 /** Where they sit and whether others may see it, to the account. */
 export async function saveOrigin(userId: string, origin: string | null, share: boolean): Promise<string | null> {
   const { error } = await supabase
@@ -162,21 +177,37 @@ export async function saveOrigin(userId: string, origin: string | null, share: b
   return error ? 'That could not be saved just now. You can set it later in Settings.' : null;
 }
 
+/** Where the site's own client keeps its session: supabase-js's default key. */
+const SITE_SESSION_KEY = `sb-${new URL(SUPABASE_URL).hostname.split('.')[0]}-auth-token`;
+/** Which handoff the web view's storage last took, so it is taken once. */
+const HANDOFF_KEY = 'mwm.app.handoff';
+
 /**
- * The site's address with the session in its fragment, so the web view
- * arrives signed in: the site's client reads the fragment on load
- * (`detectSessionInUrl`), the same way it reads a magic link.
+ * The session for the site, as a script the web view runs before the page
+ * does: it writes the session where the site's client keeps its own
+ * (`persistSession`), so the page loads signed in. Once per handoff, and
+ * only on the site's own origin — never into Google's or Apple's pages,
+ * which load in the same web view.
+ *
+ * Until 7 October 2026 this was the address's fragment, read as a magic
+ * link is. The tokens then stayed in the web view's history and in the
+ * address *Try again* reloaded, and a swipe back offered the site a spent
+ * refresh token. A script leaves nothing to go back to.
  */
-export function handoff(session: Session | null): string {
-  if (!session) return SITE;
-  const expiresIn = Math.max(1, (session.expires_at ?? 0) - Math.floor(Date.now() / 1000));
-  const q = new URLSearchParams({
+export function handoffScript(session: Session, id: string): string {
+  const value = JSON.stringify({
     access_token: session.access_token,
     refresh_token: session.refresh_token,
-    expires_in: String(expiresIn),
-    expires_at: String(session.expires_at ?? 0),
+    expires_in: session.expires_in,
+    expires_at: session.expires_at,
     token_type: 'bearer',
-    type: 'app',
+    user: session.user,
   });
-  return `${SITE}#${q.toString()}`;
+  const q = JSON.stringify;
+  return `(function(){try{
+if (location.origin !== ${q(new URL(SITE).origin)}) return;
+if (localStorage.getItem(${q(HANDOFF_KEY)}) === ${q(id)}) return;
+localStorage.setItem(${q(SITE_SESSION_KEY)}, ${q(value)});
+localStorage.setItem(${q(HANDOFF_KEY)}, ${q(id)});
+}catch(e){}})();true;`;
 }

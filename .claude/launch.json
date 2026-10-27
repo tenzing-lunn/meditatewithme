@@ -10,6 +10,15 @@
       ],
       "port": 3000,
       "autoPort": true
+    },
+    {
+      "name": "app-metro",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd mobile && EXPO_PUBLIC_SITE=http://$(ipconfig getifaddr en0):3000/ npx expo start --dev-client --port 8081"
+      ],
+      "port": 8081
     }
   ]
 }

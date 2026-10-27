@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { inAppUserAgent } from './useAppBridge';
 
 /**
  * Presence: tell the server we're here, and read back how many others are.
@@ -27,6 +28,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  * meditation, not a forgotten tab, and the sitter must stay in the count.
  * The fetch has `keepalive` for exactly this. When the sitting ends while
  * the tab is still hidden, the beats stop then.
+ *
+ * INSIDE THE IPHONE APP IT ONLY LISTENS
+ * The app beats for itself (`mobile/presence.ts`), with its own id, from the
+ * arrival to the end of a sitting, while this page waits behind it. Were
+ * this page to beat too, one person would be two people on the water, and
+ * its label-less beats would take the app's name off it. So inside the app
+ * (`inAppUserAgent`) nothing is sent — no beats and no Begin — and the count
+ * is still polled, for the sitting this page shows there.
  */
 
 const HEARTBEAT_MS = 30_000;
@@ -104,7 +113,7 @@ export function usePresence({
 
   const begin = useCallback(async () => {
     const anonId = anonIdRef.current;
-    if (!anonId) return null;
+    if (!anonId || inAppUserAgent()) return null;
 
     try {
       const res = await fetch('/api/heartbeat', {
@@ -129,7 +138,9 @@ export function usePresence({
     let pollTimer: number | undefined;
     let stopped = false;
 
+    const silent = inAppUserAgent();
     const beat = async () => {
+      if (silent) return;
       try {
         await fetch('/api/heartbeat', {
           method: 'POST',

@@ -31,6 +31,16 @@ const WORDS: { page: Page; label: string }[] = [
  * exactly the distance between its own right edge and the corner's, so all
  * three begin stacked where the name is. Transform and opacity only.
  */
+/**
+ * First name in the corner: it is a label, not a greeting, and a full name
+ * pushes the clock off a phone's header. The email's first part stands in
+ * for an account that was never given a name. The iPhone app's corner says
+ * the same word (`useAppBridge`).
+ */
+export function cornerWord(name: string | undefined, email: string | undefined): string {
+  return name?.split(/\s+/)[0] ?? email?.split('@')[0] ?? 'Account';
+}
+
 export default function AccountCorner({
   name,
   email,
@@ -59,10 +69,7 @@ export default function AccountCorner({
   const words = useRef<(HTMLButtonElement | null)[]>([]);
   const [offsets, setOffsets] = useState<number[]>([]);
 
-  // First name in the corner: it is a label, not a greeting, and a full name
-  // pushes the clock off a phone's header. The email's first part stands in
-  // for an account that was never given a name.
-  const shown = name?.split(/\s+/)[0] ?? email?.split('@')[0] ?? 'Account';
+  const shown = cornerWord(name, email);
 
   // Layout offsets rather than bounding rects: a rect includes the word's
   // own transform, so measuring a closed corner would read every slide as 0.

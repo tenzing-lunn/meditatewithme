@@ -72,6 +72,9 @@ export function usePractice(userId: string | null) {
 
   const write = useCallback((next: PracticeEntry[]) => {
     const clean = normaliseEntries(next);
+    // At once, not at the next render: two sittings recorded back to back
+    // (the iPhone app hands over a queue) must both build on the last.
+    entriesRef.current = clean;
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(clean));
     } catch {

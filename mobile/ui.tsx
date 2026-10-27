@@ -132,7 +132,8 @@ export const type = StyleSheet.create({
   control: { fontSize: 15, fontWeight: '600' as const },
   /** What you type: 1.5rem. */
   answer: { fontSize: 24, lineHeight: 36, color: INK },
-  error: { marginTop: 12, fontSize: 14, lineHeight: 21, color: '#8a4a3e' },
+  /** An error is ember, as on the site: no red anywhere (DESIGN.md). */
+  error: { marginTop: 12, fontSize: 14, lineHeight: 21, color: EMBER },
 });
 
 // ---- the controls ---------------------------------------------------------------
@@ -171,19 +172,19 @@ export function Button({
   );
 }
 
-/** A quiet word, bounded by its underline, 44px to hit. */
-export function Word({ label, onPress, disabled, style }: { label: string; onPress: () => void; disabled?: boolean; style?: StyleProp<ViewStyle> }) {
+/** A quiet word, bounded by its underline, 44px to hit; ink rather than ink-2 for the one that goes on. */
+export function Word({ label, onPress, disabled, ink, style }: { label: string; onPress: () => void; disabled?: boolean; ink?: boolean; style?: StyleProp<ViewStyle> }) {
   return (
     <Pressable onPress={onPress} disabled={disabled} style={[c.word, disabled && { opacity: 0.5 }, style]}>
-      <Text style={[type.control, { color: INK2, textDecorationLine: 'underline', textDecorationColor: RULE }]}>{label}</Text>
+      <Text style={[type.control, { color: ink ? INK : INK2, textDecorationLine: 'underline', textDecorationColor: RULE }]}>{label}</Text>
     </Pressable>
   );
 }
 
 /** Back, in the corner: a chevron in the menu's own 44px disc. */
-export function Back({ onPress, style }: { onPress: () => void; style?: StyleProp<ViewStyle> }) {
+export function Back({ onPress, label = 'Back', style }: { onPress: () => void; label?: string; style?: StyleProp<ViewStyle> }) {
   return (
-    <Pressable onPress={onPress} accessibilityLabel="Back" hitSlop={6} style={[c.icon, style]}>
+    <Pressable onPress={onPress} accessibilityLabel={label} hitSlop={6} style={[c.icon, style]}>
       <Svg width={18} height={18} viewBox="0 0 18 18" fill="none">
         <Path d="M11 3.5 5.5 9l5.5 5.5" stroke={INK2} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
       </Svg>
@@ -191,16 +192,16 @@ export function Back({ onPress, style }: { onPress: () => void; style?: StylePro
   );
 }
 
-/** The mark and the name: the pond in miniature, and a sentence somebody says. */
-export function Brand() {
+/** The mark and the name: the pond in miniature, and a sentence somebody says. The sitting shows the mark alone, faint. */
+export function Brand({ word = true }: { word?: boolean } = {}) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, opacity: word ? 1 : 0.55 }}>
       <Svg width={26} height={20} viewBox="0 0 26 20" fill="none">
         <Circle cx={10} cy={10} r={6.5} stroke={INK} strokeOpacity={0.45} />
         <Circle cx={10} cy={10} r={9.5} stroke={INK} strokeOpacity={0.2} />
         <Ellipse cx={10} cy={10} rx={3.2} ry={2.5} fill={INK} rotation={-12} origin="10, 10" />
       </Svg>
-      <Text style={type.masthead}>meditate with me</Text>
+      {word && <Text style={type.masthead}>meditate with me</Text>}
     </View>
   );
 }
@@ -213,15 +214,18 @@ export function AppleMark() {
   );
 }
 
-export function GoogleMark() {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24">
+/** Google's mark; on the filled button, in a white disc, as on the site. */
+export function GoogleMark({ disc }: { disc?: boolean } = {}) {
+  const mark = (
+    <Svg width={disc ? 18 : 20} height={disc ? 18 : 20} viewBox="0 0 24 24">
       <Path fill="#4285F4" d="M21.6 12.23c0-.71-.06-1.39-.18-2.05H12v3.88h5.38a4.6 4.6 0 0 1-2 3.02v2.51h3.24c1.9-1.75 2.98-4.33 2.98-7.36Z" />
       <Path fill="#34A853" d="M12 22c2.7 0 4.96-.9 6.62-2.41l-3.24-2.51c-.9.6-2.05.96-3.38.96-2.6 0-4.81-1.76-5.6-4.12H3.05v2.59A10 10 0 0 0 12 22Z" />
       <Path fill="#FBBC05" d="M6.4 13.92a6 6 0 0 1 0-3.84V7.49H3.05a10 10 0 0 0 0 9.02l3.35-2.59Z" />
       <Path fill="#EA4335" d="M12 5.96c1.47 0 2.79.5 3.82 1.5l2.87-2.87A9.6 9.6 0 0 0 12 2a10 10 0 0 0-8.95 5.49l3.35 2.59C7.19 7.72 9.4 5.96 12 5.96Z" />
     </Svg>
   );
+  if (!disc) return mark;
+  return <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' }}>{mark}</View>;
 }
 
 // ---- the line -------------------------------------------------------------------
@@ -285,10 +289,11 @@ export function LineField({
  * the right end once something is typed, coming up rather than appearing.
  */
 export function LineActions({
-  typed, active, prompt, onSkip, onNext, nextLabel = 'Next', skipLabel = 'Skip', disabled, children,
+  typed, active, prompt, onSkip, onNext, nextLabel = 'Next', nextKind = 'primary', skipLabel = 'Skip', disabled, children,
 }: {
   typed: boolean; active: boolean; prompt: string; onSkip?: () => void; onNext: () => void;
-  nextLabel?: string; skipLabel?: string; disabled?: boolean; children?: ReactNode;
+  /** Outlined when something else on the screen is the one fill (Google, on sign-in). */
+  nextLabel?: string; nextKind?: 'primary' | 'quiet'; skipLabel?: string; disabled?: boolean; children?: ReactNode;
 }) {
   const settle = useRef(new Animated.Value(active ? 0 : 1)).current;
   const next = useRef(new Animated.Value(typed ? 1 : 0)).current;
@@ -308,7 +313,7 @@ export function LineActions({
           {onSkip ? <Word label={skipLabel} onPress={onSkip} disabled={disabled} style={{ marginLeft: -8 }} /> : <View />}
         </Animated.View>
         <Animated.View style={rise(next)} pointerEvents={typed ? 'auto' : 'none'}>
-          <Button small label={nextLabel} onPress={onNext} disabled={disabled} />
+          <Button small kind={nextKind} label={nextLabel} onPress={onNext} disabled={disabled} />
         </Animated.View>
       </View>
       {children && <View style={{ marginTop: 24 }}>{children}</View>}

@@ -9,7 +9,13 @@
 // first sign-in: *What should we call you?* when the account has no name
 // yet; *Where are you sitting?* as `OriginScreen` has it, the line alone in
 // the middle, the town list under it, the share switch under that; then, the
-// app's own, whether to be told before the bell.
+// app's own, whether to be told before the bell. The place is asked only
+// of an account that was never asked, as the site asks it, and the
+// reminder only once.
+//
+// The same name and place screens ask a guest, after Begin, what the site
+// would ask (`ask`, from the site's `screensFor`): the answers go to the
+// site's profile through the bridge, and the last one begins the sitting.
 import * as Notifications from 'expo-notifications';
 import type { Session } from '@supabase/supabase-js';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -29,7 +35,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NAME_MAX, ORIGIN_MAX, cleanText, composeLabel } from '../lib/label';
 import { normalizeEmail } from '../lib/emailCode';
 import { searchPlaces, type PlaceIndex } from '../lib/places';
-import { saveOrigin, signInWithApple, signInWithEmail, signInWithGoogle, verifyCode } from './auth';
+import { originAsked, saveOrigin, signInWithApple, signInWithEmail, signInWithGoogle, verifyCode } from './auth';
 import { loadPlaces, loadSuggestion } from './places';
 import { supabase } from './supabase';
 import { AppleMark, Back, Button, EMBER, EMBER_SOFT, GoogleMark, INK, INK3, LineActions, LineField, RULE, Rail, SURFACE, Word, type } from './ui';
@@ -38,6 +44,17 @@ type Step = 'signin' | 'code' | 'create' | 'name' | 'place' | 'remind';
 const ORDER: Step[] = ['signin', 'create', 'code', 'name', 'place', 'remind'];
 
 export const REMIND_KEY = 'mwm.app.remind';
+
+/** The questions the site would ask after Begin, asked here instead. */
+export interface Ask {
+  screens: readonly ('name' | 'origin')[];
+  /** The name the share switch shows, if the site already has one. */
+  name: string | null;
+  /** Into the site's profile: `''` for a question skipped, as the site writes it. */
+  save: (patch: { name?: string; origin?: string; share?: boolean }) => void;
+  /** The last question answered: the sitting begins. */
+  onFinish: () => void;
+}
 
 interface Option {
   key: string;
@@ -51,8 +68,11 @@ function accountName(session: Session | null): string | null {
   return typeof n === 'string' && n.trim() ? n.trim() : null;
 }
 
-export default function SignIn({ onDone, onClose }: { onDone: (session: Session) => void; onClose: () => void }) {
-  const [step, setStep] = useState<Step>('signin');
+export default function SignIn({ onDone, onClose, ask }: { onDone: (session: Session) => void; onClose: () => void; ask?: Ask }) {
+  const asking = ask?.screens.map((q): Step => (q === 'origin' ? 'place' : 'name')) ?? [];
+  const [step, setStep] = useState<Step>(asking[0] ?? 'signin');
+  const stepRef = useRef(step);
+  stepRef.current = step;
   const [dir, setDir] = useState<1 | -1>(1);
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
@@ -60,6 +80,7 @@ export default function SignIn({ onDone, onClose }: { onDone: (session: Session)
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [resent, setResent] = useState(false);
   const insets = useSafeAreaInsets();
   const scroller = useRef<ScrollView>(null);
   // One ref per screen: the leaving screen is still mounted while the next
@@ -85,23 +106,70 @@ export default function SignIn({ onDone, onClose }: { onDone: (session: Session)
     setStep(to);
   };
 
+  // Whether this account was ever asked where it sits: the site asks once.
+  const askedPlace = useRef<boolean | null>(null);
+
   useEffect(() => {
+    if (ask) return;
     const { data } = supabase.auth.onAuthStateChange((_event, s) => {
       if (!s) return;
       setSession(s);
       setBusy(false);
       setError(null);
       setDir(1);
-      setStep((current) =>
-        current === 'name' || current === 'place' || current === 'remind' ? current : accountName(s) ? 'place' : 'name',
-      );
+      // Out of the callback first: Supabase holds its auth lock through it,
+      // and a query made inside would wait on that lock.
+      setTimeout(() => void originAsked(s.user.id).then((asked) => {
+        askedPlace.current = asked;
+        const current = stepRef.current;
+        if (current === 'name' || current === 'place' || current === 'remind') return;
+        const to = accountName(s) ? afterName(asked) : 'name';
+        // Nothing left to ask: straight back, signed in.
+        if (to === 'remind' && localStorage.getItem(REMIND_KEY) !== null) void finish(s);
+        else setStep(to);
+      }), 0);
     });
     return () => data.subscription.unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /**
+   * After the name: the place only if the account was certainly never asked
+   * (unknown counts as asked, so a Skip cannot erase a place it could not
+   * see), then the reminder if never asked, then done.
+   */
+  const afterName = (asked: boolean | null): Step => (asked === false ? 'place' : 'remind');
+  // Handed over once, whichever path gets there first.
+  const handed = useRef(false);
+  /**
+   * Done: the session as it is now, not as some render saw it — a name
+   * saved a moment ago is in the latest copy, and the site takes the user
+   * from what it is handed.
+   */
+  const finish = async (s: Session | null) => {
+    if (handed.current) return;
+    if (!s) return onClose();
+    handed.current = true;
+    const { data } = await supabase.auth.getSession();
+    onDone(data.session ?? s);
+  };
+  /** On from the name or the place, in the guest's questions or after a sign-in. */
+  const onward = (from: 'name' | 'place') => {
+    if (ask) {
+      const next = asking[asking.indexOf(from) + 1];
+      if (next) go(next)();
+      else ask.onFinish();
+      return;
+    }
+    const to = from === 'name' ? afterName(askedPlace.current) : 'remind';
+    if (to === 'remind' && localStorage.getItem(REMIND_KEY) !== null) void finish(session);
+    else go(to)();
+  };
 
   // The field has focus once the screen has risen into place.
   useEffect(() => {
     setError(null);
+    setResent(false);
     const ref = fields[step];
     const t = setTimeout(() => ref?.current?.focus(), 450);
     return () => clearTimeout(t);
@@ -143,6 +211,17 @@ export default function SignIn({ onDone, onClose }: { onDone: (session: Session)
     );
   };
 
+  const resend = () => {
+    const address = normalizeEmail(email);
+    if (!address) return;
+    setResent(false);
+    setCode('');
+    void run(
+      () => signInWithEmail(address, name.trim() ? (cleanText(name, NAME_MAX) ?? undefined) : undefined),
+      () => setResent(true),
+    );
+  };
+
   const confirm = () => {
     if (code.length !== 6) {
       setError('The code is six digits.');
@@ -153,14 +232,22 @@ export default function SignIn({ onDone, onClose }: { onDone: (session: Session)
 
   const saveName = () => {
     const n = cleanText(name, NAME_MAX);
-    if (!n) return go('place')();
+    if (ask) {
+      ask.save({ name: n ?? '' });
+      return onward('name');
+    }
+    if (!n) return onward('name');
     void run(
       async () => {
         const { error: e } = await supabase.auth.updateUser({ data: { name: n } });
         return e ? 'The name could not be saved just now. Please try again.' : null;
       },
-      go('place'),
+      () => onward('name'),
     );
+  };
+  const skipName = () => {
+    if (ask) ask.save({ name: '' });
+    onward('name');
   };
 
   const typedCity = city.trim();
@@ -186,9 +273,13 @@ export default function SignIn({ onDone, onClose }: { onDone: (session: Session)
   const rows = listed ? options.length + (looking ? 1 : 0) : 0;
 
   const savePlace = (skip: boolean) => () => {
-    if (!session) return go('remind')();
     const origin = skip ? null : cleanText(city, ORIGIN_MAX);
-    void run(() => saveOrigin(session.user.id, origin, !skip && share), go('remind'));
+    if (ask) {
+      ask.save({ origin: origin ?? '', share: origin !== null && share });
+      return onward('place');
+    }
+    if (!session) return onward('place');
+    void run(() => saveOrigin(session.user.id, origin, origin !== null && share), () => onward('place'));
   };
 
   const remind = (yes: boolean) => async () => {
@@ -198,8 +289,7 @@ export default function SignIn({ onDone, onClose }: { onDone: (session: Session)
     } else {
       localStorage.setItem(REMIND_KEY, 'no');
     }
-    if (session) onDone(session);
-    else onClose();
+    void finish(session);
   };
 
   // A line that takes focus is scrolled clear of the keyboard, with room
@@ -215,7 +305,7 @@ export default function SignIn({ onDone, onClose }: { onDone: (session: Session)
 
   const top = insets.top + 16;
   const bottom = insets.bottom + 32;
-  const label = composeLabel(accountName(session) ?? name, city) ?? 'you';
+  const label = composeLabel(accountName(session) ?? (ask?.name || name), city) ?? 'you';
 
   const note = (
     <>
@@ -226,8 +316,10 @@ export default function SignIn({ onDone, onClose }: { onDone: (session: Session)
 
   const providers = (
     <>
-      <Button kind="apple" label="Continue with Apple" icon={<AppleMark />} onPress={() => void run(signInWithApple)} disabled={busy} style={{ marginTop: 32 }} />
-      <Button kind="quiet" label="Continue with Google" icon={<GoogleMark />} onPress={() => void run(signInWithGoogle)} disabled={busy} style={{ marginTop: 12 }} />
+      {/* Google is the one filled button while it is offered, so the
+          address's Send me a code below is outlined, as on the site. */}
+      <Button label="Continue with Google" icon={<GoogleMark disc />} onPress={() => void run(signInWithGoogle)} disabled={busy} style={{ marginTop: 32 }} />
+      <Button kind="apple" label="Continue with Apple" icon={<AppleMark />} onPress={() => void run(signInWithApple)} disabled={busy} style={{ marginTop: 12 }} />
       <View style={s.or}>
         <View style={s.hair} />
         <Text style={type.caption}>or</Text>
@@ -235,6 +327,13 @@ export default function SignIn({ onDone, onClose }: { onDone: (session: Session)
       </View>
     </>
   );
+
+  /** Back from a question: in a guest's questions, to the one before or out to the arrival; after a sign-in, none. */
+  const backFrom = (screen: 'name' | 'place'): Step | 'close' | null => {
+    if (!ask) return null;
+    const i = asking.indexOf(screen);
+    return i > 0 ? asking[i - 1]! : 'close';
+  };
 
   /** A question's frame: Back in the corner, a column that scrolls only when the keyboard asks it to, the foot last. */
   const frame = (back: Step | 'close' | null, body: ReactNode, foot?: ReactNode) => (
@@ -262,7 +361,7 @@ export default function SignIn({ onDone, onClose }: { onDone: (session: Session)
         'close',
         <>
           <Text style={type.question}>Sign in.</Text>
-          <Text style={[type.body, { marginTop: 12 }]}>Your sittings go with you to your other devices, and you can be seen on the water if you like.</Text>
+          <Text style={[type.body, { marginTop: 12 }]}>Your sittings and sounds, on any device.</Text>
           {providers}
           <LineField
             inputRef={signinField}
@@ -278,7 +377,7 @@ export default function SignIn({ onDone, onClose }: { onDone: (session: Session)
             onFocus={reveal(56)}
             onSubmitEditing={sendCode(false)}
           />
-          <LineActions typed={normalizeEmail(email) !== null} active={active} prompt="Enter your email" onNext={sendCode(false)} nextLabel="Send me a code" disabled={busy} />
+          <LineActions typed={normalizeEmail(email) !== null} active={active} prompt="Enter your email" onNext={sendCode(false)} nextLabel={`Send me a code${busy ? '…' : ''}`} nextKind="quiet" disabled={busy} />
           {note}
         </>,
         <View style={[s.row, { marginTop: 24 }]}>
@@ -293,7 +392,7 @@ export default function SignIn({ onDone, onClose }: { onDone: (session: Session)
         'signin',
         <>
           <Text style={type.question}>Create account.</Text>
-          <Text style={[type.body, { marginTop: 12 }]}>Every sitting is already kept on this phone. An account carries it to your others.</Text>
+          <Text style={[type.body, { marginTop: 12 }]}>Every sitting is already logged on this device. An account carries it to your others.</Text>
           {providers}
           <LineField
             inputRef={createField}
@@ -323,7 +422,7 @@ export default function SignIn({ onDone, onClose }: { onDone: (session: Session)
             onFocus={reveal(56)}
             onSubmitEditing={sendCode(true)}
           />
-          <LineActions typed={normalizeEmail(email) !== null} active={active} prompt="Enter your email" onNext={sendCode(true)} nextLabel="Send me a code" disabled={busy} />
+          <LineActions typed={normalizeEmail(email) !== null} active={active} prompt="Enter your email" onNext={sendCode(true)} nextLabel={`Send me a code${busy ? '…' : ''}`} nextKind="quiet" disabled={busy} />
           {note}
         </>,
         <View style={[s.row, { marginTop: 24, justifyContent: 'flex-end' }]}>
@@ -340,7 +439,7 @@ export default function SignIn({ onDone, onClose }: { onDone: (session: Session)
           <Text style={[type.body, { marginTop: 12 }]}>
             We have sent a six-digit code to <Text style={{ color: INK }}>{email.trim()}</Text>. The link in that email works too.
           </Text>
-          <Text style={[type.caption, { marginTop: 36 }]}>The six-digit code</Text>
+          <Text style={[type.caption, { marginTop: 36 }]}>The code</Text>
           <LineField
             inputRef={codeField}
             center
@@ -355,17 +454,16 @@ export default function SignIn({ onDone, onClose }: { onDone: (session: Session)
             onFocus={reveal(140)}
             onSubmitEditing={confirm}
           />
-          <Button label={busy ? 'Confirming…' : 'Confirm and enter'} onPress={confirm} disabled={busy} style={{ marginTop: 28 }} />
-          <Word label="Send it again" onPress={sendCode(name.trim() !== '')} disabled={busy} style={{ alignSelf: 'center', marginTop: 8 }} />
-          {error && <Text style={type.error}>{error}</Text>}
+          <Button label={`Confirm and enter${busy ? '…' : ''}`} onPress={confirm} disabled={busy} style={{ marginTop: 28 }} />
+          <Word label="Send it again" onPress={resend} disabled={busy} style={{ alignSelf: 'center', marginTop: 8 }} />
+          {error ? <Text style={type.error}>{error}</Text> : resent ? <Text style={[type.error, { color: INK3 }]}>Sent again.</Text> : null}
         </>,
-        <Text style={[type.caption, { marginTop: 24 }]}>If it is not there in a minute, look in the junk folder.</Text>,
       );
     }
 
     if (screen === 'name') {
       return frame(
-        null,
+        backFrom('name'),
         <>
           <Text style={type.question}>What should we call you?</Text>
           <Text style={[type.body, { marginTop: 12 }]}>Your first name, if you’d like to be seen.</Text>
@@ -384,7 +482,7 @@ export default function SignIn({ onDone, onClose }: { onDone: (session: Session)
             onFocus={reveal(56)}
             onSubmitEditing={() => name.trim() && saveName()}
           />
-          <LineActions typed={name.trim() !== ''} active={active} prompt="Enter your name" onSkip={go('place')} onNext={saveName} disabled={busy} />
+          <LineActions typed={name.trim() !== ''} active={active} prompt="Enter your name" onSkip={skipName} onNext={saveName} disabled={busy} />
           {note}
         </>,
       );
@@ -394,7 +492,7 @@ export default function SignIn({ onDone, onClose }: { onDone: (session: Session)
       // Bare, as the site has it: the line is all there is, and it sits in
       // the upper middle so the list has room to hang under it.
       return frame(
-        null,
+        backFrom('place'),
         <View style={{ marginTop: '22%' }}>
           <Text style={s.srOnly} accessibilityRole="header">Where are you sitting?</Text>
           <View style={{ zIndex: 2 }}>
@@ -455,7 +553,7 @@ export default function SignIn({ onDone, onClose }: { onDone: (session: Session)
                     Let others see <Text style={{ color: INK }}>{label}</Text> while you sit with them
                   </Text>
                 </View>
-                <Text style={[type.caption, { marginTop: 6, marginLeft: 65 }]}>Saved on this device, and to your account. Shown to others only while this is on.</Text>
+                <Text style={[type.caption, { marginTop: 6, marginLeft: 65 }]}>Saved on this device, and to your account if you’re signed in. Shown to others only while this is on.</Text>
               </>
             ) : null}
           </LineActions>

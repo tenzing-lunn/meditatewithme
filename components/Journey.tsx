@@ -15,7 +15,7 @@ import {
   nextSharedBellAt,
 } from '@/lib/timer';
 import type { UserPreferences } from '@/lib/types';
-import AccountCorner from './AccountCorner';
+import AccountCorner, { cornerWord } from './AccountCorner';
 import Afterwards, { COOLDOWN_MS } from './Afterwards';
 import Arrive from './Arrive';
 import Pond, { type PondHandle, type Stone } from './Pond';
@@ -578,9 +578,10 @@ export default function Journey({
         ? `The next session starts at ${localTime(onCamera.next)}`
         : 'Nobody is guiding right now';
 
-  // In the iPhone app the arrival is the phone's own, and Begin there asks
-  // this page to begin (`useAppBridge`): with the choices already written,
-  // so the sitting is begun a render later, once they are in `prefs`.
+  // In the iPhone app the arrival and the sitting are the phone's own; a
+  // guided Begin there asks this page to begin (`useAppBridge`): with the
+  // choices already written, so the sitting is begun a render later, once
+  // they are in `prefs`.
   const inApp = useInApp();
   const [appBegin, setAppBegin] = useState<boolean | null>(null);
   useEffect(() => {
@@ -591,11 +592,17 @@ export default function Journey({
   useAppBridge({
     inApp,
     atArrive,
-    sitting: stage.kind === 'sitting',
+    sitting: sit !== null,
     prefs,
     guide: guideLine,
     name: signedIn ? (displayName(auth.user) ?? null) : null,
+    corner: signedIn ? cornerWord(displayName(auth.user), auth.user.email) : null,
+    label: ownLabel,
+    // Live, not the list decided at mount: the app asks at its own Begin.
+    ask: decide().filter((s): s is Exclude<ScreenName, 'arrive'> => s !== 'arrive'),
     update,
+    record,
+    profile: setProfile,
     mix,
     onBegin: (g) => {
       setGuidedPick(g);

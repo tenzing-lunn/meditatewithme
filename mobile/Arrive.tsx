@@ -25,7 +25,7 @@ const BELL_WORDS: Record<BellKind, string> = {
   'struck-bell': 'a struck bell',
 };
 
-const SOUND_WORDS: Record<TrackSlug | 'silence', string> = {
+export const SOUND_WORDS: Record<TrackSlug | 'silence', string> = {
   silence: 'silence',
   rain: 'rain',
   wind: 'wind',
@@ -78,7 +78,7 @@ function units(segments: Part[]): Unit[] {
 }
 
 export default function Arrive({
-  prefs, update, guided, onGuided, guide, name, others, leaving,
+  prefs, update, guided, onGuided, guide, name, others, now, leaving,
   onAccount, onBegin, onPreviewBell, onStopBell, onTaste, onHush,
 }: {
   prefs: UserPreferences;
@@ -87,9 +87,11 @@ export default function Arrive({
   onGuided: (guided: boolean) => void;
   /** Who is guiding: "Live now", or when the next session starts. */
   guide: string | null;
-  /** Signed in: the name for the corner. */
+  /** Signed in: the word for the corner, as the site's corner says it (a first name, the email's first part, or Account). */
   name: string | null;
   others: number;
+  /** The session clock, or null until it has been read: the clock and the bell's time wait, and so does Begin. */
+  now: number | null;
   /** Begin was pressed: the words go into the water. */
   leaving: boolean;
   onAccount: () => void;
@@ -102,12 +104,7 @@ export default function Arrive({
 }) {
   const insets = useSafeAreaInsets();
   const [open, setOpen] = useState<Open>(null);
-  const [now, setNow] = useState(() => Date.now());
   const pebble = useRef<View>(null);
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 5_000);
-    return () => clearInterval(t);
-  }, []);
 
   // One clock for the whole leaving, in milliseconds since Begin.
   const leave = useRef(new Animated.Value(0)).current;
@@ -115,9 +112,12 @@ export default function Arrive({
     if (!leaving) return leave.setValue(0);
     Animated.timing(leave, { toValue: SINK_MS + STAGGER_MS, duration: SINK_MS + STAGGER_MS, easing: Easing.linear, useNativeDriver: true }).start();
   }, [leaving, leave]);
-  const fade = { opacity: leave.interpolate({ inputRange: [0, FADE_MS], outputRange: [1, 0], extrapolate: 'clamp' }) };
+  // The site's Tailwind default curve for the 300ms fade, and CSS ease-out
+  // for the pebble's fifth of a second.
+  const fade = { opacity: leave.interpolate({ inputRange: [0, FADE_MS], outputRange: [1, 0], extrapolate: 'clamp', easing: Easing.bezier(0.4, 0, 0.2, 1) }) };
 
-  const bellLabel = localTime(nextSharedBellAt(now));
+  const bellLabel = now === null ? null : localTime(nextSharedBellAt(now));
+  const untilBell = `until the bell${bellLabel ? ` at ${bellLabel}` : ''}`;
   const together = prefs.showCount && prefs.untilBell;
   const sound: TrackSlug | 'silence' = TRACK_SLUGS.find((t) => (prefs.soundMix[t] ?? 0) > 0) ?? 'silence';
 
@@ -126,8 +126,8 @@ export default function Arrive({
     { phrase: guided ? 'with a guide' : 'by yourself', open: 'm', name: 'How' },
     // A guided sitting is the session's: it ends on the shared bell.
     ...(guided
-      ? [` until the bell at ${bellLabel}`]
-      : [together ? ' ' : ' for ', { phrase: together ? `until the bell at ${bellLabel}` : minutes(prefs.timerMinutes), open: 't' as const, name: 'How long' }]),
+      ? [` ${untilBell}`]
+      : [together ? ' ' : ' for ', { phrase: together ? untilBell : minutes(prefs.timerMinutes), open: 't' as const, name: 'How long' }]),
     ', end with ',
     { phrase: BELL_WORDS[prefs.endBell], open: 'b', name: 'The bell' },
     sound === 'silence' ? ', in ' : ', with ',
@@ -178,9 +178,9 @@ export default function Arrive({
       <Animated.View style={[s.header, fade]}>
         <Brand />
         <View style={s.corner}>
-          <Text style={s.clock}>{localTime(now)}</Text>
+          {now !== null && <Text style={s.clock}>{localTime(now)}</Text>}
           <Pressable onPress={onAccount} hitSlop={8} style={s.word}>
-            <Text style={s.cornerWord}>{name ?? 'Sign in'}</Text>
+            <Text style={s.cornerWord} numberOfLines={1}>{name ?? 'Sign in'}</Text>
           </Pressable>
         </View>
       </Animated.View>
@@ -199,10 +199,15 @@ export default function Arrive({
         </View>
         {guided && guide && <Animated.Text style={[type.body, { marginTop: 12, color: INK3 }, fade]}>{guide}.</Animated.Text>}
 
-        <Pressable onPress={begin} accessibilityRole="button" style={({ pressed }) => [s.begin, pressed && { opacity: 0.8 }]}>
+        <Pressable
+          onPress={begin}
+          disabled={now === null}
+          accessibilityRole="button"
+          style={({ pressed }) => [s.begin, now === null && { opacity: 0.4 }, pressed && { opacity: 0.8 }]}
+        >
           {/* The pebble in your hand: it hands over to the thrown one, which
               fades up out of the same spot over the same fifth of a second. */}
-          <Animated.View ref={pebble} style={{ opacity: leave.interpolate({ inputRange: [0, 200], outputRange: [1, 0], extrapolate: 'clamp' }) }}>
+          <Animated.View ref={pebble} style={{ opacity: leave.interpolate({ inputRange: [0, 200], outputRange: [1, 0], extrapolate: 'clamp', easing: Easing.bezier(0, 0, 0.58, 1) }) }}>
             <Image source={require('./assets/skipping-stone.webp')} style={{ width: 28, height: 10 }} />
           </Animated.View>
           <Animated.Text style={[s.beginWord, fade]}>Begin</Animated.Text>
@@ -227,7 +232,7 @@ export default function Arrive({
           value={together ? 'bell' : String(prefs.timerMinutes)}
           options={[
             ...TIMER_STOPS.map((m) => ({ value: String(m), label: minutes(m) })),
-            { value: 'bell', label: `until the bell at ${bellLabel}` },
+            { value: 'bell', label: untilBell },
           ]}
           onConfirm={(v) => {
             update(v === 'bell' ? { untilBell: true, showCount: true } : { timerMinutes: Number(v), untilBell: false });
@@ -273,7 +278,8 @@ const s = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   corner: { flexDirection: 'row', alignItems: 'center', gap: 12, marginRight: -8 },
   clock: { fontFamily: SERIF_REGULAR, fontSize: 16, color: INK3, fontVariant: ['tabular-nums'] },
-  word: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
+  // At most 10rem, cut short, as the site's corner.
+  word: { minHeight: 44, maxWidth: 160, justifyContent: 'center', paddingHorizontal: 8 },
   cornerWord: { fontFamily: SERIF_REGULAR, fontSize: 16, color: INK2, textDecorationLine: 'underline', textDecorationColor: '#cdd4d9' },
   sentence: { flexDirection: 'row', flexWrap: 'wrap', maxWidth: 576 },
   phrase: { color: INK, textDecorationLine: 'underline', textDecorationColor: 'rgba(90,101,108,0.6)' },

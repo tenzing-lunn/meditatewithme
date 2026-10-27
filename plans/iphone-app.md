@@ -190,6 +190,168 @@ with no gesture inside the page (the app's web view has
 Begin was not pressed in the simulator, so the handoff into the sitting —
 the opening bell, the reveal, and the way home — is still to be walked.
 
+## 6 October 2026 (evening): the sitting is native
+
+Tenzing: "turning the rest of our app native now", keeping it in this
+repo, in `mobile/`, with the sitting first, and **the site's own audio
+engine on the phone** rather than Expo's player — so the bell is scheduled
+on the audio clock as the site does it, and rings on time with the phone
+locked, in silence too. Asked for verification agents to compare each piece
+of the port against the site as it went.
+
+- **The sound** (`mobile/audio.ts`): the site's `audio.ts`, `mix.ts` and
+  `useMix.ts` on **react-native-audio-api** (Software Mansion's Web Audio
+  for React Native). Same graph, same synthesised bowl and struck bell,
+  same loop points inside the beds' padding, same ramps; the opening bell
+  at Begin and the closing bell scheduled for the whole sitting at once.
+  The bell tables moved to `lib/bells.ts` so both ring one table. The beds
+  and the drum are the site's own `public/sounds/` files, bundled through
+  Metro (`metro.config.js` watches the folder), about 16 MB. The audio
+  session is `playback` (rings on silent, plays in the background); the
+  context is suspended when the app goes to the background outside a
+  sitting, and held through a sitting and its tail. The wheels' play
+  buttons are native now too.
+- **The sitting** (`mobile/Sitting.tsx`, `mobile/Afterwards.tsx`): the
+  site's `Sitting`, `SoundLine` and `Afterwards` over the Skia pond — the
+  controls resting after four seconds, End asking first, Back ending at
+  once, the line of sounds, the company line from `lib/company.ts`, the
+  time left from `lib/timer.ts`, *Come back.* through the bell's tail, then
+  the minutes. The pond gained the site's bell ring and the scatter under a
+  tap. *Again* asks the site's *Same setup?* with the setup in one line
+  (the site's `settingsLine`): *Yes* sits again from the pebble, *No* goes
+  to the arrival, whose sentence stands in for the site's five steps.
+  Begin waits for the first clock sync, as on the site.
+- **The clock and presence** (`mobile/clock.ts`, `mobile/presence.ts`):
+  `lib/clock.ts` synced against the site's `/api/time` through its
+  `fetchImpl`, again on every return to the front; heartbeats and the count
+  as the site's `usePresence`, beating through a locked sitting. The site
+  inside the app no longer beats at all (`usePresence`, `inAppUserAgent`),
+  so a person is one fish, not two.
+- **The account stays the site's** until it is native: a sitting sat here
+  is handed to the site's practice log through the bridge (`record`), which
+  keeps it and syncs it as its own. The app keeps each in a queue
+  (`mwm.app.unsent`) until the site answers `recorded` with its id, and
+  offers the queue again at every arrival and every return to the front.
+  The site's `arrive` now also says the label the person is seen by, for
+  the fish and the company line.
+- **A guided sitting is still the site's**, for its live video: the old
+  path, Begin asking the site to begin and the native water fading to it.
+  The site now says when it is over (`sitting`, `on: false`), which takes
+  the name off the water, and hushes its own beds whenever it is back at
+  its arrival inside the app, so the phone's sound is the only sound.
+- Not ported: the guest's account offer after a sitting (`Remember`), the
+  wake lock (not wanted: the phone may lock now), reduced motion, the blur
+  on *Come back.*, the edge fade on the line of sounds.
+
+**Running it needs a development build now.** Expo Go cannot load
+react-native-audio-api, and `expo-dev-client` is installed, so `npm start`
+serves a development build, not Expo Go.
+
+- On this Mac: Xcode 26.6 is installed but its **iOS 26.5 platform is
+  not** (Xcode → Settings → Components, or `xcodebuild -downloadPlatform
+  iOS`); until it is, nothing builds for iOS here. Then
+  `LANG=en_US.UTF-8 EXPO_PUBLIC_MUTE=1 npx expo run:ios` (CocoaPods needs
+  the UTF-8 locale; the mute keeps the simulator off the Mac's speakers).
+- On the iPhone: `npx eas-cli build --profile development --platform ios`
+  (the new `development` profile in `eas.json`, internal distribution; the
+  phone registered once with `npx eas-cli device:create`), then `npx expo
+  start` and open it from the build.
+
+**The site has to ship first.** The live site has none of this bridge:
+against it, this build's arrival has no name or label, its sittings are
+never logged (they wait in the queue, which is safe), and the page behind
+it still beats for itself, so every app user counts twice. Test against a
+local `next dev` (`EXPO_PUBLIC_SITE`) or the `dev` preview until the site's
+side reaches `main`.
+
+**Checked by verification agents, in rounds,** each comparing a piece with
+the site and reporting what a person would hear or see differently, then
+re-checking the fixes. What they found and what changed: ramps anchored
+where a level really is (the library reads a just-set level back late, and
+its own hold cannot anchor a settled one); a bed at nothing stopped and its
+samples let go (the library copies each buffer into its source); the
+session let go after the engine stops, so an interrupted podcast resumes;
+nothing frozen mid-fade by a lock; the name off the water after a guided
+sitting; sittings dropped only once the site has them.
+
+**Not yet run anywhere.** Typecheck passes, `expo export --platform ios`
+bundles with every sound, and the CI job that now typechecks the app
+passes from a clean install. Nothing has been heard: the first real test is
+the one Step 1 below asks for, now on the real sitting — 45 minutes, phone
+locked, in a pocket, and once in silence.
+
+## 7 October 2026: the app against the site — review and fixes
+
+Tenzing asked for a review of the app against the site as it was before it
+went native. Four agents compared the code on both sides (arrival; sitting
+and after; sign-in, account and the bridge; sound, time and presence). Most
+of it matched to the value. What did not is below.
+
+**Goal:** a person moving between the site and the app sees the same words,
+the same type and the same choices, and nothing in the app can sign them out
+of the site, erase what they told the site, or leave them stuck. Done when
+every box below is ticked in the code, typecheck and the site's tests pass,
+and a verification agent re-reading both sides agrees.
+
+The bugs:
+- [x] **The app's own copy of a session is gone once handed over.** It was
+  saved to disk and reused on the next *Sign in*, and once stale, refreshed
+  with a token the site had already rotated — which can revoke the site's.
+  Now the app keeps it in memory only, forgets it at the handoff, and
+  deletes the copy older builds left on disk.
+- [x] **No tokens in the web view's address or history.** The handoff is
+  written into the site's own session storage before the page loads (once
+  per handoff, on the site's origin only), not in the fragment, so a swipe
+  back or *Try again* cannot replay a spent refresh token.
+- [x] **Signed in with no name is still signed in.** The site says what its
+  own corner would show (first name, else the email's first part, else
+  *Account*); the app shows that, one line, and opens the account with it.
+- [x] **A guided Begin cannot strand you on the water.** If the site has not
+  begun a while after the stone is in, the arrival comes back; a sitting
+  that begins late is shown when it does.
+- [x] **Skip on *Where are you sitting?* no longer erases a saved place**:
+  the place is asked only if the account was never asked, as on the site,
+  and the reminder ask only once.
+- [x] **Taps during a guided throw stay in the app**, and Begin cannot start
+  two sittings.
+
+The differences:
+- [x] Sign-in leads with *Continue with Google* filled, Apple black under
+  it, *Send me a code* outlined (one fill a screen); the site's words
+  (*Your sittings and sounds, on any device.*, *logged on this device*,
+  *The code*, *Confirm and enter…*, *Sent again.*); provider errors in the
+  site's sentence, not Supabase's; errors in ember, not red.
+- [x] *Come back.*, the minutes and *Same setup?* in Newsreader regular, as
+  the site sets them; *No* as the site's pond choice (serif, ink-2,
+  underlined), *Back* as its quiet sans word; no stone under *Same setup?*.
+- [x] A guest who has sat once is asked their name and place after Begin,
+  as the site asks (`screensFor`), and the answers go to the site's profile.
+- [x] Details: the mark faint during the sitting; the words for the sitting
+  at 6.4 s as on the site; the tapped pebble at full strength; the leaving
+  fades on the site's curve; *Yes, end* / *Keep sitting* 16px apart; the
+  corner's word one line, at most 10rem; the fish band in landscape;
+  signing out in the site's corner brings the native arrival back.
+
+Left as they are, on purpose or for later: the serif's optical size (the
+site's variable Newsreader picks a display cut at 28px; the app bundles the
+16pt static cut — a variable font in the app is its own piece of work); the
+blur as words sink (no cheap text blur in React Native); a bed decoded again
+each time it is raised (the memory trade made on 6 October); a bell late
+after a phone call with the phone kept locked (the audio engine's restart
+after an interruption — the locked-phone test in Step 1 will say how much it
+matters); Begin greyed until the first clock answer on a bad connection;
+the guide's line before the site has said it (the site always has a line,
+but the app cannot know whether anyone is live until the page says, and a
+wrong *Nobody is guiding right now* is worse than none).
+
+How it was done, for the next person: the app's Supabase client keeps its
+session in a `Map` (`forgetSession` in `mobile/supabase.ts`); the handoff is
+`handoffScript` in `mobile/auth.ts`, run by the web view as
+`injectedJavaScriptBeforeContentLoaded` on a fresh mount; the site's
+`arrive` carries `corner` and `ask`, and `window.mwmApp.profile` writes the
+answers (`components/useAppBridge.ts`); the guest's questions are
+`SignIn`'s own name and place screens with an `ask` prop.
+
 ## The route
 
 **Expo, in `mobile/`, beside the website, in the same repo.** Same
@@ -248,7 +410,9 @@ EAS in the cloud with the Apple Developer account.
 
 1. **The sitting, natively:** the beds and mixer, the bell choice, the
    timer, the shared hour against the server clock (`lib/clock.ts` +
-   `/api/time`), the practice log on the device.
+   `/api/time`), the practice log on the device. *Built 6 October 2026
+   (above), except the guided sitting and the log, which are still the
+   site's; not yet run.*
 2. **Accounts:** Supabase in React Native (session in secure storage),
    Google, and **Sign in with Apple** (4.8) — the Apple setup is listed
    in `plans/launch-readiness.md`.

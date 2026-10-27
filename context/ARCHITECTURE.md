@@ -318,6 +318,12 @@ This is the single most important line in the timer. A meditation app whose bell
 > follows describes generated noise, it is history; the gain graph, the
 > ramps and the master are unchanged. The bells are still synthesised.
 
+> **6 October 2026: the bell tables are in `lib/bells.ts`.** `Mode`, `Strike`,
+> `BELLS`, `PEAK` and `OPENING_DECAY` moved there unchanged from
+> `components/audio.ts`, so the site and the iPhone app (`mobile/audio.ts`,
+> the same `strike()` on react-native-audio-api) ring the same bells from
+> one table. Whoever plays them owns the context; the table is data.
+
 > **29 September 2026: the gong is a recording, and three beds changed.** The
 > bell keyed `gong` (stored in preferences and a CHECK constraint, so the key
 > stays) is a steel tongue drum, `public/sounds/drum.mp3`, played by
@@ -357,7 +363,7 @@ All tracks start immediately at zero gain and stay running. Fading is cheaper an
 ### Constraints worth knowing before you write it
 
 - **An `AudioContext` cannot start without a user gesture.** Autoplay policy. Turn this into the design rather than fighting it: one deliberate **Begin** button that lights the candle and starts the audio together. The constraint becomes the ritual.
-- **iOS suspends the context when the screen locks.** Not solvable in a web app: a lock that happens suspends the graph, and the bell is late until the screen wakes. Accept it, and note it for whenever the mobile app conversation happens. What *is* solvable is the lock itself: since 22 September 2026 `components/useWakeLock.ts` asks for a screen wake lock inside the click that strikes the bowl and holds it for the sitting, asking again each time the tab comes back, so where the browser grants it the screen stays on and the context never suspends. Unsupported is a silent no-op. Both statements stand side by side; the second is why the first is rarely met.
+- **iOS suspends the context when the screen locks.** *(In the iPhone app it does not: since 6 October 2026 the app's sitting runs this same graph on react-native-audio-api, Web Audio as a native library, in the app's own audio session, which iOS keeps running for an app with the `audio` background mode — `mobile/audio.ts`. Built and bundled; not yet heard on a locked phone.)* Not solvable in a web app: a lock that happens suspends the graph, and the bell is late until the screen wakes. Accept it, and note it for whenever the mobile app conversation happens. What *is* solvable is the lock itself: since 22 September 2026 `components/useWakeLock.ts` asks for a screen wake lock inside the click that strikes the bowl and holds it for the sitting, asking again each time the tab comes back, so where the browser grants it the screen stays on and the context never suspends. Unsupported is a silent no-op. Both statements stand side by side; the second is why the first is rarely met.
 - **Decode all buffers up front**, behind the Begin button, so no track arrives late.
 - Loops need to be **seamless at the sample level**. This is an asset-quality problem, not a code problem — a loop with a click at the seam will be audible on repeat and no amount of crossfading fully hides it.
 
@@ -386,7 +392,7 @@ The first pass gave each bell its own modes and stopped there. What it did not c
 
 The singing bowl was not touched. Its ratios were always the widely-spaced inharmonic ones and it was always the convincing one.
 
-`strike()` is arithmetic over a static table, which means the bells can be **rendered and measured offline** rather than argued about — a short Node script that reads `BELLS` straight out of the file, sums the sines and writes a WAV is how both faults above were found and how the fix was checked before anyone listened. That beats opening the preview, and it is the only way to A/B a change against the version in git.
+`strike()` is arithmetic over a static table, which means the bells can be **rendered and measured offline** rather than argued about — a short Node script that reads `BELLS` straight out of `lib/bells.ts`, sums the sines and writes a WAV is how both faults above were found and how the fix was checked before anyone listened. That beats opening the preview, and it is the only way to A/B a change against the version in git.
 
 ### The bell rings at both ends
 
@@ -726,17 +732,19 @@ meditatewithme/
 ├── lib/                         # pure; tested file-for-file in tests/
 │   ├── session.ts, clock.ts, timer.ts, journey.ts
 │   ├── label.ts, company.ts, places.ts, format.ts
-│   ├── geo.ts, projection.ts, pond.ts, fish.ts, pebble.ts, noise.ts, beds.ts
+│   ├── geo.ts, projection.ts, pond.ts, fish.ts, pebble.ts, noise.ts, beds.ts, bells.ts
 │   ├── practice.ts, preferences.ts, authErrors.ts, authRedirect.ts, emailCode.ts
 │   ├── live.ts, limit.ts, room.ts, types.ts
 │   └── supabase.ts
 ├── tests/                       # mirrors lib/; tests/api/ runs the route handlers
 ├── mobile/                      # the iPhone app (Expo), since 2 October 2026;
-│                                #   reads ../lib through Metro — plans/iphone-app.md
+│                                #   reads ../lib and ../public/sounds through Metro
+│                                #   — plans/iphone-app.md
 ├── infra/mediamtx/              # the live video server, by hand
 ├── public/earth/                # land.json + relief.jpg — 273KB
 ├── supabase/migrations/
-├── .github/workflows/ci.yml     # typecheck, lint, tests, build on every push
+├── .github/workflows/ci.yml     # typecheck, lint, tests, build on every push;
+│                                #   the app's own typecheck beside them
 ├── context/                     # standing project knowledge
 ├── plans/                       # active plans
 └── docs/                        # finished writing

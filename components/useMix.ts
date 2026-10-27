@@ -100,6 +100,14 @@ export interface Mix {
   taste: (slug: TrackSlug, gain?: number) => void;
   /** Stop a taste now, quickly, and put the stored beds back underneath. */
   hush: () => void;
+  /**
+   * Stop following the stored levels up, and touch nothing else: a fade in
+   * progress runs on to silence, and a level written to preferences from
+   * now on moves the beds but never raises the master, until `restore`.
+   * Only the iPhone app's page uses it (`useAppBridge`), whose sound is
+   * the phone's own.
+   */
+  mute: () => void;
 }
 
 export function useMix(soundMix: Record<string, number>): Mix {
@@ -222,5 +230,9 @@ export function useMix(soundMix: Record<string, number>): Mix {
     for (const s of TRACK_SLUGS) mix.set(s, latest.current[s] ?? 0);
   }, []);
 
-  return { ensure, unmute, fadeOut, restore, audition, taste, hush };
+  const mute = useCallback(() => {
+    muted.current = true;
+  }, []);
+
+  return { ensure, unmute, fadeOut, restore, audition, taste, hush, mute };
 }

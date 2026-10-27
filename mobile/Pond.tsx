@@ -6,13 +6,15 @@
 // breathes a soft ring now and then. A touch on the water flicks a pale
 // pebble to it from the near bank, and the fish scatter where it lands.
 // Begin throws your stone: the site's skim (`skimConfig`, `skimAt`), its
-// touches, its landing and then its breaths.
+// touches, its landing and then its breaths. In a sitting a tap scatters
+// the fish where it lands (`scatter`), and at the bell one soft, wide ring
+// leaves your stone while the others go (`bellAt`), as on the site.
 //
 // One picture a frame, recorded on the JS thread from the same maths the
 // site runs, handed to the canvas through a shared value so React never
 // re-renders for a frame.
 import { Canvas, Picture, Skia, PaintStyle, StrokeCap, TileMode, createPicture, matchFont, useImage, type SkCanvas, type SkPaint, type SkPicture } from '@shopify/react-native-skia';
-import { useEffect, useRef } from 'react';
+import { useEffect, useImperativeHandle, useRef, type Ref } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 import { alarmAt, fishAt, hash, lookFor, planFish, SCATTER_S, spawnFish, spine, swim, type FishPlan, type FishState, type Joint, type Look, type Spine, type Touch } from '../lib/fish';
@@ -32,6 +34,13 @@ const SETTLED = 90;
 /** Your stone's landing, and a flicked pebble's stop: the site's trains. */
 const LANDING = { rings: 4, life: 9, strength: 0.6, width: 1.2, rise: 0.12 };
 const SETTLE = { rings: 3, life: 4.5, reach: 70, strength: 0.7, width: 1.1, rise: 0.1 };
+/** The bell: one soft train, wide, and then the water is still (the site's `BELL`). */
+const BELL = { rings: 4, life: 13, strength: 0.85, width: 1.4, rise: 0.4 };
+
+export interface PondHandle {
+  /** A tap in a sitting: the fish near it scatter. In the pond's own points. */
+  scatter: (at: Point) => void;
+}
 
 /** Where the throw left the hand, in the pond's own points, and when (`performance.now()`). */
 export interface Thrown {
@@ -48,7 +57,7 @@ const LABEL = '#5a656c';
 const rgba = (c: readonly [number, number, number], a: number) => Skia.Color(`rgba(${c[0]},${c[1]},${c[2]},${a})`);
 
 export default function Pond({
-  stones, you, throwFrom = null, water = false,
+  stones, you, throwFrom = null, water = false, bellAt = null, ref,
 }: {
   stones: readonly Stone[];
   /** Whether your stone is on the water (or on its way). */
@@ -56,16 +65,24 @@ export default function Pond({
   throwFrom?: Thrown | null;
   /** Bare water can be touched: a pebble is flicked to the spot. */
   water?: boolean;
+  /** When the bell rang (`performance.now()`): one wide ring, and the others go. */
+  bellAt?: number | null;
+  ref?: Ref<PondHandle>;
 }) {
   const picture = useSharedValue<SkPicture>(createPicture(() => undefined, { x: 0, y: 0, width: 1, height: 1 }));
   const size = useRef({ w: 0, h: 0 });
-  const props = useRef({ stones, you, throwFrom });
-  props.current = { stones, you, throwFrom };
+  const props = useRef({ stones, you, throwFrom, bellAt });
+  props.current = { stones, you, throwFrom, bellAt };
   const touches = useRef<Touch[]>([]);
   const flicks = useRef<{ cfg: SkimConfig; t0: number }[]>([]);
   // The pond's own clock starts here: the breaths are counted up from zero,
   // and a clock since the epoch would be counted for a very long time.
   const start = useRef(performance.now());
+  useImperativeHandle(ref, () => ({
+    scatter(at) {
+      touches.current = [...touches.current, { ...at, t: (performance.now() - start.current) / 1000 }].slice(-6);
+    },
+  }), []);
   const stone = useImage(require('./assets/skipping-stone.webp'));
   const stoneRef = useRef(stone);
   stoneRef.current = stone;
@@ -198,9 +215,12 @@ export default function Pond({
       const t = nowMs / 1000;
       const R = reachFor(w, h);
       const me = { x: YOU.x * w, y: YOU.y * h };
+      const bell = p.bellAt === null ? null : (performance.now() - p.bellAt) / 1000;
+      // The others go quietly once the bell has rung.
+      const others = bell === null ? 1 : Math.max(0, 1 - bell / 2.5);
 
       // The fish keep to the open water above the words, as on the arrival.
-      const band = p.you ? { y0: 0.08, y1: 0.84 } : { y0: 0.1, y1: 0.5 };
+      const band = p.you ? { y0: 0.08, y1: 0.84 } : w > h ? { y0: 0.1, y1: 0.56 } : { y0: 0.1, y1: 0.5 };
       const sig = `${p.stones.map((s) => s.key).join('|')}#${w}x${h}#${band.y1}`;
       if (sig !== planned) {
         plan = planFish(p.stones, { w, h, ...band });
@@ -225,7 +245,7 @@ export default function Pond({
           ? spawnFish(to, ((k % 360) * Math.PI) / 180, own, ((k >>> 9) % 628) / 100)
           : swim(was, to, dt, { size: own, alarm: alarmAt(plan!, i, t, touches.current) });
         drawn.set(s.key, now);
-        swimming.push({ spine: spine(now, own), size: own, look, o: (0.55 + 0.3 * ((i * 7) % 5) / 4) * fade, label: s.label });
+        swimming.push({ spine: spine(now, own), size: own, look, o: (0.55 + 0.3 * ((i * 7) % 5) / 4) * fade * others, label: s.label });
       });
       for (const k of drawn.keys()) if (!here.has(k)) drawn.delete(k);
 
@@ -241,6 +261,10 @@ export default function Pond({
           flying = frame.stone;
           rings.push(...touchRings(frame.touches));
           splashes.push(...frame.touches);
+        }
+        if (bell !== null) {
+          rings.push(...trainAt(bell, { x: me.x, y: me.y, reach: Math.max(w, h) * 0.75, yours: true, ...BELL }));
+        } else if (frame) {
           const landed = since - frame.stopAt;
           rings.push(...trainAt(landed, { x: me.x, y: me.y, reach: R * 1.4, yours: true, ...LANDING }));
           rings.push(...breathsAt(landed, me, R * 1.2, Math.floor(p.throwFrom!.t) >>> 0));
@@ -270,7 +294,7 @@ export default function Pond({
         const up = f.h / 4;
         shadow(c, f.x, f.y + 1, (11 + sk * 3) * (1 - up * 0.1), (4.5 + sk * 3) * (1 - up * 0.1), f.sunk > 0 ? 0.2 * (1 - sk) : (0.22 - up * 0.07) * f.o);
         const sz = (1 - 0.25 * Math.min(1, f.spin / 70)) * (1 - 0.2 * sk);
-        pebble(c, f.x, f.y - f.h - 2 + sk * 2, 15 * sz, 7 * sz, f.spin * 0.22 - 5, f.o * 0.75);
+        pebble(c, f.x, f.y - f.h - 2 + sk * 2, 15 * sz, 7 * sz, f.spin * 0.22 - 5, f.o);
       }
 
       fill.setColor(Skia.Color(LABEL));

@@ -119,6 +119,13 @@ route taken, and the three `localStorage` call sites are all in hooks already.
 Speculative plumbing is the expensive kind of preparation; the boundary is the
 cheap kind.
 
+**The app in the simulator plays through the Mac's speakers**, the same as
+the browser preview: since 6 October 2026 its sitting has real sound
+(`mobile/audio.ts`). Start Metro with `EXPO_PUBLIC_MUTE=1` and the whole
+graph runs with the output held at zero. Expo Go can no longer run the app
+(react-native-audio-api is native code); it needs a development build —
+`plans/iphone-app.md`.
+
 ## Applying a migration — never `db push`
 
 ```bash
