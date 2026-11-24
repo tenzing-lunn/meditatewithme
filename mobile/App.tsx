@@ -20,6 +20,7 @@ import BellTest from './BellTest';
 import { useClock } from './clock';
 import Pond, { type PondHandle, type Stone, type Thrown } from './Pond';
 import { usePresence } from './presence';
+import { lay } from './remind';
 import SignIn, { type Ask } from './SignIn';
 import Sitting, { type Sit } from './Sitting';
 import { Back, EASE, PAPER, Rail } from './ui';
@@ -256,6 +257,11 @@ function Root() {
     localStorage.setItem(UNSENT_KEY, JSON.stringify([...readUnsent().filter((e) => e.id !== entry.id), entry]));
     flush();
   };
+  // The note before the bell, laid again at every start (`remind.ts`).
+  useEffect(() => {
+    void lay().catch(() => {});
+  }, []);
+
   useEffect(() => {
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') flush();

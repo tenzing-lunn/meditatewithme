@@ -247,11 +247,13 @@ of the port against the site as it went.
 react-native-audio-api, and `expo-dev-client` is installed, so `npm start`
 serves a development build, not Expo Go.
 
-- On this Mac: Xcode 26.6 is installed but its **iOS 26.5 platform is
-  not** (Xcode → Settings → Components, or `xcodebuild -downloadPlatform
-  iOS`); until it is, nothing builds for iOS here. Then
-  `LANG=en_US.UTF-8 EXPO_PUBLIC_MUTE=1 npx expo run:ios` (CocoaPods needs
-  the UTF-8 locale; the mute keeps the simulator off the Mac's speakers).
+- On this Mac: Xcode 26.6 with the iOS 26.5 platform (installed by 26
+  October 2026). `LANG=en_US.UTF-8 EXPO_PUBLIC_MUTE=1 npx expo run:ios`
+  (CocoaPods needs the UTF-8 locale; the mute keeps the simulator off the
+  Mac's speakers). **It needs disk**: on 24 November the pods and a first
+  build took the Mac from 5.4 GB free to under 400 MB and were stopped, and
+  a full disk is what had been quietly deleting files out of both
+  `node_modules` folders. Free ten GB or so before trying again.
 - On the iPhone: `npx eas-cli build --profile development --platform ios`
   (the new `development` profile in `eas.json`, internal distribution; the
   phone registered once with `npx eas-cli device:create`), then `npx expo
@@ -351,6 +353,19 @@ session in a `Map` (`forgetSession` in `mobile/supabase.ts`); the handoff is
 `arrive` carries `corner` and `ask`, and `window.mwmApp.profile` writes the
 answers (`components/useAppBridge.ts`); the guest's questions are
 `SignIn`'s own name and place screens with an `ask` prop.
+
+## 24 November 2026: the note before the bell
+
+Tenzing chose **once a day, at an hour the person picks**: the ask's *Remind
+me* asks the phone, then opens a wheel, *Which bell?*, of the day's 24 bells
+by their time (`mobile/remind.ts`, `HOURS`). The phone lays one daily note
+at **:45** that hour — ten minutes before the bell at :55, not five, because
+`nextSharedBellAt` sends anyone with under five minutes' lead to the bell
+after. The answer is kept under `mwm.app.remind` (the hour, `no` or
+`denied`); the schedule is laid again at every start. Still to do: a place
+to change the hour later (the native account screen, next), and tapping the
+note opening the arrival set to *until the bell*. Typechecked; not yet seen
+in the simulator (disk).
 
 ## The route
 

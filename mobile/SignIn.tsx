@@ -16,7 +16,6 @@
 // The same name and place screens ask a guest, after Begin, what the site
 // would ask (`ask`, from the site's `screensFor`): the answers go to the
 // site's profile through the bridge, and the last one begins the sitting.
-import * as Notifications from 'expo-notifications';
 import type { Session } from '@supabase/supabase-js';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
@@ -36,14 +35,14 @@ import { NAME_MAX, ORIGIN_MAX, cleanText, composeLabel } from '../lib/label';
 import { normalizeEmail } from '../lib/emailCode';
 import { searchPlaces, type PlaceIndex } from '../lib/places';
 import { originAsked, saveOrigin, signInWithApple, signInWithEmail, signInWithGoogle, verifyCode } from './auth';
+import Picker from './Picker';
 import { loadPlaces, loadSuggestion } from './places';
+import { HOURS, allowNotes, remindAsked, setReminder } from './remind';
 import { supabase } from './supabase';
 import { AppleMark, Back, Button, EMBER, EMBER_SOFT, GoogleMark, INK, INK3, LineActions, LineField, RULE, Rail, SURFACE, Word, type } from './ui';
 
 type Step = 'signin' | 'code' | 'create' | 'name' | 'place' | 'remind';
 const ORDER: Step[] = ['signin', 'create', 'code', 'name', 'place', 'remind'];
-
-export const REMIND_KEY = 'mwm.app.remind';
 
 /** The questions the site would ask after Begin, asked here instead. */
 export interface Ask {
@@ -125,7 +124,7 @@ export default function SignIn({ onDone, onClose, ask }: { onDone: (session: Ses
         if (current === 'name' || current === 'place' || current === 'remind') return;
         const to = accountName(s) ? afterName(asked) : 'name';
         // Nothing left to ask: straight back, signed in.
-        if (to === 'remind' && localStorage.getItem(REMIND_KEY) !== null) void finish(s);
+        if (to === 'remind' && remindAsked()) void finish(s);
         else setStep(to);
       }), 0);
     });
@@ -162,7 +161,7 @@ export default function SignIn({ onDone, onClose, ask }: { onDone: (session: Ses
       return;
     }
     const to = from === 'name' ? afterName(askedPlace.current) : 'remind';
-    if (to === 'remind' && localStorage.getItem(REMIND_KEY) !== null) void finish(session);
+    if (to === 'remind' && remindAsked()) void finish(session);
     else go(to)();
   };
 
@@ -282,13 +281,17 @@ export default function SignIn({ onDone, onClose, ask }: { onDone: (session: Ses
     void run(() => saveOrigin(session.user.id, origin, origin !== null && share), () => onward('place'));
   };
 
+  // *Remind me* asks the phone, then which bell; *Only when I ask*, or a
+  // phone that says no, is kept as the answer and nothing is laid.
+  const [choosingHour, setChoosingHour] = useState(false);
   const remind = (yes: boolean) => async () => {
-    if (yes) {
-      const { granted } = await Notifications.requestPermissionsAsync();
-      localStorage.setItem(REMIND_KEY, granted ? 'yes' : 'denied');
-    } else {
-      localStorage.setItem(REMIND_KEY, 'no');
-    }
+    if (yes && (await allowNotes())) return setChoosingHour(true);
+    await setReminder(yes ? 'denied' : 'no');
+    void finish(session);
+  };
+  const remindAt = async (hour: string) => {
+    setChoosingHour(false);
+    await setReminder(Number(hour));
     void finish(session);
   };
 
@@ -568,12 +571,21 @@ export default function SignIn({ onDone, onClose, ask }: { onDone: (session: Ses
         <View style={{ flex: 1, justifyContent: 'flex-end', paddingBottom: 32 }}>
           <Text style={type.question}>Shall we tell you before the bell?</Text>
           <Text style={[type.body, { marginTop: 12 }]}>
-            Everyone who sits <Text style={{ fontStyle: 'italic' }}>until the bell</Text> finishes together at five to the hour. A quiet note a few minutes before, so you can join them.
+            Everyone who sits <Text style={{ fontStyle: 'italic' }}>until the bell</Text> finishes together at five to the hour. A quiet note ten minutes before, once a day at the hour you choose, so you can join them.
           </Text>
         </View>
         <Button label="Remind me" onPress={remind(true)} />
         <Button kind="quiet" label="Only when I ask" onPress={remind(false)} style={{ marginTop: 12 }} />
         <Text style={[type.caption, { marginTop: 16, textAlign: 'center' }]}>The phone will ask once to allow it. Nothing else is ever sent.</Text>
+        {choosingHour && (
+          <Picker
+            title="Which bell?"
+            value="7"
+            options={HOURS}
+            onConfirm={(v) => void remindAt(v)}
+            onCancel={() => setChoosingHour(false)}
+          />
+        )}
       </View>
     );
   };

@@ -25,6 +25,10 @@ tables moved from `components/audio.ts` to `lib/bells.ts`, unchanged, so
 the site and the app ring one table. The other five commits are `mobile/`
 only. **Jonny has not been told about the app.** Rollback: redeploy
 `953eb1a`.
+**The Supabase project was found paused** (`INACTIVE`) straight after,
+when `/api/health` answered 503 with every table failing: the page loads,
+but sign-in, the fish and the count, and syncing are all down. When or why
+it paused is not known. Tenzing chose to keep it paused for now.
 
 **3 October 2026: the guides' side, the hardening, and Apple sign-in's
 button go live.** Tenzing asked for `dev` to be merged into `main`. Live
