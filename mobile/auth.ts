@@ -8,7 +8,6 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
-import type { Session } from '@supabase/supabase-js';
 import { GMAIL_USES_GOOGLE, SERVICE_UNREACHABLE, authErrorMessage, emailReasonMessage } from '../lib/authErrors';
 import { readLinkError } from '../lib/authRedirect';
 import { isGoogleMail } from '../lib/emailCode';
@@ -179,35 +178,15 @@ export async function saveOrigin(userId: string, origin: string | null, share: b
 
 /** Where the site's own client keeps its session: supabase-js's default key. */
 const SITE_SESSION_KEY = `sb-${new URL(SUPABASE_URL).hostname.split('.')[0]}-auth-token`;
-/** Which handoff the web view's storage last took, so it is taken once. */
-const HANDOFF_KEY = 'mwm.app.handoff';
 
 /**
- * The session for the site, as a script the web view runs before the page
- * does: it writes the session where the site's client keeps its own
- * (`persistSession`), so the page loads signed in. Once per handoff, and
- * only on the site's own origin — never into Google's or Apple's pages,
- * which load in the same web view.
- *
- * Until 7 October 2026 this was the address's fragment, read as a magic
- * link is. The tokens then stayed in the web view's history and in the
- * address *Try again* reloaded, and a swipe back offered the site a spent
- * refresh token. A script leaves nothing to go back to.
+ * The site in the web view kept a guest, as a script run before the page
+ * is: since 24 November 2026 the app holds the session (`supabase.ts`), and
+ * a page still signed in from a handoff before then (7 October to 24
+ * November) would be a second holder. Only on the site's own origin; the
+ * copy is let go without a sign-out, so the app's session is untouched.
  */
-export function handoffScript(session: Session, id: string): string {
-  const value = JSON.stringify({
-    access_token: session.access_token,
-    refresh_token: session.refresh_token,
-    expires_in: session.expires_in,
-    expires_at: session.expires_at,
-    token_type: 'bearer',
-    user: session.user,
-  });
-  const q = JSON.stringify;
-  return `(function(){try{
-if (location.origin !== ${q(new URL(SITE).origin)}) return;
-if (localStorage.getItem(${q(HANDOFF_KEY)}) === ${q(id)}) return;
-localStorage.setItem(${q(SITE_SESSION_KEY)}, ${q(value)});
-localStorage.setItem(${q(HANDOFF_KEY)}, ${q(id)});
+export const GUEST_SCRIPT = `(function(){try{
+if (location.origin !== ${JSON.stringify(new URL(SITE).origin)}) return;
+localStorage.removeItem(${JSON.stringify(SITE_SESSION_KEY)});
 }catch(e){}})();true;`;
-}

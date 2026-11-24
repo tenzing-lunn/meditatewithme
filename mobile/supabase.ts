@@ -1,20 +1,24 @@
-// The app's own Supabase client, for signing in natively.
+// The app's own Supabase client, and since 24 November 2026 the only holder
+// of the person's session.
 //
-// Same project and same anon key as the website (`lib/supabase.ts`), a
-// different session store: the site keeps its session in the web view's
-// localStorage, this one in memory only. The two never share a token on
-// purpose — see `handoffScript` in `auth.ts`: once the person is signed in here,
-// the session is handed to the site once, the site owns it from then on,
-// and this side forgets it (`forgetSession`). That is why `autoRefreshToken`
-// is off and nothing is kept on disk: two clients refreshing the same
-// refresh token would knock each other out (Supabase rotates it, and a
-// spent one can revoke the whole session), and the native side only needs
-// the session for the minutes between signing in and the site loading.
+// Same project and same anon key as the website (`lib/supabase.ts`). Until
+// then the session was handed to the site in the web view after a native
+// sign-in and the app forgot its copy, because two clients refreshing one
+// refresh token knock each other out (Supabase rotates it, and a spent one
+// can revoke the whole session). Tenzing chose the other way round: the app
+// keeps the session, refreshes it while it is in front, and syncs the
+// account itself (`account.ts`); the site in the web view stays a guest,
+// used only for a guided sitting until the live video is native. One owner,
+// so nothing fights over the token.
 //
-// `detectSessionInUrl` is off because a phone has no address bar; the deep
-// link back from Google or Apple is read by hand in `auth.ts`.
+// The session is kept in the app's own storage (expo-sqlite's localStorage,
+// inside the app's sandbox, as Supabase's own Expo guide keeps it), under
+// a key of its own. `detectSessionInUrl` is off because a phone has no
+// address bar; the deep link back from Google or Apple is read by hand in
+// `auth.ts`.
 import 'expo-sqlite/localStorage/install';
 import { createClient } from '@supabase/supabase-js';
+import { AppState } from 'react-native';
 
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const key = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
@@ -26,28 +30,24 @@ if (!url || !key) {
 export const SUPABASE_URL = url;
 export const SUPABASE_ANON_KEY = key;
 
-// Until 7 October 2026 the session was kept on disk and never let go, so the
-// next *Sign in* found it, reused it, and once stale refreshed a token the
-// site had already rotated. That copy is deleted here, once per launch.
+// Before 7 October 2026 a session was kept on disk under Supabase's default
+// key and, once the site had rotated its token, reused stale. Never read.
 localStorage.removeItem(`sb-${new URL(url).hostname.split('.')[0]}-auth-token`);
-
-const memory = new Map<string, string>();
-
-/** Let go of the session here, without signing it out: the site has it now. */
-export function forgetSession(): void {
-  memory.clear();
-}
 
 export const supabase = createClient(url, key, {
   auth: {
-    storage: {
-      getItem: (k) => memory.get(k) ?? null,
-      setItem: (k, v) => void memory.set(k, v),
-      removeItem: (k) => void memory.delete(k),
-    },
+    storage: localStorage,
+    storageKey: 'mwm.app.session',
     persistSession: true,
-    autoRefreshToken: false,
+    autoRefreshToken: true,
     detectSessionInUrl: false,
     flowType: 'implicit',
   },
+});
+
+// Refreshed only while the app is in front, as Supabase asks of a phone: a
+// timer in the background would be frozen mid-refresh by the system.
+AppState.addEventListener('change', (state) => {
+  if (state === 'active') void supabase.auth.startAutoRefresh();
+  else void supabase.auth.stopAutoRefresh();
 });

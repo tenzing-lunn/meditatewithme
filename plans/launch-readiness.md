@@ -386,6 +386,12 @@ again first.
   exactly this (`tests/portability.test.ts`).
 - [ ] **Account deletion inside the app (5.1.1(v)).** The web has it; the
   app must have it too, and a way to revoke the Google and Apple sign-ins.
+  *24 November 2026:* the app's own *Account* page deletes (the site's
+  `DELETE /api/account`, with the app's session). Still to do: revoking the
+  Sign in with Apple token on deletion — Apple's `/auth/revoke`, called by
+  the server with the client secret (`scripts/apple-secret.mjs`) and the
+  user's Apple refresh token, which Supabase does not keep for us; and a
+  real deletion walked on a phone.
 - [ ] **The privacy policy linked** in App Store Connect and inside the app
   (5.1.1(i)) — the same notice, once its gaps are filled.
 - [ ] **The App Privacy label.** Name, email, coarse location, user ID,

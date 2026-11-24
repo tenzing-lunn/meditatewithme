@@ -780,9 +780,17 @@ Since 7 October the bridge also says the word the site's own corner shows
 (`cornerWord` in `components/AccountCorner.tsx`, so an account with no name
 reads as the email's first part in the app too) and the questions the site
 would ask after Begin, and takes the answers into the site's profile, so a
-guest in the app is asked their name and place once, as on the site. A
-native sign-in is handed to the site by writing it into the site's own
-session storage before the page loads; the app keeps no copy.
+guest in the app is asked their name and place once, as on the site. 
+**Since 24 November 2026 the account is the app's own** (on `dev`, at
+Tenzing's word): the app keeps the session and syncs the preferences, the
+profile and the practice log to the account itself, by the site's rules,
+and the site in the web view stays a guest, there only for a guided
+sitting. The account is three native pages — *Account* (name, email, your
+practice, guiding with the stream key, sign out, delete), *Settings* (where
+you are from, the share switch, and the hour of the once-a-day note before
+the bell) and *Layout* — in the site's words. Not yet native: connecting a
+second email address. Written while the Supabase project was paused, so
+**no part of it has been signed into**.
 Still **not mentioned to Jonny**
 as far as this file knows — it would be a new commercial arrangement, not a
 v1 remainder, and it does not fit inside the 55 hours.

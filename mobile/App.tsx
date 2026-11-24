@@ -3,11 +3,11 @@ import { Newsreader_700Bold } from '@expo-google-fonts/newsreader/700Bold';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, AppState, Easing, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Animated, Easing, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import { serverNow } from '../lib/clock';
-import { MIN_LOGGED_SECONDS } from '../lib/practice';
+import { screensFor } from '../lib/journey';
 import { normalize, parsePreferences } from '../lib/preferences';
 import type { Point } from '../lib/pond';
 import { endsAt as computeEndsAt, hasEnded, monotonicEndAtFromServerTarget, nextSharedBellAt } from '../lib/timer';
@@ -15,7 +15,9 @@ import type { TrackSlug, UserPreferences } from '../lib/types';
 import Afterwards, { COOLDOWN_MS, SameSetup } from './Afterwards';
 import Arrive from './Arrive';
 import { holdForSitting, openingBell, previewBell, scheduleBell, stopPreviewBell, useMix, type ScheduledBell } from './audio';
-import { SITE, handoffScript } from './auth';
+import { cornerWord, useAccount } from './account';
+import AccountScreen from './AccountScreen';
+import { GUEST_SCRIPT, SITE } from './auth';
 import BellTest from './BellTest';
 import { useClock } from './clock';
 import Pond, { type PondHandle, type Stone, type Thrown } from './Pond';
@@ -23,14 +25,13 @@ import { usePresence } from './presence';
 import { lay } from './remind';
 import SignIn, { type Ask } from './SignIn';
 import Sitting, { type Sit } from './Sitting';
-import { Back, EASE, PAPER, Rail } from './ui';
+import { EASE, PAPER, Rail } from './ui';
 import { useStones } from './world';
 import * as Crypto from 'expo-crypto';
-import { forgetSession } from './supabase';
 
 /**
- * The iPhone app: the site's arrival and its sitting, native, with the site
- * loaded behind them for the account.
+ * The iPhone app: the site's arrival, its sitting and its account, native,
+ * with the site loaded behind them for a guided sitting.
  *
  * Tenzing's call, 3 October 2026, was to wrap the site first and replace it
  * piece by piece. On 6 October the arrival went native — the pond, the
@@ -40,15 +41,14 @@ import { forgetSession } from './supabase';
  * the beds and the bells on the phone's own audio (`audio.ts`), presence
  * (`presence.ts`), the sitting itself and its ending (`Sitting.tsx`,
  * `Afterwards.tsx`). The site is loaded the whole time, underneath and
- * still, because it still holds the account, and the two talk
+ * still, because a guided sitting is still the site's, and the two talk
  * (`useAppBridge.ts` on the site's side):
  *
  * - the site says what its arrival would show — the preferences, the
  *   guide's line, the name if signed in, the label the person is seen by —
  *   and the native sentence and fish read it;
- * - a choice made on a wheel is written to the site at once, and a sitting
- *   sat here is handed to the site's practice log, which syncs it to the
- *   account as it syncs its own;
+ * - a choice made on a wheel is written to the site at once, so its guided
+ *   sitting has the same bell and beds;
  * - a guided sitting, which needs the live video, is still the site's:
  *   Begin throws the stone here and asks the site to begin, then, once the
  *   stone has gone in and the site says the sitting has begun, the native
@@ -56,10 +56,11 @@ import { forgetSession } from './supabase';
  *   over and the site is back at its arrival, the native arrival comes back
  *   over it.
  *
- * The session is handed to the site after a native sign-in by a script that
- * writes it into the site's own storage before the page loads
- * (`handoffScript`), on a fresh web view; the app then forgets its copy. The user agent ends
- * in `MeditateWithMeApp`, which is how the site knows to talk at all.
+ * Since 24 November 2026 the account is the app's own (`account.ts`,
+ * `AccountScreen.tsx`): the app holds the session and syncs the
+ * preferences, the profile and the practice log itself, and the site in the
+ * web view stays a guest. The user agent ends in `MeditateWithMeApp`, which
+ * is how the site knows to talk at all.
  *
  * `EXPO_PUBLIC_SITE=http://localhost:3000/` points the app at a local
  * `next dev`; `EXPO_PUBLIC_BELL_TEST=1 npx expo start` shows the
@@ -67,8 +68,6 @@ import { forgetSession } from './supabase';
  */
 
 const PREFS_KEY = 'mwm.app.prefs';
-/** Sittings sat here and not yet handed to the site's practice log. */
-const UNSENT_KEY = 'mwm.app.unsent';
 /** The sitting fading out from under the minutes. */
 const FADE_MS = 800;
 /** The site's `THROW_MS`: the stone's skim and sink, then the sitting's words (and a guided sitting's page) show. */
@@ -101,18 +100,10 @@ function inside(url: string): boolean {
   }
 }
 
-/** What the site says while it is at its arrival. */
+/** What the site says while it is at its arrival; only the guide's line is still read. */
 interface ArriveMessage {
   type: 'arrive';
-  prefs: UserPreferences;
   guide: string;
-  name: string | null;
-  /** The word the site's own corner shows when signed in; null signed out. Absent from an older site. */
-  corner?: string | null;
-  /** "Ana from Lisbon", if they chose to be seen. Absent from a site older than the native sitting. */
-  label?: string | null;
-  /** The questions the site would ask after Begin. Absent from an older site. */
-  ask?: ('name' | 'origin')[];
 }
 
 export default function App() {
@@ -125,11 +116,10 @@ export default function App() {
 }
 
 /**
- * Where the app is: on the native arrival or sign-in (`native`), throwing
- * the stone (`throw`), in the site's sitting (`web`), or looking at the
- * site's account corner from the name in the native one (`site`).
+ * Where the app is: on the native arrival, sign-in or account (`native`),
+ * throwing the stone (`throw`), or in the site's guided sitting (`web`).
  */
-type Mode = 'native' | 'throw' | 'web' | 'site';
+type Mode = 'native' | 'throw' | 'web';
 
 /** A native sitting: where it is, from Begin to the minutes. */
 type Stage =
@@ -137,24 +127,10 @@ type Stage =
   | { kind: 'sitting'; sit: Sit; bell: ScheduledBell | null; opening: ScheduledBell | null }
   | { kind: 'finished'; sit: Sit; minutes: number; endedAt: number };
 
-type Entry = { id: string; startedAt: number; seconds: number; completed: boolean };
-
-function readUnsent(): Entry[] {
-  try {
-    const raw = JSON.parse(localStorage.getItem(UNSENT_KEY) ?? '[]');
-    return Array.isArray(raw) ? raw : [];
-  } catch {
-    return [];
-  }
-}
-
 function Root() {
   const [fonts] = useFonts({ Newsreader_400Regular, Newsreader_700Bold });
-  const insets = useSafeAreaInsets();
   const web = useRef<WebView>(null);
   const uri = SITE;
-  /** The last sign-in, handed to a fresh web view by the script that carries it. */
-  const [handed, setHanded] = useState<{ id: string; js: string } | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [failed, setFailed] = useState(false);
 
@@ -163,12 +139,6 @@ function Root() {
   prefsRef.current = prefs;
   const [guided, setGuided] = useState(false);
   const [guide, setGuide] = useState<string | null>(null);
-  const [name, setName] = useState<string | null>(null);
-  /** Signed in: the word for the corner, as the site's corner says it. */
-  const [corner, setCorner] = useState<string | null>(null);
-  const [label, setLabel] = useState<string | null>(null);
-  /** What the site would ask after Begin; asked natively before the sitting. */
-  const [ask, setAsk] = useState<readonly ('name' | 'origin')[]>([]);
   /** A Begin waiting on those questions. */
   const pending = useRef<{ from: Point; guided: boolean } | null>(null);
   /** The site says its guided sitting is on: from its Begin to its bell, or End. */
@@ -180,7 +150,7 @@ function Root() {
     modeRef.current = m;
     setModeState(m);
   };
-  const [layer, setLayer] = useState<'arrive' | 'signin' | 'ask'>('arrive');
+  const [layer, setLayer] = useState<'arrive' | 'signin' | 'ask' | 'account'>('arrive');
   const [dir, setDir] = useState<1 | -1>(1);
   const [thrown, setThrown] = useState<Thrown | null>(null);
   const cover = useRef(new Animated.Value(1)).current;
@@ -204,8 +174,6 @@ function Root() {
 
   // The page has said where it is, so it can be talked to.
   const ready = useRef(false);
-  // Choices made before then, written to it when it is.
-  const unsent = useRef<Partial<UserPreferences>>({});
   // A Begin pressed before then.
   const queued = useRef<boolean | null>(null);
   const begun = useRef(false);
@@ -225,49 +193,35 @@ function Root() {
 
   const keep = (next: UserPreferences) => {
     localStorage.setItem(PREFS_KEY, JSON.stringify(next));
+    prefsRef.current = next;
     setPrefs(next);
+    // The page is told the whole of it on its next arrive if it is not there now.
+    if (ready.current) call(`update(${JSON.stringify(next)})`);
   };
 
-  const update = (patch: Partial<UserPreferences>) => {
-    keep(normalize({ ...prefsRef.current, ...patch }));
-    if (ready.current) call(`update(${JSON.stringify(patch)})`);
-    else unsent.current = { ...unsent.current, ...patch };
-  };
+  const update = (patch: Partial<UserPreferences>) => keep(normalize({ ...prefsRef.current, ...patch }));
 
-  /**
-   * Hand the sittings sat here to the site's practice log, which keeps and
-   * syncs them as its own, all in one call, with the page there and the app
-   * in front. Each is let go only when the site says it has it
-   * (`recorded`); until then it is offered again at every arrival and every
-   * return to the app. The log takes an id once, so twice costs nothing.
-   */
-  const flush = () => {
-    if (!ready.current || AppState.currentState !== 'active') return;
-    const entries = readUnsent();
-    if (entries.length) call(`record(${JSON.stringify(entries)})`);
-  };
-  const recorded = (ids: string[]) => {
-    const left = readUnsent().filter((e) => !ids.includes(e.id));
-    if (left.length) localStorage.setItem(UNSENT_KEY, JSON.stringify(left));
-    else localStorage.removeItem(UNSENT_KEY);
-  };
-  const record = (entry: Entry) => {
-    // Under a minute was a mis-tap, not a sitting.
-    if (entry.seconds < MIN_LOGGED_SECONDS) return;
-    localStorage.setItem(UNSENT_KEY, JSON.stringify([...readUnsent().filter((e) => e.id !== entry.id), entry]));
-    flush();
-  };
+  // The account: the session, and the preferences, profile and practice log synced to it.
+  const account = useAccount(prefs, keep);
+  const { name, label, record } = account;
+  const corner = account.user ? cornerWord(account.user) : null;
+  /** The questions the site would ask after Begin (`screensFor`), asked natively before the sitting. */
+  const [askDone, setAskDone] = useState(false);
+  const ask = askDone
+    ? []
+    : screensFor({ signedIn: account.user !== null, hasSat: account.entries.some((e) => e.completed), originAsked: account.profile.share !== null })
+        .flatMap((sc) => (sc === 'name' || sc === 'origin' ? [sc] : []));
+  // Signed out or deleted from the account screen: back to the arrival.
+  useEffect(() => {
+    if (!account.user && layer === 'account') {
+      setDir(-1);
+      setLayer('arrive');
+    }
+  }, [account.user, layer]);
+
   // The note before the bell, laid again at every start (`remind.ts`).
   useEffect(() => {
     void lay().catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') flush();
-    });
-    return () => sub.remove();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fadeCover = (to: 0 | 1, ms: number, then?: () => void) =>
@@ -385,12 +339,17 @@ function Root() {
   const asked: Ask = {
     screens: ask,
     name,
-    save: (patch) => call(`profile(${JSON.stringify(patch)})`),
+    // A skipped question is '' from `SignIn`, as the site writes it: kept as nothing.
+    save: (patch) => {
+      if (patch.name !== undefined) void account.saveName(patch.name || null);
+      if (patch.origin !== undefined || patch.share !== undefined) {
+        void account.saveProfile({ origin: patch.origin === undefined ? account.profile.origin : patch.origin || null, share: patch.share ?? false });
+      }
+    },
     onFinish: () => {
       const p = pending.current;
       pending.current = null;
-      // Asked once: the site says so too on its next `arrive`.
-      setAsk([]);
+      setAskDone(true);
       setDir(-1);
       setLayer('arrive');
       if (p) sit(p.from, p.guided);
@@ -489,14 +448,10 @@ function Root() {
   }, [sitVisible, fading, sitShown]);
 
   const onMessage = (e: WebViewMessageEvent) => {
-    let m: ArriveMessage | { type: 'sitting'; on?: boolean } | { type: 'recorded'; ids: string[] };
+    let m: ArriveMessage | { type: 'sitting'; on?: boolean };
     try {
       m = JSON.parse(e.nativeEvent.data);
     } catch {
-      return;
-    }
-    if (m.type === 'recorded') {
-      if (Array.isArray(m.ids)) recorded(m.ids);
       return;
     }
     if (m.type === 'sitting') {
@@ -507,8 +462,7 @@ function Root() {
       begun.current = true;
       const late = guidedAsked.current;
       guidedAsked.current = false;
-      if (modeRef.current === 'site') setMode('web');
-      else if (modeRef.current === 'native' && late && stageRef.current.kind === 'arrive') {
+      if (modeRef.current === 'native' && late && stageRef.current.kind === 'arrive') {
         // Begun after the arrival had come back: show it now.
         setMode('throw');
         landedGuided.current = true;
@@ -519,41 +473,20 @@ function Root() {
     if (m.type !== 'arrive') return;
     ready.current = true;
     setGuide(m.guide);
-    setName(m.name);
-    const word = m.corner !== undefined ? m.corner : (m.name?.split(/\s+/)[0] ?? null);
-    setCorner(word);
-    setLabel(m.label ?? null);
-    setAsk(m.ask ?? []);
-    const mine = unsent.current;
-    unsent.current = {};
-    if (Object.keys(mine).length) call(`update(${JSON.stringify(mine)})`);
-    keep(normalize({ ...m.prefs, ...mine }));
-    flush();
+    // The phone's choices are the ones that count: the page takes them.
+    call(`update(${JSON.stringify(prefsRef.current)})`);
     if (queued.current !== null) {
       sendBegin(queued.current);
       queued.current = null;
     }
-    // The site is back at its arrival after a guided sitting, or signed out
-    // from its own corner.
-    if (modeRef.current === 'web' || (modeRef.current === 'site' && word === null)) home();
+    // The site is back at its arrival after a guided sitting.
+    if (modeRef.current === 'web') home();
   };
 
-  const account = () => {
-    if (!corner) {
-      setDir(1);
-      setLayer('signin');
-      return;
-    }
-    // Signed in: the site's own corner, its account and settings, over the
-    // site's arrival; Back comes home.
-    setMode('site');
-    web.current?.injectJavaScript(`document.querySelector('main header [aria-expanded]')?.click(); true;`);
-    fadeCover(0, BACK_MS);
-  };
-
-  const fromSite = () => {
-    web.current?.injectJavaScript(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })); true;`);
-    home();
+  /** The corner: Sign in, or the account once signed in. */
+  const openAccount = () => {
+    setDir(1);
+    setLayer(corner ? 'account' : 'signin');
   };
 
   const atArrive = stage.kind === 'arrive' || (!landed && !repeat);
@@ -562,10 +495,10 @@ function Root() {
     <View style={s.screen}>
       <StatusBar style="dark" />
       <WebView
-        key={`${attempt}:${handed?.id ?? ''}`}
+        key={attempt}
         ref={web}
         source={{ uri }}
-        injectedJavaScriptBeforeContentLoaded={handed?.js}
+        injectedJavaScriptBeforeContentLoaded={GUEST_SCRIPT}
         style={s.web}
         // Hide the whole container, not just the page: the web view draws its
         // own grey error page in there, which would show under the one above.
@@ -600,8 +533,8 @@ function Root() {
         <Animated.View
           style={[StyleSheet.absoluteFill, s.screen, { opacity: fonts ? cover : 1 }]}
           // Over the site through a guided throw too: a tap there would land
-          // on the hidden page. Only the account corner is the site's to touch.
-          pointerEvents={mode === 'site' ? 'none' : 'auto'}
+          // on the hidden page.
+          pointerEvents="auto"
         >
           {fonts && (
             <>
@@ -672,12 +605,20 @@ function Root() {
                           others={world.length}
                           now={clock.now}
                           leaving={mode === 'throw' || stage.kind !== 'arrive'}
-                          onAccount={account}
+                          onAccount={openAccount}
                           onBegin={begin}
                           onPreviewBell={previewBell}
                           onStopBell={stopPreviewBell}
                           onTaste={mix.taste}
                           onHush={mix.hush}
+                        />
+                      ) : l === 'account' ? (
+                        <AccountScreen
+                          account={account}
+                          onClose={() => {
+                            setDir(-1);
+                            setLayer('arrive');
+                          }}
                         />
                       ) : (
                         <SignIn
@@ -687,15 +628,10 @@ function Root() {
                             setDir(-1);
                             setLayer('arrive');
                           }}
-                          onDone={(session) => {
-                            // A fresh web view that loads signed in, the session
-                            // written into the site's storage before the page
-                            // runs; it says the name on its first arrive. This
-                            // side keeps no copy.
-                            ready.current = false;
-                            const id = Crypto.randomUUID();
-                            setHanded({ id, js: handoffScript(session, id) });
-                            forgetSession();
+                          onDone={() => {
+                            // The session is the app's own now (`account.ts`); what
+                            // the questions just saved is read back into it.
+                            void account.refreshProfile();
                             setDir(-1);
                             setLayer('arrive');
                           }}
@@ -709,8 +645,6 @@ function Root() {
           )}
         </Animated.View>
       )}
-
-      {mode === 'site' && <Back onPress={fromSite} style={{ position: 'absolute', left: 16, top: insets.top + 12 }} />}
 
       {failed && mode !== 'native' && (
         <View style={[StyleSheet.absoluteFill, s.screen, s.failed]}>

@@ -362,10 +362,45 @@ by their time (`mobile/remind.ts`, `HOURS`). The phone lays one daily note
 at **:45** that hour — ten minutes before the bell at :55, not five, because
 `nextSharedBellAt` sends anyone with under five minutes' lead to the bell
 after. The answer is kept under `mwm.app.remind` (the hour, `no` or
-`denied`); the schedule is laid again at every start. Still to do: a place
-to change the hour later (the native account screen, next), and tapping the
-note opening the arrival set to *until the bell*. Typechecked; not yet seen
+`denied`); the schedule is laid again at every start. Changing the hour later is
+in the account's *Settings*. Still to do: tapping the note opening the
+arrival set to *until the bell*. Typechecked; not yet seen
 in the simulator (disk).
+
+## 24 November 2026: the account is the app's own
+
+Tenzing chose native accounts, with **the app holding the session** and
+the site in the web view kept a guest, and everything in the first pass:
+the account basics, settings, the practice log and the guide's key.
+
+- **The session** (`mobile/supabase.ts`) is kept in the app's own storage
+  under `mwm.app.session` and refreshed while the app is in front. The
+  handoff is gone; `GUEST_SCRIPT` (`auth.ts`) removes any session a web
+  view was handed before, so there is one holder.
+- **The sync** (`mobile/account.ts`, `useAccount`) is the site's, from the
+  same `lib/` helpers: preferences pulled once per sign-in (the account
+  wins; the phone's fills an empty one) and pushed 900 ms after a change;
+  the profile the same; the practice log (`mwm.app.practice`) a union by
+  id, the phone's missing rows upserted, again on every return to the
+  front. The old queue for the site's log (`mwm.app.unsent`) is folded in
+  once. A guest's sittings, name and place stay on the phone and go up at
+  sign-in. The guest's questions after Begin come from `screensFor` on the
+  app's own log and profile, no longer from the site.
+- **The screens** (`mobile/AccountScreen.tsx`): *Account · Settings ·
+  Layout* as on the site's corner, in its words. The stream key is
+  selectable rather than copied (a clipboard is a native module, so a
+  rebuild). Settings carries the reminder's hour: change it, or *No note*.
+- **The site's side is unchanged**: `useAppBridge`'s `record` and
+  `profile` are simply no longer called; the page still says its guide's
+  line, takes the app's preferences on every arrive, and runs a guided
+  sitting.
+
+Not done: connecting a second email (the site's `Emails`); deletion does
+not yet revoke a Sign in with Apple token, which Apple asks of an app that
+offers Apple sign-in (`plans/launch-readiness.md`); a guided sitting is
+logged by the site as a guest's, not into the app's log. **Nothing here has
+been signed into**: it was written with the Supabase project paused, so
+it is typechecked and the app runs, and that is all.
 
 ## The route
 
