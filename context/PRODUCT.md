@@ -14,6 +14,18 @@ and §3's history says what it replaced.
 
 ## 1. Live status
 
+**24 November 2026: the iPhone app's bridge goes live.** Tenzing asked
+for `dev` to be released so the app can be tried against the real site.
+What changed for the site is only what the app talks to
+(`components/useAppBridge.ts`), and all of it is inert unless the user
+agent ends in `MeditateWithMeApp`: the page answering the app's arrival,
+Begin and practice log, and staying silent there (no heartbeats, no beds
+of its own). One change reaches every visitor without showing: the bell
+tables moved from `components/audio.ts` to `lib/bells.ts`, unchanged, so
+the site and the app ring one table. The other five commits are `mobile/`
+only. **Jonny has not been told about the app.** Rollback: redeploy
+`953eb1a`.
+
 **3 October 2026: the guides' side, the hardening, and Apple sign-in's
 button go live.** Tenzing asked for `dev` to be merged into `main`. Live
 from it: the caption under the live window and the privacy notice brought
