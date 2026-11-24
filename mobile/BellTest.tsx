@@ -26,8 +26,8 @@ type Choice = { label: string; end: () => number };
 type Result = { planned: number; lateMs: number; minutes: number };
 
 export default function BellTest() {
-  const bed = useAudioPlayer(require('./assets/sounds/rain.mp3'));
-  const bell = useAudioPlayer(require('./assets/sounds/drum.mp3'));
+  const bed = useAudioPlayer(require('../public/sounds/rain.mp3'));
+  const bell = useAudioPlayer(require('../public/sounds/drum.mp3'));
   const [now, setNow] = useState(Date.now());
   const [end, setEnd] = useState<number | null>(null);
   const [results, setResults] = useState<Result[]>([]);
