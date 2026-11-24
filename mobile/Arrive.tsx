@@ -114,7 +114,7 @@ export default function Arrive({
   }, [leaving, leave]);
   // The site's Tailwind default curve for the 300ms fade, and CSS ease-out
   // for the pebble's fifth of a second.
-  const fade = { opacity: leave.interpolate({ inputRange: [0, FADE_MS], outputRange: [1, 0], extrapolate: 'clamp', easing: Easing.bezier(0.4, 0, 0.2, 1) }) };
+  const fade = { opacity: eased(leave, 0, FADE_MS, 1, 0, Easing.bezier(0.4, 0, 0.2, 1)) };
 
   const bellLabel = now === null ? null : localTime(nextSharedBellAt(now));
   const untilBell = `until the bell${bellLabel ? ` at ${bellLabel}` : ''}`;
@@ -137,11 +137,10 @@ export default function Arrive({
 
   const sink = (i: number) => {
     const from = (i / sentence.length) * STAGGER_MS;
-    const range = { inputRange: [from, from + SINK_MS], extrapolate: 'clamp' as const };
     return {
       // The fade lags the drift, so each word is seen going down before it goes.
-      opacity: leave.interpolate({ ...range, outputRange: [1, 0], easing: Easing.bezier(0.4, 0, 1, 1) }),
-      transform: [{ translateY: leave.interpolate({ ...range, outputRange: [0, 4], easing: EASE }) }],
+      opacity: eased(leave, from, from + SINK_MS, 1, 0, Easing.bezier(0.4, 0, 1, 1)),
+      transform: [{ translateY: eased(leave, from, from + SINK_MS, 0, 4, EASE) }],
     };
   };
 
@@ -207,7 +206,7 @@ export default function Arrive({
         >
           {/* The pebble in your hand: it hands over to the thrown one, which
               fades up out of the same spot over the same fifth of a second. */}
-          <Animated.View ref={pebble} style={{ opacity: leave.interpolate({ inputRange: [0, 200], outputRange: [1, 0], extrapolate: 'clamp', easing: Easing.bezier(0, 0, 0.58, 1) }) }}>
+          <Animated.View ref={pebble} style={{ opacity: eased(leave, 0, 200, 1, 0, Easing.bezier(0, 0, 0.58, 1)) }}>
             <Image source={require('./assets/skipping-stone.webp')} style={{ width: 28, height: 10 }} />
           </Animated.View>
           <Animated.Text style={[s.beginWord, fade]}>Begin</Animated.Text>
@@ -286,3 +285,17 @@ const s = StyleSheet.create({
   begin: { marginTop: 40, marginLeft: -8, alignSelf: 'flex-start', minHeight: 48, paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center', gap: 12 },
   beginWord: { fontSize: 24, color: INK },
 });
+
+/**
+ * An eased stretch of the leaving's clock the native driver can run: it
+ * takes no `easing` in `interpolate`, so the curve is sampled into short
+ * straight pieces, held at both ends.
+ */
+function eased(clock: Animated.Value, from: number, to: number, start: number, end: number, ease: (t: number) => number) {
+  const t = Array.from({ length: 17 }, (_, i) => i / 16);
+  return clock.interpolate({
+    inputRange: t.map((x) => from + (to - from) * x),
+    outputRange: t.map((x) => start + (end - start) * ease(x)),
+    extrapolate: 'clamp',
+  });
+}
