@@ -11,7 +11,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { GMAIL_USES_GOOGLE, SERVICE_UNREACHABLE, authErrorMessage, emailReasonMessage } from '../lib/authErrors';
 import { readLinkError } from '../lib/authRedirect';
 import { isGoogleMail } from '../lib/emailCode';
-import { SUPABASE_URL, supabase } from './supabase';
+import { supabase } from './supabase';
 
 export const SITE = process.env.EXPO_PUBLIC_SITE ?? 'https://www.meditatewithme.online/';
 
@@ -175,18 +175,3 @@ export async function saveOrigin(userId: string, origin: string | null, share: b
     .upsert({ id: userId, origin, share_label: share });
   return error ? 'That could not be saved just now. You can set it later in Settings.' : null;
 }
-
-/** Where the site's own client keeps its session: supabase-js's default key. */
-const SITE_SESSION_KEY = `sb-${new URL(SUPABASE_URL).hostname.split('.')[0]}-auth-token`;
-
-/**
- * The site in the web view kept a guest, as a script run before the page
- * is: since 24 November 2026 the app holds the session (`supabase.ts`), and
- * a page still signed in from a handoff before then (7 October to 24
- * November) would be a second holder. Only on the site's own origin; the
- * copy is let go without a sign-out, so the app's session is untouched.
- */
-export const GUEST_SCRIPT = `(function(){try{
-if (location.origin !== ${JSON.stringify(new URL(SITE).origin)}) return;
-localStorage.removeItem(${JSON.stringify(SITE_SESSION_KEY)});
-}catch(e){}})();true;`;

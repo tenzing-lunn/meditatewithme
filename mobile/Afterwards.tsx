@@ -83,8 +83,10 @@ function settingsLine(prefs: UserPreferences, now: number | null): string {
  * Back to the minutes, *Yes* to sit again with the stone, *No* to the
  * arrival's sentence.
  */
-export function SameSetup({ prefs, now, onYes, onNo, onBack }: {
+export function SameSetup({ prefs, guided, now, onYes, onNo, onBack }: {
   prefs: UserPreferences;
+  /** The last sitting was *with a guide*: Yes begins another, ending on the shared bell. */
+  guided: boolean;
   now: number | null;
   /** Where the pebble was, for the stone. */
   onYes: (from: Point) => void;
@@ -103,7 +105,7 @@ export function SameSetup({ prefs, now, onYes, onNo, onBack }: {
       </View>
       <View style={s.ask}>
         <Text accessibilityRole="header" style={s.question}>Same setup?</Text>
-        <Text style={[type.body, { marginTop: 20, textAlign: 'center' }]}>By yourself · {settingsLine(prefs, now)}</Text>
+        <Text style={[type.body, { marginTop: 20, textAlign: 'center' }]}>{guided ? 'With a guide' : 'By yourself'} · {settingsLine(guided ? { ...prefs, untilBell: true } : prefs, now)}</Text>
         <View style={[s.row, { gap: 24 }]}>
           <Pressable
             disabled={now === null}

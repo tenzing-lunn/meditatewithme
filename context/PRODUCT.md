@@ -784,8 +784,11 @@ guest in the app is asked their name and place once, as on the site.
 **Since 24 November 2026 the account is the app's own** (on `dev`, at
 Tenzing's word): the app keeps the session and syncs the preferences, the
 profile and the practice log to the account itself, by the site's rules,
-and the site in the web view stays a guest, there only for a guided
-sitting. The account is three native pages — *Account* (name, email, your
+and the site in the web view stayed a guest, there only for a guided
+sitting — until the same day **the guided sitting went native too**: the
+person on camera framed on the water on the phone's own player, so the app
+no longer loads the site at all and talks only to its API. Written with
+nobody live anywhere, so never seen with a stream. The account is three native pages — *Account* (name, email, your
 practice, guiding with the stream key, sign out, delete), *Settings* (where
 you are from, the share switch, and the hour of the once-a-day note before
 the bell) and *Layout* — in the site's words. Not yet native: connecting a

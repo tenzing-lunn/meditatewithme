@@ -48,7 +48,8 @@
       "expo-sqlite",
       "expo-web-browser",
       "expo-font",
-      "react-native-audio-api"
+      "react-native-audio-api",
+      "expo-video"
     ],
     "owner": "meditatewithme",
     "extra": {

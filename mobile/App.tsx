@@ -3,9 +3,8 @@ import { Newsreader_700Bold } from '@expo-google-fonts/newsreader/700Bold';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import { serverNow } from '../lib/clock';
 import { screensFor } from '../lib/journey';
 import { normalize, parsePreferences } from '../lib/preferences';
@@ -17,21 +16,21 @@ import Arrive from './Arrive';
 import { holdForSitting, openingBell, previewBell, scheduleBell, stopPreviewBell, useMix, type ScheduledBell } from './audio';
 import { cornerWord, useAccount } from './account';
 import AccountScreen from './AccountScreen';
-import { GUEST_SCRIPT, SITE } from './auth';
 import BellTest from './BellTest';
 import { useClock } from './clock';
+import { guideLine, useLive } from './live';
+import LiveLayer from './LiveLayer';
 import Pond, { type PondHandle, type Stone, type Thrown } from './Pond';
 import { usePresence } from './presence';
 import { lay } from './remind';
 import SignIn, { type Ask } from './SignIn';
 import Sitting, { type Sit } from './Sitting';
-import { EASE, PAPER, Rail } from './ui';
+import { PAPER, Rail } from './ui';
 import { useStones } from './world';
 import * as Crypto from 'expo-crypto';
 
 /**
- * The iPhone app: the site's arrival, its sitting and its account, native,
- * with the site loaded behind them for a guided sitting.
+ * The iPhone app: the site's arrival, its sitting and its account, native.
  *
  * Tenzing's call, 3 October 2026, was to wrap the site first and replace it
  * piece by piece. On 6 October the arrival went native — the pond, the
@@ -40,27 +39,13 @@ import * as Crypto from 'expo-crypto';
  * sitting: the timer and the shared hour on the site's clock (`clock.ts`),
  * the beds and the bells on the phone's own audio (`audio.ts`), presence
  * (`presence.ts`), the sitting itself and its ending (`Sitting.tsx`,
- * `Afterwards.tsx`). The site is loaded the whole time, underneath and
- * still, because a guided sitting is still the site's, and the two talk
- * (`useAppBridge.ts` on the site's side):
- *
- * - the site says what its arrival would show — the preferences, the
- *   guide's line, the name if signed in, the label the person is seen by —
- *   and the native sentence and fish read it;
- * - a choice made on a wheel is written to the site at once, so its guided
- *   sitting has the same bell and beds;
- * - a guided sitting, which needs the live video, is still the site's:
- *   Begin throws the stone here and asks the site to begin, then, once the
- *   stone has gone in and the site says the sitting has begun, the native
- *   water fades away and the site's sitting is what is left; when it is
- *   over and the site is back at its arrival, the native arrival comes back
- *   over it.
- *
- * Since 24 November 2026 the account is the app's own (`account.ts`,
+ * `Afterwards.tsx`). On 24 November the account (`account.ts`,
  * `AccountScreen.tsx`): the app holds the session and syncs the
- * preferences, the profile and the practice log itself, and the site in the
- * web view stays a guest. The user agent ends in `MeditateWithMeApp`, which
- * is how the site knows to talk at all.
+ * preferences, the profile and the practice log itself. And the same day
+ * the last piece, the guided sitting's live video (`live.ts`,
+ * `LiveLayer.tsx`), on the phone's own player — so the site is no longer
+ * loaded in the app at all; the app talks only to its API, as the site's
+ * own pages do.
  *
  * `EXPO_PUBLIC_SITE=http://localhost:3000/` points the app at a local
  * `next dev`; `EXPO_PUBLIC_BELL_TEST=1 npx expo start` shows the
@@ -70,41 +55,8 @@ import * as Crypto from 'expo-crypto';
 const PREFS_KEY = 'mwm.app.prefs';
 /** The sitting fading out from under the minutes. */
 const FADE_MS = 800;
-/** The site's `THROW_MS`: the stone's skim and sink, then the sitting's words (and a guided sitting's page) show. */
+/** The site's `THROW_MS`: the stone's skim and sink, then the sitting's words show. */
 const THROW_MS = 6400;
-/**
- * A guided Begin the site has not answered this long after the stone went
- * in: the page is not coming (a site without the bridge, or a begin that
- * was lost), so the arrival comes back rather than leaving you on the water.
- */
-const GUIDED_WAIT_MS = 8000;
-/** The site's sitting fading up as the native water goes, as its own words do. */
-const SHOW_MS = 1000;
-const BACK_MS = 300;
-
-// Pages the app may show inside itself: the site, and the sign-in round trip.
-const INSIDE = [
-  new URL(SITE).hostname,
-  'meditatewithme.online',
-  'supabase.co',
-  'appleid.apple.com',
-  'accounts.google.com',
-];
-
-function inside(url: string): boolean {
-  try {
-    const host = new URL(url).hostname;
-    return INSIDE.some((h) => host === h || host.endsWith(`.${h}`));
-  } catch {
-    return false;
-  }
-}
-
-/** What the site says while it is at its arrival; only the guide's line is still read. */
-interface ArriveMessage {
-  type: 'arrive';
-  guide: string;
-}
 
 export default function App() {
   if (process.env.EXPO_PUBLIC_BELL_TEST === '1') return <BellTest />;
@@ -115,12 +67,6 @@ export default function App() {
   );
 }
 
-/**
- * Where the app is: on the native arrival, sign-in or account (`native`),
- * throwing the stone (`throw`), or in the site's guided sitting (`web`).
- */
-type Mode = 'native' | 'throw' | 'web';
-
 /** A native sitting: where it is, from Begin to the minutes. */
 type Stage =
   | { kind: 'arrive' }
@@ -129,32 +75,21 @@ type Stage =
 
 function Root() {
   const [fonts] = useFonts({ Newsreader_400Regular, Newsreader_700Bold });
-  const web = useRef<WebView>(null);
-  const uri = SITE;
-  const [attempt, setAttempt] = useState(0);
-  const [failed, setFailed] = useState(false);
 
   const [prefs, setPrefs] = useState<UserPreferences>(() => parsePreferences(localStorage.getItem(PREFS_KEY)));
   const prefsRef = useRef(prefs);
   prefsRef.current = prefs;
+  /** *By yourself* or *with a guide*, chosen in the arrival's sentence. */
   const [guided, setGuided] = useState(false);
-  const [guide, setGuide] = useState<string | null>(null);
+  const guidedRef = useRef(guided);
+  guidedRef.current = guided;
   /** A Begin waiting on those questions. */
   const pending = useRef<{ from: Point; guided: boolean } | null>(null);
-  /** The site says its guided sitting is on: from its Begin to its bell, or End. */
-  const [webSitting, setWebSitting] = useState(false);
 
-  const [mode, setModeState] = useState<Mode>('native');
-  const modeRef = useRef(mode);
-  const setMode = (m: Mode) => {
-    modeRef.current = m;
-    setModeState(m);
-  };
   const [layer, setLayer] = useState<'arrive' | 'signin' | 'ask' | 'account'>('arrive');
   const [dir, setDir] = useState<1 | -1>(1);
   const [thrown, setThrown] = useState<Thrown | null>(null);
-  const cover = useRef(new Animated.Value(1)).current;
-  const world = useStones(mode !== 'web');
+  const world = useStones(true);
   const clock = useClock();
   const mix = useMix(prefs.soundMix);
   const pond = useRef<PondHandle>(null);
@@ -172,31 +107,10 @@ function Root() {
   /** Again was pressed on the minutes: *Same setup?* is asked. */
   const [again, setAgain] = useState(false);
 
-  // The page has said where it is, so it can be talked to.
-  const ready = useRef(false);
-  // A Begin pressed before then.
-  const queued = useRef<boolean | null>(null);
-  const begun = useRef(false);
-  const landedGuided = useRef(false);
-  /** A guided Begin was pressed and the site has not yet said its sitting is on. */
-  const guidedAsked = useRef(false);
-  /** The last guided Begin's two timers, so a later Begin is not timed by them. */
-  const guidedTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const clearGuided = () => {
-    guidedTimers.current.forEach(clearTimeout);
-    guidedTimers.current = [];
-  };
-  const failedRef = useRef(failed);
-  failedRef.current = failed;
-
-  const call = (js: string) => web.current?.injectJavaScript(`window.mwmApp && window.mwmApp.${js}; true;`);
-
   const keep = (next: UserPreferences) => {
     localStorage.setItem(PREFS_KEY, JSON.stringify(next));
     prefsRef.current = next;
     setPrefs(next);
-    // The page is told the whole of it on its next arrive if it is not there now.
-    if (ready.current) call(`update(${JSON.stringify(next)})`);
   };
 
   const update = (patch: Partial<UserPreferences>) => keep(normalize({ ...prefsRef.current, ...patch }));
@@ -224,73 +138,25 @@ function Root() {
     void lay().catch(() => {});
   }, []);
 
-  const fadeCover = (to: 0 | 1, ms: number, then?: () => void) =>
-    Animated.timing(cover, { toValue: to, duration: ms, easing: EASE, useNativeDriver: true }).start(({ finished }) => {
-      if (finished) then?.();
-    });
-
-  // ---- a guided sitting: the site's, for its live video -------------------
-
-  /** The stone is in and the sitting has begun: the site's sitting is what is left. */
-  const reveal = () => {
-    if (!begun.current || !landedGuided.current || modeRef.current !== 'throw') return;
-    fadeCover(0, SHOW_MS, () => setMode('web'));
-  };
-
-  const sendBegin = (g: boolean) => call(`begin(${JSON.stringify(g)}, ${JSON.stringify(prefsRef.current)})`);
-
-  const beginGuided = (from: Point) => {
-    // One Begin: a second tap before this one's render must not throw twice.
-    if (modeRef.current !== 'native') return;
-    clearGuided();
-    begun.current = false;
-    landedGuided.current = false;
-    guidedAsked.current = true;
-    setThrown({ at: from, t: performance.now() });
-    setMode('throw');
-    if (ready.current) sendBegin(true);
-    else queued.current = true;
-    guidedTimers.current = [setTimeout(() => {
-      landedGuided.current = true;
-      // A page that never came cannot begin: say so rather than wait on the water.
-      if (failedRef.current) setMode('web');
-      else reveal();
-    }, THROW_MS), setTimeout(() => {
-      if (modeRef.current !== 'throw' || begun.current) return;
-      // Never begun: back to the arrival. If it begins after all, it is shown then.
-      queued.current = null;
-      home();
-    }, THROW_MS + GUIDED_WAIT_MS)];
-  };
-
-  /** Back to the native arrival, fresh, over the site's own (the cover is out, at 0). */
-  const home = () => {
-    setThrown(null);
-    setLayer('arrive');
-    setMode('native');
-    fadeCover(1, BACK_MS);
-  };
-
-  // ---- a native sitting ------------------------------------------------------
-
   /**
    * Begin, as the site's: the stored mix and the opening bell at once, the
    * closing bell scheduled on the audio clock for the whole sitting, and the
    * end on the monotonic clock — at the shared bell, converted once from the
-   * session clock, for *until the bell*. The stone is thrown from where it
-   * was in the hand.
+   * session clock, for *until the bell* and for a guided sitting, which ends
+   * on the shared bell, where the person on camera hands over. The stone is
+   * thrown from where it was in the hand.
    */
-  const beginNative = (from: Point, fromMinutes = false) => {
+  const beginNative = (from: Point, g: boolean, fromMinutes = false) => {
     // One Begin: a second tap before this one's render would schedule a
     // second pair of bells that End could not cancel.
-    if (stageRef.current.kind === 'sitting' || modeRef.current !== 'native') return;
+    if (stageRef.current.kind === 'sitting') return;
     const p = prefsRef.current;
     mix.ensure();
     mix.restore();
     holdForSitting(true);
     const startedAt = performance.now();
     const sessionNow = clock.now ?? serverNow();
-    const together = p.showCount && p.untilBell;
+    const together = g || (p.showCount && p.untilBell);
     const end = together
       ? monotonicEndAtFromServerTarget(nextSharedBellAt(sessionNow), sessionNow, startedAt)
       : computeEndsAt(startedAt, p.timerMinutes);
@@ -303,7 +169,7 @@ function Root() {
     setThrown({ at: from, t: performance.now() });
     setStage({
       kind: 'sitting',
-      sit: { id: Crypto.randomUUID(), startedAt, startedAtWall: Date.now(), endsAt: end, together, withOthers: p.showCount },
+      sit: { id: Crypto.randomUUID(), startedAt, startedAtWall: Date.now(), endsAt: end, together, withOthers: g || p.showCount, guided: g },
       bell,
       opening,
     });
@@ -318,22 +184,20 @@ function Root() {
     return () => clearTimeout(t);
   }, [landed]);
 
-  const sit = (from: Point, g: boolean) => (g ? beginGuided(from) : beginNative(from));
-
   /**
    * Begin, as the site's: when the site would ask the name and the place
    * first (`screensFor`: a guest who has sat once and was never asked), they
    * are asked here, and the last answer begins the sitting.
    */
   const begin = (from: Point) => {
-    if (modeRef.current !== 'native' || stageRef.current.kind !== 'arrive') return;
+    if (stageRef.current.kind !== 'arrive') return;
     if (ask.length) {
       pending.current = { from, guided };
       setDir(1);
       setLayer('ask');
       return;
     }
-    sit(from, guided);
+    beginNative(from, guided);
   };
 
   const asked: Ask = {
@@ -352,7 +216,7 @@ function Root() {
       setAskDone(true);
       setDir(-1);
       setLayer('arrive');
-      if (p) sit(p.from, p.guided);
+      if (p) beginNative(p.from, p.guided);
     },
   };
 
@@ -405,29 +269,23 @@ function Root() {
   const sittingNow = stage.kind === 'sitting' || held;
   const withOthersNow = sittingNow && (stage.kind === 'sitting' || stage.kind === 'finished') && stage.sit.withOthers;
 
-  // A guided sitting on the site is a sitting with others too, from the
-  // throw until the site says it is over.
-  const guidedNow = mode === 'throw' || (mode === 'web' && webSitting);
-  // And it keeps the app's audio as a native sitting does: resting it as
-  // the phone locks could take the page's sound with it.
-  const wasGuided = useRef(false);
-  useEffect(() => {
-    if (guidedNow) holdForSitting(true);
-    else if (wasGuided.current) holdForSitting(false, COOLDOWN_MS + 30_000);
-    wasGuided.current = guidedNow;
-  }, [guidedNow]);
   const presence = usePresence({
-    label: withOthersNow || guidedNow ? label : null,
-    sitting: sittingNow || guidedNow,
+    label: withOthersNow ? label : null,
+    sitting: sittingNow,
   });
+
+  // Whoever is on camera: framed on the water in a guided sitting, and the
+  // line under the arrival's sentence.
+  const guidedNow = sittingNow && (stage.kind === 'sitting' || stage.kind === 'finished') && stage.sit.guided;
+  const onCamera = useLive(guidedNow || (stage.kind === 'arrive' && layer === 'arrive'));
 
   // One fish per person here now. While you sit, your own heartbeat is among
   // them and you are not a fish: one comes off — yours by name if you share
   // one — down to the count of everybody else (`count` includes you). By
-  // yourself, no fish.
+  // yourself, no fish; with a guide, none either: the picture is the company.
   const stones = useMemo<Stone[]>(() => {
     if (stage.kind === 'arrive') return world;
-    if (!stage.sit.withOthers) return [];
+    if (!stage.sit.withOthers || stage.sit.guided) return [];
     const out = [...world];
     const { count } = presence;
     const others = Math.max(0, count === null ? out.length - 1 : Math.min(out.length, count - 1));
@@ -447,42 +305,6 @@ function Root() {
     Animated.timing(sitShown, { toValue: sitVisible ? 1 : 0, duration: fading ? 700 : 1000, easing: Easing.bezier(0.4, 0, 0.2, 1), useNativeDriver: true }).start();
   }, [sitVisible, fading, sitShown]);
 
-  const onMessage = (e: WebViewMessageEvent) => {
-    let m: ArriveMessage | { type: 'sitting'; on?: boolean };
-    try {
-      m = JSON.parse(e.nativeEvent.data);
-    } catch {
-      return;
-    }
-    if (m.type === 'sitting') {
-      // A site older than this says only that a sitting has begun.
-      const on = m.on !== false;
-      setWebSitting(on);
-      if (!on) return;
-      begun.current = true;
-      const late = guidedAsked.current;
-      guidedAsked.current = false;
-      if (modeRef.current === 'native' && late && stageRef.current.kind === 'arrive') {
-        // Begun after the arrival had come back: show it now.
-        setMode('throw');
-        landedGuided.current = true;
-        reveal();
-      } else reveal();
-      return;
-    }
-    if (m.type !== 'arrive') return;
-    ready.current = true;
-    setGuide(m.guide);
-    // The phone's choices are the ones that count: the page takes them.
-    call(`update(${JSON.stringify(prefsRef.current)})`);
-    if (queued.current !== null) {
-      sendBegin(queued.current);
-      queued.current = null;
-    }
-    // The site is back at its arrival after a guided sitting.
-    if (modeRef.current === 'web') home();
-  };
-
   /** The corner: Sign in, or the account once signed in. */
   const openAccount = () => {
     setDir(1);
@@ -494,174 +316,118 @@ function Root() {
   return (
     <View style={s.screen}>
       <StatusBar style="dark" />
-      <WebView
-        key={attempt}
-        ref={web}
-        source={{ uri }}
-        injectedJavaScriptBeforeContentLoaded={GUEST_SCRIPT}
-        style={s.web}
-        // Hide the whole container, not just the page: the web view draws its
-        // own grey error page in there, which would show under the one above.
-        containerStyle={[{ backgroundColor: PAPER }, failed && s.hidden]}
-        contentInsetAdjustmentBehavior="never"
-        automaticallyAdjustContentInsets={false}
-        bounces={false}
-        overScrollMode="never"
-        allowsInlineMediaPlayback
-        mediaPlaybackRequiresUserAction={false}
-        allowsBackForwardNavigationGestures
-        sharedCookiesEnabled
-        applicationNameForUserAgent="MeditateWithMeApp"
-        onLoadStart={() => {
-          ready.current = false;
-        }}
-        onMessage={onMessage}
-        onShouldStartLoadWithRequest={(req) => {
-          if (req.url.startsWith('about:') || inside(req.url)) return true;
-          // Everything else — mail links, credits, other sites — goes to
-          // the phone's own apps, not into the app's frame.
-          void Linking.openURL(req.url);
-          return false;
-        }}
-        onError={() => setFailed(true)}
-        onHttpError={(e) => {
-          if (e.nativeEvent.statusCode >= 500) setFailed(true);
-        }}
-      />
+      {fonts && (
+        <>
+          <Pond
+            ref={pond}
+            stones={stones}
+            you={(thrown !== null || stage.kind !== 'arrive') && !again}
+            throwFrom={thrown}
+            water={layer === 'arrive' && stage.kind === 'arrive'}
+            bellAt={finished ? stage.endedAt : null}
+          />
 
-      {mode !== 'web' && (
-        <Animated.View
-          style={[StyleSheet.absoluteFill, s.screen, { opacity: fonts ? cover : 1 }]}
-          // Over the site through a guided throw too: a tap there would land
-          // on the hidden page.
-          pointerEvents="auto"
-        >
-          {fonts && (
-            <>
-              <Pond
-                ref={pond}
-                stones={stones}
-                you={(thrown !== null || stage.kind !== 'arrive') && !again}
-                throwFrom={thrown}
-                water={mode === 'native' && layer === 'arrive' && stage.kind === 'arrive'}
-                bellAt={finished ? stage.endedAt : null}
-              />
-
-              {finished && !held && !again && (
-                <Afterwards minutes={stage.minutes} onAgain={() => setAgain(true)} onDone={homeNative} />
-              )}
-              {finished && !held && again && (
-                <SameSetup
-                  prefs={prefs}
-                  now={clock.now}
-                  onYes={(from) => beginNative(from, true)}
-                  onNo={homeNative}
-                  onBack={() => setAgain(false)}
-                />
-              )}
-
-              {shownSit !== null && (
-                <Animated.View style={[StyleSheet.absoluteFill, { opacity: sitShown }]} pointerEvents={sitVisible ? 'box-none' : 'none'}>
-                  <Sitting
-                    // A new sitting is a new screen, its controls awake, even
-                    // when Again is pressed while the last one is fading.
-                    key={shownSit.id}
-                    sit={shownSit}
-                    now={clock.now}
-                    mono={clock.mono}
-                    count={presence.count}
-                    litCount={presence.litCount}
-                    labels={labels}
-                    ownLabel={label}
-                    soundMix={prefs.soundMix}
-                    onSound={(patch: Partial<Record<TrackSlug, number>>) => update({ soundMix: { ...prefsRef.current.soundMix, ...patch } })}
-                    onSoundOpen={mix.unmute}
-                    onEnd={endEarly}
-                    onBack={endEarly}
-                    onTap={(at) => pond.current?.scatter(at)}
-                    ended={finished}
-                  />
-                </Animated.View>
-              )}
-
-              {atArrive && (
-                <View style={StyleSheet.absoluteFill} pointerEvents={stage.kind === 'arrive' ? 'box-none' : 'none'}>
-                  <Rail
-                    at={layer}
-                    dir={dir}
-                    render={(l) =>
-                      l === 'arrive' ? (
-                        <Arrive
-                          prefs={prefs}
-                          update={update}
-                          guided={guided}
-                          onGuided={(g) => {
-                            setGuided(g);
-                            // By yourself is among the fish, as on the site.
-                            if (!g) update({ showCount: true });
-                          }}
-                          guide={guide}
-                          name={corner}
-                          others={world.length}
-                          now={clock.now}
-                          leaving={mode === 'throw' || stage.kind !== 'arrive'}
-                          onAccount={openAccount}
-                          onBegin={begin}
-                          onPreviewBell={previewBell}
-                          onStopBell={stopPreviewBell}
-                          onTaste={mix.taste}
-                          onHush={mix.hush}
-                        />
-                      ) : l === 'account' ? (
-                        <AccountScreen
-                          account={account}
-                          onClose={() => {
-                            setDir(-1);
-                            setLayer('arrive');
-                          }}
-                        />
-                      ) : (
-                        <SignIn
-                          ask={l === 'ask' ? asked : undefined}
-                          onClose={() => {
-                            pending.current = null;
-                            setDir(-1);
-                            setLayer('arrive');
-                          }}
-                          onDone={() => {
-                            // The session is the app's own now (`account.ts`); what
-                            // the questions just saved is read back into it.
-                            void account.refreshProfile();
-                            setDir(-1);
-                            setLayer('arrive');
-                          }}
-                        />
-                      )
-                    }
-                  />
-                </View>
-              )}
-            </>
+          {guidedNow && (
+            <LiveLayer src={onCamera.live?.hls ?? null} guide={onCamera.live?.name ?? null} stopped={onCamera.stopped} />
           )}
-        </Animated.View>
-      )}
 
-      {failed && mode !== 'native' && (
-        <View style={[StyleSheet.absoluteFill, s.screen, s.failed]}>
-          <Text style={s.failedTitle}>Meditate With Me could not be reached.</Text>
-          <Text style={s.failedBody}>Check your connection, then try again.</Text>
-          <Pressable
-            onPress={() => {
-              // A fresh web view rather than reload(): after a first load
-              // that never arrived, WKWebView has no page to reload.
-              setFailed(false);
-              setAttempt((n) => n + 1);
-            }}
-            style={({ pressed }) => [s.retry, pressed && { opacity: 0.6 }]}
-          >
-            <Text style={s.retryText}>Try again</Text>
-          </Pressable>
-        </View>
+          {finished && !held && !again && (
+            <Afterwards minutes={stage.minutes} onAgain={() => setAgain(true)} onDone={homeNative} />
+          )}
+          {finished && !held && again && (
+            <SameSetup
+              prefs={prefs}
+              guided={guided}
+              now={clock.now}
+              onYes={(from) => beginNative(from, guidedRef.current, true)}
+              onNo={homeNative}
+              onBack={() => setAgain(false)}
+            />
+          )}
+
+          {shownSit !== null && (
+            <Animated.View style={[StyleSheet.absoluteFill, { opacity: sitShown }]} pointerEvents={sitVisible ? 'box-none' : 'none'}>
+              <Sitting
+                // A new sitting is a new screen, its controls awake, even
+                // when Again is pressed while the last one is fading.
+                key={shownSit.id}
+                sit={shownSit}
+                now={clock.now}
+                mono={clock.mono}
+                count={presence.count}
+                litCount={presence.litCount}
+                labels={labels}
+                ownLabel={label}
+                soundMix={prefs.soundMix}
+                onSound={(patch: Partial<Record<TrackSlug, number>>) => update({ soundMix: { ...prefsRef.current.soundMix, ...patch } })}
+                onSoundOpen={mix.unmute}
+                onEnd={endEarly}
+                onBack={endEarly}
+                onTap={(at) => pond.current?.scatter(at)}
+                ended={finished}
+                nextSession={shownSit.guided && !onCamera.live ? onCamera.next : null}
+              />
+            </Animated.View>
+          )}
+
+          {atArrive && (
+            <View style={StyleSheet.absoluteFill} pointerEvents={stage.kind === 'arrive' ? 'box-none' : 'none'}>
+              <Rail
+                at={layer}
+                dir={dir}
+                render={(l) =>
+                  l === 'arrive' ? (
+                    <Arrive
+                      prefs={prefs}
+                      update={update}
+                      guided={guided}
+                      onGuided={(g) => {
+                        setGuided(g);
+                        // By yourself is among the fish, as on the site.
+                        if (!g) update({ showCount: true });
+                      }}
+                      guide={guideLine(onCamera)}
+                      name={corner}
+                      others={world.length}
+                      now={clock.now}
+                      leaving={stage.kind !== 'arrive'}
+                      onAccount={openAccount}
+                      onBegin={begin}
+                      onPreviewBell={previewBell}
+                      onStopBell={stopPreviewBell}
+                      onTaste={mix.taste}
+                      onHush={mix.hush}
+                    />
+                  ) : l === 'account' ? (
+                    <AccountScreen
+                      account={account}
+                      onClose={() => {
+                        setDir(-1);
+                        setLayer('arrive');
+                      }}
+                    />
+                  ) : (
+                    <SignIn
+                      ask={l === 'ask' ? asked : undefined}
+                      onClose={() => {
+                        pending.current = null;
+                        setDir(-1);
+                        setLayer('arrive');
+                      }}
+                      onDone={() => {
+                        // The session is the app's own now (`account.ts`); what
+                        // the questions just saved is read back into it.
+                        void account.refreshProfile();
+                        setDir(-1);
+                        setLayer('arrive');
+                      }}
+                    />
+                  )
+                }
+              />
+            </View>
+          )}
+        </>
       )}
     </View>
   );
@@ -669,11 +435,4 @@ function Root() {
 
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: PAPER },
-  web: { flex: 1, backgroundColor: PAPER },
-  hidden: { display: 'none' },
-  failed: { justifyContent: 'center', paddingHorizontal: 28, gap: 12 },
-  failedTitle: { color: '#2a3136', fontSize: 22, fontWeight: '700' },
-  failedBody: { color: '#4f5a61', fontSize: 17, lineHeight: 24 },
-  retry: { alignSelf: 'flex-start', marginTop: 12, minHeight: 48, justifyContent: 'center', paddingHorizontal: 22, borderRadius: 12, backgroundColor: '#3e4c55' },
-  retryText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

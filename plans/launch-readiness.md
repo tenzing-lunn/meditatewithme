@@ -384,6 +384,12 @@ again first.
   the bell rung by the phone itself (the first spike: does it ring on a
   locked phone forty-five minutes later?). `lib/` stays portable for
   exactly this (`tests/portability.test.ts`).
+  *24 November 2026:* all of it is native now and the app no longer loads
+  the site: the live video on AVPlayer (expo-video), the reminder, the
+  beds and bells on the phone's own audio. The video is silent and framed
+  on the water as on the site, so Picture in Picture and AirPlay are off.
+  Not yet heard or seen on a phone: the locked-phone bell, and the video
+  with anyone live (`plans/iphone-app.md`).
 - [ ] **Account deletion inside the app (5.1.1(v)).** The web has it; the
   app must have it too, and a way to revoke the Google and Apple sign-ins.
   *24 November 2026:* the app's own *Account* page deletes (the site's

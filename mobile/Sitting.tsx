@@ -26,6 +26,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { companyLine } from '../lib/company';
+import { localTime } from '../lib/format';
 import type { Point } from '../lib/pond';
 import { mmss, remainingMs } from '../lib/timer';
 import { TRACK_SLUGS, type TrackSlug } from '../lib/types';
@@ -54,6 +55,8 @@ export interface Sit {
   together: boolean;
   /** Among the others: their fish are shown, and the company line. */
   withOthers: boolean;
+  /** *With a guide*: whoever is on camera, framed on the water, and no fish. */
+  guided: boolean;
 }
 
 /** Where the minutes stand, and *Come back.* before them: 58% down, under the header. */
@@ -64,7 +67,7 @@ export function useMinutesTop(): number {
 }
 
 export default function Sitting({
-  sit, now, mono, count, litCount, labels, ownLabel, soundMix, onSound, onSoundOpen, onEnd, onBack, onTap, ended = false,
+  sit, now, mono, count, litCount, labels, ownLabel, soundMix, onSound, onSoundOpen, onEnd, onBack, onTap, ended = false, nextSession = null,
 }: {
   sit: Sit;
   now: number | null;
@@ -83,6 +86,8 @@ export default function Sitting({
   onTap: (at: Point) => void;
   /** The bell has rung: the held beat, before the minutes. */
   ended?: boolean;
+  /** Between two guides, when the next goes on: what the line says instead. */
+  nextSession?: number | null;
 }) {
   const insets = useSafeAreaInsets();
   const minutesTop = useMinutesTop();
@@ -139,7 +144,12 @@ export default function Sitting({
     Animated.timing(comeBack, { toValue: 1, duration: 1600, easing: EASE, useNativeDriver: true }).start();
   }, [ended, comeBack]);
 
-  const line = sit.withOthers ? companyLine(labels, count, litCount, ownLabel, now ?? Date.now()) : null;
+  // Between two people on camera, that is what the line says; otherwise it is who is here.
+  const line = !sit.withOthers
+    ? null
+    : nextSession !== null && !ended
+      ? `The next session starts at ${localTime(nextSession)}.`
+      : companyLine(labels, count, litCount, ownLabel, now ?? Date.now());
   const controls = { opacity: fade };
   const reach = shown ? 'box-none' : 'none';
 

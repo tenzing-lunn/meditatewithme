@@ -402,6 +402,47 @@ logged by the site as a guest's, not into the app's log. **Nothing here has
 been signed into**: it was written with the Supabase project paused, so
 it is typechecked and the app runs, and that is all.
 
+## 24 November 2026: the guided sitting is native, and the web view is gone
+
+Tenzing said start the live video, untested (the Supabase project is
+paused and production has no `LIVE_HLS_BASE`, so there is no stream to
+watch anywhere yet). With it native, nothing was left for the site in the
+web view to do, so **the app no longer loads the site at all**: it talks
+only to the site's API (`/api/live`, `/api/world`, `/api/heartbeat`,
+`/api/signin`, `/api/account`), as the site's own pages do.
+
+- **A guided Begin is a native sitting** with `guided` set, as the site's
+  `Journey` begins one: it ends on the shared bell, where the person on
+  camera hands over; it is among the others (your name on the water if you
+  share it); and there are no fish — the picture is the company.
+- **Who is on camera** (`mobile/live.ts`) is the site's `useLive`, polling
+  `/api/live` every ten seconds and holding a vanished stream for twenty,
+  and the arrival's line under *with a guide* is `Journey`'s
+  (`guideLine`).
+- **The picture** (`mobile/LiveLayer.tsx`) is the site's `LiveLayer` and
+  `LiveStream` on expo-video (AVPlayer, HLS natively): framed on the water,
+  fading in only once frames play and out when they stop, silent, the same
+  line under it, the same recovery (reload from scratch after an error, an
+  end, or eight seconds without frames, waiting 3 s growing to 30 s). The
+  phone pauses the picture while locked; that is not counted as a stall,
+  and coming back reloads it at live. Between two guides the sitting's line
+  says when the next starts, as the site's does. Low Power Mode's
+  autoplay rule is a browser one, so there is no priming.
+- ***Same setup?*** keeps the guided choice and says *With a guide*.
+- A guided sitting is now logged in the app's own practice log, like any
+  other (it was the site's, as a guest's).
+- **Gone:** the web view and `react-native-webview`, the bridge calls,
+  the could-not-be-reached screen, and `GUEST_SCRIPT`. The site's
+  `components/useAppBridge.ts` is no longer used by any build of the app;
+  it is inert outside the app, and retiring it is a site change for later.
+
+**To check on a phone, with someone live:** expo-video sets the audio
+session to `playback`/`moviePlayback` with `mixWithOthers` when its player
+starts, over the settings `mobile/audio.ts` made at Begin. The beds and the
+bells should carry on through it, and through the lock, but that has not
+been heard. Built for the simulator and launched; never seen with a
+stream.
+
 ## The route
 
 **Expo, in `mobile/`, beside the website, in the same repo.** Same
